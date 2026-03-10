@@ -1,0 +1,43 @@
+[package]
+name = "mc_translator_rs"
+version = "0.2.0"
+edition = "2021"
+default-run = "mc_translator_rs"
+
+[dependencies]
+eframe = "0.27"
+egui = "0.27"
+egui-chinese-font = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+tokio = { version = "1", features = ["full"] }
+lazy_static = "1.4.0"
+async-recursion = "1.0"
+futures = "0.3"
+once_cell = "1"
+rfd = "0.14"
+regex = "1.10"
+reqwest = { version = "0.11", features = ["json", "cookies", "stream"] }
+tempfile = "3.8"
+zip = "0.6"
+rand = "0.8"
+urlencoding = "2.1"
+hanconv = "0.4"
+dotenvy = "0.15"
+chrono = "0.4"
+base64 = "0.21"
+winapi = { version = "0.3", features = ["wincrypt", "winbase", "basetsd", "dpapi"] }
+walkdir = "2.5.0"
+aho-corasick = "1.1"
+bytes = "1.5"
+
+[[bin]]
+name = "mc_translator_rs"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
