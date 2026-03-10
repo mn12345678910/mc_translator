@@ -29,9 +29,11 @@ fn main() -> Result<(), eframe::Error> {
             .show();
     }));
 
+    let config = config::AppConfig::load();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([750.0, 550.0])
+            .with_inner_size([config.main_width, config.main_height])
+            .with_position([config.main_x, config.main_y])
             .with_min_inner_size([700.0, 500.0]),
         follow_system_theme: true,
         vsync: true,

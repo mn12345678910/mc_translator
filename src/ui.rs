@@ -1,12 +1,34 @@
-//! # 介面模組
-//! 負責所有 egui GUI 渲染邏輯。
-
-use crate::state_and_log::{AppState, ViewerSharedState};
+use crate::state_and_log::{AppState, ViewerSharedState, ViewerUpdate};
 use eframe::egui;
 use std::fs;
 
+// --- UI 顏色常量 (Revision 15.20) ---
+const LABEL_COLOR_LIGHT: egui::Color32 = egui::Color32::from_rgb(30, 60, 120); // 深靛藍
+const LABEL_COLOR_DARK: egui::Color32 = egui::Color32::from_rgb(200, 160, 100); // 淺沙色
+
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // 0. 處理來自 Viewport 的非同步更新訊息 (Revision 15.12)
+        while let Ok(update) = self._update_rx.try_recv() {
+            match update {
+                ViewerUpdate::Theme(t) => {
+                    self.theme = t;
+                }
+                ViewerUpdate::FontSize(s) => {
+                    self.font_size = s;
+                }
+                ViewerUpdate::SaveConfig => {
+                    self.save_config();
+                }
+            }
+        }
+
+        // 0. 更新啟動延遲計數器 (Revision 15.13: V6 終極整合 - 補回被誤刪的遞減邏輯)
+        if self.viewer_opening_counter > 0 {
+            self.viewer_opening_counter -= 1;
+            ctx.request_repaint(); // 確保計數器遞減期間持續重繪
+        }
+
         if self
             .viewer_shared
             .close_requested
@@ -75,6 +97,45 @@ impl eframe::App for AppState {
         // 8. 建議詞管理器 (Viewport)
         if self.show_memory_viewer {
             self.show_viewport_if_needed(ctx);
+
+            // 視窗同步 (ses_342b): 從共享狀態同步回 AppState 並儲存
+            {
+                if let Ok(pos_lock) = self.viewer_shared.position.read() {
+                    if let Some(pos) = *pos_lock {
+                        if (pos.x - self.viewer_x).abs() > 0.1
+                            || (pos.y - self.viewer_y).abs() > 0.1
+                        {
+                            self.viewer_x = pos.x;
+                            self.viewer_y = pos.y;
+                        }
+                    }
+                }
+                if let Ok(size_lock) = self.viewer_shared.inner_size.read() {
+                    if let Some(size) = *size_lock {
+                        if (size.x - self.viewer_width).abs() > 0.1
+                            || (size.y - self.viewer_height).abs() > 0.1
+                        {
+                            self.viewer_width = size.x;
+                            self.viewer_height = size.y;
+                        }
+                    }
+                }
+            }
+
+            // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
+            if let Some(rect) = ctx.input(|i| i.viewport().outer_rect) {
+                if (rect.min.x - self.main_x).abs() > 0.1 || (rect.min.y - self.main_y).abs() > 0.1
+                {
+                    self.main_x = rect.min.x;
+                    self.main_y = rect.min.y;
+                }
+                if (rect.width() - self.main_width).abs() > 0.1
+                    || (rect.height() - self.main_height).abs() > 0.1
+                {
+                    self.main_width = rect.width();
+                    self.main_height = rect.height();
+                }
+            }
         }
 
         // 處理中時持續重繪
@@ -87,29 +148,38 @@ impl eframe::App for AppState {
 impl AppState {
     /// 若有需要則顯示建議詞管理器 Viewport
     fn show_viewport_if_needed(&mut self, ctx: &egui::Context) {
-        if !self.show_memory_viewer {
+        if !self.show_memory_viewer || self.viewer_opening_counter > 0 {
             return;
         }
 
-        let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
+        // 1. 在主執行緒更新幀數計數器，用於隱形展現與幾何引導 (Revision 15.10)
+        let count_val = {
+            let mut count = self.viewer_shared.opened_frames.lock().unwrap();
+            if *count < 150 {
+                *count += 1;
+            }
+            *count
+        };
 
+        let opened = self.viewer_shared.opened_last_frame.lock().unwrap();
         if !*opened {
-            // 第一次打開：初始化
-            *opened = true;
-            drop(opened);
             self.refresh_all_dictionaries();
             self.is_memory_viewer_open
                 .store(true, std::sync::atomic::Ordering::SeqCst);
-        } else {
-            drop(opened);
         }
+        drop(opened);
 
-        // 每 frame 都必須調用 show_viewport_deferred 才能保持 viewport 持續顯示
-        self.create_viewport_deferred(ctx);
+        // 每 frame 都必須調用 show_viewport_deferred 才能保持 viewport 持績顯示
+        self.create_viewport_deferred(ctx, count_val);
+
+        // 確保在開啟初期的引導與亮顯階段持續重繪，防止計數器卡住 (Deadlock Prevention)
+        if count_val < 65 {
+            ctx.request_repaint();
+        }
     }
 
     /// 創建建議詞管理器 Viewport
-    fn create_viewport_deferred(&mut self, ctx: &egui::Context) {
+    fn create_viewport_deferred(&mut self, ctx: &egui::Context, opened_frames: u32) {
         // 收集所需的所有 Arc 變數
         if self.show_memory_viewer {
             let is_processing = self.is_processing.clone();
@@ -136,32 +206,96 @@ impl AppState {
             let glossary_priority = self.glossary_priority.clone();
             let is_memory_viewer_open = self.is_memory_viewer_open.clone();
 
-            let opened_last_frame = self.viewer_shared.opened_last_frame.lock().unwrap().clone();
+            let mut opened_lock = self.viewer_shared.opened_last_frame.lock().unwrap();
+            let opened_last_frame = *opened_lock;
 
-            // 只有在剛開啟的一幀或特定條件下才動態計算尺寸，避免每幀 Builder 造成的尺寸閃動
+            // 1. 隱形啟動策略 (Invisible-First): 初始設為 invisible (Revision 15.10)
+            // 2. 幾何引導 (Geometry Guidance): 前 20 幀持續強制套用座標與尺寸，壓制 OS 跳位 (Feedback Fix)
+            let is_visible = opened_frames >= 30; // 使用者要求調回 30 幀
             let mut builder = egui::ViewportBuilder::default()
                 .with_title("📖 建議詞管理器")
-                .with_resizable(true);
+                .with_resizable(true)
+                .with_maximized(false)
+                .with_min_inner_size([800.0, 600.0]) // [Revision 15.15] 最小尺寸限制
+                .with_visible(is_visible);
 
-            if !opened_last_frame {
+            // 只有在穩定前（前 40 幀，涵蓋 30 幀亮顯期）持續強制套位，壓制 OS 隨機跳位 (Revision 15.13)
+            if opened_frames < 40 {
                 builder = builder
                     .with_inner_size([self.viewer_width, self.viewer_height])
                     .with_position([self.viewer_x, self.viewer_y]);
             }
 
+            // 一旦建立了帶有初始位置的 builder，就標記為已開啟
+            if !opened_last_frame {
+                *opened_lock = true;
+            }
+            drop(opened_lock);
+
+            // (顯現指令已透過 builder.with_visible(is_visible) 處理，不需額外發送以防 ID 註冊競爭)
+
             ctx.show_viewport_deferred(
                 egui::ViewportId::from_hash_of("memory_viewer"),
                 builder,
                 move |ctx, _viewport_id| {
-                    // 監聽關閉事件
+                    // 1. 視覺初始化: 消彌白閃
+                    let is_dark = *viewer_shared.theme.read().unwrap() == "dark";
+                    let bg_color = if is_dark {
+                        egui::Color32::from_rgb(30, 30, 35)
+                    } else {
+                        egui::Color32::from_rgb(0xFF, 0xDE, 0xAD)
+                    };
+                    ctx.style_mut(|s| s.visuals.window_fill = bg_color);
+
+                    // 監聽關閉事件 (Revision 15.12: Deferred Save)
                     if ctx.input(|i| i.viewport().close_requested()) {
                         is_memory_viewer_open.store(false, std::sync::atomic::Ordering::SeqCst);
                         viewer_shared
                             .close_requested
                             .store(true, std::sync::atomic::Ordering::SeqCst);
+
+                        // 當視窗關閉時觸發一次設定檔存盤 (Feedback Fix)
+                        viewer_shared.update_tx.send(ViewerUpdate::SaveConfig).ok();
                     }
 
-                    // 直接調用渲染內容，內部已有 CentralPanel，移除此處的 egui::CentralPanel 以解決閃爍與重複邊距
+                    // 2. 視窗同步 (ses_342b): 回報當前位置與大小
+                    let inner_size = ctx.screen_rect().size();
+                    if let Some(outer_rect) = ctx.input(|i| i.viewport().outer_rect) {
+                        let pos = outer_rect.min;
+                        let current_count = *viewer_shared.opened_frames.lock().unwrap();
+
+                        // (顯現指令已移至主執行緒 create_viewport_deferred 以防死鎖)
+
+                        if (pos.x > 1.1 || pos.y > 1.1) && current_count > 60 {
+                            // 幾何同步保護：加入 Delta Check，並限制合理的同步上限 (Revision 15.15)
+                            let clamped_width = inner_size.x.clamp(400.0, 1920.0);
+                            let clamped_height = inner_size.y.clamp(300.0, 1080.0);
+                            let clamped_size = egui::vec2(clamped_width, clamped_height);
+
+                            if let Ok(mut p_lock) = viewer_shared.position.write() {
+                                let changed = p_lock
+                                    .map(|old| (old.x - pos.x).abs() + (old.y - pos.y).abs() > 2.0)
+                                    .unwrap_or(true);
+                                if changed {
+                                    *p_lock = Some(pos);
+                                }
+                            }
+                            if let Ok(mut s_lock) = viewer_shared.inner_size.write() {
+                                let changed = s_lock
+                                    .map(|old| {
+                                        (old.x - clamped_size.x).abs()
+                                            + (old.y - clamped_size.y).abs()
+                                            > 10.0
+                                    })
+                                    .unwrap_or(true);
+                                if changed {
+                                    *s_lock = Some(clamped_size);
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. 渲染內容
                     Self::render_memory_viewer_content(
                         ctx,
                         is_processing.clone(),
@@ -286,88 +420,110 @@ impl AppState {
         }
     }
 
-    /// 渲染頂部控制項 (還原自備份版本佈局)
+    /// 渲染頂部控制項 (優化佈局防止遮擋)
     fn render_header_controls(&mut self, ui: &mut egui::Ui, ui_enabled: bool) {
-        ui.horizontal_wrapped(|ui| {
+        ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.0;
-            if ui
-                .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案"))
-                .clicked()
-            {
-                if let Some(files) = rfd::FileDialog::new()
-                    .add_filter("JAR, JS & JSON 檔案", &["jar", "js", "json"])
-                    .pick_files()
+
+            // 左側按鈕區
+            ui.horizontal(|ui| {
+                if ui
+                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案"))
+                    .clicked()
                 {
-                    self.input_paths = files
-                        .into_iter()
-                        .map(|p| {
-                            let rel = p
-                                .file_name()
-                                .unwrap_or_default()
-                                .to_string_lossy()
-                                .to_string();
-                            (p, rel.replace('\\', "/"))
-                        })
-                        .collect();
-                    self.add_log(&format!("已選擇 {} 個檔案", self.input_paths.len()));
-                    // [Rev 13] 選取時立即更新總數
-                    *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
-                    *self.global_progress.lock().unwrap() = 0.0;
+                    if let Some(files) = rfd::FileDialog::new()
+                        .add_filter("JAR, JS & JSON 檔案", &["jar", "js", "json"])
+                        .pick_files()
+                    {
+                        self.input_paths = files
+                            .into_iter()
+                            .map(|p| {
+                                let rel = p
+                                    .file_name()
+                                    .unwrap_or_default()
+                                    .to_string_lossy()
+                                    .to_string();
+                                (p, rel.replace('\\', "/"))
+                            })
+                            .collect();
+                        self.add_log(&format!("已選擇 {} 個檔案", self.input_paths.len()));
+                        *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
+                        *self.global_progress.lock().unwrap() = 0.0;
+                    }
                 }
-            }
-            if ui
-                .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾"))
-                .clicked()
-            {
-                if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                    let files = scan_files_recursive(&path, &path);
-                    self.add_log(&format!("已選擇 {} 個檔案", files.len()));
-                    self.input_paths = files;
-                    // [Rev 13] 選取時立即更新總數
-                    *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
-                    *self.global_progress.lock().unwrap() = 0.0;
+                if ui
+                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾"))
+                    .clicked()
+                {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        let files = scan_files_recursive(&path, &path);
+                        self.add_log(&format!("已選擇 {} 個檔案", files.len()));
+                        self.input_paths = files;
+                        *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
+                        *self.global_progress.lock().unwrap() = 0.0;
+                    }
                 }
-            }
 
-            ui.separator();
+                ui.separator();
 
-            if ui
-                .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾"))
-                .clicked()
-            {
-                if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                    self.output_dir = path.to_string_lossy().to_string();
-                    self.save_config();
-                    self.add_log(&format!("輸出資料夾已設定: {}", self.output_dir));
+                if ui
+                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾"))
+                    .clicked()
+                {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        self.output_dir = path.to_string_lossy().to_string();
+                        self.save_config();
+                        self.add_log(&format!("輸出資料夾已設定: {}", self.output_dir));
+                    }
                 }
-            }
 
-            if ui.button("📂 打開輸出").clicked() {
-                let target = if self.output_dir.is_empty() {
-                    "LLMTranslator"
-                } else {
-                    &self.output_dir
-                };
-                let path = std::path::Path::new(target);
-                if !path.exists() {
-                    let _ = std::fs::create_dir_all(path);
+                if ui.button("📂 打開輸出").clicked() {
+                    let target = if self.output_dir.is_empty() {
+                        "LLMTranslator"
+                    } else {
+                        &self.output_dir
+                    };
+                    let path = std::path::Path::new(target);
+                    if !path.exists() {
+                        let _ = std::fs::create_dir_all(path);
+                    }
+                    #[cfg(target_os = "windows")]
+                    let _ = std::process::Command::new("explorer").arg(path).spawn();
                 }
-                #[cfg(target_os = "windows")]
-                let _ = std::process::Command::new("explorer").arg(path).spawn();
-            }
+            });
 
+            // 右側導航按鈕 (固定置右)
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                self.render_status_navigation(ui);
+            });
+        });
+
+        ui.add_space(2.0);
+
+        // 路徑標籤單獨一行，並具備截斷保護
+        ui.horizontal(|ui| {
+            let label_color = if self.theme == "light" {
+                LABEL_COLOR_LIGHT
+            } else {
+                LABEL_COLOR_DARK
+            };
             let display_path = if self.output_dir.is_empty() {
                 "預設: ./LLMTranslator".into()
             } else {
                 self.output_dir.clone()
             };
-            ui.add(egui::Label::new(display_path).truncate(true));
-
-            self.render_status_navigation(ui);
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new(format!("輸出路徑: {}", display_path))
+                        .color(label_color)
+                        .strong(),
+                )
+                .truncate(true),
+            );
         });
     }
 
-    /// 渲染導航按鈕 (⚙ 🌓 📖 🔧) 並修復建議詞開啟邏輯
+    /// 渲染導航按鈕 (⚙ 🌓 📖 🔧)
     fn render_status_navigation(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui.button("⚙").on_hover_text("API 翻譯設定").clicked() {
@@ -378,9 +534,19 @@ impl AppState {
             }
             if ui.button("📖").on_hover_text("建議詞管理器").clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
-                if !self.show_memory_viewer {
+                if self.show_memory_viewer {
+                    // 點擊開啟時發動 0.5s (30 frames) 的靜默期，等待主程式狀態穩定 (Feedback Fix)
+                    self.viewer_opening_counter = 30;
+                } else {
+                    let mut frames = self.viewer_shared.opened_frames.lock().unwrap();
+                    *frames = 0;
+                    self.is_memory_viewer_open
+                        .store(false, std::sync::atomic::Ordering::SeqCst);
+                    // 重要：重置旗標，確保下次開啟能正確初始化 (Revision 15.13)
                     let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
                     *opened = false;
+                    // 關閉時存盤
+                    self.save_config();
                 }
             }
             if ui.button("🌓").on_hover_text("切換主題").clicked() {
@@ -414,9 +580,9 @@ impl AppState {
                 .show(ui, |ui| {
                     ui.vertical(|ui| {
                         let label_color = if self.theme == "light" {
-                            egui::Color32::from_rgb(100, 50, 0)
+                            LABEL_COLOR_LIGHT
                         } else {
-                            egui::Color32::from_rgb(200, 160, 100)
+                            LABEL_COLOR_DARK
                         };
 
                         // --- 服務商與恢復預設 (鎖定) ---
@@ -554,7 +720,7 @@ impl AppState {
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("批次量:").color(label_color));
+                            ui.label(egui::RichText::new("批次量:").color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 let mut bs = self.batch_size as i32;
                                 if ui
@@ -571,7 +737,7 @@ impl AppState {
                             });
 
                             ui.add_space(12.0);
-                            ui.label(egui::RichText::new("字數上限:").color(label_color));
+                            ui.label(egui::RichText::new("字數上限:").color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -586,7 +752,11 @@ impl AppState {
                             });
 
                             ui.add_space(12.0);
-                            ui.label(egui::RichText::new("逾時 (秒):").color(label_color));
+                            ui.label(
+                                egui::RichText::new("逾時 (秒):")
+                                    .color(label_color)
+                                    .strong(),
+                            );
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -601,7 +771,7 @@ impl AppState {
                             });
 
                             ui.add_space(12.0);
-                            ui.label(egui::RichText::new("字體:").color(label_color));
+                            ui.label(egui::RichText::new("字體:").color(label_color).strong());
                             if ui
                                 .add(
                                     egui::DragValue::new(&mut self.font_size)
@@ -613,11 +783,9 @@ impl AppState {
                             {
                                 self.save_config();
                             }
-                        });
 
-                        ui.add_space(12.0);
-                        ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("FPS:").color(label_color));
+                            ui.add_space(12.0);
+                            ui.label(egui::RichText::new("FPS:").color(label_color).strong());
                             ui.checkbox(&mut self.enable_custom_fps, "");
                             if self.enable_custom_fps {
                                 let fps_input = ui.add(
@@ -630,7 +798,11 @@ impl AppState {
                                     self.save_config();
                                 }
                             } else {
-                                ui.label(egui::RichText::new("(預設:vsync)").small());
+                                ui.label(
+                                    egui::RichText::new("(預設:vsync)")
+                                        .color(label_color)
+                                        .strong(),
+                                );
                             }
                         });
 
@@ -639,7 +811,11 @@ impl AppState {
 
                         // --- 翻譯提示 (鎖定) ---
                         ui.group(|ui| {
-                            ui.label(egui::RichText::new("📝 翻譯提示:").color(label_color));
+                            ui.label(
+                                egui::RichText::new("📝 翻譯提示:")
+                                    .color(label_color)
+                                    .strong(),
+                            );
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -700,7 +876,7 @@ impl AppState {
             return;
         }
         let label_color = if self.theme == "light" {
-            egui::Color32::from_rgb(100, 50, 0)
+            LABEL_COLOR_LIGHT
         } else {
             egui::Color32::from_rgb(200, 160, 100)
         };
@@ -722,7 +898,9 @@ impl AppState {
                     };
                     ui.add_sized(
                         [105.0, 20.0],
-                        egui::Label::new(egui::RichText::new(json_label).color(label_color)),
+                        egui::Label::new(
+                            egui::RichText::new(json_label).color(label_color).strong(),
+                        ),
                     );
                     ui.add(toggle(&mut self.skip_json));
 
@@ -733,7 +911,9 @@ impl AppState {
                     };
                     ui.add_sized(
                         [105.0, 20.0],
-                        egui::Label::new(egui::RichText::new(jar_label).color(label_color)),
+                        egui::Label::new(
+                            egui::RichText::new(jar_label).color(label_color).strong(),
+                        ),
                     );
                     ui.add(toggle(&mut self.skip_jar));
                     ui.end_row();
@@ -745,7 +925,7 @@ impl AppState {
                     };
                     ui.add_sized(
                         [105.0, 20.0],
-                        egui::Label::new(egui::RichText::new(js_label).color(label_color)),
+                        egui::Label::new(egui::RichText::new(js_label).color(label_color).strong()),
                     );
                     ui.add(toggle(&mut self.skip_js));
 
@@ -756,7 +936,9 @@ impl AppState {
                     };
                     ui.add_sized(
                         [105.0, 20.0],
-                        egui::Label::new(egui::RichText::new(log_label).color(label_color)),
+                        egui::Label::new(
+                            egui::RichText::new(log_label).color(label_color).strong(),
+                        ),
                     );
                     ui.add(toggle(&mut self.enable_llm_log));
                     ui.end_row();
@@ -774,7 +956,7 @@ impl AppState {
         ui.add_space(1.0);
 
         let label_color = if self.theme == "light" {
-            egui::Color32::from_rgb(100, 50, 0)
+            LABEL_COLOR_LIGHT
         } else {
             egui::Color32::from_rgb(200, 160, 100)
         };
@@ -790,7 +972,11 @@ impl AppState {
             };
             current_status.push_str(dots);
         }
-        ui.label(egui::RichText::new(format!("目前狀態: {}", current_status)).color(label_color));
+        ui.label(
+            egui::RichText::new(format!("目前狀態: {}", current_status))
+                .color(label_color)
+                .strong(),
+        );
 
         // 如果不在處理中，清空進度顯示 (除非是在暫停中)
         let (prog, total, g_prog, g_total) = {
@@ -900,12 +1086,12 @@ impl AppState {
 
     fn render_log_area(&mut self, ui: &mut egui::Ui) {
         let label_color = if self.theme == "light" {
-            egui::Color32::from_rgb(100, 50, 0)
+            LABEL_COLOR_LIGHT
         } else {
-            egui::Color32::from_rgb(200, 160, 100)
+            LABEL_COLOR_DARK
         };
         ui.separator();
-        ui.label(egui::RichText::new("執行日誌:").color(label_color));
+        ui.label(egui::RichText::new("執行日誌:").color(label_color).strong());
         let log = self.log.lock().unwrap();
         egui::ScrollArea::vertical()
             .stick_to_bottom(true)
@@ -1005,9 +1191,26 @@ impl AppState {
             ui.set_style(style);
             let processing = *is_processing.lock().unwrap();
             let current_tab = *dict_active_tab.lock().unwrap();
+            let theme_val = viewer_shared.theme.read().unwrap().clone();
+            let label_color = if theme_val == "light" {
+                LABEL_COLOR_LIGHT
+            } else {
+                LABEL_COLOR_DARK
+            };
 
-            ui.heading("📖 建議詞管理器");
-            ui.label("存在裡面的文字將作為術語表建議 LLM 如何翻譯該文字（僅建議，不一定會使用）");
+            ui.label(
+                egui::RichText::new("📖 建議詞管理器")
+                    .heading()
+                    .color(label_color)
+                    .strong(),
+            );
+            ui.label(
+                egui::RichText::new(
+                    "存在裡面的文字將作為術語表建議 LLM 如何翻譯該文字（僅建議，不一定會使用）",
+                )
+                .color(label_color)
+                .strong(),
+            );
 
             ui.horizontal(|ui| {
                 let mut active_tab = dict_active_tab.lock().unwrap();
@@ -1363,7 +1566,7 @@ impl AppState {
             let end = (start + page_size).min(total_items);
 
             ui.horizontal(|ui| {
-                ui.label("🔍 搜尋:");
+                ui.label(egui::RichText::new("🔍 搜尋:").color(label_color).strong());
                 ui.add(
                     egui::TextEdit::singleline(&mut *dict_search.lock().unwrap())
                         .desired_width(120.0),
@@ -1372,14 +1575,18 @@ impl AppState {
                 if ui.button("◀").clicked() {
                     *page = page.saturating_sub(1);
                 }
-                ui.label(format!(
-                    "第 {}/{} 頁 (顯示 {}-{}/{})",
-                    current_page + 1,
-                    total_pages,
-                    if total_items > 0 { start + 1 } else { 0 },
-                    end,
-                    total_items
-                ));
+                ui.label(
+                    egui::RichText::new(format!(
+                        "第 {}/{} 頁 (顯示 {}-{}/{})",
+                        current_page + 1,
+                        total_pages,
+                        if total_items > 0 { start + 1 } else { 0 },
+                        end,
+                        total_items
+                    ))
+                    .color(label_color)
+                    .strong(),
+                );
                 if ui.button("▶").clicked() && (*page + 1) < total_pages {
                     *page += 1;
                 }
@@ -1403,7 +1610,11 @@ impl AppState {
                     } else {
                         "官方優先"
                     };
-                    ui.label(priority_label);
+                    ui.label(
+                        egui::RichText::new(priority_label)
+                            .color(label_color)
+                            .strong(),
+                    );
                 });
             });
 
@@ -1414,7 +1625,7 @@ impl AppState {
                 .show(ui, |ui| {
                     // 計算欄位寬度，扣除間距與操作欄固定寬度，並實施 150px 最小寬度保護
                     let spacing = 12.0;
-                    let actions_w = 80.0;
+                    let actions_w = 120.0; // 增加空間以利按鈕置中
                     let col_w =
                         ((ui.available_width() - actions_w - spacing * 2.0) / 2.0).max(150.0);
 
@@ -1423,27 +1634,43 @@ impl AppState {
                         .spacing([spacing, 8.0])
                         .striped(true)
                         .show(ui, |ui| {
-                            // 標題置中對齊 (Revision 14.3: 改用 add_sized 避免撐開寬度)
-                            ui.add_sized(
-                                [col_w, 20.0],
-                                egui::Label::new(egui::RichText::new("Key").strong()),
-                            );
-                            ui.add_sized(
-                                [col_w, 20.0],
-                                egui::Label::new(egui::RichText::new("Value").strong()),
-                            );
-                            ui.add_sized(
-                                [actions_w, 20.0],
-                                egui::Label::new(egui::RichText::new("操作").strong()),
-                            );
+                            // 標題置中對齊且不鎖死寬度 (Revision 15.15: 使用 allocate_ui 使其可縮小)
+                            ui.allocate_ui([col_w, 20.0].into(), |ui| {
+                                ui.centered_and_justified(|ui| {
+                                    ui.label(
+                                        egui::RichText::new("Key").color(label_color).strong(),
+                                    );
+                                });
+                            });
+                            ui.allocate_ui([col_w, 20.0].into(), |ui| {
+                                ui.centered_and_justified(|ui| {
+                                    ui.label(
+                                        egui::RichText::new("Value").color(label_color).strong(),
+                                    );
+                                });
+                            });
+                            ui.allocate_ui([actions_w, 20.0].into(), |ui| {
+                                ui.with_layout(
+                                    egui::Layout::right_to_left(egui::Align::Center),
+                                    |ui| {
+                                        ui.label(
+                                            egui::RichText::new("操作").color(label_color).strong(),
+                                        );
+                                    },
+                                );
+                            });
                             ui.end_row();
 
                             if items.is_empty() {
                                 ui.label("");
-                                ui.vertical_centered(|ui| {
-                                    ui.label(
-                                        egui::RichText::new("(目前的字典分頁是空的)").italics(),
-                                    );
+                                ui.allocate_ui([col_w, 30.0].into(), |ui| {
+                                    ui.centered_and_justified(|ui| {
+                                        ui.label(
+                                            egui::RichText::new("(目前的字典分頁是空的)")
+                                                .color(label_color)
+                                                .strong(),
+                                        );
+                                    });
                                 });
                                 ui.label("");
                                 ui.end_row();
@@ -1453,26 +1680,37 @@ impl AppState {
                             let end = (start + page_size).min(total_items);
 
                             for (k, v) in &items[start..end] {
-                                // 使用 Layout 確保垂直置左對齊 (Align::Min 為左/頂)
-                                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
-                                    ui.add_sized([col_w, 0.0], egui::Label::new(k).wrap(true));
+                                // 使用 Layout 確保水平與垂直置中 (Revision 15.15)
+                                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                                    ui.set_max_width(col_w);
+                                    ui.add(
+                                        egui::Label::new(
+                                            egui::RichText::new(k).color(label_color).strong(),
+                                        )
+                                        .wrap(true),
+                                    );
                                 });
 
                                 let is_editing =
                                     dict_edit_key.lock().unwrap().as_deref() == Some(k);
                                 if is_editing {
-                                    ui.add(
-                                        egui::TextEdit::singleline(
-                                            &mut *dict_edit_value.lock().unwrap(),
-                                        )
-                                        .desired_width(col_w - 20.0),
+                                    ui.with_layout(
+                                        egui::Layout::top_down(egui::Align::Center),
+                                        |ui| {
+                                            ui.add(
+                                                egui::TextEdit::singleline(
+                                                    &mut *dict_edit_value.lock().unwrap(),
+                                                )
+                                                .desired_width(col_w - 20.0),
+                                            );
+                                        },
                                     );
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
-                                            // 順序優化 (Revision 14.5)：先加 💾 使得在 right_to_left 下位於最右面
-                                            // 使用者 feedback：[❌] [💾] 是相反的 -> 代表用戶希望 💾 在右
-                                            // 在 right_to_left 中，第一個加的會在最右邊
+                                            if ui.button("❌").clicked() {
+                                                *dict_edit_key.lock().unwrap() = None;
+                                            }
                                             let save_btn = ui.button("💾");
                                             let enter_pressed =
                                                 ui.input(|i| i.key_pressed(egui::Key::Enter));
@@ -1482,8 +1720,6 @@ impl AppState {
                                                     dict_edit_value.lock().unwrap().clone();
                                                 mem.insert(k.clone(), edit_val);
                                                 crate::config::save_translation_memory(&*mem);
-
-                                                // Revision 14.6: 對官方字典操作後移入使用者分頁 (從官方移除)
                                                 if current_tab == 1 {
                                                     let mut inferred =
                                                         inferred_match_map.lock().unwrap();
@@ -1493,58 +1729,70 @@ impl AppState {
                                                         &*inferred,
                                                     );
                                                 }
-
-                                                *dict_edit_key.lock().unwrap() = None;
-                                            }
-                                            if ui.button("❌").clicked() {
                                                 *dict_edit_key.lock().unwrap() = None;
                                             }
                                         },
                                     );
                                 } else {
                                     ui.with_layout(
-                                        egui::Layout::top_down(egui::Align::Min),
+                                        egui::Layout::top_down(egui::Align::Center),
                                         |ui| {
-                                            ui.add_sized(
-                                                [col_w, 0.0],
-                                                egui::Label::new(v).wrap(true),
+                                            ui.set_max_width(col_w);
+                                            ui.add(
+                                                egui::Label::new(
+                                                    egui::RichText::new(v)
+                                                        .color(label_color)
+                                                        .strong(),
+                                                )
+                                                .wrap(true),
                                             );
                                         },
                                     );
 
-                                    ui.with_layout(
-                                        egui::Layout::right_to_left(egui::Align::Center),
-                                        |ui| {
-                                            // 順序調整 (Revision 14.4)：先加 🗑 使其在右
-                                            if ui
-                                                .add_enabled(!processing, egui::Button::new("🗑"))
-                                                .clicked()
-                                            {
-                                                // 刪除邏輯修正 (Revision 14.1)：根據分頁刪除對應字典
-                                                if current_tab == 0 {
-                                                    let mut mem =
-                                                        translation_memory.lock().unwrap();
-                                                    mem.remove(k);
-                                                    crate::config::save_translation_memory(&*mem);
-                                                } else {
-                                                    let mut inferred =
-                                                        inferred_match_map.lock().unwrap();
-                                                    inferred.remove(k);
-                                                    crate::config::save_dict(
-                                                        crate::config::OFFICIAL_DICT,
-                                                        &*inferred,
-                                                    );
+                                    // 確保按鈕群組在 Grid 內置右對齊且順序正確 (Revision 15.17)
+                                    ui.allocate_ui([actions_w, 20.0].into(), |ui| {
+                                        ui.with_layout(
+                                            egui::Layout::right_to_left(egui::Align::Center),
+                                            |ui| {
+                                                // 右對齊模式下，先加的在右邊 -> [✏️] [🗑️]
+                                                if ui
+                                                    .add_enabled(
+                                                        !processing,
+                                                        egui::Button::new("🗑"),
+                                                    )
+                                                    .clicked()
+                                                {
+                                                    if current_tab == 0 {
+                                                        let mut mem =
+                                                            translation_memory.lock().unwrap();
+                                                        mem.remove(k);
+                                                        crate::config::save_translation_memory(
+                                                            &*mem,
+                                                        );
+                                                    } else {
+                                                        let mut inferred =
+                                                            inferred_match_map.lock().unwrap();
+                                                        inferred.remove(k);
+                                                        crate::config::save_dict(
+                                                            crate::config::OFFICIAL_DICT,
+                                                            &*inferred,
+                                                        );
+                                                    }
                                                 }
-                                            }
-                                            if ui
-                                                .add_enabled(!processing, egui::Button::new("✏"))
-                                                .clicked()
-                                            {
-                                                *dict_edit_key.lock().unwrap() = Some(k.clone());
-                                                *dict_edit_value.lock().unwrap() = v.clone();
-                                            }
-                                        },
-                                    );
+                                                if ui
+                                                    .add_enabled(
+                                                        !processing,
+                                                        egui::Button::new("✏"),
+                                                    )
+                                                    .clicked()
+                                                {
+                                                    *dict_edit_key.lock().unwrap() =
+                                                        Some(k.clone());
+                                                    *dict_edit_value.lock().unwrap() = v.clone();
+                                                }
+                                            },
+                                        );
+                                    });
                                 }
                                 ui.end_row();
                             }

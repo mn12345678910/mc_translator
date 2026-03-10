@@ -16,6 +16,7 @@ use tokio::sync::Notify;
 pub enum ViewerUpdate {
     Theme(String),
     FontSize(f32),
+    SaveConfig, // 新增：觸發存盤 (Revision 15.12)
 }
 
 /// 視窗共享狀態 (用於主子視窗同步)
@@ -25,6 +26,11 @@ pub struct ViewerSharedState {
     pub close_requested: Arc<std::sync::atomic::AtomicBool>,
     pub update_tx: tokio::sync::mpsc::UnboundedSender<ViewerUpdate>,
     pub opened_last_frame: Arc<Mutex<bool>>,
+    /// 用於隱形啟動的幀數計數器
+    pub opened_frames: Arc<Mutex<u32>>,
+    // 視窗同步 (ses_342b)
+    pub position: Arc<RwLock<Option<egui::Pos2>>>,
+    pub inner_size: Arc<RwLock<Option<egui::Vec2>>>,
 }
 
 /// 應用程式的主要全域狀態
@@ -80,6 +86,11 @@ pub struct AppState {
     pub viewer_y: f32,
     pub viewer_width: f32,
     pub viewer_height: f32,
+    // --- 主視窗位置/大小 ---
+    pub main_x: f32,
+    pub main_y: f32,
+    pub main_width: f32,
+    pub main_height: f32,
 
     // --- UI 控制標記 ---
     pub show_api_settings: bool,
@@ -88,6 +99,7 @@ pub struct AppState {
     pub is_memory_viewer_open: Arc<std::sync::atomic::AtomicBool>,
     pub show_stop_confirm: bool,
     pub dict_active_tab: Arc<Mutex<usize>>,
+    pub _update_rx: tokio::sync::mpsc::UnboundedReceiver<ViewerUpdate>,
 
     // --- 建議詞管理器 UI 狀態 ---
     pub dict_search: Arc<Mutex<String>>,
@@ -110,7 +122,8 @@ pub struct AppState {
     pub runtime: Runtime,
     pub pause_notifier: Arc<Notify>,
     pub last_frame_time: std::time::Instant,
-
+    /// 建議詞管理器開啟延遲計數器 (0.5s 延遲防閃爍)
+    pub viewer_opening_counter: u32,
     // --- 視窗同步 (ses_342b) ---
     pub viewer_shared: Arc<ViewerSharedState>,
 }
@@ -125,7 +138,7 @@ impl AppState {
         // 載入設定檔
         let config = AppConfig::load();
 
-        let (update_tx, _update_rx) = tokio::sync::mpsc::unbounded_channel();
+        let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
         let viewer_shared = Arc::new(ViewerSharedState {
@@ -134,6 +147,9 @@ impl AppState {
             close_requested,
             update_tx,
             opened_last_frame: Arc::new(Mutex::new(false)),
+            opened_frames: Arc::new(Mutex::new(0)),
+            position: Arc::new(RwLock::new(None)),
+            inner_size: Arc::new(RwLock::new(None)),
         });
 
         let state = Self {
@@ -186,6 +202,10 @@ impl AppState {
             viewer_y: config.viewer_y,
             viewer_width: config.viewer_width,
             viewer_height: config.viewer_height,
+            main_x: config.main_x,
+            main_y: config.main_y,
+            main_width: config.main_width,
+            main_height: config.main_height,
             show_api_settings: false,
             show_developer_mode: false,
             show_memory_viewer: false,
@@ -210,7 +230,9 @@ impl AppState {
             runtime: Runtime::new().unwrap(),
             pause_notifier: Arc::new(Notify::new()),
             last_frame_time: std::time::Instant::now(),
+            viewer_opening_counter: 0,
             viewer_shared,
+            _update_rx: update_rx,
         };
 
         state.refresh_all_dictionaries();
@@ -328,6 +350,16 @@ impl AppState {
         config.skip_jar = self.skip_jar;
         config.skip_book = self.skip_book;
         config.enable_llm_log = self.enable_llm_log;
+
+        // --- 視窗幾幾何持久化 (Revision 15.17) ---
+        config.viewer_x = self.viewer_x;
+        config.viewer_y = self.viewer_y;
+        config.viewer_width = self.viewer_width;
+        config.viewer_height = self.viewer_height;
+        config.main_x = self.main_x;
+        config.main_y = self.main_y;
+        config.main_width = self.main_width;
+        config.main_height = self.main_height;
 
         if self.api_provider == "Ollama" {
             config.api_key = String::new();

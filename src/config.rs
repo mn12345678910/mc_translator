@@ -63,6 +63,14 @@ pub struct AppConfig {
     pub viewer_width: f32,
     /// 建議詞管理器視窗高度
     pub viewer_height: f32,
+    /// 主視窗 X 座標
+    pub main_x: f32,
+    /// 主視窗 Y 座標
+    pub main_y: f32,
+    /// 主視窗寬度
+    pub main_width: f32,
+    /// 主視窗高度
+    pub main_height: f32,
 }
 
 impl Default for AppConfig {
@@ -90,6 +98,10 @@ impl Default for AppConfig {
             viewer_y: 100.0,
             viewer_width: 750.0,
             viewer_height: 500.0,
+            main_x: 50.0,
+            main_y: 50.0,
+            main_width: 750.0,
+            main_height: 550.0,
         }
     }
 }
