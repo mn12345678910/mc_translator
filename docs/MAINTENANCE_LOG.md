@@ -5,6 +5,8 @@
 ## [2026-03-10] Revision 15.1 - Git 版本控制與文檔同步
 - **Git 初始化**: 啟動了 Git 倉庫，建立了 `.gitignore`，並完成了首次提交 (Initial commit)。
 - **文檔索引更新**: 更新 `AI_CONTEXT.md` 以記錄 `docs/` 目錄下所有文件的角色與內容。
+- **依賴優化**: 使用 `cargo-udeps` 掃描並移除了未使用的依賴項：`async-recursion`, `futures`, `rand`, `tempfile`。
+
 
 
 ## [2026-03-10] Revision 14.6 - 遷移邏輯與 UI 文字優化

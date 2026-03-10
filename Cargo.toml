@@ -12,15 +12,11 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 tokio = { version = "1", features = ["full"] }
 lazy_static = "1.4.0"
-async-recursion = "1.0"
-futures = "0.3"
 once_cell = "1"
 rfd = "0.14"
 regex = "1.10"
 reqwest = { version = "0.11", features = ["json", "cookies", "stream"] }
-tempfile = "3.8"
 zip = "0.6"
-rand = "0.8"
 urlencoding = "2.1"
 hanconv = "0.4"
 dotenvy = "0.15"
