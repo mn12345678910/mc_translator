@@ -38,8 +38,21 @@
   - 詳述 Viewport 閃爍修復、視窗規格、細粒度鎖定邏輯及表格渲染基準。
 - **[測試框架與自動化驗證](docs/testing.md)**
   - 包含 Aho-Corasick 匹配驗證與 JSON 輸出格式校驗。
+- **歷史維護紀錄 (Maintenance Log)**
+  - 追蹤從基礎架構到 Revision 15.1 的所有重大修補、功能演進與版本控制歷程。
+- **版本控制**: 系統使用 Git 進行管理。核心配置文件如 `.env` 與 `config.cfg` 已被忽略以確保安全。
+
+## 系統快速索引 (Quick Lookup)
+- **[核心架構與併發模型](docs/architecture.md)**
+  - 描述多執行緒事件驅動設計 (Notify/MPSC)，並詳細說明 UI 渲染循環。
+- **[翻譯邏輯與數據緩存](docs/translation.md)**
+  - 術語推論 (Inference)、單次遍歷替換 (Single-pass)、字典優先級規範與匹配邏輯。
+- **[UI 互動標準與建議詞管理器](docs/ui.md)**
+  - 詳述 Viewport 閃爍修復、視窗規格、細粒度鎖定邏輯及表格渲染基準。
+- **[測試框架與自動化驗證](docs/testing.md)**
+  - 包含 Aho-Corasick 匹配驗證與 JSON 輸出格式校驗。
 - **[歷史維護紀錄 (Maintenance Log)](docs/MAINTENANCE_LOG.md)**
-  - 追蹤從基礎架構到 Revision 12.1 的所有重大修補與功能演進。
+  - 完整記錄專案從初期至今的所有版本變遷 (Revision 1-15.1)。
 
 ---
 *備註：此檔案為「快查系統」的入口。若需開發，請務必先 read 對應的細節文件。*
