@@ -214,7 +214,7 @@ pub async fn collect_js_task(
                     let offset = m.start();
                     for inner_cap in JS_INNER_SINGLE_RE.captures_iter(s) {
                         if let Some(mi) = inner_cap.get(1) {
-                            if !crate::data_processing::should_skip_value(mi.as_str()) {
+                            if !crate::utils::should_skip_value(mi.as_str()) {
                                 js_matches.push((
                                     offset + mi.start(),
                                     offset + mi.end(),
@@ -227,7 +227,7 @@ pub async fn collect_js_task(
                     }
                     for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(s) {
                         if let Some(mi) = inner_cap.get(1) {
-                            if !crate::data_processing::should_skip_value(mi.as_str()) {
+                            if !crate::utils::should_skip_value(mi.as_str()) {
                                 js_matches.push((
                                     offset + mi.start(),
                                     offset + mi.end(),
@@ -238,7 +238,7 @@ pub async fn collect_js_task(
                             }
                         }
                     }
-                } else if !crate::data_processing::should_skip_value(s) {
+                } else if !crate::utils::should_skip_value(s) {
                     js_matches.push((m.start(), m.end(), s.to_string(), match_counter));
                     match_counter += 1;
                 }
@@ -391,19 +391,19 @@ pub async fn check_js_has_target(
                     let array_str = s;
                     for inner_cap in JS_INNER_SINGLE_RE.captures_iter(array_str) {
                         if let Some(mi) = inner_cap.get(1) {
-                            if !crate::data_processing::should_skip_value(mi.as_str()) {
+                            if !crate::utils::should_skip_value(mi.as_str()) {
                                 return Ok(true);
                             }
                         }
                     }
                     for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(array_str) {
                         if let Some(mi) = inner_cap.get(1) {
-                            if !crate::data_processing::should_skip_value(mi.as_str()) {
+                            if !crate::utils::should_skip_value(mi.as_str()) {
                                 return Ok(true);
                             }
                         }
                     }
-                } else if !crate::data_processing::should_skip_value(s) {
+                } else if !crate::utils::should_skip_value(s) {
                     return Ok(true);
                 }
             }

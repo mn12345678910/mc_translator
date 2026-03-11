@@ -1,10 +1,18 @@
-﻿//! # 通用工具模組
+//! # 通用工具模組
 //! 包含 mc_lang 字典載入與共用資料結構。
+
+pub mod helpers;
+pub mod skip_rules;
+
+// === 向後相容：重新匯出所有公開 API ===
+pub use helpers::{add_log, extract_display_path, format_log_message, hashmap_to_entries};
+pub use skip_rules::{should_skip_key, should_skip_value};
+
+// === 以下為暫時保留在此的程式碼，Phase 3 將移至 translation/glossary/ ===
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 
 use aho_corasick::{AhoCorasick, MatchKind};
 use std::fs;
@@ -434,64 +442,4 @@ fn find_common_hanzi(texts: Vec<&String>) -> Option<String> {
         .max_by_key(|(_, freq, len)| (*freq, *len))
         .map(|(s, _, _)| s);
     result.and_then(|s| clean_inferred_zh(&s))
-}
-
-pub fn extract_display_path(path: &Path) -> String {
-    let path_str = path.to_string_lossy();
-    if let Some(pos) = path_str.find("assets") {
-        let after_assets = &path_str[pos + 7..];
-        let parts: Vec<&str> = after_assets
-            .split(['/', '\\'])
-            .filter(|s| !s.is_empty())
-            .collect();
-        if parts.len() >= 2 {
-            return format!("{}/{}", parts[0], parts.last().unwrap_or(&"en_us.json"));
-        }
-    }
-    path.file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string()
-}
-
-pub fn add_log(log_arc: &Arc<Mutex<Vec<String>>>, msg: &str) {
-    let mut log = log_arc.lock().unwrap();
-    let now = chrono::Local::now();
-    let timestamp = now.format("%H:%M:%S").to_string();
-    for line in msg.lines() {
-        if !line.trim().is_empty() {
-            log.push(format!("[{}] {}", timestamp, line));
-        } else {
-            log.push("".to_string());
-        }
-    }
-}
-
-pub fn format_log_message(msg: &str) -> Vec<String> {
-    let mut log_entries = Vec::new();
-    let now = chrono::Local::now();
-    let timestamp = now.format("%H:%M:%S").to_string();
-    for line in msg.lines() {
-        if !line.trim().is_empty() {
-            log_entries.push(format!("[{}] {}", timestamp, line));
-        } else {
-            log_entries.push("".to_string());
-        }
-    }
-    log_entries
-}
-
-pub fn hashmap_to_entries(
-    map: &std::collections::HashMap<String, (String, TermType)>,
-) -> Vec<GlossaryEntry> {
-    let mut entries: Vec<GlossaryEntry> = map
-        .iter()
-        .map(|(k, (v, t))| GlossaryEntry {
-            original: k.clone(),
-            translated: v.clone(),
-            source: t.clone(),
-        })
-        .collect();
-    entries.sort_by(|a, b| b.original.len().cmp(&a.original.len()));
-    entries
 }
