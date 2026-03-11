@@ -11,7 +11,7 @@ use winapi::um::wincrypt::DATA_BLOB;
 
 /// 使用 Windows DPAPI 加密字串
 #[cfg(target_os = "windows")]
-pub(crate) fn encrypt_string(data: &str) -> Result<String, String> {
+pub fn encrypt_string(data: &str) -> Result<String, String> {
     let bytes = data.as_bytes();
     if bytes.is_empty() {
         return Ok(String::new());
@@ -51,13 +51,13 @@ pub(crate) fn encrypt_string(data: &str) -> Result<String, String> {
 
 /// 非 Windows 环境下，不進行 DPAPI 加密，直接回傳 Base64 對原始資料加碼
 #[cfg(not(target_os = "windows"))]
-pub(crate) fn encrypt_string(data: &str) -> Result<String, String> {
+pub fn encrypt_string(data: &str) -> Result<String, String> {
     Ok(general_purpose::STANDARD.encode(data.as_bytes()))
 }
 
 /// 使用 Windows DPAPI 解密字串
 #[cfg(target_os = "windows")]
-pub(crate) fn decrypt_string(encoded_data: &str) -> Result<String, String> {
+pub fn decrypt_string(encoded_data: &str) -> Result<String, String> {
     let decoded = general_purpose::STANDARD
         .decode(encoded_data)
         .map_err(|_| "Base64 decode failed".to_string())?;
@@ -103,7 +103,7 @@ pub(crate) fn decrypt_string(encoded_data: &str) -> Result<String, String> {
 
 /// 非 Windows 环境下，將 Base64 解碼回原始字串
 #[cfg(not(target_os = "windows"))]
-pub(crate) fn decrypt_string(encoded_data: &str) -> Result<String, String> {
+pub fn decrypt_string(encoded_data: &str) -> Result<String, String> {
     let decoded = general_purpose::STANDARD
         .decode(encoded_data)
         .map_err(|_| "Base64 decode failed".to_string())?;
