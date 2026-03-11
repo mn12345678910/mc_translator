@@ -1,0 +1,29 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [ "main", "refactor/module-restructure" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Check
+      run: cargo check --verbose
+
+    - name: Build
+      run: cargo build --verbose
