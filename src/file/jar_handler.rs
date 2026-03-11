@@ -1,6 +1,6 @@
 use crate::translation::batching::GlobalBatchItem;
 use crate::translation::job::JobSharedState;
-use crate::file::pipeline::FileTask;
+use super::pipeline::FileTask;
 use crate::translation::context::{TranslationContext, ContextOptions};
 use crate::translation::engine;
 use std::collections::HashMap;

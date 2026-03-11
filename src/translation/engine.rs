@@ -1,5 +1,5 @@
-use crate::translation::api;
-use crate::translation::context::TranslationContext;
+use super::api;
+use super::context::TranslationContext;
 use crate::utils::skip_rules::{should_skip_key, should_skip_value};
 use crate::utils::text_processing::{
     detect_loop, postprocess_text, preprocess_text, sync_formatting, validate_and_cleanup,

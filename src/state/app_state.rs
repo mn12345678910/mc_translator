@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use tokio::sync::Notify;
-use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
+use super::viewer_state::{ViewerSharedState, ViewerUpdate};
 use std::sync::RwLock;
 
 /// 應用程式的主要全域狀態

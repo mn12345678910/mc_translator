@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use crate::translation::engine::count_strings;
-use crate::file::js_handler::{JS_REGEX_LIST, JS_INNER_SINGLE_RE, JS_INNER_DOUBLE_RE};
+use super::js_handler::{JS_REGEX_LIST, JS_INNER_SINGLE_RE, JS_INNER_DOUBLE_RE};
 use crate::utils::skip_rules::should_skip_value;
 
 pub fn scan_files_recursive(

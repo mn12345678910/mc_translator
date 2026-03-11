@@ -1,5 +1,5 @@
-use crate::translation::job::JobConfig;
-use crate::translation::glossary::TermType;
+use super::super::job::JobConfig;
+use super::super::glossary::TermType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
@@ -14,7 +14,7 @@ const TECHNICAL_CONSTRAINTS: &str = "\n\n[內部技術指令 - 請務必遵守]\
 /// 建立包含術語表的系統提示詞
 pub fn build_system_prompt(
     base_prompt: &str,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> String {
     let mut prompt = if base_prompt.is_empty() {
         DEFAULT_SYSTEM_PROMPT.to_string()
@@ -76,7 +76,7 @@ pub(crate) static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
 pub async fn translate_one(
     text: &str,
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     match config.api_provider.as_str() {
         "Gemini" => {
@@ -104,7 +104,7 @@ pub async fn translate_one(
 pub async fn translate_batch(
     texts: &[String],
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
     if texts.is_empty() {
         return Ok(HashMap::new());
@@ -233,7 +233,7 @@ async fn translate_free_google(
 async fn translate_with_gemini(
     text: &str,
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!(
         "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
@@ -295,7 +295,7 @@ async fn translate_with_gemini(
 pub async fn translate_with_ollama(
     text: &str,
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let enhanced_prompt = if text.len() < 500 {
         format!("{}\nReturn a JSON object with a \"translated\" key containing ONLY the translated text.", text)
@@ -370,7 +370,7 @@ lazy_static::lazy_static! {
 async fn call_ollama_raw(
     text: &str,
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/api/generate", config.ollama_url.trim_end_matches('/'));
     let sys_prompt = build_system_prompt(&config.prompt, glossary);
@@ -433,7 +433,7 @@ async fn call_ollama_raw(
 async fn translate_with_openai_compatible(
     text: &str,
     config: &JobConfig,
-    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    glossary: Option<&[super::super::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = match config.api_provider.as_str() {
         "DeepSeek" => "https://api.deepseek.com/v1/chat/completions",

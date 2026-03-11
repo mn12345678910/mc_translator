@@ -1,6 +1,6 @@
 use crate::translation::job::{JobConfig, JobSharedState};
-use crate::state::app_state::AppState;
-use crate::state::viewer_state::ViewerUpdate;
+use super::app_state::AppState;
+use super::viewer_state::ViewerUpdate;
 use crate::utils;
 use eframe::egui;
 use std::collections::HashMap;
