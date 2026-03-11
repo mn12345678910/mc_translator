@@ -1,6 +1,4 @@
-use crate::config::AppConfig;
-use crate::translation_job::{JobConfig, JobSharedState};
-use crate::translation_service;
+use crate::translation::job::{JobConfig, JobSharedState};
 use crate::state::app_state::AppState;
 use crate::state::viewer_state::ViewerUpdate;
 use crate::utils;
@@ -94,7 +92,7 @@ impl AppState {
     }
 
     pub fn save_config(&self) {
-        let mut config = AppConfig::load();
+        let mut config = crate::config::AppConfig::load();
         config.output_dir = self.output_dir.clone();
         config.provider = self.api_provider.clone();
         config.model = self.selected_model.clone();
@@ -139,7 +137,7 @@ impl AppState {
 
         self.runtime.spawn(async move {
             if let Ok(models) =
-                translation_service::fetch_dynamic_models(&provider, &api_key, &ollama_url).await
+                crate::translation::fetch_dynamic_models(&provider, &api_key, &ollama_url).await
             {
                 let mut m = available_models.lock().unwrap();
                 *m = models;
@@ -150,7 +148,7 @@ impl AppState {
     pub fn refresh_mc_versions(&self) {
         let mc_versions = self.mc_versions.clone();
         self.runtime.spawn(async move {
-            let versions = translation_service::fetch_mc_versions().await;
+            let versions = crate::translation::fetch_mc_versions().await;
             let mut v = mc_versions.lock().unwrap();
             *v = versions;
         });
@@ -235,7 +233,7 @@ impl AppState {
 
         self_runtime.spawn(async move {
             let res =
-                crate::file_handler::process_all_files(paths, job_state, mc_lang_arc, term_arc, exact_arc)
+                crate::file::pipeline::process_all_files(paths, job_state, mc_lang_arc, term_arc, exact_arc)
                     .await;
 
             *processing_arc.lock().unwrap() = false;

@@ -1,5 +1,5 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
-use crate::translation_job::{JobConfig, JobSharedState};
+use crate::translation::job::{JobConfig, JobSharedState};
 use crate::file::json_handler::collect_json_task;
 use crate::file::js_handler::collect_js_task;
 use crate::file::jar_handler::{collect_jar_tasks, repack_jar};

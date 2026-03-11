@@ -29,6 +29,7 @@ src/
 │   ├── context.rs                # TranslationContext, ContextOptions [新增]
 │   ├── engine.rs                 # translate_json_recursive, collect_translatable_strings, count_strings
 │   ├── batching.rs               # translate_global_batches, run_translation_batch, create_adaptive_batches
+│   ├── text_processing.rs        # preprocess_text, postprocess_text, validate_and_cleanup, sync_formatting, detect_loop [新增]
 │   ├── api/
 │   │   ├── mod.rs
 │   │   ├── client.rs             # translate_one, translate_batch, translate_with_*
@@ -73,7 +74,6 @@ src/
 └── utils/                        ← 工具模組
     ├── mod.rs
     ├── helpers.rs                # add_log, format_log_message, extract_display_path, hashmap_to_entries
-    ├── text_processing.rs        # preprocess_text, validate_and_cleanup, detect_loop, etc. [已新增]
     └── skip_rules.rs             # should_skip_key, should_skip_value, SKIP_KEYS [新增]
 ```
 
@@ -183,9 +183,10 @@ graph TD
 | `context.rs` | L38-95 | `TranslationContext`, `ContextOptions` |
 | `engine.rs` | L545-800, L802-889, L1170-1221 | `translate_json_recursive`, `collect_translatable_strings`, `count_strings` |
 | `batching.rs` | L97-470 | `GlobalBatchItem`, `translate_global_batches`, `run_translation_batch`, `create_adaptive_batches`, `BatchContext`, `RunBatchContext` |
+| `text_processing.rs` | L891-1168 | `validate_and_cleanup`, `detect_loop`, `preprocess_text`, `postprocess_text`, `sync_formatting`, `PLACEHOLDER_RE` |
 
-> [!NOTE]
-> `text_processing` 相關函式 (validate_and_cleanup, detect_loop, preprocess_text, postprocess_text, sync_formatting, PLACEHOLDER_RE) 已在前置作業中提取至 `utils/text_processing.rs` 以解除循環依賴，因此 Phase 3 不需再搬移這部分。
+> [!WARNING]
+> `translation_service.rs` 的 `translate_batch()` 在 L174, L192, L211 反向呼叫了 `crate::data_processing::validate_and_cleanup`。重構後需改為 `crate::translation::text_processing::validate_and_cleanup`。
 
 #### 遷移步驟
 1. 建立 `src/translation/` 目錄結構

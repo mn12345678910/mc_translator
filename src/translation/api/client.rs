@@ -1,4 +1,4 @@
-use crate::translation_job::JobConfig;
+use crate::translation::job::JobConfig;
 use crate::translation::glossary::TermType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;

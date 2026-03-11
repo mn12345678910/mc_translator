@@ -1,5 +1,5 @@
 use crate::translation::batching::GlobalBatchItem;
-use crate::translation_job::{JobConfig, JobSharedState};
+use crate::translation::job::{JobConfig, JobSharedState};
 use crate::file::pipeline::{FileTask, FileStatus};
 use crate::translation::context::{TranslationContext, ContextOptions};
 use crate::translation::engine;

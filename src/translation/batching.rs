@@ -1,5 +1,5 @@
 use crate::translation::api;
-use crate::translation_job::JobConfig;
+use crate::translation::job::JobConfig;
 use crate::utils::text_processing::{
     postprocess_text, preprocess_text, validate_and_cleanup,
 };

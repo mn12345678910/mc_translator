@@ -1,4 +1,4 @@
-use crate::translation_job::JobConfig;
+use crate::translation::job::JobConfig;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;

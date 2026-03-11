@@ -8,5 +8,6 @@ pub mod context;
 pub mod batching;
 pub mod engine;
 
-// 向後相容：重新匯出 engine 中的所有公開 API
+// 向後相容：重新匯出 engine 與 api 中的所有公開 API
 pub use engine::*;
+pub use api::*;

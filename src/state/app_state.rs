@@ -1,5 +1,4 @@
-use crate::config::AppConfig;
-use crate::translation_job::JobConfig;
+use crate::translation::job::JobConfig;
 use crate::utils;
 use eframe::egui;
 use std::collections::HashMap;
@@ -112,7 +111,7 @@ impl AppState {
         let _ = egui_chinese_font::setup_chinese_fonts(&cc.egui_ctx);
 
         // 載入設定檔
-        let config = AppConfig::load();
+        let config = crate::config::AppConfig::load();
 
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(std::sync::atomic::AtomicBool::new(false));
