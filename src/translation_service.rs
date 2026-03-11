@@ -171,7 +171,7 @@ pub async fn translate_batch(
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
 
-    let result = crate::data_processing::validate_and_cleanup(&result);
+    let result = crate::utils::text_processing::validate_and_cleanup(&result);
     let mut map = HashMap::new();
 
     if config.api_provider == "Ollama" || result.trim().starts_with('{') || result.contains("```") {
@@ -189,7 +189,7 @@ pub async fn translate_batch(
                             (idx_str.parse::<usize>(), trans_val.as_str())
                         {
                             if idx >= 1 && idx <= texts.len() {
-                                let cleaned = crate::data_processing::validate_and_cleanup(trans_s);
+                                let cleaned = crate::utils::text_processing::validate_and_cleanup(trans_s);
                                 if !cleaned.is_empty() && cleaned != "{}" && cleaned != "{ }" {
                                     map.insert(texts[idx - 1].clone(), cleaned);
                                 }
@@ -208,7 +208,7 @@ pub async fn translate_batch(
         if let (Ok(idx), Some(translated)) = (cap[1].parse::<usize>(), cap.get(2)) {
             if idx >= 1 && idx <= texts.len() {
                 let translated_text =
-                    crate::data_processing::validate_and_cleanup(translated.as_str());
+                    crate::utils::text_processing::validate_and_cleanup(translated.as_str());
                 map.insert(texts[idx - 1].clone(), translated_text);
             }
         }

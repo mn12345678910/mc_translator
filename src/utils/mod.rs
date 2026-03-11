@@ -3,6 +3,7 @@
 
 pub mod helpers;
 pub mod skip_rules;
+pub mod text_processing;
 
 // === 向後相容：重新匯出所有公開 API ===
 pub use helpers::{add_log, extract_display_path, format_log_message, hashmap_to_entries};
