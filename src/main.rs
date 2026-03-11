@@ -7,8 +7,9 @@
 
 pub mod config;
 pub mod data_processing;
+pub mod file;
 pub mod file_handler;
-pub mod state_and_log;
+pub mod state;
 pub mod translation;
 pub mod translation_job;
 pub mod translation_service;
@@ -16,7 +17,7 @@ pub mod ui;
 pub mod utils;
 
 use eframe::egui;
-use state_and_log::AppState;
+use state::app_state::AppState;
 
 /// 程式入口
 fn main() -> Result<(), eframe::Error> {
