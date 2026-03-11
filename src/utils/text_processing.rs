@@ -281,3 +281,46 @@ pub fn sync_formatting(original: &str, translations: &HashMap<String, Vec<String
 
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 1. 正常路徑測試 (Happy Path)
+    #[test]
+    fn test_cleanup_standard() {
+        let input = "Translation: \"Hello World\"";
+        assert_eq!(validate_and_cleanup(input), "Hello World");
+        
+        let md_input = "```json\n{ \"text\": \"測試文字\" }\n```";
+        assert_eq!(validate_and_cleanup(md_input), "測試文字");
+    }
+
+    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    #[test]
+    fn test_cleanup_utf8_edge_cases() {
+        // 測試中文引號與繁簡轉換支援 (UTF-8)
+        let input = "翻譯：「這是特殊的 ❄️ 表情與繁體中文」";
+        assert_eq!(validate_and_cleanup(input), "這是特殊的 ❄️ 表情與繁體中文");
+        
+        // 測試空字串與特殊空白
+        assert_eq!(validate_and_cleanup("   "), "");
+        assert_eq!(validate_and_cleanup("{}"), "");
+    }
+
+    /// 3. 強韌性與無限迴圈偵測 (Robustness / Loop Prevention)
+    #[test]
+    fn test_detect_loop_infinite_prevention() {
+        // 測試重複文字偵測
+        let looping_text = "跳轉跳轉跳轉跳轉跳轉跳轉";
+        assert!(detect_loop(looping_text));
+        
+        // 測試超長文字防護
+        let long_text = "A".repeat(2001);
+        assert!(detect_loop(&long_text));
+        
+        // 正常長文字不應判定為迴圈
+        let normal_long = "這是一段很長但沒有重複的正常文字，用於測試偵測器不會誤判。".repeat(5);
+        assert!(!detect_loop(&normal_long));
+    }
+}

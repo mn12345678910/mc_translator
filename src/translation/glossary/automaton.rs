@@ -174,3 +174,54 @@ pub struct GlossaryEntry {
     pub translated: String,
     pub source: TermType,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 1. 正常路徑測試 (Happy Path)
+    #[test]
+    fn test_glossary_match_standard() {
+        let mut exact = HashMap::new();
+        exact.insert("Apple".to_string(), "蘋果".to_string());
+        exact.insert("Stone".to_string(), "石頭".to_string());
+        
+        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        let results = automaton.extract(&["I have an Apple and some Stone".to_string()]);
+        
+        assert!(results.contains_key("apple")); // match is lowercase
+        assert_eq!(results.get("apple").unwrap().0, "蘋果");
+        assert!(results.contains_key("stone"));
+    }
+
+    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    #[test]
+    fn test_glossary_match_utf8() {
+        let mut exact = HashMap::new();
+        // 包含表情符號與複合字元的 UTF-8 術語
+        exact.insert("❄️ Ice方塊".to_string(), "冰塊".to_string());
+        
+        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        // 測試在句子中精確匹配 UTF-8 術語
+        let results = automaton.extract(&["這是一個 ❄️ Ice方塊 在這裡".to_string()]);
+        
+        assert!(results.contains_key("❄️ ice方塊")); 
+        assert_eq!(results.get("❄️ ice方塊").unwrap().0, "冰塊");
+    }
+
+    /// 3. 強韌性與邏輯防錯 (Robustness / Logic Flow)
+    #[test]
+    fn test_glossary_circular_definition_safety() {
+        let mut exact = HashMap::new();
+        // 模擬循環定義：A -> B, B -> A
+        exact.insert("A".to_string(), "B".to_string());
+        exact.insert("B".to_string(), "A".to_string());
+        
+        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        let results = automaton.extract(&["A and B".to_string()]);
+        
+        // 自動機應能正常提取，且不應陷入死循環（因為 Aho-Corasick 是單次掃描）
+        assert!(results.contains_key("a"));
+        assert!(results.contains_key("b"));
+    }
+}
