@@ -1,6 +1,7 @@
 //! # 檔案處理模組
 //! 負責 JAR 檔案的解壓、翻譯後的檔案替換，以及重新封裝 ZIP 的輸出邏輯。
 
+
 use crate::data_processing;
 use crate::translation_job::{JobConfig, JobSharedState};
 use std::collections::HashMap;
@@ -437,7 +438,7 @@ pub async fn check_json_has_target(
                 }
             }
 
-            let count = crate::data_processing::count_strings(&en_us_value, None, &zh_tw_value);
+            let count = data_processing::count_strings(&en_us_value, None, &zh_tw_value);
             if count == 0 {
                 return Ok(false);
             }
@@ -459,7 +460,7 @@ pub async fn process_all_files(
     exact: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut file_tasks: Vec<FileTask> = Vec::new();
-    let mut global_items: Vec<crate::data_processing::GlobalBatchItem> = Vec::new();
+    let mut global_items: Vec<data_processing::GlobalBatchItem> = Vec::new();
     let mut file_id_counter = 0;
 
     let job_config = state.config.clone();
@@ -564,7 +565,7 @@ pub async fn process_all_files(
         item_offset += file_item_count;
 
         // 執行翻譯
-        crate::data_processing::translate_global_batches(
+        data_processing::translate_global_batches(
             current_file_items,
             job_config.clone(),
             status_arc.clone(),
