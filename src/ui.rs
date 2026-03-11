@@ -1,6 +1,5 @@
 use crate::state_and_log::{AppState, ViewerSharedState, ViewerUpdate};
 use eframe::egui;
-use std::fs;
 
 // --- UI 顏色常量 (Revision 15.20) ---
 const LABEL_COLOR_LIGHT: egui::Color32 = egui::Color32::from_rgb(30, 60, 120); // 深靛藍
@@ -456,7 +455,7 @@ impl AppState {
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
-                        let files = scan_files_recursive(&path, &path);
+                        let files = crate::file_handler::scan_files_recursive(&path, &path);
                         self.add_log(&format!("已選擇 {} 個檔案", files.len()));
                         self.input_paths = files;
                         *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
@@ -1802,31 +1801,7 @@ impl AppState {
     }
 }
 
-fn scan_files_recursive(
-    dir: &std::path::Path,
-    base_dir: &std::path::Path,
-) -> Vec<(std::path::PathBuf, String)> {
-    let mut files = Vec::new();
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                files.extend(scan_files_recursive(&path, base_dir));
-            } else if path
-                .extension()
-                .is_some_and(|ext| ext == "jar" || ext == "json" || ext == "js")
-            {
-                let rel = path
-                    .strip_prefix(base_dir)
-                    .unwrap_or(&path)
-                    .to_string_lossy()
-                    .replace('\\', "/");
-                files.push((path, rel));
-            }
-        }
-    }
-    files
-}
+
 
 fn toggle(on: &mut bool) -> impl egui::Widget + '_ {
     move |ui: &mut egui::Ui| {
