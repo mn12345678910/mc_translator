@@ -1,5 +1,5 @@
-use super::api;
-use super::job::JobConfig;
+use crate::translation::api;
+use crate::translation::job::JobConfig;
 use crate::utils::text_processing::{
     postprocess_text, preprocess_text, validate_and_cleanup,
 };
@@ -48,7 +48,7 @@ pub async fn translate_global_batches(
     paused: Arc<Mutex<bool>>,
     log: Arc<Mutex<Vec<String>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
-    glossary_automaton: &super::glossary::GlossaryAutomaton,
+    glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 首先設定目前的條目總數
     *progress_total.lock().unwrap() = items.len() as f32;
@@ -78,7 +78,7 @@ pub struct RunBatchContext<'a> {
     pub cancelled: Arc<Mutex<bool>>,
     pub paused: Arc<Mutex<bool>>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
-    pub glossary_automaton: &'a super::glossary::GlossaryAutomaton,
+    pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)
@@ -307,7 +307,7 @@ struct BatchContext<'a> {
     config: &'a Arc<Mutex<JobConfig>>,
     status_arc: &'a Arc<Mutex<String>>,
     _log: &'a Arc<Mutex<Vec<String>>>,
-    glossary_automaton: &'a super::glossary::GlossaryAutomaton,
+    glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     current_idx: usize,
     total_batch: usize,
     is_retry: bool,

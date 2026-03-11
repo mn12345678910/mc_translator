@@ -1,5 +1,5 @@
 use crate::state::app_state::AppState;
-use super::super::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
     /// 渲染頂部控制項 (優化佈局防止遮擋)

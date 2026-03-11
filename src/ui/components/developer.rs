@@ -1,6 +1,6 @@
 use crate::state::app_state::AppState;
-use super::super::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
-use super::super::widgets::toggle::toggle;
+use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+use crate::ui::widgets::toggle::toggle;
 
 impl AppState {
     /// 渲染開發人員模式面板 (還原至備份 Grid，套用隨主題變色標籤)

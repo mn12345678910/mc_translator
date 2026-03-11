@@ -1,7 +1,7 @@
 use crate::state::app_state::AppState;
 use crate::state::viewer_state::ViewerSharedState;
-use super::super::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
-use super::super::widgets::toggle::toggle;
+use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+use crate::ui::widgets::toggle::toggle;
 use std::sync::{Arc, Mutex};
 
 impl AppState {

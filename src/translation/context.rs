@@ -1,4 +1,4 @@
-use super::job::JobConfig;
+use crate::translation::job::JobConfig;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -7,7 +7,7 @@ pub struct TranslationContext<'a> {
     pub config: Arc<Mutex<JobConfig>>,
     pub inferred: &'a HashMap<String, String>,
     pub terms: &'a Vec<(String, String)>,
-    pub glossary_automaton: &'a super::glossary::GlossaryAutomaton,
+    pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub status: Arc<Mutex<String>>,
     pub progress: Arc<Mutex<f32>>,
     pub total_progress: Arc<Mutex<f32>>,
@@ -26,7 +26,7 @@ pub struct ContextOptions<'a> {
     pub config: Arc<Mutex<JobConfig>>,
     pub inferred: &'a HashMap<String, String>,
     pub terms: &'a Vec<(String, String)>,
-    pub glossary_automaton: &'a super::glossary::GlossaryAutomaton,
+    pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub status: Arc<Mutex<String>>,
     pub progress: Arc<Mutex<f32>>,
     pub total_progress: Arc<Mutex<f32>>,

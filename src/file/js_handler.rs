@@ -1,6 +1,6 @@
 use crate::translation::batching::GlobalBatchItem;
 use crate::translation::job::JobConfig;
-use super::pipeline::{FileTask, FileStatus};
+use crate::file::pipeline::{FileTask, FileStatus};
 use crate::utils::skip_rules::should_skip_value;
 use std::collections::HashMap;
 use std::fs;

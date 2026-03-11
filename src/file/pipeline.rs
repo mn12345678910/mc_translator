@@ -1,9 +1,9 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
 use crate::translation::job::{JobConfig, JobSharedState};
-use super::json_handler::collect_json_task;
-use super::js_handler::collect_js_task;
-use super::jar_handler::{collect_jar_tasks, repack_jar};
-use super::pack_gen::{output_resource_pack, write_to_temp_or_output};
+use crate::file::json_handler::collect_json_task;
+use crate::file::js_handler::collect_js_task;
+use crate::file::jar_handler::{collect_jar_tasks, repack_jar};
+use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::utils::text_processing::sync_formatting;
 use std::collections::HashMap;

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use aho_corasick::{AhoCorasick, MatchKind};
-use super::analyzer::analyze_dictionary;
+use crate::translation::glossary::analyzer::analyze_dictionary;
 
 pub struct GlossaryAutomaton {
     pub ac: AhoCorasick,

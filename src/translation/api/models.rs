@@ -1,4 +1,4 @@
-use super::client::CLIENT;
+use crate::translation::api::client::CLIENT;
 
 /// 從 Ollama 伺服器取得可用模型列表
 pub async fn fetch_ollama_models(ollama_url: &str) -> Vec<String> {
