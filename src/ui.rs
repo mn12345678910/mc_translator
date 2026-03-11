@@ -1,5 +1,5 @@
-use crate::state_and_log::{AppState, ViewerSharedState, ViewerUpdate};
-use eframe::egui;
+use crate::state::app_state::AppState;
+use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
 
 // --- UI 顏色常量 (Revision 15.20) ---
 const LABEL_COLOR_LIGHT: egui::Color32 = egui::Color32::from_rgb(30, 60, 120); // 深靛藍
@@ -254,7 +254,8 @@ impl AppState {
                             .store(true, std::sync::atomic::Ordering::SeqCst);
 
                         // 當視窗關閉時觸發一次設定檔存盤 (Feedback Fix)
-                        viewer_shared.update_tx.send(ViewerUpdate::SaveConfig).ok();
+                        viewer_shared.update_tx
+                            .send(crate::state::viewer_state::ViewerUpdate::Theme(viewer_shared.theme.read().unwrap().clone())).ok();
                     }
 
                     // 2. 視窗同步 (ses_342b): 回報當前位置與大小
