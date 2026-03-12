@@ -165,8 +165,6 @@ impl AppState {
         *self.global_total.lock().unwrap() = 0.0;
         *self.status.lock().unwrap() = "正在分析檔案".to_string();
 
-        self.refresh_all_dictionaries();
-
         self.add_log(">>> 開始翻譯任務...");
 
         let log = self.log.clone();
@@ -262,5 +260,81 @@ impl AppState {
 
     pub fn pause_translation(&self) {
         *self.is_paused.lock().unwrap() = true;
+    }
+
+    /// 啟動辭典目錄監控 (feat/dict-watcher)
+    pub fn start_dict_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        use notify::{Watcher, RecursiveMode, Config};
+        use std::time::Duration;
+
+        let exact_match_map = self.exact_match_map.clone();
+        let inferred_match_map = self.inferred_match_map.clone();
+        let term_replacements = self.term_replacements.clone();
+        let status = self.status.clone();
+        let runtime_handle = self.runtime.handle().clone();
+        let viewer_update_tx = self.viewer_shared.update_tx.clone();
+        let theme = self.theme.clone();
+        let show_memory_viewer = self.show_memory_viewer;
+        let mc_lang = self.mc_lang.clone();
+
+        // 建立防抖 (Debounce) 的監控處理
+        let (tx, mut rx) = tokio::sync::mpsc::channel(10);
+
+        let mut watcher = notify::RecommendedWatcher::new(
+            move |res: notify::Result<notify::Event>| {
+                if let Ok(event) = res {
+                    // 1. 檢查事件類型：排除 Access (讀取) 事件，專注於 Modify, Create, Remove
+                    if event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove() {
+                        // 2. 檢查檔案名稱：僅針對來源辭典檔案 (不包含 official.json 與 user.json)
+                        let dict_files = ["en_us.json", "zh_cn.json", "zh_tw.json"];
+                        let is_target = event.paths.iter().any(|p| {
+                            p.file_name()
+                                .and_then(|n| n.to_str())
+                                .map(|s| dict_files.contains(&s))
+                                .unwrap_or(false)
+                        });
+
+                        if is_target {
+                            let _ = tx.blocking_send(());
+                        }
+                    }
+                }
+            },
+            Config::default().with_poll_interval(Duration::from_secs(2)),
+        )?;
+
+        let dict_path = std::path::Path::new(crate::config::DICT_DIR);
+        if !dict_path.exists() {
+            let _ = std::fs::create_dir_all(dict_path);
+        }
+        watcher.watch(dict_path, RecursiveMode::NonRecursive)?;
+
+        // 持久化 watcher
+        self._dict_watcher = Some(Box::new(watcher));
+
+        // 在非同步任務中處理事件並防抖
+        let h_inner = runtime_handle.clone();
+        runtime_handle.spawn(async move {
+            while rx.recv().await.is_some() {
+                // 簡單的防抖：收到訊號後等 500ms
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                // 清空堆積的訊號
+                while rx.try_recv().is_ok() {}
+
+                Self::refresh_dictionaries_core(
+                    mc_lang.clone(),
+                    exact_match_map.clone(),
+                    inferred_match_map.clone(),
+                    term_replacements.clone(),
+                    status.clone(),
+                    h_inner.clone(),
+                    viewer_update_tx.clone(),
+                    theme.clone(),
+                    show_memory_viewer,
+                );
+            }
+        });
+
+        Ok(())
     }
 }

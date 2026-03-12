@@ -26,6 +26,7 @@ winapi = { version = "0.3", features = ["wincrypt", "winbase", "basetsd", "dpapi
 walkdir = "2.5.0"
 aho-corasick = "1.1"
 bytes = "1.5"
+notify = "6.1"
 
 [[bin]]
 name = "mc_translator_rs"

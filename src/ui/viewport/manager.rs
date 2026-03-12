@@ -18,7 +18,6 @@ impl AppState {
 
         let opened = self.viewer_shared.opened_last_frame.lock().unwrap();
         if !*opened {
-            self.refresh_all_dictionaries();
             self.is_memory_viewer_open
                 .store(true, std::sync::atomic::Ordering::SeqCst);
         }
@@ -109,9 +108,9 @@ impl AppState {
                             .close_requested
                             .store(true, std::sync::atomic::Ordering::SeqCst);
 
-                        // 當視窗關閉時觸發一次設定檔存盤 (Feedback Fix)
+                        // 當視窗關閉時觸發一次設定檔存盤 (Revision 15.12)
                         viewer_shared.update_tx
-                            .send(crate::state::viewer_state::ViewerUpdate::Theme(viewer_shared.theme.read().unwrap().clone())).ok();
+                            .send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                     }
 
                     // 2. 視窗同步 (ses_342b): 回報當前位置與大小

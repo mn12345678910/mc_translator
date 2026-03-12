@@ -122,15 +122,15 @@ pub fn find_common_hanzi(texts: Vec<&String>) -> Option<String> {
     let best_prefix = prefix_counts
         .into_iter()
         .filter(|(s, count)| *count >= min_freq && s.chars().count() <= max_allowed_len)
-        .max_by_key(|(s, count)| (*count, s.chars().count()));
+        .max_by_key(|(s, count)| (*count, s.chars().count(), s.clone()));
     let best_suffix = suffix_counts
         .into_iter()
         .filter(|(s, count)| *count >= min_freq && s.chars().count() <= max_allowed_len)
-        .max_by_key(|(s, count)| (*count, s.chars().count()));
+        .max_by_key(|(s, count)| (*count, s.chars().count(), s.clone()));
     let best_ngram = ngram_counts
         .into_iter()
         .filter(|(s, count)| *count >= min_freq && s.chars().count() <= max_allowed_len)
-        .max_by_key(|(s, count)| (*count, s.chars().count()));
+        .max_by_key(|(s, count)| (*count, s.chars().count(), s.clone()));
 
     let candidates: Vec<(String, usize, usize)> = [
         best_prefix.map(|(s, c)| (s.clone(), c, s.chars().count())),

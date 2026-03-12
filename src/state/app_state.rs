@@ -101,6 +101,8 @@ pub struct AppState {
     pub viewer_opening_counter: u32,
     // --- 視窗同步 (ses_342b) ---
     pub viewer_shared: Arc<ViewerSharedState>,
+    /// 辭典檔案監控器 (保持生命週期)
+    pub _dict_watcher: Option<Box<dyn std::any::Any>>,
 }
 
 impl AppState {
@@ -127,7 +129,7 @@ impl AppState {
             inner_size: Arc::new(RwLock::new(None)),
         });
 
-        let state = Self {
+        let mut state = Self {
             input_paths: Vec::new(),
             output_dir: config.output_dir.clone(),
             log: Arc::new(Mutex::new(Vec::new())),
@@ -208,11 +210,15 @@ impl AppState {
             viewer_opening_counter: 0,
             viewer_shared,
             _update_rx: update_rx,
+            _dict_watcher: None,
         };
 
         state.refresh_all_dictionaries();
         state.refresh_models();
         state.refresh_mc_versions();
+
+        // 啟動辭典監控 (feat/dict-watcher)
+        let _ = state.start_dict_watcher();
 
         state
     }
