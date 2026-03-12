@@ -8,6 +8,12 @@
 >    - **規範化辭典**：系統統一使用 `dicts/user.json` 與 `dicts/official.json`。
 >    - **術語時機**：實作了 `refresh_all_dictionaries` 四大同步時機，確保建議詞始終最新。
 >    - **遷移邏輯 (Migration Mode)**：對「官方建議詞」進行任何編輯或取代操作後，該條目必須「移入」使用者字典 (`user.json`) 並從官方字典 (`official.json`) 中移除。
+  - **設定與持久化規範 (Revision 15.21)**:
+    - **金鑰隔離**: `api_key` 僅保留於 `.env` 中，且必須在 `AppConfig` 結構中使用 `#[serde(skip)]` 標記，禁止寫入 `config.cfg`。
+    - **視窗持久化**: 主視窗幾何資訊需於 `AppState::update` 中始終保持同步，並透過 `eframe::App::on_exit` 鉤子觸發最終存檔，確保位置不丟失。
+    - **即時存檔**: 所有 UI 設定項（如開發者模式、術語優先級）在變更後必須立即發動 `save_config()`。
+  - **代碼風格與清理**:
+    - **縮排規範**: 專案嚴格禁止使用 TAB 字元 (`\t`)，所有檔案必須使用純空白縮排，以確保開發工具一致性。
   - **UI 標籤樣式與顏色統一 (Revision 15.18 - 15.20)**:
     - **屬性強制**: 所有 RichText 標籤統一套用 `.strong()` (粗體) 並移除 `.italics()` 與 `.small()`。
     - **常量化管理**: 顏色統一透過 `ui.rs` 頂部的 `LABEL_COLOR_LIGHT` (#1E3C78 深靛藍) 與 `LABEL_COLOR_DARK` (#C8A064 淺沙) 管理。
