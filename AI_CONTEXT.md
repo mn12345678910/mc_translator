@@ -31,32 +31,18 @@
 >    - 使用 `tokio::sync::mpsc` 處理主子視窗通訊，並透過 `Arc<Mutex<T>>` / `Atomic` 確保多執行緒下的資料一致性。
 
 ## 系統快速索引 (Quick Lookup)
-- **[核心架構與併發模型](docs/architecture.md)**
-  - 描述多執行緒事件驅動設計 (Notify/MPSC) 與 UI 渲染循環。
-- **[翻譯邏輯與數據緩存](docs/translation.md)**
-  - 術語推論 (Inference)、單次遍歷替換 (Single-pass)、字典優先級規範。
-- **[UI 互動標準與建議詞管理器](docs/ui.md)**
-  - 詳述 Viewport 閃爍修復、視窗規格、細粒度鎖定邏輯及表格渲染基準。
-- **[測試框架與自動化驗證](docs/testing.md)**
-  - 包含 Aho-Corasick 匹配驗證與 JSON 輸出格式校驗。
-- **歷史維護紀錄 (Maintenance Log)**
-  - 追蹤從基礎架構到 Revision 15.1 的所有重大修補、功能演進與版本控制歷程。
-- **版本控制**: 系統使用 Git 進行管理。核心配置文件如 `.env` 與 `config.cfg` 已被忽略以確保安全。
-
-## 系統快速索引 (Quick Lookup)
-- **[核心架構與併發模型](docs/architecture.md)**
-  - 描述多執行緒事件驅動設計 (Notify/MPSC)，並詳細說明 UI 渲染循環。
-- **[翻譯邏輯與數據緩存](docs/translation.md)**
-  - 術語推論 (Inference)、單次遍歷替換 (Single-pass)、字典優先級規範與匹配邏輯。
-- **[UI 互動標準與建議詞管理器](docs/ui.md)**
-  - 詳述 Viewport 閃爍修復、視窗規格、細粒度鎖定邏輯及表格渲染基準。
-- **[測試框架與自動化驗證](docs/testing.md)**
-  - 包含 Aho-Corasick 匹配驗證與 JSON 輸出格式校驗。
-- **[Git 與 GitHub 使用指南](docs/GIT_GITHUB_GUIDE.md)**
-  - 詳述本地與雲端同步工作流、AI 協作規範與常用救急指令。
-- **[歷史維護紀錄 (Maintenance Log)](docs/MAINTENANCE_LOG.md)**
-
-  - 完整記錄專案從初期至今的所有版本變遷 (Revision 1-15.20)。
+- **[核心架構與流程](docs/architecture/overview.md)**
+  - 描述系統模組職責、並發模型 (MPSC) 與流程圖。
+- **[翻譯核心與穩定性](docs/modules/translation_core.md)**
+  - 整合翻譯邏輯、失敗降級策略 (Adaptive Batching) 與辭典規範。
+- **[UI 規格與狀態矩陣](docs/ui/specs.md)**
+  - 詳述視窗規格、色彩常量與細粒度 UI 鎖定邏輯。
+- **[測試策略與規範](docs/guides/testing_strategy.md)**
+  - 包含 3-Test Rule、UTF-8 安全與 Windows 開發環境設定。
+- **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**
+  - 本地與雲端同步工作流、Commit 規範與指令參考。
+- **[歷史維護紀錄](docs/MAINTENANCE_LOG.md)**
+  - 完整記錄專案從初期至今的所有版本變遷。
 
 ---
 *備註：此檔案為「快查系統」的入口。若需開發，請務必先 read 對應的細節文件。*

@@ -66,19 +66,16 @@
 | **網路連接** | 需可連接至 API；Ollama 需啟動本地伺服器 |
 | **硬體建議** | 翻譯主要依賴網路 API，本機需求極低；Ollama 依模型而定 |
 
-## 🏗️ 程式架構
+## 📖 文檔中心 (Documentation)
 
-程式採用 Rust 語言編寫，分為以下模組：
+關於程式的詳細設計與規範，請參閱 [docs/](docs/) 目錄：
 
-| 模組 | 說明 |
-|------|------|
-| `ui.rs` | 基於 `egui` 的 GUI 介面、字典管理器、進度顯示 |
-| `file_handler.rs` | 檔案處理邏輯：JAR 解壓、路徑分流、資源包生成 |
-| `data_processing.rs` | JSON 遞迴遍歷、JS 正則匹配、術語替換、值過濾 |
-| `translation_service.rs` | API 通訊層：各家 LLM API 呼叫、動態模型/版本獲取 |
-| `config.rs` | 設定讀寫、DPAPI 加密、翻譯記憶體管理 |
-| `state_and_log.rs` | 應用狀態管理、翻譯流程控制、暫停/繼續邏輯 |
-| `utils.rs` | 工具函式：日誌管理、字典載入、路徑處理 |
+- **[架構概覽](docs/architecture/overview.md)**：系統模組職責、並發模型與執行流程圖。
+- **[翻譯核心](docs/modules/translation_core.md)**：翻譯邏輯、辭典系統與失敗降級策略。
+- **[UI 規格](docs/ui/specs.md)**：介面佈局、顏色常量與狀態控制矩陣。
+- **[測試策略](docs/guides/testing_strategy.md)**：測試規範、UTF-8 安全與環境設定。
+- **[維護日誌](docs/MAINTENANCE_LOG.md)**：專案開發歷程紀錄。
+- **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**：協作規範與指令參考。
 
 ## 📖 操作說明
 
