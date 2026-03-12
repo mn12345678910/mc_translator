@@ -164,19 +164,20 @@ impl AppState {
             return;
         }
 
-        // 防禦性檢查：若未選取模型且非 Google 免費模式，則不啟動 (Validation Fix)
-        if self.api_provider != "Gemini" && self.api_provider != "DeepL" && self.selected_model.is_empty() && self.api_provider != "Ollama" {
-             self.add_log("⚠️ 啟動失敗：請先選取翻譯模型。");
+        // 防禦性檢查：確保所有非免費 Google 模式都已選取模型 (Validation Fix)
+        let is_google_free = self.api_provider == "Google Free" || self.api_provider.is_empty();
+        if !is_google_free && self.selected_model.is_empty() {
+             self.add_log("⚠️ 啟動失敗：目前服務商需要選取翻譯模型，請先於設定中選擇。");
              return;
         }
+
+        self.add_log(&format!(">>> 開始翻譯任務 (模型: {})", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model }));
 
         *self.progress.lock().unwrap() = 0.0;
         *self.progress_total.lock().unwrap() = 0.0;
         *self.global_progress.lock().unwrap() = 0.0;
         *self.global_total.lock().unwrap() = 0.0;
         *self.status.lock().unwrap() = "正在分析檔案".to_string();
-
-        self.add_log(">>> 開始翻譯任務...");
 
         let log = self.log.clone();
         let paths = self.input_paths.clone();

@@ -8,18 +8,18 @@ impl AppState {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 10.0;
             if !processing {
-                let is_model_needed = self.api_provider != "Gemini" && self.api_provider != "DeepL" && self.api_provider != "Ollama";
+                let is_google_free = self.api_provider == "Google Free" || self.api_provider.is_empty();
                 let has_model = !self.selected_model.is_empty();
-                let can_start = !self.input_paths.is_empty() && (!is_model_needed || has_model);
+                let can_start = !self.input_paths.is_empty() && (is_google_free || has_model);
                 
                 let start_btn = egui::Button::new("▶ 開始翻譯").min_size([120.0, 32.0].into());
-                let resp = ui.add_enabled(can_start, start_btn);
+                let mut resp = ui.add_enabled(can_start, start_btn);
                 
                 if !can_start {
                     if self.input_paths.is_empty() {
-                        resp.on_disabled_hover_text("請先選取檔案或資料夾");
-                    } else if is_model_needed && !has_model {
-                        resp.on_disabled_hover_text("請先於設定中選取翻譯模型");
+                        resp = resp.on_disabled_hover_text("請先選取檔案或資料夾");
+                    } else if !is_google_free && !has_model {
+                        resp = resp.on_disabled_hover_text("請先於設定中選取翻譯模型");
                     }
                 }
 

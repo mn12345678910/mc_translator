@@ -40,6 +40,7 @@ impl AppState {
                                                 )
                                                 .changed()
                                             {
+                                                self.selected_model = String::new(); // 切換服務商時清空已選模型 (Mismatched Model Fix)
                                                 self.refresh_models();
                                                 self.save_config();
                                             }
