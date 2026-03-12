@@ -52,31 +52,7 @@ impl AppState {
                                 |ui| {
                                     ui.add_enabled_ui(ui_enabled, |ui| {
                                         if ui.button("⟲ 恢復預設").clicked() {
-                                            let def = crate::config::settings::AppConfig::default();
-                                            self.api_provider = def.provider;
-                                            self.api_key = def.api_key;
-                                            self.selected_model = def.model;
-                                            self.ollama_url = def.ollama_url;
-                                            self.batch_size = def.batch_size;
-                                            self.batch_max_chars = def.batch_max_chars;
-                                            self.ollama_timeout = def.ollama_timeout;
-                                            self.translation_prompt = def.translation_prompt;
-                                            self.output_dir = def.output_dir;
-                                            self.theme = def.theme;
-                                            self.font_size = def.font_size;
-                                            self.pack_format = def.pack_format;
-                                            self.skip_json = def.skip_json;
-                                            self.skip_js = def.skip_js;
-                                            self.skip_jar = def.skip_jar;
-                                            self.skip_book = def.skip_book;
-                                            self.enable_llm_log = def.enable_llm_log;
-                                            self.technical_constraints = def.technical_constraints;
-                                            {
-                                                let mut priority = self.glossary_priority.lock().unwrap();
-                                                *priority = def.glossary_priority;
-                                            }
-                                            self.save_config();
-                                            self.refresh_models();
+                                            self.show_restore_default_confirm = true;
                                         }
                                     });
                                 },
@@ -317,5 +293,55 @@ impl AppState {
                     });
                 });
         });
+        self.render_restore_default_confirm(_ctx);
+    }
+
+    fn render_restore_default_confirm(&mut self, ctx: &egui::Context) {
+        if !self.show_restore_default_confirm {
+            return;
+        }
+
+        egui::Window::new("確認恢復預設")
+            .collapsible(false)
+            .resizable(false)
+            .pivot(egui::Align2::CENTER_CENTER)
+            .default_pos(ctx.screen_rect().center())
+            .show(ctx, |ui| {
+                ui.label("您確定要將所有設定恢復為系統預設值嗎？\n這將覆蓋您目前的所有設定。");
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    if ui.button("確定恢復").clicked() {
+                        let def = crate::config::settings::AppConfig::default();
+                        self.api_provider = def.provider;
+                        self.api_key = def.api_key;
+                        self.selected_model = def.model;
+                        self.ollama_url = def.ollama_url;
+                        self.batch_size = def.batch_size;
+                        self.batch_max_chars = def.batch_max_chars;
+                        self.ollama_timeout = def.ollama_timeout;
+                        self.translation_prompt = def.translation_prompt;
+                        self.output_dir = def.output_dir;
+                        self.theme = def.theme;
+                        self.font_size = def.font_size;
+                        self.pack_format = def.pack_format;
+                        self.skip_json = def.skip_json;
+                        self.skip_js = def.skip_js;
+                        self.skip_jar = def.skip_jar;
+                        self.skip_book = def.skip_book;
+                        self.enable_llm_log = def.enable_llm_log;
+                        self.technical_constraints = def.technical_constraints;
+                        {
+                            let mut priority = self.glossary_priority.lock().unwrap();
+                            *priority = def.glossary_priority;
+                        }
+                        self.save_config();
+                        self.refresh_models();
+                        self.show_restore_default_confirm = false;
+                    }
+                    if ui.button("取消").clicked() {
+                        self.show_restore_default_confirm = false;
+                    }
+                });
+            });
     }
 }

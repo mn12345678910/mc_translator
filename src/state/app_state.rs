@@ -74,6 +74,7 @@ pub struct AppState {
     pub show_memory_viewer: bool,
     pub is_memory_viewer_open: Arc<std::sync::atomic::AtomicBool>,
     pub show_stop_confirm: bool,
+    pub show_restore_default_confirm: bool,
     pub dict_active_tab: Arc<Mutex<usize>>,
     pub _update_rx: tokio::sync::mpsc::UnboundedReceiver<ViewerUpdate>,
 
@@ -190,6 +191,7 @@ impl AppState {
             show_memory_viewer: false,
             is_memory_viewer_open: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             show_stop_confirm: false,
+            show_restore_default_confirm: false,
             dict_active_tab: Arc::new(Mutex::new(0)),
             dict_search: Arc::new(Mutex::new(String::new())),
             dict_page: Arc::new(Mutex::new(0)),
