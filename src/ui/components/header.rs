@@ -10,7 +10,7 @@ impl AppState {
             // 左側按鈕區
             ui.horizontal(|ui| {
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案"))
+                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案").rounding(0.0))
                     .clicked()
                 {
                     if let Some(files) = rfd::FileDialog::new()
@@ -34,7 +34,7 @@ impl AppState {
                     }
                 }
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾"))
+                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾").rounding(0.0))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -49,7 +49,7 @@ impl AppState {
                 ui.separator();
 
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾"))
+                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾").rounding(0.0))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -59,7 +59,7 @@ impl AppState {
                     }
                 }
 
-                if ui.button("📂 打開輸出").clicked() {
+                if ui.add(egui::Button::new("📂 打開輸出").rounding(0.0)).clicked() {
                     let target = if self.output_dir.is_empty() {
                         "LLMTranslator"
                     } else {
@@ -107,7 +107,8 @@ impl AppState {
                         .strong(),
                 )
                 .truncate(true),
-            );
+            )
+            .on_hover_text(display_path.clone());
         });
     }
 

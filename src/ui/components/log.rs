@@ -16,7 +16,11 @@ impl AppState {
             .auto_shrink([false; 2])
             .show(ui, |ui| {
                 for line in log.iter() {
-                    ui.add(egui::Label::new(egui::RichText::new(line).monospace()));
+                    let mut text = egui::RichText::new(line).monospace();
+                    if line.contains("Err") || line.contains("錯誤") || line.contains("失敗") || line.contains("中斷") {
+                        text = text.color(egui::Color32::RED);
+                    }
+                    ui.add(egui::Label::new(text));
                 }
             });
     }

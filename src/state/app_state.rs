@@ -229,7 +229,8 @@ impl AppState {
 
     pub fn add_log(&self, msg: &str) {
         let mut log = self.log.lock().unwrap();
-        log.push(msg.to_string());
+        let now = chrono::Local::now().format("[%H:%M:%S]").to_string();
+        log.push(format!("{} {}", now, msg));
     }
 
     pub fn is_processing_active(&self) -> bool {

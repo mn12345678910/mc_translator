@@ -110,7 +110,7 @@ impl AppState {
 
                         if self.api_provider == "Ollama" {
                             ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("Ollama URL:").color(label_color));
+                                ui.label(egui::RichText::new("Ollama URL:").color(label_color).strong());
                                 ui.add_enabled_ui(ui_enabled, |ui| {
                                     if ui
                                         .add(
@@ -264,29 +264,27 @@ impl AppState {
                                     .strong(),
                             );
                             let models_locked = self.available_models.lock().unwrap();
-                            let is_ollama = self.api_provider == "Ollama";
-                            let is_ready = if is_ollama {
+                            let is_ready = if self.api_provider == "Ollama" {
                                 !models_locked.is_empty()
                             } else {
                                 !self.api_key.is_empty() && !models_locked.is_empty()
                             };
-                            let is_light = self.theme == "light";
                             let status_text = if is_ready {
                                 "[已連線]"
                             } else {
                                 "[未就緒]"
                             };
                             let status_color = if is_ready {
-                                if is_light {
-                                    egui::Color32::from_rgb(0, 130, 0)
+                                if self.theme == "light" {
+                                    egui::Color32::from_rgb(0, 100, 0) // 深綠
                                 } else {
                                     egui::Color32::GREEN
                                 }
                             } else {
-                                if is_light {
-                                    egui::Color32::from_rgb(160, 80, 0)
+                                if self.theme == "light" {
+                                    egui::Color32::from_rgb(180, 100, 0) // 深橘
                                 } else {
-                                    egui::Color32::from_rgb(255, 165, 0)
+                                    egui::Color32::from_rgb(255, 165, 0) // 亮橘
                                 }
                             };
                             ui.label(egui::RichText::new(status_text).color(status_color));

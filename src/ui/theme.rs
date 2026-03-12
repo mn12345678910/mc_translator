@@ -30,16 +30,16 @@ impl AppState {
                 v.extreme_bg_color = egui::Color32::from_rgb(20, 20, 25);
                 v.selection.bg_fill = egui::Color32::from_rgb(60, 100, 150);
 
-                let btn_bg = egui::Color32::from_rgb(60, 60, 70);
-                v.widgets.inactive.bg_fill = btn_bg;
-                v.widgets.inactive.weak_bg_fill = btn_bg;
-                v.widgets.hovered.bg_fill = egui::Color32::from_rgb(75, 75, 90);
-                v.widgets.active.bg_fill = egui::Color32::from_rgb(90, 90, 110);
+                let _btn_bg = egui::Color32::from_rgb(60, 60, 70);
+                v.widgets.inactive.rounding = 8.0.into();
+                v.widgets.hovered.rounding = 8.0.into();
+                v.widgets.active.rounding = 8.0.into();
+
                 v.faint_bg_color = egui::Color32::from_rgb(40, 40, 45);
                 v
             } else {
                 let mut v = egui::Visuals::light();
-                let bg_color = egui::Color32::from_rgb(0xFF, 0xDE, 0xAD);
+                let bg_color = egui::Color32::from_rgb(0xFF, 0xFD, 0xF0); // 更淺的暖橘色
                 v.window_fill = bg_color;
                 v.panel_fill = bg_color;
 
@@ -49,9 +49,14 @@ impl AppState {
                 v.widgets.inactive.bg_fill = btn_bg;
                 v.widgets.inactive.weak_bg_fill = btn_bg;
                 v.widgets.inactive.fg_stroke = egui::Stroke::new(1.2, btn_stroke_color);
+                v.widgets.inactive.rounding = 8.0.into();
+
                 v.widgets.hovered.bg_fill = egui::Color32::from_rgb(0xCD, 0xAA, 0x7D);
                 v.widgets.hovered.fg_stroke = egui::Stroke::new(1.8, btn_stroke_color);
+                v.widgets.hovered.rounding = 8.0.into();
+
                 v.widgets.active.bg_fill = egui::Color32::from_rgb(0xA0, 0x7B, 0x7B);
+                v.widgets.active.rounding = 8.0.into();
 
                 v.extreme_bg_color = egui::Color32::WHITE;
                 v.selection.bg_fill = egui::Color32::from_rgb(0xCD, 0x85, 0x3F);
@@ -59,7 +64,7 @@ impl AppState {
                 v.widgets.noninteractive.fg_stroke =
                     egui::Stroke::new(1.0, egui::Color32::from_gray(100));
                 v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
-                v.override_text_color = Some(egui::Color32::from_rgb(50, 40, 30));
+                v.override_text_color = Some(egui::Color32::BLACK); // 回歸黑色
                 v
             };
 

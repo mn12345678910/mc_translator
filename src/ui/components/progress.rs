@@ -46,14 +46,32 @@ impl AppState {
 
         // 目前檔案 (顯示條目進度)
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
-        ui.add(egui::ProgressBar::new(ratio).show_percentage().text(
+        let accent_color = ui.visuals().selection.bg_fill;
+        let bar_color = if processing {
+            let shimmer_val = ((ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 0.85) as f32; // 0.7 ~ 1.0
+            egui::Color32::from_rgb(
+                (accent_color.r() as f32 * shimmer_val) as u8,
+                (accent_color.g() as f32 * shimmer_val) as u8,
+                (accent_color.b() as f32 * shimmer_val) as u8,
+            )
+        } else {
+            if self.theme == "light" {
+                egui::Color32::from_rgb(180, 140, 80) // 稍深的橘金色，更顯眼
+            } else {
+                accent_color
+            }
+        };
+
+        ui.add(egui::ProgressBar::new(ratio).fill(bar_color).show_percentage().text(
             egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32)).strong(),
         ));
 
         // 總進度 (顯示檔案進度)
         let g_ratio = if g_total > 0.0 { g_prog / g_total } else { 0.0 };
         ui.add(
-            egui::ProgressBar::new(g_ratio).text(
+            egui::ProgressBar::new(g_ratio)
+                .fill(bar_color)
+                .text(
                 egui::RichText::new(format!(
                     "總進度: ({}/{}) {}%",
                     g_prog as u32,

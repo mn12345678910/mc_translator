@@ -85,6 +85,7 @@ impl eframe::App for AppState {
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::central_panel(&ctx.style())
+                    .fill(ctx.style().visuals.panel_fill)
                     .inner_margin(egui::Margin::symmetric(16.0, 8.0)),
             )
             .show(ctx, |ui| {
@@ -96,23 +97,22 @@ impl eframe::App for AppState {
                 self.render_header_controls(ui, ui_enabled);
                 ui.add_space(1.0);
 
-                // 3. 設定面板 (還原至備份版本，包含進階參數)
+                // 3. 設定面板
                 self.render_settings_panel(ui, ui_enabled, ctx);
 
-                // 4. 開發者模式面板 (還原至備份版本，包含 Toggle 開關)
+                // 4. 開發者模式面板
                 self.render_developer_mode_panel(ui);
                 ui.add_space(1.0);
 
-                // 5. 進度顯示區域 (還原雙進度條)
+                // 5. 進度顯示區域
                 self.render_progress_section(ui, ctx, processing);
 
-                // 6. 操作按鈕與停止對話框 (還原獨立尺寸)
+                // 6. 操作按鈕與停止對話框
                 self.render_action_buttons(ui, ctx, processing);
 
                 // 7. 日誌區域
                 self.render_log_area(ui);
             });
-
         // 8. 建議詞管理器 (Viewport)
         if self.show_memory_viewer {
             self.show_viewport_if_needed(ctx);
