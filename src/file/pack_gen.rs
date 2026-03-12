@@ -89,7 +89,16 @@ pub fn write_to_temp_or_output(
             }
             let _ = fs::write(&fs_path, content);
         } else {
-            let fs_path = output_path.join(&final_path);
+            // 防禦性檢查：防止 final_path 為絕對路徑導致 Path::join 置換掉基礎路徑 (Path Escape Fix)
+            let safe_final_path = if Path::new(&final_path).is_absolute() {
+                Path::new(&final_path).file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or(final_path)
+            } else {
+                final_path
+            };
+
+            let fs_path = output_path.join(&safe_final_path);
             if let Some(parent) = fs_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }
