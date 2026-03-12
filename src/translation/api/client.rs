@@ -3,9 +3,7 @@ use crate::translation::glossary::TermType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-pub const DEFAULT_SYSTEM_PROMPT: &str =
-    "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n\
-保持專業的遊戲術語風格（如方塊、實體、附魔）。";
+// 移除硬編碼 TECHNICAL_CONSTRAINTS 與重複的 DEFAULT_SYSTEM_PROMPT，改由設定模組統一管理
 
 // 移除硬編碼 TECHNICAL_CONSTRAINTS，改為從 JobConfig 讀取
 
@@ -16,7 +14,7 @@ pub fn build_system_prompt(
     technical_constraints: &str,
 ) -> String {
     let mut prompt = if base_prompt.is_empty() {
-        DEFAULT_SYSTEM_PROMPT.to_string()
+        crate::config::settings::DEFAULT_PROMPT.to_string()
     } else {
         base_prompt.to_string()
     };
