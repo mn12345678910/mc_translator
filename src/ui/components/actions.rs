@@ -8,7 +8,7 @@ impl AppState {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 10.0;
             if !processing {
-                let is_google_free = self.api_provider == "Google Free" || self.api_provider.is_empty();
+                let is_google_free = self.api_provider == "Google Free";
                 let has_model = !self.selected_model.is_empty();
                 let can_start = !self.input_paths.is_empty() && (is_google_free || has_model);
                 

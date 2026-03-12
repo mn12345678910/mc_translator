@@ -164,14 +164,17 @@ impl AppState {
             return;
         }
 
-        // 防禦性檢查：確保所有非免費 Google 模式都已選取模型 (Validation Fix)
-        let is_google_free = self.api_provider == "Google Free" || self.api_provider.is_empty();
+        // 防禦性檢查：確保所有模式都已選取模型 (除 Google Free 外) (Strict Validation Fix)
+        let is_google_free = self.api_provider == "Google Free";
         if !is_google_free && self.selected_model.is_empty() {
-             self.add_log("⚠️ 啟動失敗：目前服務商需要選取翻譯模型，請先於設定中選擇。");
+             self.add_log(&format!("⚠️ 啟動失敗：目前服務商 [{}] 需要選取模型。", self.api_provider));
              return;
         }
 
-        self.add_log(&format!(">>> 開始翻譯任務 (模型: {})", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model }));
+        self.add_log(&format!(">>> 啟動翻譯任務 | 服務商: {} | 模型: {}", 
+            if self.api_provider.is_empty() { "未指定" } else { &self.api_provider },
+            if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model }
+        ));
 
         *self.progress.lock().unwrap() = 0.0;
         *self.progress_total.lock().unwrap() = 0.0;

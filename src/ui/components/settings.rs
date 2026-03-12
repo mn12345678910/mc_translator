@@ -30,7 +30,7 @@ impl AppState {
                                     .show_ui(ui, |ui| {
                                         for p in &[
                                             "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
-                                            "Ollama",
+                                            "Ollama", "Google Free",
                                         ] {
                                             if ui
                                                 .selectable_value(
