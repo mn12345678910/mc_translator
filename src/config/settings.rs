@@ -49,6 +49,8 @@ pub struct AppConfig {
     pub skip_book: bool,
     /// 開啟 LLM 通訊紀錄
     pub enable_llm_log: bool,
+    /// 技術指令 (TECHNICAL_CONSTRAINTS)
+    pub technical_constraints: String,
     /// 建議詞管理器視窗 X 座標
     pub viewer_x: f32,
     /// 建議詞管理器視窗 Y 座標
@@ -88,6 +90,9 @@ impl Default for AppConfig {
             skip_jar: false,
             skip_book: false,
             enable_llm_log: false,
+            technical_constraints: "\n\n[內部技術指令 - 請務必遵守]\n\
+1. 識別並正確處理 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符，保持它們完全不變（絕對不可修改、翻譯、添加空格或刪除標籤）。\n\
+2. 保持 %%VAR_n%% 等標記的原有格式，嚴禁將其替換為 {} 或其他符號。".to_string(),
             viewer_x: 100.0,
             viewer_y: 100.0,
             viewer_width: 750.0,

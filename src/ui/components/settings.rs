@@ -61,6 +61,19 @@ impl AppState {
                                             self.batch_max_chars = def.batch_max_chars;
                                             self.ollama_timeout = def.ollama_timeout;
                                             self.translation_prompt = def.translation_prompt;
+                                            self.theme = def.theme;
+                                            self.font_size = def.font_size;
+                                            self.pack_format = def.pack_format;
+                                            self.skip_json = def.skip_json;
+                                            self.skip_js = def.skip_js;
+                                            self.skip_jar = def.skip_jar;
+                                            self.skip_book = def.skip_book;
+                                            self.enable_llm_log = def.enable_llm_log;
+                                            self.technical_constraints = def.technical_constraints;
+                                            {
+                                                let mut priority = self.glossary_priority.lock().unwrap();
+                                                *priority = def.glossary_priority;
+                                            }
                                             self.save_config();
                                             self.refresh_models();
                                         }

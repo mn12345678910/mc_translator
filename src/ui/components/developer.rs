@@ -103,6 +103,23 @@ impl AppState {
                     }
                     ui.end_row();
                 });
+
+            ui.add_space(4.0);
+            ui.label(
+                egui::RichText::new("📜 技術指令 (TECHNICAL_CONSTRAINTS)")
+                    .color(label_color)
+                    .strong(),
+            );
+            if ui
+                .add(
+                    egui::TextEdit::multiline(&mut self.technical_constraints)
+                        .desired_rows(4)
+                        .desired_width(ui.available_width()),
+                )
+                .changed()
+            {
+                self.save_config();
+            }
         });
     }
 }

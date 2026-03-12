@@ -23,6 +23,7 @@ pub struct JobConfig {
     pub skip_jar: bool,
     pub skip_book: bool,
     pub enable_llm_log: bool,
+    pub technical_constraints: String,
 }
 
 /// 翻譯任務在執行過程中的共享狀態物件 (Arc<Mutex<...>>)
@@ -61,6 +62,7 @@ impl JobConfig {
         skip_jar: bool,
         skip_book: bool,
         enable_llm_log: bool,
+        technical_constraints: String,
     ) -> Self {
         Self {
             api_key,
@@ -79,6 +81,7 @@ impl JobConfig {
             skip_jar,
             skip_book,
             enable_llm_log,
+            technical_constraints,
         }
     }
 }

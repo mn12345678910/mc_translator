@@ -84,6 +84,7 @@ impl AppState {
             cfg.skip_jar = self.skip_jar;
             cfg.skip_book = self.skip_book;
             cfg.enable_llm_log = self.enable_llm_log;
+            cfg.technical_constraints = self.technical_constraints.clone();
         }
 
         *self.is_paused.lock().unwrap() = false;
@@ -110,6 +111,7 @@ impl AppState {
         config.skip_jar = self.skip_jar;
         config.skip_book = self.skip_book;
         config.enable_llm_log = self.enable_llm_log;
+        config.technical_constraints = self.technical_constraints.clone();
 
         // --- 視窗幾幾何持久化 (Revision 15.17) ---
         config.viewer_x = self.viewer_x;
@@ -206,6 +208,7 @@ impl AppState {
             self.skip_jar,
             self.skip_book,
             self.enable_llm_log,
+            self.technical_constraints.clone(),
         )));
         self.active_job_config = Some(job_config.clone());
 

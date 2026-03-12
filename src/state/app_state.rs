@@ -55,6 +55,7 @@ pub struct AppState {
     pub skip_jar: bool,
     pub skip_book: bool,
     pub enable_llm_log: bool,
+    pub technical_constraints: String,
 
     // --- 建議詞管理器視窗位置/大小 ---
     pub viewer_x: f32,
@@ -175,6 +176,7 @@ impl AppState {
             skip_jar: config.skip_jar,
             skip_book: config.skip_book,
             enable_llm_log: config.enable_llm_log,
+            technical_constraints: config.technical_constraints.clone(),
             viewer_x: config.viewer_x,
             viewer_y: config.viewer_y,
             viewer_width: config.viewer_width,

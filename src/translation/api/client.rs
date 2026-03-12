@@ -7,14 +7,13 @@ pub const DEFAULT_SYSTEM_PROMPT: &str =
     "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n\
 保持專業的遊戲術語風格（如方塊、實體、附魔）。";
 
-const TECHNICAL_CONSTRAINTS: &str = "\n\n[內部技術指令 - 請務必遵守]\n\
-1. 識別並正確處理 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符，保持它們完全不變（絕對不可修改、翻譯、添加空格或刪除標籤）。\n\
-2. 保持 %%VAR_n%% 等標記的原有格式，嚴禁將其替換為 {} 或其他符號。";
+// 移除硬編碼 TECHNICAL_CONSTRAINTS，改為從 JobConfig 讀取
 
 /// 建立包含術語表的系統提示詞
 pub fn build_system_prompt(
     base_prompt: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    technical_constraints: &str,
 ) -> String {
     let mut prompt = if base_prompt.is_empty() {
         DEFAULT_SYSTEM_PROMPT.to_string()
@@ -59,7 +58,7 @@ pub fn build_system_prompt(
         }
     }
 
-    prompt.push_str(TECHNICAL_CONSTRAINTS);
+    prompt.push_str(technical_constraints);
     prompt
 }
 
@@ -240,7 +239,8 @@ async fn translate_with_gemini(
         config.selected_model, config.api_key
     );
 
-    let sys_prompt = build_system_prompt(&config.prompt, glossary);
+    let tech_constraints = &config.technical_constraints;
+    let sys_prompt = build_system_prompt(&config.prompt, glossary, tech_constraints);
     let body = serde_json::json!({
         "systemInstruction": {
             "parts": [{"text": sys_prompt}]
@@ -270,6 +270,8 @@ async fn translate_with_gemini(
             log_llm_communication(
                 &format!("(System): {}\n(User): {}", sys_prompt, text),
                 &format!("API_ERROR: {}", err_text),
+                config,
+                text.len(),
             );
         }
         return Err(format!("API_ERROR:Gemini API Error: {}", err_text).into());
@@ -285,6 +287,8 @@ async fn translate_with_gemini(
         log_llm_communication(
             &format!("(System): {}\n(User): {}", sys_prompt, text),
             translated,
+            config,
+            text.len(),
         );
     }
 
@@ -373,7 +377,8 @@ async fn call_ollama_raw(
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/api/generate", config.ollama_url.trim_end_matches('/'));
-    let sys_prompt = build_system_prompt(&config.prompt, glossary);
+    let tech_constraints = &config.technical_constraints;
+    let sys_prompt = build_system_prompt(&config.prompt, glossary, tech_constraints);
     let body = serde_json::json!({
         "model": config.selected_model,
         "system": sys_prompt,
@@ -425,6 +430,8 @@ async fn call_ollama_raw(
         log_llm_communication(
             &format!("(System): {}\n(User): {}", sys_prompt, text),
             &response,
+            config,
+            text.len(),
         );
     }
     Ok(response)
@@ -440,7 +447,8 @@ async fn translate_with_openai_compatible(
         "Mistral" => "https://api.mistral.ai/v1/chat/completions",
         _ => "https://api.openai.com/v1/chat/completions",
     };
-    let system_content = build_system_prompt(&config.prompt, glossary);
+    let tech_constraints = &config.technical_constraints;
+    let system_content = build_system_prompt(&config.prompt, glossary, tech_constraints);
     let body = serde_json::json!({
         "model": config.selected_model,
         "messages": [
@@ -475,6 +483,8 @@ async fn translate_with_openai_compatible(
         log_llm_communication(
             &format!("(System): {}\n(User): {}", system_content, text),
             translated,
+            config,
+            text.len(),
         );
     }
     Ok(translated.trim_matches('"').to_string())
@@ -512,7 +522,7 @@ async fn translate_with_deepl(
     Ok(translated.to_string())
 }
 
-pub fn log_llm_communication(prompt: &str, response: &str) {
+pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, char_count: usize) {
     use std::io::Write;
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     if let Ok(mut file) = std::fs::OpenOptions::new()
@@ -520,6 +530,14 @@ pub fn log_llm_communication(prompt: &str, response: &str) {
         .append(true)
         .open("llm_communication.log")
     {
-        let _ = file.write_all(format!("--- LLM 通訊紀錄 [{}] ---\n[發送內容]:\n{}\n\n[接收內容]:\n{}\n------------------\n\n", now, prompt, response).as_bytes());
+        let settings = format!(
+            "[設定]: {} / {} / 批次量: {} / 文字數量: {} / 逾時: {}s",
+            config.api_provider,
+            config.selected_model,
+            config.batch_size,
+            char_count,
+            config.ollama_timeout
+        );
+        let _ = file.write_all(format!("--- LLM 通訊紀錄 [{}] ---\n{}\n[發送內容]:\n{}\n\n[接收內容]:\n{}\n------------------\n\n", now, settings, prompt, response).as_bytes());
     }
 }
