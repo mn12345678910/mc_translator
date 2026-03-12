@@ -17,9 +17,15 @@ impl AppState {
             .show(ui, |ui| {
                 for line in log.iter() {
                     let mut text = egui::RichText::new(line).monospace();
+                    
                     if line.contains("Err") || line.contains("錯誤") || line.contains("失敗") || line.contains("中斷") {
                         text = text.color(egui::Color32::RED);
+                    } else if line.contains("成功") || line.contains("完成") || line.contains("Done") {
+                        text = text.color(egui::Color32::GREEN);
+                    } else {
+                        text = text.color(label_color);
                     }
+                    
                     ui.add(egui::Label::new(text));
                 }
             });
