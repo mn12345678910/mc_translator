@@ -502,6 +502,7 @@ impl AppState {
                         } else {
                             "official".to_string()
                         };
+                        viewer_shared.update_tx.send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                     }
                     let priority_label = if is_user_priority {
                         "使用者優先"

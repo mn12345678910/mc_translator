@@ -116,20 +116,19 @@ impl eframe::App for AppState {
                     }
                 }
             }
+        }
 
-            // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
-            if let Some(rect) = ctx.input(|i| i.viewport().outer_rect) {
-                if (rect.min.x - self.main_x).abs() > 0.1 || (rect.min.y - self.main_y).abs() > 0.1
-                {
-                    self.main_x = rect.min.x;
-                    self.main_y = rect.min.y;
-                }
-                if (rect.width() - self.main_width).abs() > 0.1
-                    || (rect.height() - self.main_height).abs() > 0.1
-                {
-                    self.main_width = rect.width();
-                    self.main_height = rect.height();
-                }
+        // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
+        // 注意：此處需移出 if self.show_memory_viewer 塊，確保主視窗位置始終同步 (fix_main_pos)
+        if let Some(rect) = ctx.input(|i| i.viewport().outer_rect) {
+            if (rect.min.x - self.main_x).abs() > 0.1 || (rect.min.y - self.main_y).abs() > 0.1 {
+                self.main_x = rect.min.x;
+                self.main_y = rect.min.y;
+            }
+            if (rect.width() - self.main_width).abs() > 0.1 || (rect.height() - self.main_height).abs() > 0.1
+            {
+                self.main_width = rect.width();
+                self.main_height = rect.height();
             }
         }
 
