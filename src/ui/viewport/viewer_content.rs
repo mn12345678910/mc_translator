@@ -232,19 +232,23 @@ impl AppState {
                     if let Ok(abs_path) = std::fs::canonicalize(&path) {
                         // 1. 以檔案總管開啟並選中
                         #[cfg(target_os = "windows")]
-                        let _ = std::process::Command::new("explorer")
-                            .arg("/select,")
-                            .arg(&abs_path)
-                            .spawn();
+                        {
+                            use std::os::windows::process::CommandExt;
+                            let _ = std::process::Command::new("explorer")
+                                .arg("/select,")
+                                .arg(&abs_path)
+                                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                                .spawn();
 
-                        // 2. 以預設編輯器開啟實體檔案
-                        #[cfg(target_os = "windows")]
-                        let _ = std::process::Command::new("cmd")
-                            .arg("/c")
-                            .arg("start")
-                            .arg("")
-                            .arg(&abs_path)
-                            .spawn();
+                            // 2. 以預設編輯器開啟實體檔案
+                            let _ = std::process::Command::new("cmd")
+                                .arg("/c")
+                                .arg("start")
+                                .arg("")
+                                .arg(&abs_path)
+                                .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                                .spawn();
+                        }
                     }
                 }
 

@@ -70,7 +70,13 @@ impl AppState {
                         let _ = std::fs::create_dir_all(path);
                     }
                     #[cfg(target_os = "windows")]
-                    let _ = std::process::Command::new("explorer").arg(path).spawn();
+                    {
+                        use std::os::windows::process::CommandExt;
+                        let _ = std::process::Command::new("explorer")
+                            .arg(path)
+                            .creation_flags(0x08000000) // CREATE_NO_WINDOW
+                            .spawn();
+                    }
                 }
             });
 
