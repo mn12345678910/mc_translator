@@ -4,10 +4,10 @@
 
 ```mermaid
 graph LR
-    Button[主按鈕群] --> Action{Actions.rs}
-    Action --> Toggle[AppState::is_processing]
-    Toggle --> UI_Lock[UI 鎖定矩陣生效]
-    UI_Lock --> Viewport[開啟建議詞視窗/設定面板]
+    Button["主按鈕群"] --> Action{"Actions.rs"}
+    Action --> Toggle["AppState::is_processing"]
+    Toggle --> UI_Lock["UI 鎖定矩陣生效"]
+    UI_Lock --> Viewport["開啟建議詞視窗/設定面板"]
 ```
 
 ## 2. 視窗穩態行為
