@@ -18,6 +18,26 @@ impl eframe::App for AppState {
             }
         }
 
+        // 0.5 視窗同步 (ses_342b): 提前於儲存前同步，且不限視覺狀態 (fix_save_race)
+        {
+            if let Ok(pos_lock) = self.viewer_shared.position.read() {
+                if let Some(pos) = *pos_lock {
+                    if (pos.x - self.viewer_x).abs() > 0.1 || (pos.y - self.viewer_y).abs() > 0.1 {
+                        self.viewer_x = pos.x;
+                        self.viewer_y = pos.y;
+                    }
+                }
+            }
+            if let Ok(size_lock) = self.viewer_shared.inner_size.read() {
+                if let Some(size) = *size_lock {
+                    if (size.x - self.viewer_width).abs() > 0.1 || (size.y - self.viewer_height).abs() > 0.1 {
+                        self.viewer_width = size.x;
+                        self.viewer_height = size.y;
+                    }
+                }
+            }
+        }
+
         // 0. 更新啟動延遲計數器 (Revision 15.13: V6 終極整合 - 補回被誤刪的遞減邏輯)
         if self.viewer_opening_counter > 0 {
             self.viewer_opening_counter -= 1;
@@ -92,30 +112,6 @@ impl eframe::App for AppState {
         // 8. 建議詞管理器 (Viewport)
         if self.show_memory_viewer {
             self.show_viewport_if_needed(ctx);
-
-            // 視窗同步 (ses_342b): 從共享狀態同步回 AppState 並儲存
-            {
-                if let Ok(pos_lock) = self.viewer_shared.position.read() {
-                    if let Some(pos) = *pos_lock {
-                        if (pos.x - self.viewer_x).abs() > 0.1
-                            || (pos.y - self.viewer_y).abs() > 0.1
-                        {
-                            self.viewer_x = pos.x;
-                            self.viewer_y = pos.y;
-                        }
-                    }
-                }
-                if let Ok(size_lock) = self.viewer_shared.inner_size.read() {
-                    if let Some(size) = *size_lock {
-                        if (size.x - self.viewer_width).abs() > 0.1
-                            || (size.y - self.viewer_height).abs() > 0.1
-                        {
-                            self.viewer_width = size.x;
-                            self.viewer_height = size.y;
-                        }
-                    }
-                }
-            }
         }
 
         // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
