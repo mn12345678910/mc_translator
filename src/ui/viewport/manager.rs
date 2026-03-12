@@ -129,7 +129,7 @@ impl AppState {
 
                             if let Ok(mut p_lock) = viewer_shared.position.write() {
                                 let changed = p_lock
-                                    .map(|old| (old.x - pos.x).abs() + (old.y - pos.y).abs() > 2.0)
+                                    .map(|old| (old.x - pos.x).abs() + (old.y - pos.y).abs() > 5.0)
                                     .unwrap_or(true);
                                 if changed {
                                     *p_lock = Some(pos);

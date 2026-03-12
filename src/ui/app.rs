@@ -22,7 +22,8 @@ impl eframe::App for AppState {
         {
             if let Ok(pos_lock) = self.viewer_shared.position.read() {
                 if let Some(pos) = *pos_lock {
-                    if (pos.x - self.viewer_x).abs() > 0.1 || (pos.y - self.viewer_y).abs() > 0.1 {
+                    // 提升閾值至 5.0 以防止 Windows 系統邊框微調產生的飄移 (Drift Fix)
+                    if (pos.x - self.viewer_x).abs() > 5.0 || (pos.y - self.viewer_y).abs() > 5.0 {
                         self.viewer_x = pos.x;
                         self.viewer_y = pos.y;
                     }
@@ -30,7 +31,7 @@ impl eframe::App for AppState {
             }
             if let Ok(size_lock) = self.viewer_shared.inner_size.read() {
                 if let Some(size) = *size_lock {
-                    if (size.x - self.viewer_width).abs() > 0.1 || (size.y - self.viewer_height).abs() > 0.1 {
+                    if (size.x - self.viewer_width).abs() > 5.0 || (size.y - self.viewer_height).abs() > 5.0 {
                         self.viewer_width = size.x;
                         self.viewer_height = size.y;
                     }
@@ -57,6 +58,9 @@ impl eframe::App for AppState {
             // 重要：重置旗標以利下次開啟時重新整理辭典
             let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
             *opened = false;
+            // 重置計數器，確保下次開啟時能再次套用引導座標 (Reset Fix)
+            let mut frames = self.viewer_shared.opened_frames.lock().unwrap();
+            *frames = 0;
         }
 
         // 幀數控制
@@ -115,16 +119,18 @@ impl eframe::App for AppState {
         }
 
         // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
-        // 注意：此處需移出 if self.show_memory_viewer 塊，確保主視窗位置始終同步 (fix_main_pos)
-        if let Some(rect) = ctx.input(|i| i.viewport().outer_rect) {
-            if (rect.min.x - self.main_x).abs() > 0.1 || (rect.min.y - self.main_y).abs() > 0.1 {
-                self.main_x = rect.min.x;
-                self.main_y = rect.min.y;
+        // 注意：此處需使用 inner_size (screen_rect) 以對齊 main.rs 的載入邏輯，防止視窗不斷長大 (Size Drift Fix)
+        let inner_rect = ctx.screen_rect();
+        if let Some(outer_rect) = ctx.input(|i| i.viewport().outer_rect) {
+            let pos = outer_rect.min;
+            if (pos.x - self.main_x).abs() > 5.0 || (pos.y - self.main_y).abs() > 5.0 {
+                self.main_x = pos.x;
+                self.main_y = pos.y;
             }
-            if (rect.width() - self.main_width).abs() > 0.1 || (rect.height() - self.main_height).abs() > 0.1
+            if (inner_rect.width() - self.main_width).abs() > 5.0 || (inner_rect.height() - self.main_height).abs() > 5.0
             {
-                self.main_width = rect.width();
-                self.main_height = rect.height();
+                self.main_width = inner_rect.width();
+                self.main_height = inner_rect.height();
             }
         }
 
