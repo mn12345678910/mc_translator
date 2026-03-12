@@ -32,16 +32,16 @@
 
 ## 系統快速索引 (Quick Lookup)
 - **[核心架構與流程](docs/architecture/overview.md)**
-  - 描述系統模組職責、並發模型 (MPSC) 與流程圖。
-- **[翻譯核心與穩定性](docs/modules/translation_core.md)**
-  - 整合翻譯邏輯、失敗降級策略 (Adaptive Batching) 與辭典規範。
-- **[UI 規格與狀態矩陣](docs/ui/specs.md)**
-  - 詳述視窗規格、色彩常量與細粒度 UI 鎖定邏輯。
+  - 包含 [狀態管理](docs/architecture/state_management.md) 與 [錯誤處理](docs/architecture/error_handling.md)。
+- **[翻譯核心與模組](docs/modules/translation_core.md)**
+  - 包含 [檔案流水線](docs/modules/file_pipeline.md)、[術語系統](docs/modules/glossary_system.md) 與 [翻譯記憶體](docs/modules/translation_memory.md)。
+- **[UI 規格與交互](docs/ui/specs.md)**
+  - 包含 [詳細狀態交互地圖](docs/ui/interactions.md)。
 - **[測試策略與規範](docs/guides/testing_strategy.md)**
   - 包含 3-Test Rule、UTF-8 安全與 Windows 開發環境設定。
 - **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**
   - 本地與雲端同步工作流、Commit 規範與指令參考。
-- **[歷史維護紀錄](docs/MAINTENANCE_LOG.md)**
+- **[歷史維護紀錄](docs/guides/MAINTENANCE_LOG.md)**
   - 完整記錄專案從初期至今的所有版本變遷。
 
 ---

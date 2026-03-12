@@ -70,12 +70,10 @@
 
 關於程式的詳細設計與規範，請參閱 [docs/](docs/) 目錄：
 
-- **[架構概覽](docs/architecture/overview.md)**：系統模組職責、並發模型與執行流程圖。
-- **[翻譯核心](docs/modules/translation_core.md)**：翻譯邏輯、辭典系統與失敗降級策略。
-- **[UI 規格](docs/ui/specs.md)**：介面佈局、顏色常量與狀態控制矩陣。
-- **[測試策略](docs/guides/testing_strategy.md)**：測試規範、UTF-8 安全與環境設定。
-- **[維護日誌](docs/MAINTENANCE_LOG.md)**：專案開發歷程紀錄。
-- **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**：協作規範與指令參考。
+- **架構維度**: [架構概覽](docs/architecture/overview.md) (包含 [狀態管理](docs/architecture/state_management.md)、[錯誤處理](docs/architecture/error_handling.md))
+- **邏輯維度**: [翻譯核心](docs/modules/translation_core.md) (包含 [檔案流水線](docs/modules/file_pipeline.md)、[術語系統](docs/modules/glossary_system.md)、[翻譯記憶體](docs/modules/translation_memory.md))
+- **視覺維度**: [UI 規格](docs/ui/specs.md) (包含 [交互地圖](docs/ui/interactions.md))
+- **維護維度**: [測試策略](docs/guides/testing_strategy.md)、[維護日誌](docs/guides/MAINTENANCE_LOG.md)、[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)
 
 ## 📖 操作說明
 
