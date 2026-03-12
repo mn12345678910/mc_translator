@@ -13,13 +13,13 @@
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Scanning: "按下 開始翻譯"
-    Scanning --> Running: "掃描完成"
-    Running --> Paused: "按下 暫停 或 Ollama 超時"
-    Paused --> Running: "按下 繼續"
-    Running --> Finished: "所有檔案處理完成"
-    Running --> Cancelled: "按下 停止"
-    Paused --> Cancelled: "按下 停止"
+    Idle --> Scanning: 按下 開始翻譯
+    Scanning --> Running: 掃描完成
+    Running --> Paused: 按下 暫停 或 Ollama 超時
+    Paused --> Running: 按下 繼續
+    Running --> Finished: 所有檔案處理完成
+    Running --> Cancelled: 按下 停止
+    Paused --> Cancelled: 按下 停止
     Finished --> Idle
     Cancelled --> Idle
 ```

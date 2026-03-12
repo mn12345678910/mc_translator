@@ -7,7 +7,7 @@
 
 ```mermaid
 graph TD
-    UI["UI Layer - egui"] --> State["State Management - AppState"]
+    UI["UI Layer (egui)"] --> State["State Management (AppState)"]
     State --> Translation["Translation Core"]
     State --> File["File Pipeline"]
     Translation --> API["LLM API Clients"]
@@ -41,13 +41,13 @@ sequenceDiagram
     participant F as "File Pipeline"
     participant T as "Translation Engine"
     
-    U->>UI: "點擊 開始翻譯"
-    UI->>S: "更新狀態為 Running"
-    S->>F: "啟動並行掃描 (JoinSet)"
-    F-->>S: "回報發現的檔案與字串"
-    S->>T: "發送翻譯請求 (Batch)"
-    T-->>S: "回傳翻譯結果"
-    S->>UI: "更新進度條與日誌"
-    S->>F: "寫入目標檔案"
-    F-->>U: "完成"
+    U->>UI: 點擊 開始翻譯
+    UI->>S: 更新狀態為 Running
+    S->>F: 啟動並行掃描 (JoinSet)
+    F-->>S: 回報發現的檔案與字串
+    S->>T: 發送翻譯請求 (Batch)
+    T-->>S: 回傳翻譯結果
+    S->>UI: 更新進度條與日誌
+    S->>F: 寫入目標檔案
+    F-->>U: 完成
 ```
