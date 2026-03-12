@@ -7,16 +7,16 @@
 
 ```mermaid
 graph TD
-    UI["UI Layer (egui)"] --> State["State Management (AppState)"]
-    State --> Translation["Translation Core"]
-    State --> File["File Pipeline"]
-    Translation --> API["LLM API Clients"]
-    File --> IO["File I/O & JAR Handling"]
-    Translation --> Memory["Translation Memory / Cache"]
+    UI[UI Layer - egui] --> State[State Management - AppState]
+    State --> Translation[Translation Core]
+    State --> File[File Pipeline]
+    Translation --> API[LLM API Clients]
+    File --> IO[File I/O & JAR Handling]
+    Translation --> Memory[Translation Memory / Cache]
     
     subgraph "Utils"
-        AC["Aho-Corasick Automaton"]
-        Log["Logger"]
+        AC[Aho-Corasick Automaton]
+        Log[Logger]
     end
     
     Translation -.-> AC
@@ -35,13 +35,13 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant U as "User"
-    participant UI as "UI Layer"
-    participant S as "AppState"
-    participant F as "File Pipeline"
-    participant T as "Translation Engine"
+    participant U as User
+    participant UI as UI Layer
+    participant S as AppState
+    participant F as File Pipeline
+    participant T as Translation Engine
     
-    U->>UI: 點擊 開始翻譯
+    U->>UI: 點擊 "開始翻譯"
     UI->>S: 更新狀態為 Running
     S->>F: 啟動並行掃描 (JoinSet)
     F-->>S: 回報發現的檔案與字串

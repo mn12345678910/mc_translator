@@ -14,12 +14,12 @@
 
 ```mermaid
 graph TD
-    Error["偵測到翻譯失敗"] --> Retry{"重試次數 < 3?"}
-    Retry -- "Yes" --> Backoff["指數退避重試"]
-    Retry -- "No" --> Degradation{"支援降級?"}
-    Degradation -- "Yes" --> Halving["二分降級 - Halve Batch Size"]
-    Halving --> ReProcess["重新處理該批次"]
-    Degradation -- "No" --> Skip["標記為已跳過"]
+    Error[偵測到翻譯失敗] --> Retry{重試次數 < 3?}
+    Retry -- Yes --> Backoff[指數退避重試]
+    Retry -- No --> Degradation{支援降級?}
+    Degradation -- Yes --> Halving[二分降級 - Halve Batch Size]
+    Halving --> ReProcess[重新處理該批次]
+    Degradation -- No --> Skip[標記為已跳過]
 ```
 
 ## 3. 異常防範機制 (Panic Prevention)
