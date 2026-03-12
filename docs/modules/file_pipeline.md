@@ -12,15 +12,15 @@
 
 ```mermaid
 graph TD
-    Entry["JAR 檔案進入"] --> Extract["解壓 assets 資料夾"]
-    Extract --> ScanLang["搜尋 en_us.json"]
-    ScanLang --> Found{"找到?"}
-    Found -- "Yes" --> CreateZH["建立 zh_tw.json 模板"]
-    CreateZH --> Translate["進入翻譯隊列"]
-    Found -- "No" --> ScanBook["搜尋 Patchouli Books"]
-    ScanBook --> BookFound{"找到?"}
-    BookFound -- "Yes" --> ProcessBook["處理說明書翻譯"]
-    BookFound -- "No" --> Skip["跳過該 JAR"]
+    Entry[JAR 檔案進入] --> Extract[解壓 assets 資料夾]
+    Extract --> ScanLang[搜尋 en_us.json]
+    ScanLang --> Found{找到?}
+    Found -- Yes --> CreateZH[建立 zh_tw.json 模板]
+    CreateZH --> Translate[進入翻譯隊列]
+    Found -- No --> ScanBook[搜尋 Patchouli Books]
+    ScanBook --> BookFound{找到?}
+    BookFound -- Yes --> ProcessBook[處理說明書翻譯]
+    BookFound -- No --> Skip[跳過該 JAR]
 ```
 
 ## 3. 資源包封裝 (Packaging)
