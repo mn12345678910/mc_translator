@@ -138,4 +138,8 @@ impl eframe::App for AppState {
             ctx.request_repaint();
         }
     }
+
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        self.save_config();
+    }
 }

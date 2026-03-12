@@ -12,6 +12,7 @@ pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯�
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AppConfig {
     /// API 金鑰（Gemini / OpenAI）
+    #[serde(skip)]
     pub api_key: String,
     /// 服務商（Gemini / OpenAI / Ollama）
     pub provider: String,
@@ -142,9 +143,7 @@ impl AppConfig {
         let _ = fs::write(".env", format!("API_KEY={}", encrypted_key));
 
         // 2. 儲存其餘設定於 config.cfg
-        let mut config_to_save = self.clone();
-        config_to_save.api_key = String::new(); // 不要把金鑰存進 cfg
-        if let Ok(json) = serde_json::to_string_pretty(&config_to_save) {
+        if let Ok(json) = serde_json::to_string_pretty(self) {
             let _ = fs::write("config.cfg", json);
         }
     }
