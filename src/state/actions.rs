@@ -157,8 +157,17 @@ impl AppState {
     }
 
     pub fn start_translation(&mut self, _ctx: egui::Context) {
+        // 在啟動前強制存檔，確保 UI 上的最新變動（如輸出資料夾）已寫入磁碟 (Sync Fix)
+        self.save_config();
+
         if self.is_processing_active() {
             return;
+        }
+
+        // 防禦性檢查：若未選取模型且非 Google 免費模式，則不啟動 (Validation Fix)
+        if self.api_provider != "Gemini" && self.api_provider != "DeepL" && self.selected_model.is_empty() && self.api_provider != "Ollama" {
+             self.add_log("⚠️ 啟動失敗：請先選取翻譯模型。");
+             return;
         }
 
         *self.progress.lock().unwrap() = 0.0;
