@@ -91,8 +91,8 @@ impl Default for AppConfig {
             skip_book: false,
             enable_llm_log: false,
             technical_constraints: "\n\n[內部技術指令 - 請務必遵守]\n\
-1. 識別並正確處理 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符，保持它們完全不變（絕對不可修改、翻譯、添加空格或刪除標籤）。\n\
-2. 保持 %%VAR_n%% 等標記的原有格式，嚴禁將其替換為 {} 或其他符號。".to_string(),
+1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
+2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
             viewer_x: 100.0,
             viewer_y: 100.0,
             viewer_width: 750.0,

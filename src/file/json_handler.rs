@@ -107,7 +107,9 @@ pub async fn apply_json_task(
         if cfg.output_dir.is_empty() {
             "./LLMTranslator".to_string()
         } else {
-            cfg.output_dir.clone()
+            let p = std::path::Path::new(&cfg.output_dir).join("LLMTranslator");
+            let _ = std::fs::create_dir_all(&p);
+            p.to_string_lossy().to_string()
         }
     };
 

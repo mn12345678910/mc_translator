@@ -61,6 +61,7 @@ impl AppState {
                                             self.batch_max_chars = def.batch_max_chars;
                                             self.ollama_timeout = def.ollama_timeout;
                                             self.translation_prompt = def.translation_prompt;
+                                            self.output_dir = def.output_dir;
                                             self.theme = def.theme;
                                             self.font_size = def.font_size;
                                             self.pack_format = def.pack_format;
