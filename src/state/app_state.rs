@@ -71,6 +71,8 @@ pub struct AppState {
     // --- UI 控制標記 ---
     pub show_api_settings: bool,
     pub show_developer_mode: bool,
+    pub show_palette_settings: bool,
+    pub palette_edit_dark: bool,
     pub show_memory_viewer: bool,
     pub is_memory_viewer_open: Arc<std::sync::atomic::AtomicBool>,
     pub show_stop_confirm: bool,
@@ -105,6 +107,12 @@ pub struct AppState {
     pub viewer_shared: Arc<ViewerSharedState>,
     /// 辭典檔案監控器 (保持生命週期)
     pub _dict_watcher: Option<Box<dyn std::any::Any>>,
+
+    // --- [自定義顏色狀態] ---
+    pub dark_bg: [u8; 3],
+    pub dark_text: [u8; 3],
+    pub light_bg: [u8; 3],
+    pub light_text: [u8; 3],
 }
 
 impl AppState {
@@ -180,6 +188,8 @@ impl AppState {
             main_height: config.main_height,
             show_api_settings: config.show_api_settings,
             show_developer_mode: config.show_developer_mode,
+            show_palette_settings: false,
+            palette_edit_dark: config.theme == "dark",
             show_memory_viewer: false,
             is_memory_viewer_open: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             show_stop_confirm: false,
@@ -207,6 +217,10 @@ impl AppState {
             viewer_shared,
             _update_rx: update_rx,
             _dict_watcher: None,
+            dark_bg: config.dark_bg,
+            dark_text: config.dark_text,
+            light_bg: config.light_bg,
+            light_text: config.light_text,
         };
 
         state.refresh_all_dictionaries();
