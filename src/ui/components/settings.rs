@@ -293,14 +293,15 @@ impl AppState {
                                     .strong(),
                             );
                             ui.add_enabled_ui(ui_enabled, |ui| {
-                                if ui
-                                    .add(
-                                        egui::TextEdit::multiline(&mut self.user_prompt)
-                                            .desired_rows(2)
-                                            .desired_width(ui.available_width()),
-                                    )
-                                    .changed()
-                                {
+                                let mut text_edit = egui::TextEdit::multiline(&mut self.user_prompt)
+                                    .desired_rows(2)
+                                    .desired_width(ui.available_width());
+                                
+                                if self.theme == "light" {
+                                    text_edit = text_edit.fill(egui::Color32::from_rgb(0xE3, 0xC3, 0x95));
+                                }
+
+                                if ui.add(text_edit).changed() {
                                     self.save_config();
                                 }
                             });
