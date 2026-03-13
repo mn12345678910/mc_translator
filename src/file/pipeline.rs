@@ -129,13 +129,12 @@ pub async fn process_all_files(
             }
 
             file_id_counter += tasks.len();
-            total_string_count += items.len();
             file_tasks.extend(tasks);
             global_items.extend(items);
 
             {
                 let mut total = state.global_total.lock().unwrap();
-                *total = total_string_count as f32;
+                *total = file_id_counter as f32;
             }
         }
     }
