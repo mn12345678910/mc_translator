@@ -125,8 +125,8 @@ impl AppState {
             if ui.button("📖").on_hover_text("建議詞管理器").clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
                 if self.show_memory_viewer {
-                    // 點擊開啟時發動 0.5s (30 frames) 的靜默期，等待主程式狀態穩定 (Feedback Fix)
-                    self.viewer_opening_counter = 30;
+                    // 點擊開啟時發動 0.16s (10 frames) 的靜默期，等待主程式狀態穩定 (Feedback Fix)
+                    self.viewer_opening_counter = 10;
                 } else {
                     let mut frames = self.viewer_shared.opened_frames.lock().unwrap();
                     *frames = 0;

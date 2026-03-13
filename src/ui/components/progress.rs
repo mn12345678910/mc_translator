@@ -74,7 +74,9 @@ impl AppState {
         };
 
         ui.add(egui::ProgressBar::new(ratio).fill(bar_color).show_percentage().text(
-            egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32)).strong(),
+            egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32))
+                .color(label_color)
+                .strong(),
         ));
 
         // 總進度 (顯示檔案進度)
@@ -89,6 +91,7 @@ impl AppState {
                     g_total as u32,
                     (g_ratio * 100.0) as u32
                 ))
+                .color(label_color)
                 .strong(),
             ),
         );

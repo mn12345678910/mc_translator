@@ -121,18 +121,20 @@ impl AppState {
 
                         // (顯現指令已移至主執行緒 create_viewport_deferred 以防死鎖)
 
-                        if (pos.x > 1.1 || pos.y > 1.1) && current_count > 60 {
+                        if (pos.x > 1.1 || pos.y > 1.1) && current_count > 20 {
                             // 幾何同步保護：加入 Delta Check，並限制合理的同步上限 (Revision 15.15)
                             let clamped_width = inner_size.x.clamp(400.0, 1920.0);
                             let clamped_height = inner_size.y.clamp(300.0, 1080.0);
                             let clamped_size = egui::vec2(clamped_width, clamped_height);
 
+                            let mut save_needed = false;
                             if let Ok(mut p_lock) = viewer_shared.position.write() {
                                 let changed = p_lock
                                     .map(|old| (old.x - pos.x).abs() + (old.y - pos.y).abs() > 5.0)
                                     .unwrap_or(true);
                                 if changed {
                                     *p_lock = Some(pos);
+                                    save_needed = true;
                                 }
                             }
                             if let Ok(mut s_lock) = viewer_shared.inner_size.write() {
@@ -145,7 +147,13 @@ impl AppState {
                                     .unwrap_or(true);
                                 if changed {
                                     *s_lock = Some(clamped_size);
+                                    save_needed = true;
                                 }
+                            }
+
+                            if save_needed {
+                                viewer_shared.update_tx
+                                    .send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                             }
                         }
                     }
