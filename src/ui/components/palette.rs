@@ -32,7 +32,6 @@ impl AppState {
             // 模式切換開關
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("編輯模式:").color(label_color));
-                let mode_text = if self.palette_edit_dark { "🌙 深色設定" } else { "☀️ 淺色設定" };
                 if ui.selectable_label(!self.palette_edit_dark, "☀️ 淺色").clicked() {
                     self.palette_edit_dark = false;
                 }
@@ -43,20 +42,17 @@ impl AppState {
 
             ui.add_space(5.0);
 
-            let (bg, text) = if self.palette_edit_dark {
-                (&mut self.dark_bg, &mut self.dark_text)
-            } else {
-                (&mut self.light_bg, &mut self.light_text)
-            };
-
+            let is_dark_edit = self.palette_edit_dark;
             egui::Grid::new("palette_grid").num_columns(2).spacing([10.0, 8.0]).show(ui, |ui| {
                 ui.label(egui::RichText::new("背景顏色:").color(label_color));
+                let bg = if is_dark_edit { &mut self.dark_bg } else { &mut self.light_bg };
                 if ui.color_edit_button_srgb(bg).changed() {
                     self.save_config();
                 }
                 ui.end_row();
 
                 ui.label(egui::RichText::new("文字顏色:").color(label_color));
+                let text = if is_dark_edit { &mut self.dark_text } else { &mut self.light_text };
                 if ui.color_edit_button_srgb(text).changed() {
                     self.save_config();
                 }
