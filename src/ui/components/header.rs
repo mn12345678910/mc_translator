@@ -138,6 +138,14 @@ impl AppState {
                 }
                 self.save_config();
             }
+            if ui.button("🎨").on_hover_text("自定義調色盤").clicked() {
+                self.show_palette_settings = !self.show_palette_settings;
+                if self.show_palette_settings {
+                    self.show_api_settings = false;
+                    self.show_developer_mode = false;
+                }
+                self.save_config();
+            }
             if ui.button("🌓").on_hover_text("切換主題").clicked() {
                 self.theme = if self.theme == "dark" {
                     "light".into()
