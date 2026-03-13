@@ -6,19 +6,41 @@ use eframe::egui;
 pub enum ViewerUpdate {
     Theme(String),
     FontSize(f32),
-    SaveConfig, // 新增：觸發存盤 (Revision 15.12)
+    Style(StyleSnapshot),
+    SaveConfig,
+}
+
+/// 樣式快照，用於主子視窗間的完整視覺同步
+#[derive(Clone, Debug)]
+pub struct StyleSnapshot {
+    pub dark_bg: [u8; 3],
+    pub dark_text: [u8; 3],
+    pub light_bg: [u8; 3],
+    pub light_text: [u8; 3],
+    pub dark_label: [u8; 3],
+    pub light_label: [u8; 3],
+    pub dark_btn_bg: [u8; 3],
+    pub dark_btn_text: [u8; 3],
+    pub light_btn_bg: [u8; 3],
+    pub light_btn_text: [u8; 3],
+    pub dark_input_bg: [u8; 3],
+    pub light_input_bg: [u8; 3],
+    pub dark_list_bg: [u8; 3],
+    pub light_list_bg: [u8; 3],
+    pub dark_tab_active: [u8; 3],
+    pub light_tab_active: [u8; 3],
+    pub instance_overrides: std::collections::HashMap<String, crate::config::settings::ComponentStyle>,
 }
 
 /// 視窗共享狀態 (用於主子視窗同步)
 pub struct ViewerSharedState {
     pub theme: Arc<RwLock<String>>,
     pub font_size: Arc<RwLock<f32>>,
+    pub style: Arc<RwLock<StyleSnapshot>>,
     pub close_requested: Arc<std::sync::atomic::AtomicBool>,
     pub update_tx: UnboundedSender<ViewerUpdate>,
     pub opened_last_frame: Arc<Mutex<bool>>,
-    /// 用於隱形啟動的幀數計數器
     pub opened_frames: Arc<Mutex<u32>>,
-    // 視窗同步 (ses_342b)
     pub position: Arc<RwLock<Option<egui::Pos2>>>,
     pub inner_size: Arc<RwLock<Option<egui::Vec2>>>,
 }

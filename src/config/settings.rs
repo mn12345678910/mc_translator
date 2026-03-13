@@ -9,7 +9,7 @@ use super::encryption::{decrypt_string, encrypt_string};
 
 pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。";
 
-/// 應用程式設定結構體
+/// 核心功能設定檔 (config.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AppConfig {
     /// API 金鑰（Gemini / OpenAI）
@@ -40,13 +40,9 @@ pub struct AppConfig {
     #[serde(rename = "術語優先級", alias = "glossary_priority")]
     pub glossary_priority: String,
 
-    // --- [輸出與介面] ---
+    // --- [輸出與路徑] ---
     #[serde(rename = "輸出路徑", alias = "output_dir")]
     pub output_dir: String,
-    #[serde(rename = "主題顏色", alias = "theme")]
-    pub theme: String,
-    #[serde(rename = "字體大小", alias = "font_size")]
-    pub font_size: f32,
     #[serde(rename = "資源包版本", alias = "pack_format")]
     pub pack_format: u32,
 
@@ -89,6 +85,15 @@ pub struct AppConfig {
     pub viewer_width: f32,
     #[serde(rename = "建議詞視窗高度", alias = "viewer_height")]
     pub viewer_height: f32,
+}
+
+/// 外觀與視覺設定檔 (style.cfg)
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct StyleConfig {
+    #[serde(rename = "主題顏色", alias = "theme")]
+    pub theme: String,
+    #[serde(rename = "字體大小", alias = "font_size")]
+    pub font_size: f32,
 
     // --- [自定義調色盤] ---
     #[serde(default = "default_dark_bg", rename = "深色背景", alias = "dark_bg")]
@@ -185,42 +190,11 @@ fn default_pulse_speed() -> f32 { 1.0 }
 fn default_true() -> bool { true }
 
 
-impl Default for AppConfig {
+impl Default for StyleConfig {
     fn default() -> Self {
         Self {
-            api_key: String::new(),
-            api_provider: "無".to_string(),
-            model: String::new(),
-            ollama_url: "http://localhost:11434".to_string(),
-            user_prompt: DEFAULT_PROMPT.to_string(),
-            system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
-1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
-2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
-            batch_size: 150,
-            batch_max_chars: 3500,
-            ollama_timeout: 60,
-            glossary_priority: "official".to_string(),
-            output_dir: String::new(),
             theme: "dark".to_string(),
             font_size: 15.0,
-            pack_format: 15,
-            enable_custom_fps: false,
-            custom_fps: 60,
-            show_api_settings: false,
-            show_developer_mode: false,
-            skip_json: false,
-            skip_js: false,
-            skip_jar: false,
-            skip_book: false,
-            enable_llm_log: false,
-            main_x: 50.0,
-            main_y: 50.0,
-            main_width: 750.0,
-            main_height: 550.0,
-            viewer_x: 100.0,
-            viewer_y: 100.0,
-            viewer_width: 750.0,
-            viewer_height: 500.0,
             dark_bg: default_dark_bg(),
             dark_text: default_dark_text(),
             light_bg: default_light_bg(),
@@ -248,6 +222,61 @@ impl Default for AppConfig {
     }
 }
 
+impl StyleConfig {
+    pub fn load() -> Self {
+        if let Ok(content) = fs::read_to_string("style.cfg") {
+            if let Ok(config) = serde_json::from_str::<Self>(&content) {
+                return config;
+            }
+        }
+        Self::default()
+    }
+
+    pub fn save(&self) {
+        if let Ok(json) = serde_json::to_string_pretty(self) {
+            let _ = fs::write("style.cfg", json);
+        }
+    }
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            api_key: String::new(),
+            api_provider: "無".to_string(),
+            model: String::new(),
+            ollama_url: "http://localhost:11434".to_string(),
+            user_prompt: DEFAULT_PROMPT.to_string(),
+            system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
+1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
+2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
+            batch_size: 150,
+            batch_max_chars: 3500,
+            ollama_timeout: 60,
+            glossary_priority: "official".to_string(),
+            output_dir: String::new(),
+            pack_format: 15,
+            enable_custom_fps: false,
+            custom_fps: 60,
+            show_api_settings: false,
+            show_developer_mode: false,
+            skip_json: false,
+            skip_js: false,
+            skip_jar: false,
+            skip_book: false,
+            enable_llm_log: false,
+            main_x: 50.0,
+            main_y: 50.0,
+            main_width: 750.0,
+            main_height: 550.0,
+            viewer_x: 100.0,
+            viewer_y: 100.0,
+            viewer_width: 750.0,
+            viewer_height: 500.0,
+        }
+    }
+}
+
 impl AppConfig {
     /// 載入設定：從 .env 讀取 API_KEY，其餘從 config.cfg 讀取
     pub fn load() -> Self {
@@ -267,7 +296,6 @@ impl AppConfig {
         config
     }
 
-    /// 從 config.cfg 載入非敏感設定
     fn load_from_config_cfg() -> Self {
         if let Ok(content) = fs::read_to_string("config.cfg") {
             if let Ok(config) = serde_json::from_str::<Self>(&content) {
@@ -277,7 +305,6 @@ impl AppConfig {
         Self::default()
     }
 
-    /// 儲存設定：API_KEY 至 .env，其餘至 config.cfg
     pub fn save(&self) {
         // 1. 儲存 API_KEY 於 .env
         let encrypted_key = if !self.api_key.is_empty() {

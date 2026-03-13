@@ -1,5 +1,3 @@
-use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 use eframe::egui;
 use crate::state::app_state::{AppState, PaletteEditSlot};
 
@@ -7,9 +5,9 @@ impl AppState {
     pub fn render_palette_settings(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.heading("🎨 自定義調色盤 (V5)");
+                ui.heading("🎨 全方位動態調色盤 (V6)");
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("⟲ 全部重置").on_hover_text("將所有顏色恢復為預設值").clicked() {
+                    if ui.button("⟲ 全部重置").on_hover_text("將全程式所有設定、顏色、圓角恢復至預設值").clicked() {
                         self.show_restore_default_confirm = true;
                     }
                 });
@@ -20,37 +18,60 @@ impl AppState {
             // 1. 編輯模式切換
             ui.horizontal(|ui| {
                 ui.label("當前編輯模式:");
-                if ui.selectable_label(!self.palette_edit_dark, "☀️ 淺色").clicked() {
+                if ui.selectable_label(!self.palette_edit_dark, "☀️ 淺色設定").clicked() {
                     self.palette_edit_dark = false;
                 }
-                if ui.selectable_label(self.palette_edit_dark, "🌙 深色").clicked() {
+                if ui.selectable_label(self.palette_edit_dark, "🌙 深色設定").clicked() {
                     self.palette_edit_dark = true;
                 }
             });
 
-            ui.add_space(10.0);
+            ui.add_space(8.0);
 
             // 2. 編輯目標選擇 (Edit Slots)
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 ui.label(egui::RichText::new("【 1. 選擇編輯目標 】").strong());
                 let mut remove_idx = None;
+                let slots_len = self.palette_edit_slots.len();
+                
                 for (idx, slot) in self.palette_edit_slots.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut slot.is_checked, "");
+                        // 移除原有的 checkbox，直接下拉選單
+                        ui.label(format!("#{}", idx + 1));
                         egui::ComboBox::from_id_source(format!("slot_{}", idx))
                             .selected_text(&slot.target_id)
+                            .width(200.0)
                             .show_ui(ui, |ui| {
-                                let targets = [
-                                    "全部按鈕", "全部標籤", "全部輸入框", "全部日誌區域", 
-                                    "全部建議詞分頁", "全部進度條",
-                                    "[特定] 選擇檔案按鈕", "[特定] 執行翻譯按鈕", "[特定] 建議詞搜尋框"
+                                let target_groups = [
+                                    ("類別批量設定", vec![
+                                        "全部按鈕", "全部標籤", "全部輸入框", "全部日誌區域", 
+                                        "全部建議詞分頁", "全部進度條", "全部面板背景", "頂部導覽列"
+                                    ]),
+                                    ("特定元件 (精確覆寫)", vec![
+                                        "[特定] 選擇檔案按鈕", "[特定] 選擇資料夾按鈕", 
+                                        "[特定] 輸出資料夾按鈕", "[特定] 打開輸出按鈕",
+                                        "[特定] 開始翻譯按鈕", "[特定] 暫停按鈕", 
+                                        "[特定] 停止按鈕", "[特定] 清除執行日誌按鈕",
+                                        "[特定] ⚙️ 設定按鈕", "[特定] 📖 字典按鈕",
+                                        "[特定] 🎨 調色盤按鈕", "[特定] 🌓 主題按鈕",
+                                        "[特定] 🔧 開發按鈕", "[特定] 建議詞搜尋框",
+                                        "[特定] 字典列表區域", "[特定] 輸出路徑標籤"
+                                    ])
                                 ];
-                                for t in targets {
-                                    ui.selectable_value(&mut slot.target_id, t.to_string(), t);
+                                
+                                for (group_name, group_items) in target_groups {
+                                    ui.label(egui::RichText::new(group_name).small().weak());
+                                    for t in group_items {
+                                        ui.selectable_value(&mut slot.target_id, t.to_string(), t);
+                                    }
+                                    ui.separator();
                                 }
                             });
-                        if self.palette_edit_slots.len() > 1 {
-                            if ui.button("🗑").clicked() { remove_idx = Some(idx); }
+                        
+                        if slots_len > 1 {
+                            if ui.button("🗑").on_hover_text("移除此編輯槽位").clicked() { 
+                                remove_idx = Some(idx); 
+                            }
                         }
                     });
                 }
@@ -63,30 +84,29 @@ impl AppState {
                             is_checked: true 
                         });
                     }
-                    if ui.button("全選/取消").clicked() {
-                        self.palette_all_selected = !self.palette_all_selected;
-                        for s in &mut self.palette_edit_slots { s.is_checked = self.palette_all_selected; }
-                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                         ui.label(egui::RichText::new(format!("共 {} 個槽位", slots_len)).small().weak());
+                    });
                 });
             });
 
             ui.add_space(10.0);
 
             // 3. 屬性調整區
-            ui.label(egui::RichText::new("【 2. 勾選屬性進行批次調整 】").strong());
+            ui.label(egui::RichText::new("【 2. 調整屬性樣式 】").strong());
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 let is_dark = self.palette_edit_dark;
+                // V6 邏輯：所有在列表中的槽位皆視為選取
                 let active_targets: Vec<String> = self.palette_edit_slots.iter()
-                    .filter(|s| s.is_checked)
                     .map(|s| s.target_id.clone())
                     .collect();
 
-                if active_targets.is_empty() {
-                    ui.label(egui::RichText::new("請先勾選上方編輯目標").weak());
-                    return;
-                }
+                // if active_targets.is_empty() { // V6: 至少會有一個槽位，所以不需要這個檢查
+                //     ui.label(egui::RichText::new("請先勾選上方編輯目標").weak());
+                //     return;
+                // }
 
-                egui::Grid::new("prop_grid").num_columns(2).spacing([20.0, 8.0]).show(ui, |ui| {
+                egui::Grid::new("prop_grid_v6").num_columns(2).spacing([20.0, 10.0]).show(ui, |ui| {
                     // 背景顏色
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut self.palette_prop_sync_bg, "背景顏色");
@@ -110,15 +130,15 @@ impl AppState {
                 });
 
                 // 4. 組件專用屬性 (圓角/動畫)
-                let has_button = active_targets.iter().any(|t| t.contains("按鈕"));
+                let has_button = active_targets.iter().any(|t| t.contains("按鈕") || t.contains("🎨") || t.contains("⚙") || t.contains("🌓") || t.contains("🔧") || t.contains("📖"));
                 let has_progress = active_targets.iter().any(|t| t.contains("進度條"));
 
                 if has_button {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.btn_rounding_enabled, "啟用控制按鈕圓角");
+                        ui.checkbox(&mut self.btn_rounding_enabled, "強制啟用全域按鈕圓角");
                         if self.btn_rounding_enabled {
-                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0)).changed() {
+                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text("圓角數值")).changed() {
                                 self.trigger_save();
                             }
                         }
@@ -128,7 +148,7 @@ impl AppState {
                 if has_progress {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.progress_pulse_enabled, "啟用進度條脈衝動畫");
+                        ui.checkbox(&mut self.progress_pulse_enabled, "啟用進度條呼吸脈衝動畫");
                     });
                     if self.progress_pulse_enabled {
                         ui.horizontal(|ui| {
@@ -142,34 +162,39 @@ impl AppState {
             });
 
             ui.add_space(10.0);
-            ui.label(egui::RichText::new("ℹ 變更將立即套用並透過背景任務儲存").small().weak());
+            ui.label(egui::RichText::new("ℹ 提示：特定元件覆寫的色彩優先級高於類別批量設定。").small().weak());
         });
     }
 
-    /// 批次套用顏色至勾選的目標
+    /// 批次套用顏色至清單中所有目標
     fn apply_batch_color(&mut self, is_bg: bool, color: [u8; 3]) {
         let is_dark = self.palette_edit_dark;
         let targets: Vec<String> = self.palette_edit_slots.iter()
-            .filter(|s| s.is_checked)
             .map(|s| s.target_id.clone())
             .collect();
 
         for t in targets {
             if t.contains("全部") || !t.contains("[特定]") {
-                // 類別更新
+                // 類別更新 (V6 擴展)
                 match t.as_str() {
                     "全部按鈕" => if is_bg { if is_dark { self.dark_btn_bg = color; } else { self.light_btn_bg = color; } } 
                                   else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
-                    "全部標籤" => if is_bg { if is_dark { self.dark_label = color; } else { self.light_label = color; } }
-                                  else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
-                    "全部輸入框" => if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } else {},
-                    "全部日誌區域" => if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } else {},
-                    "全部建議詞分頁" => if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } else {},
-                    "全部進度條" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {}, // 借用主背景
+                    "全部標籤" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
+                                  else { if is_dark { self.dark_label = color; } else { self.light_label = color; } },
+                    "全部輸入框" => if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
+                                   else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
+                    "全部日誌區域" => if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
+                                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
+                    "全部建議詞分頁" => if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
+                                     else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
+                    "全部進度條" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
+                    "全部面板背景" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
+                    "頂部導覽列" => if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
+                                   else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
                     _ => {}
                 }
             } else {
-                // 特定元件覆寫
+                // 特定元件覆寫 (V6 映射)
                 let key = self.get_id_from_target_name(&t);
                 let entry = self.instance_overrides.entry(key).or_default();
                 if is_bg { entry.bg = Some(color); } else { entry.text = Some(color); }
@@ -181,8 +206,21 @@ impl AppState {
     fn get_id_from_target_name(&self, name: &str) -> String {
         match name {
             "[特定] 選擇檔案按鈕" => "btn_select_file",
-            "[特定] 執行翻譯按鈕" => "btn_run_trans",
+            "[特定] 選擇資料夾按鈕" => "btn_select_folder",
+            "[特定] 輸出資料夾按鈕" => "btn_output_dir",
+            "[特定] 打開輸出按鈕" => "btn_open_output",
+            "[特定] 開始翻譯按鈕" => "btn_run_trans",
+            "[特定] 暫停按鈕" => "btn_pause",
+            "[特定] 停止按鈕" => "btn_stop",
+            "[特定] 清除執行日誌按鈕" => "btn_clear_log",
+            "[特定] ⚙️ 設定按鈕" => "btn_nav_settings",
+            "[特定] 📖 字典按鈕" => "btn_nav_dict",
+            "[特定] 🎨 調色盤按鈕" => "btn_nav_palette",
+            "[特定] 🌓 主題按鈕" => "btn_nav_theme",
+            "[特定] 🔧 開發按鈕" => "btn_nav_dev",
             "[特定] 建議詞搜尋框" => "input_dict_search",
+            "[特定] 字典列表區域" => "area_dict_list",
+            "[特定] 輸出路徑標籤" => "label_output_path",
             _ => name,
         }.to_string()
     }

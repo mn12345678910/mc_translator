@@ -32,46 +32,53 @@ impl AppState {
     ) {
         let is_dark = *viewer_shared.theme.read().unwrap() == "dark";
         let font_size = *viewer_shared.font_size.read().unwrap();
+        let style_snap = viewer_shared.style.read().unwrap().clone();
+        
         let mut style = (*ctx.style()).clone();
 
-        // 完整移植主視窗的視覺參數，確保按鈕、選取色與主題高度一致
+        // 完整移植主視窗的視覺參數，確保按鈕、選取色與主題高度一致 (Revision 15.18)
         let visuals = if is_dark {
             let mut v = egui::Visuals::dark();
-            v.window_fill = egui::Color32::from_rgb(30, 30, 35);
-            v.panel_fill = egui::Color32::from_rgb(30, 30, 35);
-            v.extreme_bg_color = egui::Color32::from_rgb(20, 20, 25);
-            v.selection.bg_fill = egui::Color32::from_rgb(60, 100, 150);
+            let bg = egui::Color32::from_rgb(style_snap.dark_bg[0], style_snap.dark_bg[1], style_snap.dark_bg[2]);
+            let text = egui::Color32::from_rgb(style_snap.dark_text[0], style_snap.dark_text[1], style_snap.dark_text[2]);
+            let btn_bg = egui::Color32::from_rgb(style_snap.dark_btn_bg[0], style_snap.dark_btn_bg[1], style_snap.dark_btn_bg[2]);
+            let btn_text = egui::Color32::from_rgb(style_snap.dark_btn_text[0], style_snap.dark_btn_text[1], style_snap.dark_btn_text[2]);
+            let input_bg = egui::Color32::from_rgb(style_snap.dark_input_bg[0], style_snap.dark_input_bg[1], style_snap.dark_input_bg[2]);
+            let list_bg = egui::Color32::from_rgb(style_snap.dark_list_bg[0], style_snap.dark_list_bg[1], style_snap.dark_list_bg[2]);
 
-            let btn_bg = egui::Color32::from_rgb(60, 60, 70);
+            v.window_fill = bg;
+            v.panel_fill = bg;
+            v.override_text_color = Some(text);
+            v.extreme_bg_color = input_bg;
+            v.faint_bg_color = list_bg;
+            v.selection.bg_fill = egui::Color32::from_rgb(style_snap.dark_tab_active[0], style_snap.dark_tab_active[1], style_snap.dark_tab_active[2]);
+
             v.widgets.inactive.bg_fill = btn_bg;
             v.widgets.inactive.weak_bg_fill = btn_bg;
-            v.widgets.hovered.bg_fill = egui::Color32::from_rgb(75, 75, 90);
-            v.widgets.active.bg_fill = egui::Color32::from_rgb(90, 90, 110);
-            v.faint_bg_color = egui::Color32::from_rgb(40, 40, 45);
+            v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, btn_text);
+            v.widgets.hovered.bg_fill = btn_bg.linear_multiply(1.1);
+            v.widgets.active.bg_fill = btn_bg.linear_multiply(0.9);
             v
         } else {
             let mut v = egui::Visuals::light();
-            let bg_color = crate::ui::constants::BG_COLOR_LIGHT;
-            v.window_fill = bg_color;
-            v.panel_fill = bg_color;
+            let bg = egui::Color32::from_rgb(style_snap.light_bg[0], style_snap.light_bg[1], style_snap.light_bg[2]);
+            let text = egui::Color32::from_rgb(style_snap.light_text[0], style_snap.light_text[1], style_snap.light_text[2]);
+            let btn_bg = egui::Color32::from_rgb(style_snap.light_btn_bg[0], style_snap.light_btn_bg[1], style_snap.light_btn_bg[2]);
+            let btn_text = egui::Color32::from_rgb(style_snap.light_btn_text[0], style_snap.light_btn_text[1], style_snap.light_btn_text[2]);
+            let input_bg = egui::Color32::from_rgb(style_snap.light_input_bg[0], style_snap.light_input_bg[1], style_snap.light_input_bg[2]);
+            let list_bg = egui::Color32::from_rgb(style_snap.light_list_bg[0], style_snap.light_list_bg[1], style_snap.light_list_bg[2]);
 
-            let btn_bg = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-            let btn_stroke_color = egui::Color32::from_rgb(30, 30, 30);
+            v.window_fill = bg;
+            v.panel_fill = bg;
+            v.override_text_color = Some(text);
+            v.extreme_bg_color = input_bg;
+            v.faint_bg_color = list_bg;
+            v.selection.bg_fill = egui::Color32::from_rgb(style_snap.light_tab_active[0], style_snap.light_tab_active[1], style_snap.light_tab_active[2]);
 
             v.widgets.inactive.bg_fill = btn_bg;
             v.widgets.inactive.weak_bg_fill = btn_bg;
-            v.widgets.inactive.fg_stroke = egui::Stroke::new(1.2, btn_stroke_color);
-            v.widgets.hovered.bg_fill = egui::Color32::from_rgb(0xCD, 0xAA, 0x7D);
-            v.widgets.hovered.fg_stroke = egui::Stroke::new(1.8, btn_stroke_color);
-            v.widgets.active.bg_fill = egui::Color32::from_rgb(0xA0, 0x7B, 0x7B);
-
-            v.extreme_bg_color = egui::Color32::WHITE;
-            v.selection.bg_fill = crate::ui::constants::SELECTION_BG_LIGHT;
-            v.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(0xD2, 0xB4, 0x8C);
-            v.widgets.noninteractive.fg_stroke =
-                egui::Stroke::new(1.0, egui::Color32::from_gray(100));
-            v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
-            v.override_text_color = Some(crate::ui::constants::TEXT_COLOR_LIGHT);
+            v.widgets.inactive.fg_stroke = egui::Stroke::new(1.2, btn_text);
+            v.widgets.hovered.bg_fill = btn_bg.linear_multiply(0.95);
             v
         };
 
@@ -115,11 +122,11 @@ impl AppState {
                 let theme_val = viewer_shared.theme.read().unwrap().clone();
                 let is_light = theme_val == "light";
                 let fill = if is_light {
-                    egui::Color32::from_rgb(0xE3, 0xC3, 0x95)
+                    egui::Color32::from_rgb(style_snap.light_tab_active[0], style_snap.light_tab_active[1], style_snap.light_tab_active[2])
                 } else {
-                    egui::Color32::from_rgb(60, 60, 70)
+                    egui::Color32::from_rgb(style_snap.dark_tab_active[0], style_snap.dark_tab_active[1], style_snap.dark_tab_active[2])
                 };
-
+ 
                 egui::Frame::none()
                     .fill(fill)
                     .rounding(4.0)
@@ -477,6 +484,8 @@ impl AppState {
 
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new("🔍 搜尋:").color(label_color).strong());
+                let (input_bg, _) = get_instance_style_from_snap(&style_snap, "input_dict_search", is_dark);
+                ui.visuals_mut().extreme_bg_color = input_bg;
                 ui.add(
                     egui::TextEdit::singleline(&mut *dict_search.lock().unwrap())
                         .desired_width(120.0),
@@ -530,11 +539,14 @@ impl AppState {
             });
 
             ui.separator();
+            let (area_bg, _) = get_instance_style_from_snap(&style_snap, "area_dict_list", is_dark);
             egui::ScrollArea::vertical().id_source("memory_viewer_dict_scroll")
                 .hscroll(false) // 禁用水平捲動防止無限放大 (Revision 14.2)
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
-                    // 計算欄位寬度，扣除間距與操作欄固定寬度，並實施 150px 最小寬度保護
+                    ui.visuals_mut().faint_bg_color = area_bg;
+                    egui::Frame::none().fill(area_bg).show(ui, |ui| {
+                        // 計算欄位寬度，扣除間距與操作欄固定寬度，並實施 150px 最小寬度保護
                     let spacing = 12.0;
                     let actions_w = 120.0; // 增加空間以利按鈕置中
                     let col_w =
@@ -708,7 +720,40 @@ impl AppState {
                                 ui.end_row();
                             }
                         });
+                    });
                 });
         });
     }
+}
+
+/// 從 StyleSnapshot 獲取精確樣式 (Revision 15.18)
+fn get_instance_style_from_snap(snap: &crate::state::viewer_state::StyleSnapshot, id: &str, is_dark: bool) -> (egui::Color32, egui::Color32) {
+    if let Some(style) = snap.instance_overrides.get(id) {
+        let bg = style.bg.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
+        let text = style.text.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
+        
+        if bg.is_some() || text.is_some() {
+            let final_bg = bg.unwrap_or_else(|| {
+                if id.contains("btn") { if is_dark { egui::Color32::from_rgb(snap.dark_btn_bg[0], snap.dark_btn_bg[1], snap.dark_btn_bg[2]) } else { egui::Color32::from_rgb(snap.light_btn_bg[0], snap.light_btn_bg[1], snap.light_btn_bg[2]) } }
+                else if id.contains("input") { if is_dark { egui::Color32::from_rgb(snap.dark_input_bg[0], snap.dark_input_bg[1], snap.dark_input_bg[2]) } else { egui::Color32::from_rgb(snap.light_input_bg[0], snap.light_input_bg[1], snap.light_input_bg[2]) } }
+                else { if is_dark { egui::Color32::from_rgb(snap.dark_bg[0], snap.dark_bg[1], snap.dark_bg[2]) } else { egui::Color32::from_rgb(snap.light_bg[0], snap.light_bg[1], snap.light_bg[2]) } }
+            });
+            let final_text = text.unwrap_or_else(|| {
+                if is_dark { egui::Color32::from_rgb(snap.dark_text[0], snap.dark_text[1], snap.dark_text[2]) } else { egui::Color32::from_rgb(snap.light_text[0], snap.light_text[1], snap.light_text[2]) }
+            });
+            return (final_bg, final_text);
+        }
+    }
+    
+    // 預設解析
+    let (rgb_bg, rgb_text) = if id.contains("input") {
+        (if is_dark { snap.dark_input_bg } else { snap.light_input_bg }, if is_dark { snap.dark_text } else { snap.light_text })
+    } else if id.contains("list") || id.contains("area") {
+        (if is_dark { snap.dark_list_bg } else { snap.light_list_bg }, if is_dark { snap.dark_text } else { snap.light_text })
+    } else {
+        (if is_dark { snap.dark_bg } else { snap.light_bg }, if is_dark { snap.dark_text } else { snap.light_text })
+    };
+    
+    (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),
+     egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]))
 }

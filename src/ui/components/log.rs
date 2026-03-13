@@ -1,21 +1,12 @@
 use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+// use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
     pub fn render_log_area(&mut self, ui: &mut egui::Ui) {
-        let label_color = if self.theme == "light" {
-            LABEL_COLOR_LIGHT
-        } else {
-            LABEL_COLOR_DARK
-        };
+        let (log_bg, label_color) = self.get_instance_style("area_log");
         ui.separator();
         ui.label(egui::RichText::new("執行日誌:").color(label_color).strong());
         let log = self.log.lock().unwrap();
-        let log_bg = if self.theme == "light" {
-            egui::Color32::from_rgb(0xFA, 0xF0, 0xE6) // 亞麻色 (Log Background)
-        } else {
-            egui::Color32::from_rgb(25, 25, 30) // 深色模式背景
-        };
 
         egui::Frame::none()
             .fill(log_bg)

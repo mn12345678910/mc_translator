@@ -1,9 +1,12 @@
 use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT}; // 保持導入以防遺漏，但此處警告為未使用
 
 impl AppState {
     /// 渲染 API 設定面板 (細粒度鎖定優化：僅在翻譯時鎖定必要參數)
-    pub fn render_settings_panel(&mut self, ui: &mut egui::Ui, ui_enabled: bool, _ctx: &egui::Context) {
+    pub fn render_settings_panel(&mut self, ui: &mut egui::Ui, ui_enabled: bool, ctx: &egui::Context) {
+        if self.show_restore_default_confirm {
+            self.render_restore_default_confirm(ctx);
+        }
         if !self.show_api_settings {
             return;
         }
@@ -347,10 +350,10 @@ impl AppState {
                     });
                 });
         });
-        self.render_restore_default_confirm(_ctx);
+        self.render_restore_default_confirm(ctx);
     }
 
-    fn render_restore_default_confirm(&mut self, ctx: &egui::Context) {
+    pub fn render_restore_default_confirm(&mut self, ctx: &egui::Context) {
         if !self.show_restore_default_confirm {
             return;
         }
@@ -366,6 +369,8 @@ impl AppState {
                 ui.horizontal(|ui| {
                     if ui.button("確定恢復").clicked() {
                         let def = crate::config::settings::AppConfig::default();
+                        let style_def = crate::config::settings::StyleConfig::default();
+                        
                         self.api_provider = def.api_provider;
                         self.api_key = def.api_key;
                         self.selected_model = def.model;
@@ -376,8 +381,8 @@ impl AppState {
                         self.user_prompt = def.user_prompt;
                         self.system_prompt = def.system_prompt;
                         self.output_dir = def.output_dir;
-                        self.theme = def.theme;
-                        self.font_size = def.font_size;
+                        self.theme = style_def.theme;
+                        self.font_size = style_def.font_size;
                         self.pack_format = def.pack_format;
                         self.skip_json = def.skip_json;
                         self.skip_js = def.skip_js;
@@ -390,29 +395,32 @@ impl AppState {
                         self.show_developer_mode = def.show_developer_mode;
                         // 不再從 Config 恢復 show_memory_viewer，預設關閉
                         self.show_memory_viewer = false;
-                        self.dark_bg = def.dark_bg;
-                        self.dark_text = def.dark_text;
-                        self.light_bg = def.light_bg;
-                        self.light_text = def.light_text;
-                        self.dark_label = def.dark_label;
-                        self.light_label = def.light_label;
-                        self.dark_btn_bg = def.dark_btn_bg;
-                        self.dark_btn_text = def.dark_btn_text;
-                        self.light_btn_bg = def.light_btn_bg;
-                        self.light_btn_text = def.light_btn_text;
-                        self.dark_input_bg = def.dark_input_bg;
-                        self.light_input_bg = def.light_input_bg;
-                        self.dark_list_bg = def.dark_list_bg;
-                        self.light_list_bg = def.light_list_bg;
-                        self.dark_tab_active = def.dark_tab_active;
-                        self.dark_tab_inactive = def.dark_tab_inactive;
-                        self.light_tab_active = def.light_tab_active;
-                        self.light_tab_inactive = def.light_tab_inactive;
-                        self.btn_rounding_enabled = def.btn_rounding_enabled;
-                        self.btn_rounding_value = def.btn_rounding_value;
-                        self.progress_pulse_enabled = def.progress_pulse_enabled;
-                        self.progress_pulse_speed = def.progress_pulse_speed;
-                        self.instance_overrides = def.instance_overrides.clone();
+                        
+                        // 外觀相關
+                        self.dark_bg = style_def.dark_bg;
+                        self.dark_text = style_def.dark_text;
+                        self.light_bg = style_def.light_bg;
+                        self.light_text = style_def.light_text;
+                        self.dark_label = style_def.dark_label;
+                        self.light_label = style_def.light_label;
+                        self.dark_btn_bg = style_def.dark_btn_bg;
+                        self.dark_btn_text = style_def.dark_btn_text;
+                        self.light_btn_bg = style_def.light_btn_bg;
+                        self.light_btn_text = style_def.light_btn_text;
+                        self.dark_input_bg = style_def.dark_input_bg;
+                        self.light_input_bg = style_def.light_input_bg;
+                        self.dark_list_bg = style_def.dark_list_bg;
+                        self.light_list_bg = style_def.light_list_bg;
+                        self.dark_tab_active = style_def.dark_tab_active;
+                        self.dark_tab_inactive = style_def.dark_tab_inactive;
+                        self.light_tab_active = style_def.light_tab_active;
+                        self.light_tab_inactive = style_def.light_tab_inactive;
+                        self.btn_rounding_enabled = style_def.btn_rounding_enabled;
+                        self.btn_rounding_value = style_def.btn_rounding_value;
+                        self.progress_pulse_enabled = style_def.progress_pulse_enabled;
+                        self.progress_pulse_speed = style_def.progress_pulse_speed;
+                        self.instance_overrides = style_def.instance_overrides.clone();
+                        
                         {
                             let mut priority = self.glossary_priority.lock().unwrap();
                             *priority = def.glossary_priority;

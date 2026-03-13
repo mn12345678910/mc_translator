@@ -10,4 +10,4 @@ pub use dictionary::{
     ensure_dicts_dir, load_dict, load_translation_memory, save_dict, save_translation_memory,
     DICT_DIR, OFFICIAL_DICT, USER_DICT,
 };
-pub use settings::{AppConfig, DEFAULT_PROMPT};
+pub use settings::{AppConfig, StyleConfig, DEFAULT_PROMPT};

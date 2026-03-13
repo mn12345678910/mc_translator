@@ -93,7 +93,9 @@ impl AppState {
     }
 
     pub fn save_config(&self) {
-        self.to_config().save();
+        let packet = self.to_config_packet();
+        packet.app.save();
+        packet.style.save();
     }
 
     pub fn refresh_models(&self) {

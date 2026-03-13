@@ -12,7 +12,8 @@ impl AppState {
                 let has_model = !self.selected_model.is_empty();
                 let can_start = !self.input_paths.is_empty() && (is_google_free || has_model);
                 
-                let start_btn = egui::Button::new("▶ 開始翻譯").min_size([120.0, 32.0].into());
+                let (bg, _) = self.get_instance_style("btn_run_trans");
+                let start_btn = egui::Button::new("▶ 開始翻譯").min_size([120.0, 32.0].into()).fill(bg);
                 let mut resp = ui.add_enabled(can_start, start_btn);
                 
                 if !can_start {
@@ -27,28 +28,32 @@ impl AppState {
                     self.start_translation(ctx.clone());
                 }
             } else if !is_paused {
+                let (bg, _) = self.get_instance_style("btn_pause");
                 if ui
-                    .add(egui::Button::new("⏸ 暫停").min_size([80.0, 32.0].into()))
+                    .add(egui::Button::new("⏸ 暫停").min_size([80.0, 32.0].into()).fill(bg))
                     .clicked()
                 {
                     *self.is_paused.lock().unwrap() = true;
                     self.add_log(">>> 使用者請求暫停...");
                 }
+                let (bg_stop, _) = self.get_instance_style("btn_stop");
                 if ui
-                    .add(egui::Button::new("■ 停止").min_size([80.0, 32.0].into()))
+                    .add(egui::Button::new("■ 停止").min_size([80.0, 32.0].into()).fill(bg_stop))
                     .clicked()
                 {
                     self.show_stop_confirm = true;
                 }
             } else {
+                let (bg_res, _) = self.get_instance_style("btn_pause"); // 繼續按鈕與暫停同色
                 if ui
-                    .add(egui::Button::new("▶ 繼續").min_size([80.0, 32.0].into()))
+                    .add(egui::Button::new("▶ 繼續").min_size([80.0, 32.0].into()).fill(bg_res))
                     .clicked()
                 {
                     self.resume_translation();
                 }
+                let (bg_stop, _) = self.get_instance_style("btn_stop");
                 if ui
-                    .add(egui::Button::new("■ 停止").min_size([80.0, 32.0].into()))
+                    .add(egui::Button::new("■ 停止").min_size([80.0, 32.0].into()).fill(bg_stop))
                     .clicked()
                 {
                     self.show_stop_confirm = true;

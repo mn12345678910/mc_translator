@@ -8,6 +8,12 @@ use tokio::sync::Notify;
 use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
 use std::sync::RwLock;
 
+/// 同步存檔用的包裹
+pub struct ConfigPacket {
+    pub app: crate::config::AppConfig,
+    pub style: crate::config::StyleConfig,
+}
+
 /// 應用程式的主要全域狀態
 pub struct AppState {
     // --- 輸入/輸出路徑 ---
@@ -76,6 +82,7 @@ pub struct AppState {
     pub show_memory_viewer: bool,
     pub is_memory_viewer_open: Arc<std::sync::atomic::AtomicBool>,
     pub show_stop_confirm: bool,
+    pub show_clear_log_confirm: bool,
     pub show_restore_default_confirm: bool,
     pub dict_active_tab: Arc<Mutex<usize>>,
     pub _update_rx: tokio::sync::mpsc::UnboundedReceiver<ViewerUpdate>,
@@ -134,10 +141,10 @@ pub struct AppState {
     pub progress_pulse_enabled: bool,
     pub progress_pulse_speed: f32,
 
-    pub instance_overrides: HashMap<String, crate::config::ComponentStyle>,
+    pub instance_overrides: HashMap<String, crate::config::settings::ComponentStyle>,
     
     // --- [持久化與 UI 內部狀態] ---
-    pub save_tx: tokio::sync::mpsc::UnboundedSender<crate::config::AppConfig>,
+    pub save_tx: tokio::sync::mpsc::UnboundedSender<ConfigPacket>,
     pub palette_edit_slots: Vec<PaletteEditSlot>,
     pub palette_all_selected: bool,
     /// 屬性勾選狀態 (批次變更用)
@@ -161,13 +168,33 @@ impl AppState {
 
         // 載入設定檔
         let config = crate::config::AppConfig::load();
+        let style_cfg = crate::config::StyleConfig::load();
 
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(std::sync::atomic::AtomicBool::new(false));
 
         let viewer_shared = Arc::new(ViewerSharedState {
-            theme: Arc::new(RwLock::new(config.theme.clone())),
-            font_size: Arc::new(RwLock::new(config.font_size)),
+            theme: Arc::new(RwLock::new(style_cfg.theme.clone())),
+            font_size: Arc::new(RwLock::new(style_cfg.font_size)),
+            style: Arc::new(RwLock::new(crate::state::viewer_state::StyleSnapshot {
+                dark_bg: style_cfg.dark_bg,
+                dark_text: style_cfg.dark_text,
+                light_bg: style_cfg.light_bg,
+                light_text: style_cfg.light_text,
+                dark_label: style_cfg.dark_label,
+                light_label: style_cfg.light_label,
+                dark_btn_bg: style_cfg.dark_btn_bg,
+                dark_btn_text: style_cfg.dark_btn_text,
+                light_btn_bg: style_cfg.light_btn_bg,
+                light_btn_text: style_cfg.light_btn_text,
+                dark_input_bg: style_cfg.dark_input_bg,
+                light_input_bg: style_cfg.light_input_bg,
+                dark_list_bg: style_cfg.dark_list_bg,
+                light_list_bg: style_cfg.light_list_bg,
+                dark_tab_active: style_cfg.dark_tab_active,
+                light_tab_active: style_cfg.light_tab_active,
+                instance_overrides: style_cfg.instance_overrides.clone(),
+            })),
             close_requested,
             update_tx,
             opened_last_frame: Arc::new(Mutex::new(false)),
@@ -203,9 +230,9 @@ impl AppState {
             ollama_timeout: config.ollama_timeout,
             user_prompt: config.user_prompt.clone(),
             system_prompt: config.system_prompt.clone(),
-            theme: config.theme.clone(),
+            theme: style_cfg.theme.clone(),
             pack_format: config.pack_format,
-            font_size: config.font_size,
+            font_size: style_cfg.font_size,
             enable_custom_fps: config.enable_custom_fps,
             custom_fps: config.custom_fps,
             mc_versions: Arc::new(Mutex::new(Vec::new())),
@@ -226,10 +253,11 @@ impl AppState {
             show_api_settings: config.show_api_settings,
             show_developer_mode: config.show_developer_mode,
             show_palette_settings: false,
-            palette_edit_dark: config.theme == "dark",
+            palette_edit_dark: style_cfg.theme == "dark",
             show_memory_viewer: false,
             is_memory_viewer_open: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             show_stop_confirm: false,
+            show_clear_log_confirm: false,
             show_restore_default_confirm: false,
             dict_active_tab: Arc::new(Mutex::new(0)),
             dict_search: Arc::new(Mutex::new(String::new())),
@@ -254,41 +282,42 @@ impl AppState {
             viewer_shared,
             _update_rx: update_rx,
             _dict_watcher: None,
-            dark_bg: config.dark_bg,
-            dark_text: config.dark_text,
-            light_bg: config.light_bg,
-            light_text: config.light_text,
-            dark_label: config.dark_label,
-            light_label: config.light_label,
-            dark_btn_bg: config.dark_btn_bg,
-            dark_btn_text: config.dark_btn_text,
-            light_btn_bg: config.light_btn_bg,
-            light_btn_text: config.light_btn_text,
-            dark_input_bg: config.dark_input_bg,
-            light_input_bg: config.light_input_bg,
-            dark_list_bg: config.dark_list_bg,
-            light_list_bg: config.light_list_bg,
-            dark_tab_active: config.dark_tab_active,
-            dark_tab_inactive: config.dark_tab_inactive,
-            light_tab_active: config.light_tab_active,
-            light_tab_inactive: config.light_tab_inactive,
-            btn_rounding_enabled: config.btn_rounding_enabled,
-            btn_rounding_value: config.btn_rounding_value,
-            progress_pulse_enabled: config.progress_pulse_enabled,
-            progress_pulse_speed: config.progress_pulse_speed,
-            instance_overrides: config.instance_overrides.clone(),
+            dark_bg: style_cfg.dark_bg,
+            dark_text: style_cfg.dark_text,
+            light_bg: style_cfg.light_bg,
+            light_text: style_cfg.light_text,
+            dark_label: style_cfg.dark_label,
+            light_label: style_cfg.light_label,
+            dark_btn_bg: style_cfg.dark_btn_bg,
+            dark_btn_text: style_cfg.dark_btn_text,
+            light_btn_bg: style_cfg.light_btn_bg,
+            light_btn_text: style_cfg.light_btn_text,
+            dark_input_bg: style_cfg.dark_input_bg,
+            light_input_bg: style_cfg.light_input_bg,
+            dark_list_bg: style_cfg.dark_list_bg,
+            light_list_bg: style_cfg.light_list_bg,
+            dark_tab_active: style_cfg.dark_tab_active,
+            dark_tab_inactive: style_cfg.dark_tab_inactive,
+            light_tab_active: style_cfg.light_tab_active,
+            light_tab_inactive: style_cfg.light_tab_inactive,
+            btn_rounding_enabled: style_cfg.btn_rounding_enabled,
+            btn_rounding_value: style_cfg.btn_rounding_value,
+            progress_pulse_enabled: style_cfg.progress_pulse_enabled,
+            progress_pulse_speed: style_cfg.progress_pulse_speed,
+            instance_overrides: style_cfg.instance_overrides.clone(),
             save_tx: {
-                let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+                let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<ConfigPacket>();
                 cc.egui_ctx.request_repaint(); // 確保背景任務啟動
-                let rt = Runtime::new().unwrap(); // 這裡我們需要一個獨立的 runtime 或使用現有的
+                let _rt = Runtime::new().unwrap(); // 這裡我們需要一個獨立的 runtime 或使用現有的
                 std::thread::spawn(move || {
                     let rt = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()
                         .unwrap();
                     rt.block_on(async move {
-                        while let Some(cfg) = rx.recv().await {
-                            cfg.save();
+                        while let Some(packet) = rx.recv().await {
+                            packet.app.save();
+                            packet.style.save();
                         }
                     });
                 });
@@ -327,67 +356,94 @@ impl AppState {
 
     /// 觸發非同步存檔
     pub fn trigger_save(&self) {
-        let config = self.to_config();
-        let _ = self.save_tx.send(config);
+        // 同步樣式至 Viewport (Revision 15.12+)
+        if let Ok(mut style_lock) = self.viewer_shared.style.write() {
+            *style_lock = crate::state::viewer_state::StyleSnapshot {
+                dark_bg: self.dark_bg,
+                dark_text: self.dark_text,
+                light_bg: self.light_bg,
+                light_text: self.light_text,
+                dark_label: self.dark_label,
+                light_label: self.light_label,
+                dark_btn_bg: self.dark_btn_bg,
+                dark_btn_text: self.dark_btn_text,
+                light_btn_bg: self.light_btn_bg,
+                light_btn_text: self.light_btn_text,
+                dark_input_bg: self.dark_input_bg,
+                light_input_bg: self.light_input_bg,
+                dark_list_bg: self.dark_list_bg,
+                light_list_bg: self.light_list_bg,
+                dark_tab_active: self.dark_tab_active,
+                light_tab_active: self.light_tab_active,
+                instance_overrides: self.instance_overrides.clone(),
+            };
+        }
+
+        let packet = self.to_config_packet();
+        let _ = self.save_tx.send(packet);
     }
 
-    /// 將目前狀態轉換為 AppConfig 快照
-    pub fn to_config(&self) -> crate::config::AppConfig {
-        crate::config::AppConfig {
-            api_key: self.api_key.clone(),
-            api_provider: self.api_provider.clone(),
-            model: self.selected_model.clone(),
-            ollama_url: self.ollama_url.clone(),
-            user_prompt: self.user_prompt.clone(),
-            system_prompt: self.system_prompt.clone(),
-            batch_size: self.batch_size,
-            batch_max_chars: self.batch_max_chars,
-            ollama_timeout: self.ollama_timeout,
-            glossary_priority: self.glossary_priority.lock().unwrap().clone(),
-            output_dir: self.output_dir.clone(),
-            theme: self.theme.clone(),
-            font_size: self.font_size,
-            pack_format: self.pack_format,
-            enable_custom_fps: self.enable_custom_fps,
-            custom_fps: self.custom_fps,
-            show_api_settings: self.show_api_settings,
-            show_developer_mode: self.show_developer_mode,
-            skip_json: self.skip_json,
-            skip_js: self.skip_js,
-            skip_jar: self.skip_jar,
-            skip_book: self.skip_book,
-            enable_llm_log: self.enable_llm_log,
-            main_x: self.main_x,
-            main_y: self.main_y,
-            main_width: self.main_width,
-            main_height: self.main_height,
-            viewer_x: self.viewer_x,
-            viewer_y: self.viewer_y,
-            viewer_width: self.viewer_width,
-            viewer_height: self.viewer_height,
-            dark_bg: self.dark_bg,
-            dark_text: self.dark_text,
-            light_bg: self.light_bg,
-            light_text: self.light_text,
-            dark_label: self.dark_label,
-            light_label: self.light_label,
-            dark_btn_bg: self.dark_btn_bg,
-            dark_btn_text: self.dark_btn_text,
-            light_btn_bg: self.light_btn_bg,
-            light_btn_text: self.light_btn_text,
-            dark_input_bg: self.dark_input_bg,
-            light_input_bg: self.light_input_bg,
-            dark_list_bg: self.dark_list_bg,
-            light_list_bg: self.light_list_bg,
-            dark_tab_active: self.dark_tab_active,
-            dark_tab_inactive: self.dark_tab_inactive,
-            light_tab_active: self.light_tab_active,
-            light_tab_inactive: self.light_tab_inactive,
-            btn_rounding_enabled: self.btn_rounding_enabled,
-            btn_rounding_value: self.btn_rounding_value,
-            progress_pulse_enabled: self.progress_pulse_enabled,
-            progress_pulse_speed: self.progress_pulse_speed,
-            instance_overrides: self.instance_overrides.clone(),
+    /// 將目前狀態轉換為 ConfigPacket 快照
+    pub fn to_config_packet(&self) -> ConfigPacket {
+        ConfigPacket {
+            app: crate::config::AppConfig {
+                api_key: self.api_key.clone(),
+                api_provider: self.api_provider.clone(),
+                model: self.selected_model.clone(),
+                ollama_url: self.ollama_url.clone(),
+                user_prompt: self.user_prompt.clone(),
+                system_prompt: self.system_prompt.clone(),
+                batch_size: self.batch_size,
+                batch_max_chars: self.batch_max_chars,
+                ollama_timeout: self.ollama_timeout,
+                glossary_priority: self.glossary_priority.lock().unwrap().clone(),
+                output_dir: self.output_dir.clone(),
+                pack_format: self.pack_format,
+                enable_custom_fps: self.enable_custom_fps,
+                custom_fps: self.custom_fps,
+                show_api_settings: self.show_api_settings,
+                show_developer_mode: self.show_developer_mode,
+                skip_json: self.skip_json,
+                skip_js: self.skip_js,
+                skip_jar: self.skip_jar,
+                skip_book: self.skip_book,
+                enable_llm_log: self.enable_llm_log,
+                main_x: self.main_x,
+                main_y: self.main_y,
+                main_width: self.main_width,
+                main_height: self.main_height,
+                viewer_x: self.viewer_x,
+                viewer_y: self.viewer_y,
+                viewer_width: self.viewer_width,
+                viewer_height: self.viewer_height,
+            },
+            style: crate::config::StyleConfig {
+                theme: self.theme.clone(),
+                font_size: self.font_size,
+                dark_bg: self.dark_bg,
+                dark_text: self.dark_text,
+                light_bg: self.light_bg,
+                light_text: self.light_text,
+                dark_label: self.dark_label,
+                light_label: self.light_label,
+                dark_btn_bg: self.dark_btn_bg,
+                dark_btn_text: self.dark_btn_text,
+                light_btn_bg: self.light_btn_bg,
+                light_btn_text: self.light_btn_text,
+                dark_input_bg: self.dark_input_bg,
+                light_input_bg: self.light_input_bg,
+                dark_list_bg: self.dark_list_bg,
+                light_list_bg: self.light_list_bg,
+                dark_tab_active: self.dark_tab_active,
+                dark_tab_inactive: self.dark_tab_inactive,
+                light_tab_active: self.light_tab_active,
+                light_tab_inactive: self.light_tab_inactive,
+                btn_rounding_enabled: self.btn_rounding_enabled,
+                btn_rounding_value: self.btn_rounding_value,
+                progress_pulse_enabled: self.progress_pulse_enabled,
+                progress_pulse_speed: self.progress_pulse_speed,
+                instance_overrides: self.instance_overrides.clone(),
+            },
         }
     }
 }

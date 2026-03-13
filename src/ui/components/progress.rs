@@ -1,5 +1,5 @@
 use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+// use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
     pub fn render_progress_section(
@@ -8,14 +8,9 @@ impl AppState {
         ctx: &egui::Context,
         processing: bool,
     ) {
+        let (_prog_bg, label_color) = self.get_instance_style("label_status");
         ui.separator();
         ui.add_space(1.0);
-
-        let label_color = if self.theme == "light" {
-            LABEL_COLOR_LIGHT
-        } else {
-            LABEL_COLOR_DARK
-        };
 
         let mut current_status = self.status.lock().unwrap().clone();
         if processing {
@@ -48,7 +43,7 @@ impl AppState {
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
         let accent_color = ui.visuals().selection.bg_fill;
         let bar_color = if processing && self.progress_pulse_enabled {
-            let speed = self.progress_pulse_speed * 4.0;
+            let speed = self.progress_pulse_speed as f64 * 4.0;
             if self.theme == "light" {
                 // 淺色模式：呼吸發光感
                 let pulse = (ctx.input(|i| i.time) * speed).sin() * 0.15 + 1.15;

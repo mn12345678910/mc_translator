@@ -1,5 +1,5 @@
 use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+// use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
     /// 渲染頂部控制項 (優化佈局防止遮擋)
@@ -9,8 +9,9 @@ impl AppState {
 
             // 左側按鈕區
             ui.horizontal(|ui| {
+                let (bg, _text) = self.get_instance_style("btn_select_file");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案").rounding(0.0))
+                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案").fill(bg).rounding(0.0))
                     .clicked()
                 {
                     if let Some(files) = rfd::FileDialog::new()
@@ -33,8 +34,9 @@ impl AppState {
                         *self.global_progress.lock().unwrap() = 0.0;
                     }
                 }
+                let (bg, _text) = self.get_instance_style("btn_select_folder");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾").rounding(0.0))
+                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾").fill(bg).rounding(0.0))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -48,8 +50,9 @@ impl AppState {
 
                 ui.separator();
 
+                let (bg, _text) = self.get_instance_style("btn_output_dir");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾").rounding(0.0))
+                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾").fill(bg).rounding(0.0))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -59,7 +62,8 @@ impl AppState {
                     }
                 }
 
-                if ui.add(egui::Button::new("📂 打開輸出").rounding(0.0)).clicked() {
+                let (bg, _text) = self.get_instance_style("btn_open_output");
+                if ui.add(egui::Button::new("📂 打開輸出").fill(bg).rounding(0.0)).clicked() {
                     let target = if self.output_dir.is_empty() {
                         "LLMTranslator"
                     } else {
@@ -90,11 +94,7 @@ impl AppState {
 
         // 路徑標籤單獨一行，並具備截斷保護
         ui.horizontal(|ui| {
-            let label_color = if self.theme == "light" {
-                LABEL_COLOR_LIGHT
-            } else {
-                LABEL_COLOR_DARK
-            };
+            let (_, label_color) = self.get_instance_style("label_output_path");
             let display_path = if self.output_dir.is_empty() {
                 "預設: ./LLMTranslator".into()
             } else {
@@ -115,30 +115,31 @@ impl AppState {
     /// 渲染導航按鈕 (⚙ 🌓 📖 🔧)
     pub fn render_status_navigation(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button("⚙").on_hover_text("API 翻譯設定").clicked() {
+            let (bg_set, _) = self.get_instance_style("btn_nav_settings");
+            if ui.add(egui::Button::new("⚙").fill(bg_set)).on_hover_text("API 翻譯設定").clicked() {
                 self.show_api_settings = !self.show_api_settings;
                 if self.show_api_settings {
                     self.show_developer_mode = false;
                 }
                 self.trigger_save();
             }
-            if ui.button("📖").on_hover_text("建議詞管理器").clicked() {
+            let (bg_dict, _) = self.get_instance_style("btn_nav_dict");
+            if ui.add(egui::Button::new("📖").fill(bg_dict)).on_hover_text("建議詞管理器").clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
                 if self.show_memory_viewer {
-                    // 點擊開啟時發動 0.16s (10 frames) 的靜默期，等待主程式狀態穩定 (Feedback Fix)
                     self.viewer_opening_counter = 10;
                 } else {
                     let mut frames = self.viewer_shared.opened_frames.lock().unwrap();
                     *frames = 0;
                     self.is_memory_viewer_open
                         .store(false, std::sync::atomic::Ordering::SeqCst);
-                    // 重要：重置旗標，確保下次開啟能正確初始化 (Revision 15.13)
                     let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
                     *opened = false;
                 }
                 self.trigger_save();
             }
-            if ui.button("🎨").on_hover_text("自定義調色盤").clicked() {
+            let (bg_pal, _) = self.get_instance_style("btn_nav_palette");
+            if ui.add(egui::Button::new("🎨").fill(bg_pal)).on_hover_text("自定義調色盤").clicked() {
                 self.show_palette_settings = !self.show_palette_settings;
                 if self.show_palette_settings {
                     self.show_api_settings = false;
@@ -146,7 +147,8 @@ impl AppState {
                 }
                 self.trigger_save();
             }
-            if ui.button("🌓").on_hover_text("切換主題").clicked() {
+            let (bg_theme, _) = self.get_instance_style("btn_nav_theme");
+            if ui.add(egui::Button::new("🌓").fill(bg_theme)).on_hover_text("切換主題").clicked() {
                 self.theme = if self.theme == "dark" {
                     "light".into()
                 } else {
@@ -154,7 +156,8 @@ impl AppState {
                 };
                 self.trigger_save();
             }
-            if ui.button("🔧").on_hover_text("開發人員模式").clicked() {
+            let (bg_dev, _) = self.get_instance_style("btn_nav_dev");
+            if ui.add(egui::Button::new("🔧").fill(bg_dev)).on_hover_text("開發人員模式").clicked() {
                 self.show_developer_mode = !self.show_developer_mode;
                 if self.show_developer_mode {
                     self.show_api_settings = false;

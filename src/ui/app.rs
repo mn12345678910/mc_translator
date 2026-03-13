@@ -12,6 +12,7 @@ impl eframe::App for AppState {
                 ViewerUpdate::FontSize(s) => {
                     self.font_size = s;
                 }
+                ViewerUpdate::Style(_) => {}
                 ViewerUpdate::SaveConfig => {
                     self.trigger_save();
                 }
