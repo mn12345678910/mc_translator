@@ -28,15 +28,21 @@ impl AppState {
                                     .selected_text(&self.api_provider)
                                     .width(140.0)
                                     .show_ui(ui, |ui| {
-                                        for p in &[
-                                            "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
+                                        let mut providers = vec![
+                                            "無", "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
                                             "Ollama", "Google Free",
-                                        ] {
+                                        ];
+                                        // 保持 "無" 在最前面，其餘排序
+                                        let none_provider = providers.remove(0);
+                                        providers.sort();
+                                        providers.insert(0, none_provider);
+
+                                        for p in providers {
                                             if ui
                                                 .selectable_value(
                                                     &mut self.api_provider,
                                                     p.to_string(),
-                                                    *p,
+                                                    p,
                                                 )
                                                 .changed()
                                             {
@@ -145,7 +151,6 @@ impl AppState {
                         }
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
-                        ui.horizontal(|ui| {
                             ui.label(egui::RichText::new("批次量:").color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 let mut bs = self.batch_size as i32;
@@ -161,9 +166,10 @@ impl AppState {
                                     self.save_config();
                                 }
                             });
+                            ui.label(egui::RichText::new("(1-300)").color(label_color).small());
 
-                            ui.add_space(12.0);
-                            ui.label(egui::RichText::new("字數上限:").color(label_color).strong());
+                            ui.add_space(8.0);
+                            ui.label(egui::RichText::new("上限:").color(label_color).strong()); // 縮短名稱避免擁擠
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -176,10 +182,11 @@ impl AppState {
                                     self.save_config();
                                 }
                             });
+                            ui.label(egui::RichText::new("(1-10k)").color(label_color).small());
 
-                            ui.add_space(12.0);
+                            ui.add_space(8.0);
                             ui.label(
-                                egui::RichText::new("逾時 (秒):")
+                                egui::RichText::new("逾時:")
                                     .color(label_color)
                                     .strong(),
                             );
@@ -195,8 +202,9 @@ impl AppState {
                                     self.save_config();
                                 }
                             });
+                            ui.label(egui::RichText::new("(1-600s)").color(label_color).small());
 
-                            ui.add_space(12.0);
+                            ui.add_space(8.0);
                             ui.label(egui::RichText::new("字體:").color(label_color).strong());
                             if ui
                                 .add(
@@ -209,6 +217,24 @@ impl AppState {
                             {
                                 self.save_config();
                             }
+                            ui.label(egui::RichText::new("(12-30)").color(label_color).small());
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("版本:").color(label_color).strong());
+                            ui.add_enabled_ui(ui_enabled, |ui| {
+                                if ui
+                                    .add(
+                                        egui::DragValue::new(&mut self.pack_format)
+                                            .clamp_range(1..=100)
+                                            .speed(1.0),
+                                    )
+                                    .changed()
+                                {
+                                    self.save_config();
+                                }
+                            });
+                            ui.label(egui::RichText::new("(1-100)").color(label_color).small());
 
                             ui.add_space(12.0);
                             ui.label(egui::RichText::new("FPS:").color(label_color).strong());
@@ -223,11 +249,11 @@ impl AppState {
                                 if fps_input.changed() {
                                     self.save_config();
                                 }
+                                ui.label(egui::RichText::new("(1-240)").color(label_color).small());
                             } else {
                                 ui.label(
                                     egui::RichText::new("(預設:vsync)")
-                                        .color(label_color)
-                                        .strong(),
+                                        .color(label_color),
                                 );
                             }
                         });
