@@ -1,0 +1,18 @@
+{
+  "name" : "製作方塊",
+  "icon": "ad_astra:compressor",
+  "sortnum": 1,
+  "category": "ad_astra:the_first_launch",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "title" : "壓縮機",
+      "item": "ad_astra:compressor",
+      "text" : "一旦您獲得能量，您會想要製作一個壓縮機。這個機器可以壓縮金屬和方塊，製成方塊，而方塊是製作許多物品所需的。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:compressor"
+    }
+  ]
+}

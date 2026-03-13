@@ -49,12 +49,12 @@ impl AppState {
         let accent_color = ui.visuals().selection.bg_fill;
         let bar_color = if processing {
             if self.theme == "light" {
-                // 淺色模式：基於沙褐色 (#E3C395)，閃爍時略微變亮/變色
-                let shimmer_val = ((ctx.input(|i| i.time) * 6.0).sin() * 0.1 + 1.0) as f32; // 0.9 ~ 1.1，產生發光感
+                // 淺色模式：黃金色主題 (#FFD43B) 呼吸發光感，提高辨識度
+                let pulse = (ctx.input(|i| i.time) * 4.0).sin() * 0.2 + 1.0; // 0.8 ~ 1.2
                 egui::Color32::from_rgb(
-                    (227.0 * shimmer_val) as u8,
-                    (195.0 * shimmer_val) as u8,
-                    (149.0 * shimmer_val) as u8,
+                    (255.0 * pulse).min(255.0) as u8,
+                    (212.0 * pulse).min(255.0) as u8,
+                    (59.0 * pulse).min(255.0) as u8,
                 )
             } else {
                 let shimmer_val = ((ctx.input(|i| i.time) * 6.0).sin() * 0.15 + 0.85) as f32;
