@@ -175,8 +175,13 @@ pub async fn process_all_files(
             // 無翻譯項目，顯示略過日誌 (info 級別)
             crate::utils::add_log(&log, &format!("(略過條目) 略過處理: {}", task.rel_path));
             
-            let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog = (idx + 1) as f32;
+            // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
+            let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
+            if next_path != Some(&task.path) {
+                let mut g_prog = state.global_progress.lock().unwrap();
+                *g_prog += 1.0;
+            }
+
             item_offset += file_item_count; // 雖然是 0 但保持邏輯完整
             continue;
         }

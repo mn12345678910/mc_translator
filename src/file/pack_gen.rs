@@ -82,12 +82,20 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        if final_path.contains("patchouli_books/") {
-            let fs_path = temp_dir.join(&final_path);
-            if let Some(parent) = fs_path.parent() {
+        if final_path.starts_with("assets/") || final_path.contains("patchouli_books/") {
+            // 寫入暫存目錄以待最後壓縮成 Zip
+            let zip_temp_path = temp_dir.join(&final_path);
+            if let Some(parent) = zip_temp_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }
-            let _ = fs::write(&fs_path, content);
+            let _ = fs::write(&zip_temp_path, &content);
+            
+            // 同時寫入鏡像資料夾以滿足使用者直接查看的需求
+            let folder_path = output_path.join(&final_path);
+            if let Some(parent) = folder_path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+            let _ = fs::write(&folder_path, content);
         } else {
             // 防禦性檢查：防止 final_path 為絕對路徑導致 Path::join 置換掉基礎路徑 (Path Escape Fix)
             let safe_final_path = if Path::new(&final_path).is_absolute() {
