@@ -738,7 +738,6 @@ fn get_instance_style_from_snap_full(
     id: &str,
     is_dark: bool,
 ) -> (egui::Color32, egui::Color32, f32) {
-    use crate::state::viewer_state::StyleSnapshot; // Add this import
 
     let default_rounding = snap.rounding;
 
