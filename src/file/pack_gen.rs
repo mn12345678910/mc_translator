@@ -82,7 +82,7 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        if final_path.starts_with("assets/") || final_path.contains("/lang/") || final_path.contains("patchouli_books/") {
+        if final_path.contains("patchouli_books/") {
             let fs_path = temp_dir.join(&final_path);
             if let Some(parent) = fs_path.parent() {
                 let _ = fs::create_dir_all(parent);

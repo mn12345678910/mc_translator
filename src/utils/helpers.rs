@@ -15,7 +15,7 @@ pub fn extract_display_path(path: &Path) -> String {
             .filter(|s| !s.is_empty())
             .collect();
         if parts.len() >= 2 {
-            return format!("{}/{}", parts[0], parts.last().unwrap_or(&"en_us.json"));
+            return parts.last().unwrap_or(&"en_us.json").to_string();
         }
     }
     path.file_name()

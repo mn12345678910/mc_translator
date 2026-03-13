@@ -159,7 +159,6 @@ pub async fn process_all_files(
     
     // 用於記錄 JAR 檔案是否有被修改，以便最後決定是否 Repack
     let mut modified_jars = std::collections::HashSet::new();
-    let mut has_non_jar_files = false;
 
     for (idx, task) in file_tasks.iter().enumerate() {
         if *cancelled_arc.lock().unwrap() {
@@ -206,8 +205,6 @@ pub async fn process_all_files(
 
         if is_jar_member {
             modified_jars.insert(task.path.clone());
-        } else {
-            has_non_jar_files = true;
         }
 
         // 翻譯完成日誌 (需求格式: /路徑 翻譯完成 條目數)
@@ -239,7 +236,7 @@ pub async fn process_all_files(
         }
 
         let has_patchouli = file_tasks.iter().any(|t| t.rel_path.contains("patchouli_books"));
-        if has_non_jar_files || has_patchouli {
+        if has_patchouli {
             crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...");
             output_resource_pack(
                 &std::path::PathBuf::new(),
