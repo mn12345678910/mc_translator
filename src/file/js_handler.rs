@@ -31,11 +31,22 @@ pub async fn collect_js_task(
     file_id: usize,
     path: &Path,
     rel_path: String,
+    _state: &crate::translation::job::JobSharedState,
 ) -> Result<
     Option<(FileTask, Vec<GlobalBatchItem>)>,
     Box<dyn std::error::Error + Send + Sync>,
 > {
-    let content = fs::read_to_string(path)?;
+    let path_clone = path.to_path_buf();
+    let content = tokio::task::spawn_blocking(move || -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        match fs::read_to_string(&path_clone) {
+            Ok(c) => Ok(c),
+            Err(e) => {
+                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JS 檔案 {:?}: {}\x1b[0m", 
+                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                Err(e.into())
+            }
+        }
+    }).await??;
 
     let mut js_matches = Vec::new();
     let mut match_counter = 0;

@@ -20,6 +20,8 @@ pub struct TranslationContext<'a> {
     pub translations: Arc<Mutex<HashMap<String, Vec<String>>>>,
     pub translation_memory: Arc<Mutex<HashMap<String, String>>>,
     pub skip_memory: bool,
+    /// 預先填滿的項項目 (original, key, translated)
+    pub prefilled: Arc<Mutex<Vec<(String, String, String)>>>,
 }
 
 pub struct ContextOptions<'a> {
@@ -57,6 +59,7 @@ impl<'a> TranslationContext<'a> {
             translations: Arc::new(Mutex::new(HashMap::new())),
             translation_memory: opts.translation_memory,
             skip_memory: opts.skip_memory,
+            prefilled: Arc::new(Mutex::new(Vec::new())),
             pause_notifier: opts.pause_notifier,
         }
     }

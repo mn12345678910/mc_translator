@@ -29,9 +29,9 @@ pub fn write_to_temp_or_output(
 
     for (name, content) in translated_files {
         let mut clean_name = name.clone();
-
-        if let Some(stripped) = name.strip_prefix("[BUNDLE]") {
-            clean_name = stripped.to_string();
+        let is_bundle = name.starts_with("[BUNDLE]");
+        if is_bundle {
+            clean_name = name.strip_prefix("[BUNDLE]").unwrap().to_string();
         }
 
         let name_unix = clean_name.replace('\\', "/");
@@ -82,14 +82,17 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        if final_path.starts_with("assets/") {
-            let fs_path = temp_dir.join(&final_path);
-            if let Some(parent) = fs_path.parent() {
+        // 核心邏輯：區分資源包內容與獨立鏡像
+        // 1. 如果是來自 JAR (is_bundle) 或路徑包含 assets/patchouli，則進入 Zip 暫存區
+        // 2. 否則（獨立檔案），直接寫入鏡像資料夾
+        if is_bundle || final_path.starts_with("assets/") || final_path.contains("patchouli_books/") {
+            let zip_temp_path = temp_dir.join(&final_path);
+            if let Some(parent) = zip_temp_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }
-            let _ = fs::write(&fs_path, content);
+            let _ = fs::write(&zip_temp_path, &content);
         } else {
-            // 防禦性檢查：防止 final_path 為絕對路徑導致 Path::join 置換掉基礎路徑 (Path Escape Fix)
+            // 獨立檔案鏡像
             let safe_final_path = if Path::new(&final_path).is_absolute() {
                 Path::new(&final_path).file_name()
                     .map(|n| n.to_string_lossy().to_string())
@@ -133,6 +136,19 @@ pub async fn output_resource_pack(
             if !temp_dir.exists() {
                 return Ok(());
             }
+
+            // 檢查暫存目錄是否有實際檔案需要壓縮 (排除即將生成的 pack.mcmeta)
+            let has_files = walkdir::WalkDir::new(&temp_dir)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .any(|e| e.file_type().is_file());
+
+            if !has_files {
+                let _ = fs::remove_dir_all(&temp_dir); // 清理空目錄
+                return Ok(());
+            }
+
+            crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...");
 
             let pack_mcmeta = serde_json::json!({
                 "pack": {

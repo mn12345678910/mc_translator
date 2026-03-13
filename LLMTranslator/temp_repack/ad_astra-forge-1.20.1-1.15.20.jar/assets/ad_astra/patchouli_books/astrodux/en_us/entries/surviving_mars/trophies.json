@@ -1,0 +1,20 @@
+{
+  "name" : "獎盃",
+  "icon": "ad_astra:mars_globe",
+  "sortnum": 0,
+  "category": "ad_astra:surviving_mars",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "title" : "球體",
+      "item": "ad_astra:earth_globe",
+      "text" : "球體是獎勵方塊，可在地牢的結尾獲得。球體沒有實際功能，而是作為裝飾方塊。它們可以通過右鍵點擊旋轉，也可以通過紅石供電永久旋轉。目前只有月球球體可以在生存模式中獲得。"
+    },
+    {
+      "type": "patchouli:spotlight",
+      "title" : "太空畫",
+      "item": "ad_astra:space_painting",
+      "text" : "太空畫可在地牢中的箱子中找到。它們與普通畫作完全相同，但只能放置本模組中的畫作。有 14 塊需要尋找。"
+    }
+  ]
+}

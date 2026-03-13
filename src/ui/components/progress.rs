@@ -48,15 +48,26 @@ impl AppState {
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
         let accent_color = ui.visuals().selection.bg_fill;
         let bar_color = if processing {
-            let shimmer_val = ((ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 0.85) as f32; // 0.7 ~ 1.0
-            egui::Color32::from_rgb(
-                (accent_color.r() as f32 * shimmer_val) as u8,
-                (accent_color.g() as f32 * shimmer_val) as u8,
-                (accent_color.b() as f32 * shimmer_val) as u8,
-            )
+            if self.theme == "light" {
+                // 淺色模式：深綠色主題 (#2E7D32) 呼吸發光感，最低點為原始色 (1.0)，最高 1.3
+                let pulse = (ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 1.15; // 1.0 ~ 1.3
+                egui::Color32::from_rgb(
+                    (46.0 * pulse).min(255.0) as u8,
+                    (125.0 * pulse).min(255.0) as u8,
+                    (50.0 * pulse).min(255.0) as u8,
+                )
+            } else {
+                // 深色模式：確保不低於原始亮度 (1.0 ~ 1.3)
+                let shimmer_val = ((ctx.input(|i| i.time) * 6.0).sin() * 0.15 + 1.15) as f32;
+                egui::Color32::from_rgb(
+                    (accent_color.r() as f32 * shimmer_val).min(255.0) as u8,
+                    (accent_color.g() as f32 * shimmer_val).min(255.0) as u8,
+                    (accent_color.b() as f32 * shimmer_val).min(255.0) as u8,
+                )
+            }
         } else {
             if self.theme == "light" {
-                egui::Color32::from_rgb(180, 140, 80) // 稍深的橘金色，更顯眼
+                ui.visuals().widgets.inactive.bg_fill // 統一與按鈕/輸入框背景色
             } else {
                 accent_color
             }

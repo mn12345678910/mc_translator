@@ -1,0 +1,18 @@
+{
+  "name" : "偵測",
+  "icon": "ad_astra:oxygen_sensor",
+  "sortnum": 7,
+  "category": "ad_astra:surviving_mars",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "title" : "氧氣感測器",
+      "item": "ad_astra:oxygen_sensor",
+      "text" : "氧氣感測器是一種會發送紅石信號的方塊，當它偵測到氧氣時。你可以通過右鍵點擊它來反轉信號。儘管它的名稱是氧氣感測器，但你也可以通過右鍵點擊並使用扳手來更改其偵測類型。它有偵測氧氣、安全溫度和正常重力的選項。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:oxygen_sensor"
+    }
+  ]
+}

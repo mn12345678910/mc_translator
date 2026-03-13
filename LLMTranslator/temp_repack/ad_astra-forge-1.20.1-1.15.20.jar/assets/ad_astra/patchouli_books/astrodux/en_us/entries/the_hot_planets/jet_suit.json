@@ -1,0 +1,28 @@
+{
+  "name" : "噴射服",
+  "icon": "ad_astra:jet_suit_helmet",
+  "sortnum": 0,
+  "category": "ad_astra:the_hot_planets",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "title" : "噴射服",
+      "item": "ad_astra:jet_suit_helmet",
+      "text" : "噴射服是「獄髓太空服」的升級版本，擁有更高的防護、額外的氧氣儲存空間和飛行能力。 製作成本高昂，但提供高速飛行，讓旅行變得輕鬆。"
+    },
+    {
+      "type": "patchouli:text",
+      "text" : "它擁有兩種飛行模式：上升 ($(k:jump)) 和加速 ($(k:jump) + $(k:sprint))。 上升模式使穿戴者向上飛行，而加速模式則類似於「鞘翅」，但會不斷受到煙火推進。 噴射服由能量驅動，必須充電才能飛行。 可以通過右鍵點擊噴射服來使用能量充電器進行充電。 按 ($(k:ad_astra.toggle_suit_flight)) 即可啟用/停用服裝。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:jet_suit_helmet",
+      "recipe2": "ad_astra:jet_suit"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:jet_suit_pants",
+      "recipe2": "ad_astra:jet_suit_boots"
+    }
+  ]
+}

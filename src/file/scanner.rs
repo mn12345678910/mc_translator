@@ -87,34 +87,47 @@ pub async fn check_jar_has_target(
 pub async fn check_js_has_target(
     path: &Path,
 ) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-    let content = fs::read_to_string(path)?;
-    for re in JS_REGEX_LIST.iter() {
-        for cap in re.captures_iter(&content) {
-            if let Some(m) = cap.get(1) {
-                let s = m.as_str();
-                if re.as_str().contains(r"\[(.*?)\]") {
-                    let array_str = s;
-                    for inner_cap in JS_INNER_SINGLE_RE.captures_iter(array_str) {
-                        if let Some(mi) = inner_cap.get(1) {
-                            if !should_skip_value(mi.as_str()) {
-                                return Ok(true);
+    let path_clone = path.to_path_buf();
+    let has_target = tokio::task::spawn_blocking(move || -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+        let content = match fs::read_to_string(&path_clone) {
+            Ok(c) => c,
+            Err(e) => {
+                // 根據 AI_CONTEXT.md 規範，解析失敗應記錄紅色日誌
+                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JS 檔案 {:?}: {}\x1b[0m", 
+                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                return Err(e.into());
+            }
+        };
+        for re in JS_REGEX_LIST.iter() {
+            for cap in re.captures_iter(&content) {
+                if let Some(m) = cap.get(1) {
+                    let s = m.as_str();
+                    if re.as_str().contains(r"\[(.*?)\]") {
+                        let array_str = s;
+                        for inner_cap in JS_INNER_SINGLE_RE.captures_iter(array_str) {
+                            if let Some(mi) = inner_cap.get(1) {
+                                if !should_skip_value(mi.as_str()) {
+                                    return Ok(true);
+                                }
                             }
                         }
-                    }
-                    for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(array_str) {
-                        if let Some(mi) = inner_cap.get(1) {
-                            if !should_skip_value(mi.as_str()) {
-                                return Ok(true);
+                        for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(array_str) {
+                            if let Some(mi) = inner_cap.get(1) {
+                                if !should_skip_value(mi.as_str()) {
+                                    return Ok(true);
+                                }
                             }
                         }
+                    } else if !should_skip_value(s) {
+                        return Ok(true);
                     }
-                } else if !should_skip_value(s) {
-                    return Ok(true);
                 }
             }
         }
-    }
-    Ok(false)
+        Ok(false)
+    }).await??;
+
+    Ok(has_target)
 }
 
 pub async fn check_json_has_target(
@@ -125,11 +138,19 @@ pub async fn check_json_has_target(
         move || -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
             let content = match fs::read_to_string(&path_clone) {
                 Ok(c) => c,
-                Err(_) => return Ok(false),
+                Err(e) => {
+                    eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m", 
+                        chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                    return Ok(false);
+                }
             };
             let en_us_value: serde_json::Value = match serde_json::from_str(&content) {
                 Ok(v) => v,
-                Err(_) => return Ok(false),
+                Err(e) => {
+                    eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m", 
+                        chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                    return Ok(false);
+                }
             };
 
             let zh_tw_path = path_clone.with_file_name("zh_tw.json");

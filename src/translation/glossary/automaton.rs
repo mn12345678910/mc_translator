@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use aho_corasick::{AhoCorasick, MatchKind};
-use crate::translation::glossary::analyzer::analyze_dictionary;
 
 pub struct GlossaryAutomaton {
     pub ac: AhoCorasick,
@@ -9,18 +8,19 @@ pub struct GlossaryAutomaton {
 }
 
 impl GlossaryAutomaton {
-    /// 建構术語自動機，回傳新發現的推斷詞
-    pub fn new_with_inferred(
-        exact_map: &HashMap<String, String>,
-        memory_map: &HashMap<String, String>,
+    /// 建構术術自動機，使用預先分析好的地圖
+    pub fn new(
+        official_map: &HashMap<String, String>,
+        user_map: &HashMap<String, String>,
+        inferred_map: &HashMap<String, String>,
         priority: &str, // "official" 或 "user"
-    ) -> (Self, HashMap<String, String>) {
+    ) -> Self {
         let mut terms_map: HashMap<String, String> = HashMap::new();
         let mut source_types: HashMap<String, TermType> = HashMap::new();
 
         let load_official = |target_map: &mut HashMap<String, String>,
                              st: &mut HashMap<String, TermType>| {
-            for (k, v) in exact_map {
+            for (k, v) in official_map {
                 if k.chars().any(|c| c.is_alphabetic()) {
                     let key_low = k.to_lowercase();
                     if !target_map.contains_key(&key_low) {
@@ -33,12 +33,12 @@ impl GlossaryAutomaton {
 
         let load_user = |target_map: &mut HashMap<String, String>,
                          st: &mut HashMap<String, TermType>| {
-            for (k, v) in memory_map {
+            for (k, v) in user_map {
                 if k.chars().any(|c| c.is_alphabetic()) {
                     let key_low = k.to_lowercase();
                     if !target_map.contains_key(&key_low) {
                         target_map.insert(key_low.clone(), v.clone());
-                        st.insert(key_low, TermType::Official);
+                        st.insert(key_low, TermType::Official); // USERDICT is also treated as fixed official priority in engine
                     }
                 }
             }
@@ -52,37 +52,8 @@ impl GlossaryAutomaton {
             load_user(&mut terms_map, &mut source_types);
         }
 
-        // 推論補充
-        let dict_fingerprint = exact_map.len();
-        let cache_path = std::path::Path::new("dicts").join("inferred_cache.json");
-        let cached_inferred: Option<HashMap<String, String>> = if cache_path.exists() {
-            std::fs::read_to_string(&cache_path)
-                .ok()
-                .and_then(|data| {
-                    serde_json::from_str::<(usize, HashMap<String, String>)>(&data).ok()
-                })
-                .and_then(|(fp, map)| {
-                    if fp == dict_fingerprint {
-                        Some(map)
-                    } else {
-                        None
-                    }
-                })
-        } else {
-            None
-        };
-
-        let inferred = if let Some(cached) = cached_inferred {
-            cached
-        } else {
-            let result = analyze_dictionary(exact_map);
-            if let Ok(json) = serde_json::to_string(&(dict_fingerprint, &result)) {
-                let _ = std::fs::write(&cache_path, json);
-            }
-            result
-        };
-
-        for (k, v) in inferred {
+        // 加上推論的部分 (不重複分析，直接使用傳入的 map)
+        for (k, v) in inferred_map {
             let key_low = k.to_lowercase();
             if !terms_map.contains_key(&key_low) {
                 terms_map.insert(key_low.clone(), v.clone());
@@ -90,14 +61,12 @@ impl GlossaryAutomaton {
             }
         }
 
-        let automaton = Self::build_automaton(terms_map, source_types);
-        (automaton, HashMap::new())
+        Self::build_automaton(terms_map, source_types)
     }
 
-    /// 建構术語自動機（簡化版，不返回推斷詞）
-    pub fn new(exact_map: &HashMap<String, String>, memory_map: &HashMap<String, String>) -> Self {
-        let (automaton, _) = Self::new_with_inferred(exact_map, memory_map, "official");
-        automaton
+    /// 建構术語自動機（簡化版，不帶推論）
+    pub fn new_simple(exact_map: &HashMap<String, String>, memory_map: &HashMap<String, String>) -> Self {
+        Self::new(exact_map, memory_map, &HashMap::new(), "official")
     }
 
     fn build_automaton(
@@ -186,7 +155,7 @@ mod tests {
         exact.insert("Apple".to_string(), "蘋果".to_string());
         exact.insert("Stone".to_string(), "石頭".to_string());
         
-        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         let results = automaton.extract(&["I have an Apple and some Stone".to_string()]);
         
         assert!(results.contains_key("apple")); // match is lowercase
@@ -201,7 +170,7 @@ mod tests {
         // 包含表情符號與複合字元的 UTF-8 術語
         exact.insert("❄️ Ice方塊".to_string(), "冰塊".to_string());
         
-        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         // 測試在句子中精確匹配 UTF-8 術語
         let results = automaton.extract(&["這是一個 ❄️ Ice方塊 在這裡".to_string()]);
         
@@ -217,7 +186,7 @@ mod tests {
         exact.insert("A".to_string(), "B".to_string());
         exact.insert("B".to_string(), "A".to_string());
         
-        let (automaton, _) = GlossaryAutomaton::new_with_inferred(&exact, &HashMap::new(), "official");
+        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         let results = automaton.extract(&["A and B".to_string()]);
         
         // 自動機應能正常提取，且不應陷入死循環（因為 Aho-Corasick 是單次掃描）

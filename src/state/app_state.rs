@@ -144,18 +144,10 @@ impl AppState {
             global_progress: Arc::new(Mutex::new(0.0)),
             global_total: Arc::new(Mutex::new(0.0)),
             mc_lang: Arc::new(Mutex::new(None)),
-            term_replacements: {
-                let loaded: HashMap<String, String> =
-                    crate::config::load_dict(crate::config::OFFICIAL_DICT);
-                let mut terms: Vec<(String, String)> = loaded.into_iter().collect();
-                terms.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
-                Arc::new(Mutex::new(terms))
-            },
+            term_replacements: Arc::new(Mutex::new(Vec::new())),
             exact_match_map: Arc::new(Mutex::new(HashMap::new())),
-            inferred_match_map: Arc::new(Mutex::new(crate::config::load_dict(
-                crate::config::OFFICIAL_DICT,
-            ))),
-            translation_memory: Arc::new(Mutex::new(crate::config::load_translation_memory())),
+            inferred_match_map: Arc::new(Mutex::new(HashMap::new())),
+            translation_memory: Arc::new(Mutex::new(HashMap::new())),
             api_key: config.api_key.clone(),
             api_provider: config.api_provider.clone(),
             selected_model: config.model.clone(),

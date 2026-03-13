@@ -1,8 +1,5 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
 use crate::translation::job::{JobConfig, JobSharedState};
-use crate::file::json_handler::collect_json_task;
-use crate::file::js_handler::collect_js_task;
-use crate::file::jar_handler::{collect_jar_tasks, repack_jar};
 use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::utils::text_processing::sync_formatting;
@@ -72,6 +69,7 @@ pub async fn process_all_files(
     _mc_lang: Arc<Mutex<Option<crate::translation::glossary::McLangFiles>>>,
     _terms: Arc<Mutex<Vec<(String, String)>>>,
     exact: Arc<Mutex<HashMap<String, String>>>,
+    inferred: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut file_tasks: Vec<FileTask> = Vec::new();
     let mut global_items: Vec<GlobalBatchItem> = Vec::new();
@@ -85,25 +83,28 @@ pub async fn process_all_files(
     let log = state.log.clone();
 
     let mut join_set = tokio::task::JoinSet::new();
+    let total_paths = paths.len();
 
     for (path, rel_path) in paths {
         if *cancelled_arc.lock().unwrap() {
             break;
         }
         let state_clone = state.clone();
+        let rel_path_clone = rel_path.clone();
 
         join_set.spawn(async move {
             let path_str = path.to_string_lossy().to_lowercase();
             if path_str.ends_with(".jar") {
-                collect_jar_tasks(0, &path, &state_clone).await
+                crate::file::jar_handler::collect_jar_tasks(0, &path, &state_clone).await
             } else if path_str.ends_with(".json") {
-                match collect_json_task(0, &path, rel_path, &state_clone).await {
+                // 將預先檢查整合到此處，減少一次重複的檔案讀取 (整合優化)
+                match crate::file::json_handler::collect_json_task(0, &path, rel_path_clone, &state_clone).await {
                     Ok(Some((task, items))) => Ok((vec![task], items)),
                     Ok(None) => Ok((vec![], vec![])),
                     Err(e) => Err(e),
                 }
             } else if path_str.ends_with(".js") {
-                match collect_js_task(0, &path, rel_path).await {
+                match crate::file::js_handler::collect_js_task(0, &path, rel_path_clone, &state_clone).await {
                     Ok(Some((task, items))) => Ok((vec![task], items)),
                     Ok(None) => Ok((vec![], vec![])),
                     Err(e) => Err(e),
@@ -114,11 +115,12 @@ pub async fn process_all_files(
         });
     }
 
+
     while let Some(res) = join_set.join_next().await {
         if let Ok(Ok((tasks, items))) = res {
             let offset = file_id_counter;
-            let mut tasks = tasks;
-            let mut items = items;
+            let mut tasks: Vec<FileTask> = tasks;
+            let mut items: Vec<GlobalBatchItem> = items;
 
             for t in &mut tasks {
                 t.file_id += offset;
@@ -133,7 +135,7 @@ pub async fn process_all_files(
 
             {
                 let mut total = state.global_total.lock().unwrap();
-                *total = file_id_counter as f32;
+                *total = total_paths as f32; // 使用先存起來的總數
             }
         }
     }
@@ -150,9 +152,13 @@ pub async fn process_all_files(
     let glossary_automaton = GlossaryAutomaton::new(
         &exact.lock().unwrap(),
         &state.translation_memory.lock().unwrap(),
+        &inferred.lock().unwrap(),
+        &job_config.lock().unwrap().glossary_priority,
     );
 
     let mut item_offset = 0;
+    
+
     for (idx, task) in file_tasks.iter().enumerate() {
         if *cancelled_arc.lock().unwrap() {
             break;
@@ -164,14 +170,23 @@ pub async fn process_all_files(
             .count();
 
         if file_item_count == 0 {
-            let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog = (idx + 1) as f32;
+            // 無翻譯項目，顯示略過日誌 (info 級別)
+            crate::utils::add_log(&log, &format!("(略過條目) 略過處理: {}", task.rel_path));
+            
+            // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
+            let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
+            if next_path != Some(&task.path) {
+                let mut g_prog = state.global_progress.lock().unwrap();
+                *g_prog += 1.0;
+            }
+
+            item_offset += file_item_count; // 雖然是 0 但保持邏輯完整
             continue;
         }
 
         let current_file_items = &mut global_items[item_offset..item_offset + file_item_count];
-        item_offset += file_item_count;
-
+        
+        // 執行翻譯
         translate_global_batches(
             current_file_items,
             job_config.clone(),
@@ -186,9 +201,13 @@ pub async fn process_all_files(
         )
         .await?;
 
-        {
+        item_offset += file_item_count;
+
+        // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
+        let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
+        if next_path != Some(&task.path) {
             let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog = (idx + 1) as f32;
+            *g_prog += 1.0;
         }
     }
 
@@ -196,9 +215,11 @@ pub async fn process_all_files(
         let config_locked = job_config.lock().unwrap().clone();
         apply_global_results(&config_locked, &file_tasks, &global_items)?;
 
+        // 還原起始狀態對於 BUNDLE 的判斷邏輯
         let has_bundle = file_tasks.iter().any(|t| {
             t.rel_path.contains("patchouli_books") || t.path.to_string_lossy().contains("mods")
         });
+
         if has_bundle {
             output_resource_pack(
                 &std::path::PathBuf::new(),
@@ -260,13 +281,17 @@ pub fn apply_global_results(
             c
         };
 
-        if task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js") {
+        let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
+        
+        if is_jar_member {
+            // JAR 內檔案：標記為 [BUNDLE] 供寫入器識別
+            all_results.insert(format!("[BUNDLE]{}", task.rel_path), final_content.clone());
             jar_repack_map
                 .entry(task.path.clone())
                 .or_default()
-                .insert(task.rel_path.clone(), final_content.clone());
-            all_results.insert(format!("[BUNDLE]{}", task.rel_path), final_content);
+                .insert(task.rel_path.clone(), final_content);
         } else {
+            // 普通外部檔案
             all_results.insert(task.rel_path.clone(), final_content);
         }
     }
@@ -275,8 +300,9 @@ pub fn apply_global_results(
         write_to_temp_or_output(config, all_results)?;
     }
 
+    // JAR Repack
     for (jar_path, files) in jar_repack_map {
-        repack_jar(&jar_path, &files)?;
+        crate::file::jar_handler::repack_jar(&jar_path, &files, config)?;
     }
 
     Ok(())

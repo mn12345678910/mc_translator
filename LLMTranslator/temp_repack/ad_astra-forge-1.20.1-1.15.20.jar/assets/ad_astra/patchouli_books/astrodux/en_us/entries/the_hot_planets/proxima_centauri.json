@@ -1,0 +1,17 @@
+{
+  "name" : "Proxima Centauri",
+  "icon": "ad_astra:/textures/painting/alpha_centauri.png",
+  "sortnum": 1,
+  "category": "ad_astra:the_hot_planets",
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "title" : "Proxima Centauri",
+      "text" : "一旦您收集到足夠的熱能，就可以製作第四級火箭，您將能夠離開這個太陽系並進入一個新的太陽系。您將前往 Proxima Centauri 的第一個行星是 Glacio。 Glacio 極度寒冷；然而，它有氧氣，讓您可以在沒有太空服的情況下生存。"
+    },
+    {
+      "type": "patchouli:text",
+      "text" : "這將是 Ad Astra 的進程的終點。這本指南將隨著更多內容的添加而擴展。 感謝您玩 Ad Astra！"
+    }
+  ]
+}

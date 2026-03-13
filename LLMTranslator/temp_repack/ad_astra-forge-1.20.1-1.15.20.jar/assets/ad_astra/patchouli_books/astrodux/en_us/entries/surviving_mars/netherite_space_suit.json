@@ -1,0 +1,24 @@
+{
+  "name" : "獄髓太空服",
+  "icon": "ad_astra:netherite_space_helmet",
+  "sortnum": 7,
+  "category": "ad_astra:surviving_mars",
+  "pages": [
+    {
+      "type": "patchouli:spotlight",
+      "title" : "獄髓太空服",
+      "item": "ad_astra:netherite_space_helmet",
+      "text" : "獄髓太空服是標準太空服的升級版本，具有永久性的防火、更高的防護和在火星和金星上生存的能力。 在前往這些行星之前，您必須製作獄髓太空服，否則您將被燒死。"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:netherite_space_helmet",
+      "recipe2": "ad_astra:netherite_space_suit"
+    },
+    {
+      "type": "patchouli:crafting",
+      "recipe": "ad_astra:netherite_space_pants",
+      "recipe2": "ad_astra:netherite_space_boots"
+    }
+  ]
+}

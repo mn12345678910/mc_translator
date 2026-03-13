@@ -289,10 +289,18 @@ impl AppState {
                                         mem.insert(key, val);
                                         crate::config::save_translation_memory(&*mem);
                                     } else {
-                                        // 官方分頁編輯也存入使用者字典 (Revision 14.1/14.4/14.5)
+                                        // 官方分頁編輯也存入使用者字典並從官方移除 (Migration)
                                         let mut mem = translation_memory.lock().unwrap();
-                                        mem.insert(key, val);
+                                        mem.insert(key.clone(), val);
                                         crate::config::save_translation_memory(&*mem);
+                                        
+                                        let mut inferred = inferred_match_map.lock().unwrap();
+                                        if inferred.remove(&key).is_some() {
+                                            crate::config::save_dict(
+                                                crate::config::OFFICIAL_DICT,
+                                                &*inferred,
+                                            );
+                                        }
                                     }
                                 }
                                 *show_dict_add_dialog.lock().unwrap() = false;
@@ -522,7 +530,7 @@ impl AppState {
             });
 
             ui.separator();
-            egui::ScrollArea::vertical()
+            egui::ScrollArea::vertical().id_source("memory_viewer_dict_scroll")
                 .hscroll(false) // 禁用水平捲動防止無限放大 (Revision 14.2)
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
