@@ -42,7 +42,7 @@ impl AppState {
         // 目前檔案 (顯示條目進度)
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
         let (c_bar_color_raw, c_text_color, c_rounding) = self.get_instance_style_full("progress_current");
-        // 脈衝動畫邏輯優化 (Revision 15.30+)
+        // 脈衝動畫邏輯優化
         let bar_color = if processing && self.progress_pulse_enabled {
             let speed = self.progress_pulse_speed as f64 * 4.0;
             let shimmer_val = ((ctx.input(|i| i.time) * speed).sin() * 0.15 + 1.1) as f32;

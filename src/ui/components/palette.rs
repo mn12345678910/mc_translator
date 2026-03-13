@@ -139,7 +139,7 @@ impl AppState {
                         ui.end_row();
                     }
 
-                    // 自定義圓角 (Revision 15.30+)
+                    // 自定義圓角
                     if has_rounding_supported {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_rounding, "自定義圓角");
@@ -218,7 +218,7 @@ impl AppState {
                                        p_current.text = Some(color);
                                        let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
                                        p_total.text = Some(color);
-                                       // 同時更新全域標籤顏色以供回退使用 (Revision 15.32)
+                                       // 同時更新全域標籤顏色以供回退使用
                                        if is_dark { self.dark_label = color; } else { self.light_label = color; }
                                    },
                     "全部面板背景" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
