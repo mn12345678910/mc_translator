@@ -190,6 +190,7 @@ impl AppState {
         let mc_lang_arc = self.mc_lang.clone();
         let term_arc = self.term_replacements.clone();
         let exact_arc = self.exact_match_map.clone();
+        let inferred_arc = self.inferred_match_map.clone();
         let processing_arc = self.is_processing.clone();
         let cancelled_arc = self.is_cancelled.clone();
         let paused_arc = self.is_paused.clone();
@@ -251,7 +252,14 @@ impl AppState {
 
         self_runtime.spawn(async move {
             let res =
-                crate::file::pipeline::process_all_files(paths, job_state, mc_lang_arc, term_arc, exact_arc)
+                crate::file::pipeline::process_all_files(
+                    paths,
+                    job_state,
+                    mc_lang_arc,
+                    term_arc,
+                    exact_arc,
+                    inferred_arc,
+                )
                     .await;
 
             *processing_arc.lock().unwrap() = false;

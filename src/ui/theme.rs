@@ -58,11 +58,11 @@ impl AppState {
                 v.widgets.active.bg_fill = egui::Color32::from_rgb(0xA0, 0x7B, 0x7B);
                 v.widgets.active.rounding = 8.0.into();
 
-                v.extreme_bg_color = egui::Color32::WHITE;
-                v.selection.bg_fill = crate::ui::constants::SELECTION_BG_LIGHT;
-                v.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(0xD2, 0xB4, 0x8C);
+                v.extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95); // 統一與按鈕/進度條一致的沙褐色 (原亞麻色移動至日誌背景)
+                v.selection.bg_fill = btn_bg; // 統一選取色與按鈕色
+                v.widgets.noninteractive.bg_fill = btn_bg; // 統一非交互區域背景
                 v.widgets.noninteractive.fg_stroke =
-                    egui::Stroke::new(1.0, egui::Color32::from_gray(100));
+                    egui::Stroke::new(1.0, egui::Color32::from_gray(120));
                 v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
                 v.override_text_color = Some(crate::ui::constants::TEXT_COLOR_LIGHT);
                 v

@@ -56,7 +56,7 @@ impl AppState {
             )
         } else {
             if self.theme == "light" {
-                egui::Color32::from_rgb(180, 140, 80) // 稍深的橘金色，更顯眼
+                ui.visuals().widgets.inactive.bg_fill // 統一與按鈕/輸入框背景色
             } else {
                 accent_color
             }

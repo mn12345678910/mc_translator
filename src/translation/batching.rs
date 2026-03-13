@@ -261,13 +261,7 @@ pub async fn run_translation_batch(
         }
     }
 
-    crate::utils::add_log(
-        &log,
-        &format!(
-            "✅ 全域批次翻譯完成 (成功: {}/{})",
-            success_count, total_items
-        ),
-    );
+    // 移除全域統計日誌，由 pipeline 統一按檔案路徑輸出
     Ok(())
 }
 

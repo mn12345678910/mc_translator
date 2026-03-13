@@ -10,6 +10,7 @@ impl AppState {
         ui.add_space(4.0);
         ui.group(|ui| {
             egui::ScrollArea::vertical()
+                .id_source("settings_scroll_area")
                 .max_height(350.0)
                 .auto_shrink([true; 2])
                 .show(ui, |ui| {

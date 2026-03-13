@@ -50,7 +50,7 @@ pub async fn collect_json_task(
 
     let empty_map = HashMap::new();
     let empty_vec = Vec::new();
-    let glossary_automaton = Arc::new(crate::translation::glossary::GlossaryAutomaton::new(&empty_map, &empty_map));
+    let glossary_automaton = Arc::new(crate::translation::glossary::GlossaryAutomaton::new_simple(&empty_map, &empty_map));
     let ctx = TranslationContext::new(ContextOptions {
         config: state.config.clone(),
         inferred: &empty_map,
