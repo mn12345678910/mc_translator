@@ -64,8 +64,8 @@ impl AppState {
             let opened_last_frame = *opened_lock;
 
             // 1. 隱形啟動策略 (Invisible-First): 初始設為 invisible (Revision 15.10)
-            // 2. 幾何引導 (Geometry Guidance): 前 20 幀持續強制套用座標與尺寸，壓制 OS 跳位 (Feedback Fix)
-            let is_visible = opened_frames >= 30; // 使用者要求調回 30 幀
+            // 2. 幾何引導 (Geometry Guidance): 前 10 幀持續強制套用座標與尺寸，壓制 OS 跳位 (Feedback Fix)
+            let is_visible = opened_frames >= 10; // 使用者要求調至 10 幀
             let mut builder = egui::ViewportBuilder::default()
                 .with_title("📖 建議詞管理器")
                 .with_resizable(true)
@@ -73,8 +73,8 @@ impl AppState {
                 .with_min_inner_size([800.0, 600.0]) // [Revision 15.15] 最小尺寸限制
                 .with_visible(is_visible);
 
-            // 只有在穩定前（前 40 幀，涵蓋 30 幀亮顯期）持續強制套位，壓制 OS 隨機跳位 (Revision 15.13)
-            if opened_frames < 40 {
+            // 只有在穩定前（前 20 幀，涵蓋 10 幀亮顯期）持續強制套位，壓制 OS 隨機跳位 (Revision 15.13)
+            if opened_frames < 20 {
                 builder = builder
                     .with_inner_size([self.viewer_width, self.viewer_height])
                     .with_position([self.viewer_x, self.viewer_y]);
