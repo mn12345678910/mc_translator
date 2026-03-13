@@ -10,8 +10,9 @@
 >    - **遷移邏輯 (Migration Mode)**：對「官方建議詞」進行任何編輯或取代操作後，該條目必須「移入」使用者字典 (`user.json`) 並從官方字典 (`official.json`) 中移除。
   - **設定與持久化規範**:
     - **金鑰隔離**: `api_key` 僅保留於 `.env` 中，且必須在 `AppConfig` 結構中使用 `#[serde(skip)]` 標記，禁止寫入 `config.cfg`。
-    - **狀態持久化**: 所有關鍵 UI 狀態（包括 API 設定、開發者模式、及自定義 FPS）與視窗幾何資訊均需同步至 `AppConfig` 並持久化。`user_prompt` 與 `system_prompt` 作為核心翻譯設定，必須確保與 `config.cfg` 中的繁體中文鍵名同步。
-    - **狀態排除**: 「建議詞管理器」的開啟狀態不進持久化，程式啟動時預設為關閉。
+     - **狀態持久化**: 所有關鍵 UI 狀態（包括 API 設定、開發者模式、及自定義 FPS）與視窗幾何資訊均需同步至 `AppConfig` 並持久化。`user_prompt` (原 prompt) 與 `system_prompt` (原 technical_constraints) 作為核心翻譯設定，必須確保與 `config.cfg` 中的繁體中文鍵名同步。
+     - **向後相容性 (`Alias`)**: 為確保升級後不丟失設定，`AppConfig` 所有中文化欄位均須保留對應的 English `alias` (例如 `#[serde(alias = "api_provider")]`)。
+     - **狀態排除**: 「建議詞管理器」的開啟狀態不進持久化，程式啟動時預設為關閉。
     - **即時存檔**: 所有設定項在變更後必須立即發動 `save_config()`。
   - **UI 視覺規格與連動**:
     - **原生視窗裝飾**: 視窗必須使用 OS 原生標題列與邊框，嚴格禁止隱藏裝飾或實作自定義標題列。

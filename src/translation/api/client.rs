@@ -112,16 +112,15 @@ pub async fn translate_batch(
         .enumerate()
         .map(|(i, t)| format!("[{}] {}", i + 1, t))
         .collect();
-    let batch_prompt = format!(
-        "{}\n\n以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
-        config.user_prompt,
+    let batch_instruction = format!(
+        "以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
         numbered.join("\n")
     );
 
     let result = match config.api_provider.as_str() {
-        "Gemini" => translate_with_gemini(&batch_prompt, config, glossary).await?,
+        "Gemini" => translate_with_gemini(&batch_instruction, config, glossary).await?,
         "OpenAI" | "DeepSeek" | "Mistral" => {
-            translate_with_openai_compatible(&batch_prompt, config, glossary).await?
+            translate_with_openai_compatible(&batch_instruction, config, glossary).await?
         }
         "Ollama" => {
             let ollama_user_prompt = format!(
@@ -131,7 +130,7 @@ pub async fn translate_batch(
             call_ollama_raw(&ollama_user_prompt, config, glossary).await?
         }
         "DeepL" => {
-            translate_with_deepl(&batch_prompt, &config.api_key, &config.selected_model).await?
+            translate_with_deepl(&batch_instruction, &config.api_key, &config.selected_model).await?
         }
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
