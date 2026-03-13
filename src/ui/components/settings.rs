@@ -151,6 +151,7 @@ impl AppState {
                         }
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
+                        ui.horizontal(|ui| {
                             ui.label(egui::RichText::new("批次量:").color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 let mut bs = self.batch_size as i32;
