@@ -21,7 +21,12 @@ impl AppState {
                     if line.contains("Err") || line.contains("錯誤") || line.contains("失敗") || line.contains("中斷") {
                         text = text.color(egui::Color32::RED);
                     } else if line.contains("成功") || line.contains("完成") || line.contains("Done") {
-                        text = text.color(egui::Color32::GREEN);
+                        let success_color = if self.theme == "light" {
+                            egui::Color32::from_rgb(0, 100, 0) // 深綠色
+                        } else {
+                            egui::Color32::GREEN
+                        };
+                        text = text.color(success_color);
                     } else {
                         text = text.color(label_color);
                     }
