@@ -49,19 +49,20 @@ impl AppState {
         let accent_color = ui.visuals().selection.bg_fill;
         let bar_color = if processing {
             if self.theme == "light" {
-                // 淺色模式：深綠色主題 (#2E7D32) 搭配亮度脈衝，提高辨識度
-                let pulse = (ctx.input(|i| i.time) * 4.0).sin() * 0.2 + 1.1; // 0.9 ~ 1.3，往亮處脈衝
+                // 淺色模式：深綠色主題 (#2E7D32) 呼吸發光感，最低點為原始色 (1.0)，最高 1.3
+                let pulse = (ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 1.15; // 1.0 ~ 1.3
                 egui::Color32::from_rgb(
                     (46.0 * pulse).min(255.0) as u8,
                     (125.0 * pulse).min(255.0) as u8,
                     (50.0 * pulse).min(255.0) as u8,
                 )
             } else {
-                let shimmer_val = ((ctx.input(|i| i.time) * 6.0).sin() * 0.15 + 0.85) as f32;
+                // 深色模式：確保不低於原始亮度 (1.0 ~ 1.3)
+                let shimmer_val = ((ctx.input(|i| i.time) * 6.0).sin() * 0.15 + 1.15) as f32;
                 egui::Color32::from_rgb(
-                    (accent_color.r() as f32 * shimmer_val) as u8,
-                    (accent_color.g() as f32 * shimmer_val) as u8,
-                    (accent_color.b() as f32 * shimmer_val) as u8,
+                    (accent_color.r() as f32 * shimmer_val).min(255.0) as u8,
+                    (accent_color.g() as f32 * shimmer_val).min(255.0) as u8,
+                    (accent_color.b() as f32 * shimmer_val).min(255.0) as u8,
                 )
             }
         } else {
