@@ -41,7 +41,7 @@ impl AppState {
 
         // 目前檔案 (顯示條目進度)
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
-        let (c_bar_color_raw, _, c_rounding) = self.get_instance_style_full("progress_current");
+        let (c_bar_color_raw, c_text_color, c_rounding) = self.get_instance_style_full("progress_current");
         // 脈衝動畫邏輯優化 (Revision 15.30+)
         let bar_color = if processing && self.progress_pulse_enabled {
             let speed = self.progress_pulse_speed as f64 * 4.0;
@@ -57,13 +57,13 @@ impl AppState {
 
         ui.add(egui::ProgressBar::new(ratio).fill(bar_color).rounding(c_rounding).show_percentage().text(
             egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32))
-                .color(label_color)
+                .color(c_text_color)
                 .strong(),
         ));
 
         // 總進度 (顯示檔案進度)
         let g_ratio = if g_total > 0.0 { g_prog / g_total } else { 0.0 };
-        let (t_bar_color_raw, _, t_rounding) = self.get_instance_style_full("progress_total");
+        let (t_bar_color_raw, t_text_color, t_rounding) = self.get_instance_style_full("progress_total");
         let t_bar_color = if processing && self.progress_pulse_enabled {
             let speed = self.progress_pulse_speed as f64 * 4.0;
             let shimmer_val = ((ctx.input(|i| i.time) * speed).sin() * 0.15 + 1.1) as f32;
@@ -87,7 +87,7 @@ impl AppState {
                     g_total as u32,
                     (g_ratio * 100.0) as u32
                 ))
-                .color(label_color)
+                .color(t_text_color)
                 .strong(),
             ),
         );

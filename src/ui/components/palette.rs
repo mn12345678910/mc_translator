@@ -5,7 +5,7 @@ impl AppState {
     pub fn render_palette_settings(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.heading("🎨 全方位動態調色盤 (V6)");
+                ui.heading("🎨 調色盤");
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui.button("⟲ 全部重置").on_hover_text("將全程式所有設定、顏色、圓角恢復至預設值").clicked() {
                         self.show_restore_default_confirm = true;
@@ -103,36 +103,53 @@ impl AppState {
                     .collect();
 
                 egui::Grid::new("prop_grid_v6").num_columns(2).spacing([20.0, 10.0]).show(ui, |ui| {
-                    // 背景顏色
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.palette_prop_sync_bg, "背景顏色");
-                    });
-                    // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
-                    let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
-                    if ui.color_edit_button_srgb(&mut dummy_bg).changed() && self.palette_prop_sync_bg {
-                        self.apply_batch_color(true, dummy_bg);
+                    let mut has_bg_supported = false;
+                    let mut has_text_supported = false;
+                    let mut has_rounding_supported = false;
+
+                    for target in &active_targets {
+                        let (b, t, r) = self.is_prop_supported(target);
+                        if b { has_bg_supported = true; }
+                        if t { has_text_supported = true; }
+                        if r { has_rounding_supported = true; }
                     }
-                    ui.end_row();
+
+                    // 背景顏色
+                    if has_bg_supported {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.palette_prop_sync_bg, "背景顏色");
+                        });
+                        // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
+                        let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
+                        if ui.color_edit_button_srgb(&mut dummy_bg).changed() && self.palette_prop_sync_bg {
+                            self.apply_batch_color(true, dummy_bg);
+                        }
+                        ui.end_row();
+                    }
 
                     // 文字顏色
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.palette_prop_sync_text, "文字顏色");
-                    });
-                    let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
-                    if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
-                        self.apply_batch_color(false, dummy_text);
+                    if has_text_supported {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.palette_prop_sync_text, "文字顏色");
+                        });
+                        let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
+                        if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
+                            self.apply_batch_color(false, dummy_text);
+                        }
+                        ui.end_row();
                     }
-                    ui.end_row();
 
                     // 自定義圓角 (Revision 15.30+)
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.palette_prop_sync_rounding, "自定義圓角");
-                    });
-                    let mut dummy_rounding = self.btn_rounding_value;
-                    if ui.add(egui::DragValue::new(&mut dummy_rounding).speed(0.5).clamp_range(0.0..=30.0)).changed() && self.palette_prop_sync_rounding {
-                        self.apply_batch_rounding(dummy_rounding);
+                    if has_rounding_supported {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.palette_prop_sync_rounding, "自定義圓角");
+                        });
+                        let mut dummy_rounding = self.btn_rounding_value;
+                        if ui.add(egui::DragValue::new(&mut dummy_rounding).speed(0.5).clamp_range(0.0..=30.0)).changed() && self.palette_prop_sync_rounding {
+                            self.apply_batch_rounding(dummy_rounding);
+                        }
+                        ui.end_row();
                     }
-                    ui.end_row();
                 });
 
                 // 4. 組件專用屬性 (圓角/動畫)
@@ -193,7 +210,17 @@ impl AppState {
                                     else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
                     "全部建議詞分頁" => if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
                                      else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
-                    "全部進度條" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
+                    "全部進度條" => if is_bg { 
+                                       if is_dark { self.dark_bg = color; } else { self.light_bg = color; } 
+                                   } else {
+                                       // 同步至進度條文字顏色 (透過覆寫確保生效)
+                                       let p_current = self.instance_overrides.entry("progress_current".to_string()).or_default();
+                                       p_current.text = Some(color);
+                                       let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
+                                       p_total.text = Some(color);
+                                       // 同時更新全域標籤顏色以供回退使用 (Revision 15.32)
+                                       if is_dark { self.dark_label = color; } else { self.light_label = color; }
+                                   },
                     "全部面板背景" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
                     "頂部導覽列" => if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
                                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
@@ -246,11 +273,35 @@ impl AppState {
             "[特定] 🎨 調色盤按鈕" => "btn_nav_palette",
             "[特定] 🌓 主題按鈕" => "btn_nav_theme",
             "[特定] 🔧 開發按鈕" => "btn_nav_dev",
+            "[特定] 建議詞搜尋框" => "input_dict_search",
             "[特定] 字典列表區域" => "area_dict_list",
             "[特定] 輸出路徑標籤" => "label_output_path",
             "[特定] 目前檔案進度條" => "progress_current",
             "[特定] 總進度條" => "progress_total",
             _ => name,
         }.to_string()
+    }
+
+    /// 檢查目標是否支援特定屬性 (背景, 文字, 圓角)
+    fn is_prop_supported(&self, target: &str) -> (bool, bool, bool) {
+        match target {
+            "全部按鈕" | "頂部導覽列" | "[特定] 選擇檔案按鈕" | "[特定] 選擇資料夾按鈕" | 
+            "[特定] 輸出資料夾按鈕" | "[特定] 打開輸出按鈕" | "[特定] 開始翻譯按鈕" | 
+            "[特定] 暫停按鈕" | "[特定] 停止按鈕" | "[特定] 清除執行日誌按鈕" | 
+            "[特定] ⚙️ 設定按鈕" | "[特定] 📖 字典按鈕" | "[特定] 🎨 調色盤按鈕" | 
+            "[特定] 🌓 主題按鈕" | "[特定] 🔧 開發按鈕" => (true, true, true),
+            
+            "全部標籤" | "[特定] 輸出路徑標籤" => (true, true, false),
+            
+            "全部進度條" | "[特定] 目前檔案進度條" | "[特定] 總進度條" => (true, true, true),
+            
+            "全部輸入框" | "[特定] 建議詞搜尋框" => (true, true, false),
+            
+            "全部日誌區域" | "全部建議詞分頁" | "[特定] 字典列表區域" => (true, true, false),
+            
+            "全部面板背景" => (true, false, false),
+            
+            _ => (true, true, true),
+        }
     }
 }
