@@ -106,13 +106,13 @@ impl AppState {
 
             ui.add_space(4.0);
             ui.label(
-                egui::RichText::new("📜 技術指令 (TECHNICAL_CONSTRAINTS)")
+                egui::RichText::new("📜 系統技術指令")
                     .color(label_color)
                     .strong(),
             );
             if ui
                 .add(
-                    egui::TextEdit::multiline(&mut self.technical_constraints)
+                    egui::TextEdit::multiline(&mut self.system_prompt)
                         .desired_rows(4)
                         .desired_width(ui.available_width()),
                 )

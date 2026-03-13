@@ -114,7 +114,7 @@ pub async fn translate_batch(
         .collect();
     let batch_prompt = format!(
         "{}\n\n以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
-        config.prompt,
+        config.user_prompt,
         numbered.join("\n")
     );
 
@@ -237,8 +237,7 @@ async fn translate_with_gemini(
         config.selected_model, config.api_key
     );
 
-    let tech_constraints = &config.technical_constraints;
-    let sys_prompt = build_system_prompt(&config.prompt, glossary, tech_constraints);
+    let sys_prompt = build_system_prompt(&config.user_prompt, glossary, &config.system_prompt);
     let body = serde_json::json!({
         "systemInstruction": {
             "parts": [{"text": sys_prompt}]
@@ -375,8 +374,7 @@ async fn call_ollama_raw(
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/api/generate", config.ollama_url.trim_end_matches('/'));
-    let tech_constraints = &config.technical_constraints;
-    let sys_prompt = build_system_prompt(&config.prompt, glossary, tech_constraints);
+    let sys_prompt = build_system_prompt(&config.user_prompt, glossary, &config.system_prompt);
     let body = serde_json::json!({
         "model": config.selected_model,
         "system": sys_prompt,
@@ -445,8 +443,7 @@ async fn translate_with_openai_compatible(
         "Mistral" => "https://api.mistral.ai/v1/chat/completions",
         _ => "https://api.openai.com/v1/chat/completions",
     };
-    let tech_constraints = &config.technical_constraints;
-    let system_content = build_system_prompt(&config.prompt, glossary, tech_constraints);
+    let system_content = build_system_prompt(&config.user_prompt, glossary, &config.system_prompt);
     let body = serde_json::json!({
         "model": config.selected_model,
         "messages": [

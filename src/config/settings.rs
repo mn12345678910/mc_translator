@@ -14,93 +14,118 @@ pub struct AppConfig {
     /// API 金鑰（Gemini / OpenAI）
     #[serde(skip)]
     pub api_key: String,
-    /// 服務商（Gemini / OpenAI / Ollama）
-    pub provider: String,
-    /// 所選模型名稱
+
+    // --- [核心 API 設定] ---
+    #[serde(rename = "服務提供商")]
+    pub api_provider: String,
+    #[serde(rename = "模型名稱")]
     pub model: String,
-    /// Ollama 服務端 URL
+    #[serde(rename = "Ollama位址")]
     pub ollama_url: String,
 
-    /// 批量翻譯大小（1-300）
+    // --- [Prompt 集] ---
+    #[serde(rename = "使用者翻譯提示")]
+    pub user_prompt: String,
+    #[serde(rename = "系統技術指令")]
+    pub system_prompt: String,
+
+    // --- [翻譯參數] ---
+    #[serde(rename = "批次量")]
     pub batch_size: u32,
-    /// 批次最大字元數 (預設 3500)
+    #[serde(rename = "批次字數上限")]
     pub batch_max_chars: u32,
-    /// Ollama 逾時秒數（1-300）
+    #[serde(rename = "API逾時秒數")]
     pub ollama_timeout: u32,
-    /// 資源包輸出資料夾
-    pub output_dir: String,
-    /// 自訂翻譯提示
-    pub translation_prompt: String,
-    /// 介面主題 (light / dark)
-    pub theme: String,
-    /// 資源包版本號 (pack_format)
-    pub pack_format: u32,
-    /// 字體大小
-    pub font_size: f32,
-    /// 術語優先級 (official / user)
+    #[serde(rename = "術語優先級")]
     pub glossary_priority: String,
-    /// 跳過 .json
+
+    // --- [輸出與介面] ---
+    #[serde(rename = "輸出路徑")]
+    pub output_dir: String,
+    #[serde(rename = "主題顏色")]
+    pub theme: String,
+    #[serde(rename = "字體大小")]
+    pub font_size: f32,
+    #[serde(rename = "資源包版本")]
+    pub pack_format: u32,
+
+    // --- [效能與面板狀態] ---
+    #[serde(rename = "自定義FPS開關")]
+    pub enable_custom_fps: bool,
+    #[serde(rename = "自定義FPS數值")]
+    pub custom_fps: u32,
+    #[serde(rename = "顯示API設定")]
+    pub show_api_settings: bool,
+    #[serde(rename = "顯示開發者模式")]
+    pub show_developer_mode: bool,
+
+    // --- [檔案篩選] ---
+    #[serde(rename = "跳過JSON")]
     pub skip_json: bool,
-    /// 跳過 .js
+    #[serde(rename = "跳過JS")]
     pub skip_js: bool,
-    /// 跳過 .jar
+    #[serde(rename = "跳過JAR")]
     pub skip_jar: bool,
-    /// 跳過 patchouli_books
+    #[serde(rename = "跳過手冊")]
     pub skip_book: bool,
-    /// 開啟 LLM 通訊紀錄
+    #[serde(rename = "記錄LLM通訊")]
     pub enable_llm_log: bool,
-    /// 技術指令 (TECHNICAL_CONSTRAINTS)
-    pub technical_constraints: String,
-    /// 建議詞管理器視窗 X 座標
-    pub viewer_x: f32,
-    /// 建議詞管理器視窗 Y 座標
-    pub viewer_y: f32,
-    /// 建議詞管理器視窗寬度
-    pub viewer_width: f32,
-    /// 建議詞管理器視窗高度
-    pub viewer_height: f32,
-    /// 主視窗 X 座標
+
+    // --- [視窗幾何資訊] ---
+    #[serde(rename = "主視窗X")]
     pub main_x: f32,
-    /// 主視窗 Y 座標
+    #[serde(rename = "主視窗Y")]
     pub main_y: f32,
-    /// 主視窗寬度
+    #[serde(rename = "主視窗寬度")]
     pub main_width: f32,
-    /// 主視窗高度
+    #[serde(rename = "主視窗高度")]
     pub main_height: f32,
+    #[serde(rename = "建議詞視窗X")]
+    pub viewer_x: f32,
+    #[serde(rename = "建議詞視窗Y")]
+    pub viewer_y: f32,
+    #[serde(rename = "建議詞視窗寬度")]
+    pub viewer_width: f32,
+    #[serde(rename = "建議詞視窗高度")]
+    pub viewer_height: f32,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             api_key: String::new(),
-            provider: "Gemini".to_string(),
+            api_provider: "Gemini".to_string(),
             model: String::new(),
             ollama_url: "http://localhost:11434".to_string(),
+            user_prompt: DEFAULT_PROMPT.to_string(),
+            system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
+1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
+2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
             batch_size: 100,
             batch_max_chars: 3500,
             ollama_timeout: 60,
-            output_dir: String::new(),
-            translation_prompt: DEFAULT_PROMPT.to_string(),
-            theme: "dark".to_string(),
-            pack_format: 15,
-            font_size: 15.0,
             glossary_priority: "official".to_string(),
+            output_dir: String::new(),
+            theme: "dark".to_string(),
+            font_size: 15.0,
+            pack_format: 15,
+            enable_custom_fps: false,
+            custom_fps: 60,
+            show_api_settings: false,
+            show_developer_mode: false,
             skip_json: false,
             skip_js: false,
             skip_jar: false,
             skip_book: false,
             enable_llm_log: false,
-            technical_constraints: "\n\n[內部技術指令 - 請務必遵守]\n\
-1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
-2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
-            viewer_x: 100.0,
-            viewer_y: 100.0,
-            viewer_width: 750.0,
-            viewer_height: 500.0,
             main_x: 50.0,
             main_y: 50.0,
             main_width: 750.0,
             main_height: 550.0,
+            viewer_x: 100.0,
+            viewer_y: 100.0,
+            viewer_width: 750.0,
+            viewer_height: 500.0,
         }
     }
 }

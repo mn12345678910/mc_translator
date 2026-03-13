@@ -120,6 +120,7 @@ impl AppState {
                 if self.show_api_settings {
                     self.show_developer_mode = false;
                 }
+                self.save_config();
             }
             if ui.button("📖").on_hover_text("建議詞管理器").clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
@@ -134,9 +135,8 @@ impl AppState {
                     // 重要：重置旗標，確保下次開啟能正確初始化 (Revision 15.13)
                     let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
                     *opened = false;
-                    // 關閉時存盤
-                    self.save_config();
                 }
+                self.save_config();
             }
             if ui.button("🌓").on_hover_text("切換主題").clicked() {
                 self.theme = if self.theme == "dark" {
@@ -151,6 +151,7 @@ impl AppState {
                 if self.show_developer_mode {
                     self.show_api_settings = false;
                 }
+                self.save_config();
             }
             ui.add_space(8.0);
         });

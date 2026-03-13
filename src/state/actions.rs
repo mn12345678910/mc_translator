@@ -73,7 +73,8 @@ impl AppState {
             cfg.api_provider = self.api_provider.clone();
             cfg.selected_model = self.selected_model.clone();
             cfg.ollama_url = self.ollama_url.clone();
-            cfg.prompt = self.translation_prompt.clone();
+            cfg.user_prompt = self.user_prompt.clone();
+            cfg.system_prompt = self.system_prompt.clone();
             cfg.ollama_timeout = self.ollama_timeout as u64;
             cfg.batch_size = self.batch_size;
             cfg.batch_max_chars = self.batch_max_chars;
@@ -84,7 +85,6 @@ impl AppState {
             cfg.skip_jar = self.skip_jar;
             cfg.skip_book = self.skip_book;
             cfg.enable_llm_log = self.enable_llm_log;
-            cfg.technical_constraints = self.technical_constraints.clone();
         }
 
         *self.is_paused.lock().unwrap() = false;
@@ -95,13 +95,14 @@ impl AppState {
     pub fn save_config(&self) {
         let mut config = crate::config::AppConfig::load();
         config.output_dir = self.output_dir.clone();
-        config.provider = self.api_provider.clone();
+        config.api_provider = self.api_provider.clone();
         config.model = self.selected_model.clone();
         config.ollama_url = self.ollama_url.clone();
         config.batch_size = self.batch_size;
         config.batch_max_chars = self.batch_max_chars;
         config.ollama_timeout = self.ollama_timeout;
-        config.translation_prompt = self.translation_prompt.clone();
+        config.user_prompt = self.user_prompt.clone();
+        config.system_prompt = self.system_prompt.clone();
         config.theme = self.theme.clone();
         config.pack_format = self.pack_format;
         config.font_size = self.font_size;
@@ -111,9 +112,8 @@ impl AppState {
         config.skip_jar = self.skip_jar;
         config.skip_book = self.skip_book;
         config.enable_llm_log = self.enable_llm_log;
-        config.technical_constraints = self.technical_constraints.clone();
 
-        // --- 視窗幾幾何持久化 (Revision 15.17) ---
+        // --- 視窗幾幾何與 UI 狀態持久化 ---
         config.viewer_x = self.viewer_x;
         config.viewer_y = self.viewer_y;
         config.viewer_width = self.viewer_width;
@@ -122,6 +122,11 @@ impl AppState {
         config.main_y = self.main_y;
         config.main_width = self.main_width;
         config.main_height = self.main_height;
+
+        config.show_api_settings = self.show_api_settings;
+        config.show_developer_mode = self.show_developer_mode;
+        config.enable_custom_fps = self.enable_custom_fps;
+        config.custom_fps = self.custom_fps;
 
         if self.api_provider == "Ollama" {
             config.api_key = String::new();
@@ -157,14 +162,12 @@ impl AppState {
     }
 
     pub fn start_translation(&mut self, _ctx: egui::Context) {
-        // 在啟動前強制存檔，確保 UI 上的最新變動（如輸出資料夾）已寫入磁碟 (Sync Fix)
         self.save_config();
 
         if self.is_processing_active() {
             return;
         }
 
-        // 防禦性檢查：確保所有模式都已選取模型 (除 Google Free 外) (Strict Validation Fix)
         let is_google_free = self.api_provider == "Google Free";
         if !is_google_free && self.selected_model.is_empty() {
              self.add_log(&format!("⚠️ 啟動失敗：目前服務商 [{}] 需要選取模型。", self.api_provider));
@@ -200,7 +203,8 @@ impl AppState {
         let batch_size = self.batch_size;
         let batch_max_chars = self.batch_max_chars;
         let ollama_timeout = self.ollama_timeout;
-        let translation_prompt = self.translation_prompt.clone();
+        let user_prompt = self.user_prompt.clone();
+        let system_prompt = self.system_prompt.clone();
         let output_dir_val = self.output_dir.clone();
         let pack_format_val = self.pack_format;
 
@@ -209,7 +213,8 @@ impl AppState {
             api_provider,
             selected_model,
             ollama_url,
-            translation_prompt,
+            user_prompt,
+            system_prompt,
             ollama_timeout,
             batch_size,
             batch_max_chars,
@@ -221,7 +226,6 @@ impl AppState {
             self.skip_jar,
             self.skip_book,
             self.enable_llm_log,
-            self.technical_constraints.clone(),
         )));
         self.active_job_config = Some(job_config.clone());
 
@@ -278,7 +282,6 @@ impl AppState {
         *self.is_paused.lock().unwrap() = true;
     }
 
-    /// 啟動辭典目錄監控 (feat/dict-watcher)
     pub fn start_dict_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         use notify::{Watcher, RecursiveMode, Config};
         use std::time::Duration;
@@ -293,15 +296,12 @@ impl AppState {
         let show_memory_viewer = self.show_memory_viewer;
         let mc_lang = self.mc_lang.clone();
 
-        // 建立防抖 (Debounce) 的監控處理
         let (tx, mut rx) = tokio::sync::mpsc::channel(10);
 
         let mut watcher = notify::RecommendedWatcher::new(
             move |res: notify::Result<notify::Event>| {
                 if let Ok(event) = res {
-                    // 1. 檢查事件類型：排除 Access (讀取) 事件，專注於 Modify, Create, Remove
                     if event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove() {
-                        // 2. 檢查檔案名稱：僅針對來源辭典檔案 (不包含 official.json 與 user.json)
                         let dict_files = ["en_us.json", "zh_cn.json", "zh_tw.json"];
                         let is_target = event.paths.iter().any(|p| {
                             p.file_name()
@@ -325,16 +325,12 @@ impl AppState {
         }
         watcher.watch(dict_path, RecursiveMode::NonRecursive)?;
 
-        // 持久化 watcher
         self._dict_watcher = Some(Box::new(watcher));
 
-        // 在非同步任務中處理事件並防抖
         let h_inner = runtime_handle.clone();
         runtime_handle.spawn(async move {
             while rx.recv().await.is_some() {
-                // 簡單的防抖：收到訊號後等 500ms
                 tokio::time::sleep(Duration::from_millis(500)).await;
-                // 清空堆積的訊號
                 while rx.try_recv().is_ok() {}
 
                 Self::refresh_dictionaries_core(

@@ -235,17 +235,17 @@ impl AppState {
                         ui.separator();
                         ui.add_space(1.0);
 
-                        // --- 翻譯提示 (鎖定) ---
+                        // --- 使用者翻譯提示 (鎖定) ---
                         ui.group(|ui| {
                             ui.label(
-                                egui::RichText::new("📝 翻譯提示:")
+                                egui::RichText::new("📝 使用者翻譯提示:")
                                     .color(label_color)
                                     .strong(),
                             );
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
-                                        egui::TextEdit::multiline(&mut self.translation_prompt)
+                                        egui::TextEdit::multiline(&mut self.user_prompt)
                                             .desired_rows(2)
                                             .desired_width(ui.available_width()),
                                     )
@@ -311,14 +311,15 @@ impl AppState {
                 ui.horizontal(|ui| {
                     if ui.button("確定恢復").clicked() {
                         let def = crate::config::settings::AppConfig::default();
-                        self.api_provider = def.provider;
+                        self.api_provider = def.api_provider;
                         self.api_key = def.api_key;
                         self.selected_model = def.model;
                         self.ollama_url = def.ollama_url;
                         self.batch_size = def.batch_size;
                         self.batch_max_chars = def.batch_max_chars;
                         self.ollama_timeout = def.ollama_timeout;
-                        self.translation_prompt = def.translation_prompt;
+                        self.user_prompt = def.user_prompt;
+                        self.system_prompt = def.system_prompt;
                         self.output_dir = def.output_dir;
                         self.theme = def.theme;
                         self.font_size = def.font_size;
@@ -328,7 +329,12 @@ impl AppState {
                         self.skip_jar = def.skip_jar;
                         self.skip_book = def.skip_book;
                         self.enable_llm_log = def.enable_llm_log;
-                        self.technical_constraints = def.technical_constraints;
+                        self.enable_custom_fps = def.enable_custom_fps;
+                        self.custom_fps = def.custom_fps;
+                        self.show_api_settings = def.show_api_settings;
+                        self.show_developer_mode = def.show_developer_mode;
+                        // 不再從 Config 恢復 show_memory_viewer，預設關閉
+                        self.show_memory_viewer = false;
                         {
                             let mut priority = self.glossary_priority.lock().unwrap();
                             *priority = def.glossary_priority;

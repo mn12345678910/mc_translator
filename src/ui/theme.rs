@@ -39,12 +39,12 @@ impl AppState {
                 v
             } else {
                 let mut v = egui::Visuals::light();
-                let bg_color = egui::Color32::from_rgb(0xFF, 0xFD, 0xF0); // 更淺的暖橘色
+                let bg_color = crate::ui::constants::BG_COLOR_LIGHT;
                 v.window_fill = bg_color;
                 v.panel_fill = bg_color;
 
                 let btn_bg = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-                let btn_stroke_color = egui::Color32::from_rgb(30, 30, 30);
+                let btn_stroke_color = egui::Color32::from_rgb(34, 34, 34);
 
                 v.widgets.inactive.bg_fill = btn_bg;
                 v.widgets.inactive.weak_bg_fill = btn_bg;
@@ -59,12 +59,12 @@ impl AppState {
                 v.widgets.active.rounding = 8.0.into();
 
                 v.extreme_bg_color = egui::Color32::WHITE;
-                v.selection.bg_fill = egui::Color32::from_rgb(0xCD, 0x85, 0x3F);
+                v.selection.bg_fill = crate::ui::constants::SELECTION_BG_LIGHT;
                 v.widgets.noninteractive.bg_fill = egui::Color32::from_rgb(0xD2, 0xB4, 0x8C);
                 v.widgets.noninteractive.fg_stroke =
                     egui::Stroke::new(1.0, egui::Color32::from_gray(100));
                 v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
-                v.override_text_color = Some(egui::Color32::BLACK); // 回歸黑色
+                v.override_text_color = Some(crate::ui::constants::TEXT_COLOR_LIGHT);
                 v
             };
 
