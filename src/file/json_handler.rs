@@ -19,8 +19,22 @@ pub async fn collect_json_task(
 > {
     let path_clone = path.to_path_buf();
     let (content, en_us_value, zh_tw_value) = tokio::task::spawn_blocking(move || -> Result<(String, serde_json::Value, serde_json::Value), Box<dyn std::error::Error + Send + Sync>> {
-        let content = fs::read_to_string(&path_clone)?;
-        let en_us_value: serde_json::Value = serde_json::from_str(&content)?;
+        let content = match fs::read_to_string(&path_clone) {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m", 
+                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                return Err(e.into());
+            }
+        };
+        let en_us_value: serde_json::Value = match serde_json::from_str(&content) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m", 
+                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
+                return Err(e.into());
+            }
+        };
 
         let zh_tw_path = path_clone.with_file_name("zh_tw.json");
         let mut zh_tw_value = serde_json::Value::Null;
@@ -54,21 +68,23 @@ pub async fn collect_json_task(
         pause_notifier: state.pause_notifier.clone(),
     });
 
-    engine::collect_translatable_strings(
-        &en_us_value,
-        &zh_tw_value,
-        None,
-        &mut pending,
-        &ctx,
-    );
+    engine::collect_translatable_strings(&en_us_value, &zh_tw_value, None, &mut pending, &ctx);
 
-    if pending.is_empty() {
+    let prefilled_count = ctx.prefilled.lock().unwrap().len();
+    if pending.is_empty() && prefilled_count == 0 {
         return Ok(None);
     }
 
     let mut global_items = Vec::new();
     for (orig, key) in pending {
         global_items.push(GlobalBatchItem::new(&orig, file_id, &key));
+    }
+
+    // 加入預先填滿的項目 (修正丟失條目與進度條問題)
+    for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {
+        let mut item = GlobalBatchItem::new(orig, file_id, key);
+        item.translated = Some(trans.clone());
+        global_items.push(item);
     }
 
     Ok(Some((

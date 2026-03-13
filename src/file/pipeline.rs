@@ -1,8 +1,6 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
 use crate::translation::job::{JobConfig, JobSharedState};
-use crate::file::json_handler::collect_json_task;
-use crate::file::js_handler::collect_js_task;
-use crate::file::jar_handler::{collect_jar_tasks, repack_jar};
+use crate::file::jar_handler::repack_jar;
 use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::utils::text_processing::sync_formatting;
@@ -91,19 +89,21 @@ pub async fn process_all_files(
             break;
         }
         let state_clone = state.clone();
+        let rel_path_clone = rel_path.clone();
 
         join_set.spawn(async move {
             let path_str = path.to_string_lossy().to_lowercase();
             if path_str.ends_with(".jar") {
-                collect_jar_tasks(0, &path, &state_clone).await
+                crate::file::jar_handler::collect_jar_tasks(0, &path, &state_clone).await
             } else if path_str.ends_with(".json") {
-                match collect_json_task(0, &path, rel_path, &state_clone).await {
+                // 將預先檢查整合到此處，減少一次重複的檔案讀取 (整合優化)
+                match crate::file::json_handler::collect_json_task(0, &path, rel_path_clone, &state_clone).await {
                     Ok(Some((task, items))) => Ok((vec![task], items)),
                     Ok(None) => Ok((vec![], vec![])),
                     Err(e) => Err(e),
                 }
             } else if path_str.ends_with(".js") {
-                match collect_js_task(0, &path, rel_path).await {
+                match crate::file::js_handler::collect_js_task(0, &path, rel_path_clone, &state_clone).await {
                     Ok(Some((task, items))) => Ok((vec![task], items)),
                     Ok(None) => Ok((vec![], vec![])),
                     Err(e) => Err(e),
@@ -114,6 +114,7 @@ pub async fn process_all_files(
         });
     }
 
+    let mut total_string_count = 0;
     while let Some(res) = join_set.join_next().await {
         if let Ok(Ok((tasks, items))) = res {
             let offset = file_id_counter;
@@ -128,12 +129,13 @@ pub async fn process_all_files(
             }
 
             file_id_counter += tasks.len();
+            total_string_count += items.len();
             file_tasks.extend(tasks);
             global_items.extend(items);
 
             {
                 let mut total = state.global_total.lock().unwrap();
-                *total = file_id_counter as f32;
+                *total = total_string_count as f32;
             }
         }
     }

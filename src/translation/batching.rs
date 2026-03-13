@@ -106,8 +106,17 @@ pub async fn run_translation_batch(
     let mut success_count = 0;
     let mut failed_indices = Vec::new();
 
-    // 1. 初次嘗試：使用使用者設定的上限 (Adaptive: batch_size & batch_max_chars)
-    let initial_batches = create_adaptive_batches(items, cfg.batch_size, cfg.batch_max_chars);
+    // 1. 初次嘗試：僅處理尚未翻譯的項目
+    let pending_indices: Vec<usize> = (0..items.len())
+        .filter(|&i| items[i].translated.is_none())
+        .collect();
+
+    if pending_indices.is_empty() {
+        *progress.lock().unwrap() = total_items as f32;
+        return Ok(());
+    }
+
+    let initial_batches = create_adaptive_batches_from_indices(items, &pending_indices, cfg.batch_size, cfg.batch_max_chars);
 
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
         if *cancelled.lock().unwrap() {
@@ -140,7 +149,9 @@ pub async fn run_translation_batch(
         match batch_result {
             Ok(_) => {
                 success_count += batch_item_indices.len();
-                *progress.lock().unwrap() = success_count as f32;
+                // 進度應包含原本就已翻譯的項目
+                let already_done = total_items - pending_indices.len();
+                *progress.lock().unwrap() = (already_done + success_count) as f32;
             }
             Err(e) => {
                 let err_msg = e.to_string();
@@ -199,7 +210,8 @@ pub async fn run_translation_batch(
             match res {
                 Ok(_) => {
                     success_count += batch.len();
-                    *progress.lock().unwrap() = success_count as f32;
+                    let already_done = total_items - pending_indices.len();
+                    *progress.lock().unwrap() = (already_done + success_count) as f32;
                 }
                 Err(_) => {
                     second_failed_indices.extend(batch.clone());
@@ -238,7 +250,8 @@ pub async fn run_translation_batch(
                         let cleaned = validate_and_cleanup(&restored);
                         item.translated = Some(hanconv::s2tw(&cleaned));
                         success_count += 1;
-                        *progress.lock().unwrap() = success_count as f32;
+                        let already_done = total_items - pending_indices.len();
+                        *progress.lock().unwrap() = (already_done + success_count) as f32;
                     }
                     Err(e) => {
                         crate::utils::add_log(&log, &format!("❌ 條目翻譯最終失敗: {}", e));
@@ -258,15 +271,6 @@ pub async fn run_translation_batch(
     Ok(())
 }
 
-/// 切割自適應批次 (遵守行數與字數上限)
-fn create_adaptive_batches(
-    items: &[GlobalBatchItem],
-    max_items: u32,
-    max_chars: u32,
-) -> Vec<Vec<usize>> {
-    let indices: Vec<usize> = (0..items.len()).collect();
-    create_adaptive_batches_from_indices(items, &indices, max_items, max_chars)
-}
 
 fn create_adaptive_batches_from_indices(
     items: &[GlobalBatchItem],

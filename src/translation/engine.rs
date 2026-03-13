@@ -296,12 +296,17 @@ pub fn collect_translatable_strings(
                     let has_diff = false;
 
                     if !has_diff {
+                        let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
                         ctx.translations
                             .lock()
                             .unwrap()
-                            .entry(key_name.unwrap_or("__ARRAY_ELEMENT__").to_string())
+                            .entry(key.clone())
                             .or_default()
                             .push(existing.to_string());
+                        ctx.prefilled
+                            .lock()
+                            .unwrap()
+                            .push((s.clone(), key, existing.to_string()));
                         return;
                     }
                 }
@@ -309,12 +314,17 @@ pub fn collect_translatable_strings(
 
             // [還原] 次高優先級：官方建議詞精確匹配 (inferred)
             if let Some(matched) = ctx.inferred.get(&s.to_lowercase()) {
+                let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
                 ctx.translations
                     .lock()
                     .unwrap()
-                    .entry(key_name.unwrap_or("__ARRAY_ELEMENT__").to_string())
+                    .entry(key.clone())
                     .or_default()
                     .push(matched.clone());
+                ctx.prefilled
+                    .lock()
+                    .unwrap()
+                    .push((s.clone(), key, matched.clone()));
                 return;
             }
 
@@ -322,12 +332,17 @@ pub fn collect_translatable_strings(
             if let Some(cached) = ctx.translation_memory.lock().unwrap().get(s) {
                 let has_diff = false;
                 if !has_diff {
+                    let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
                     ctx.translations
                         .lock()
                         .unwrap()
-                        .entry(key_name.unwrap_or("__ARRAY_ELEMENT__").to_string())
+                        .entry(key.clone())
                         .or_default()
                         .push(cached.clone());
+                    ctx.prefilled
+                        .lock()
+                        .unwrap()
+                        .push((s.clone(), key, cached.clone()));
                     return;
                 }
             }

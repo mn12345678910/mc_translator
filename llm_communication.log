@@ -1,33 +1,14 @@
---- LLM 通訊紀錄 [2026-03-13 10:33:13] ---
-[設定]: Ollama / translategemma:4b / 批次量: 300 / 文字數量: 241 / 逾時: 300s
+--- LLM 通訊紀錄 [2026-03-13 14:25:01] ---
+[設定]: Ollama / translategemma:4b / 批次量: 10 / 文字數量: 134 / 逾時: 120s
 [發送內容]:
-(System): 你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。
-保持專業的遊戲術語風格（如方塊、實體、附魔）。
-
-請根據以下【術語建議】進行翻譯（僅供參考，請靈活使用）：
-- netherite => 獄髓
-
-
-[內部技術指令 - 請務必遵守]
-1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。
-2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。
+(System): Translate the following Minecraft mod text to Traditional Chinese.You are a professional translator.
 (User): 以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：
 [1] [f0]
-[2] [i0]Fluid Transfer
-[3] [i1]Netherite Oxygen Can
-[4] [i2]Fluid Capacity
-[5] [i3]Mekanism
-[6] [i4]PneumaticCraft
-[7] [i5]eof
+[2] [i0]Fuel Loader
 
 [接收內容]:
 [1] [f0]
-[2] [i0] 液體傳輸
-[3] [i1] 獄髓氧氣罐
-[4] [i2] 液體容量
-[5] [i3] Mekanism
-[6] [i4] PneumaticCraft
-[7] [i5] 結束
+[2] [i0] 燃料輸送器
 
 ------------------
 

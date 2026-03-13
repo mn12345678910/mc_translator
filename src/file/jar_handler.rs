@@ -29,7 +29,14 @@ pub async fn collect_jar_tasks(
             let mut entries = Vec::new();
             for i in 0..archive.len() {
                 let (is_target, name, content) = {
-                    let mut f = archive.by_index(i)?;
+                    let mut f = match archive.by_index(i) {
+                        Ok(f) => f,
+                        Err(e) => {
+                            eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JAR 檔案索引 {}: {}\x1b[0m", 
+                                chrono::Local::now().format("%H:%M:%S"), i, e);
+                            continue;
+                        }
+                    };
                     let name = f.name().to_string();
                     let is_book = name.contains("patchouli_books") && name.contains("en_us");
                     let is_en_us = (name.ends_with("en_us.json")
@@ -38,7 +45,10 @@ pub async fn collect_jar_tasks(
                     let is_target = is_en_us && !(is_book && skip_book);
                     let mut content = String::new();
                     if is_target {
-                        f.read_to_string(&mut content)?;
+                        if let Err(e) = f.read_to_string(&mut content) {
+                            eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JAR 內檔案 {}: {}\x1b[0m", 
+                                chrono::Local::now().format("%H:%M:%S"), name, e);
+                        }
                     }
                     (is_target, name, content)
                 };
@@ -102,9 +112,16 @@ pub async fn collect_jar_tasks(
         });
 
         engine::collect_translatable_strings(&en_us, &zh_tw, None, &mut pending, &ctx);
-        if !pending.is_empty() {
+        let prefilled_count = ctx.prefilled.lock().unwrap().len();
+        if !pending.is_empty() || prefilled_count > 0 {
             for (orig, key) in pending {
                 global_items.push(GlobalBatchItem::new(&orig, file_id, &key));
+            }
+            // 加入預先填滿的項目 (修正丟失條目與進度條問題)
+            for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {
+                let mut item = GlobalBatchItem::new(orig, file_id, key);
+                item.translated = Some(trans.clone());
+                global_items.push(item);
             }
             file_tasks.push(FileTask::new_json(
                 file_id,
