@@ -16,19 +16,23 @@ impl AppState {
 
         let needs_update = if is_dark {
             !current_is_dark || font_size_changed
+                || ctx.style().visuals.window_fill != egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2])
+                || ctx.style().visuals.override_text_color != Some(egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]))
         } else {
             current_is_dark
-                || ctx.style().visuals.window_fill != egui::Color32::from_rgb(0xFF, 0xDE, 0xAD)
+                || ctx.style().visuals.window_fill != egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2])
+                || ctx.style().visuals.override_text_color != Some(egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]))
                 || font_size_changed
         };
 
         if needs_update {
             let visuals = if is_dark {
                 let mut v = egui::Visuals::dark();
-                v.window_fill = egui::Color32::from_rgb(30, 30, 35);
-                v.panel_fill = egui::Color32::from_rgb(30, 30, 35);
-                v.extreme_bg_color = egui::Color32::from_rgb(20, 20, 25);
+                v.window_fill = egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]);
+                v.panel_fill = v.window_fill;
+                v.extreme_bg_color = v.window_fill.linear_multiply(0.8);
                 v.selection.bg_fill = egui::Color32::from_rgb(60, 100, 150);
+                v.override_text_color = Some(egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]));
 
                 let _btn_bg = egui::Color32::from_rgb(60, 60, 70);
                 v.widgets.inactive.rounding = 8.0.into();
@@ -39,12 +43,12 @@ impl AppState {
                 v
             } else {
                 let mut v = egui::Visuals::light();
-                let bg_color = crate::ui::constants::BG_COLOR_LIGHT;
+                let bg_color = egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]);
                 v.window_fill = bg_color;
                 v.panel_fill = bg_color;
 
                 let btn_bg = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-                let btn_stroke_color = crate::ui::constants::TEXT_COLOR_LIGHT; // 使用 #222
+                let btn_stroke_color = egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]);
 
                 v.widgets.inactive.bg_fill = btn_bg;
                 v.widgets.inactive.weak_bg_fill = btn_bg;
@@ -59,13 +63,13 @@ impl AppState {
                 v.widgets.active.fg_stroke = egui::Stroke::new(1.8, btn_stroke_color);
                 v.widgets.active.rounding = 8.0.into();
 
-                v.extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95); // 統一與按鈕/進度條一致的沙褐色 (原亞麻色移動至日誌背景)
-                v.selection.bg_fill = btn_bg; // 統一選取色與按鈕色
-                v.widgets.noninteractive.bg_fill = btn_bg; // 統一非交互區域背景
+                v.extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
+                v.selection.bg_fill = btn_bg;
+                v.widgets.noninteractive.bg_fill = btn_bg;
                 v.widgets.noninteractive.fg_stroke =
                     egui::Stroke::new(1.0, btn_stroke_color);
                 v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
-                v.override_text_color = Some(crate::ui::constants::TEXT_COLOR_LIGHT);
+                v.override_text_color = Some(btn_stroke_color);
                 v
             };
 

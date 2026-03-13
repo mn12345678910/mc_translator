@@ -390,6 +390,10 @@ impl AppState {
                         self.show_developer_mode = def.show_developer_mode;
                         // 不再從 Config 恢復 show_memory_viewer，預設關閉
                         self.show_memory_viewer = false;
+                        self.dark_bg = def.dark_bg;
+                        self.dark_text = def.dark_text;
+                        self.light_bg = def.light_bg;
+                        self.light_text = def.light_text;
                         {
                             let mut priority = self.glossary_priority.lock().unwrap();
                             *priority = def.glossary_priority;

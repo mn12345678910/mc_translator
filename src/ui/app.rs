@@ -100,6 +100,14 @@ impl eframe::App for AppState {
                 // 3. 設定面板
                 self.render_settings_panel(ui, ui_enabled, ctx);
 
+                // 3.5 調色盤面板
+                if self.show_palette_settings {
+                    ui.add_space(4.0);
+                    ui.group(|ui| {
+                        self.render_palette_settings(ui);
+                    });
+                }
+
                 // 4. 開發者模式面板
                 self.render_developer_mode_panel(ui);
                 ui.add_space(1.0);
