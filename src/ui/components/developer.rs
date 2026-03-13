@@ -110,15 +110,18 @@ impl AppState {
                     .color(label_color)
                     .strong(),
             );
-            let mut text_edit = egui::TextEdit::multiline(&mut self.system_prompt)
-                .desired_rows(4)
-                .desired_width(ui.available_width());
-            
             if self.theme == "light" {
-                text_edit = text_edit.fill(egui::Color32::from_rgb(0xE3, 0xC3, 0x95));
+                ui.visuals_mut().extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
             }
 
-            if ui.add(text_edit).changed() {
+            if ui
+                .add(
+                    egui::TextEdit::multiline(&mut self.system_prompt)
+                        .desired_rows(4)
+                        .desired_width(ui.available_width()),
+                )
+                .changed()
+            {
                 self.save_config();
             }
         });
