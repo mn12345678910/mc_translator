@@ -13,7 +13,7 @@ impl eframe::App for AppState {
                     self.font_size = s;
                 }
                 ViewerUpdate::SaveConfig => {
-                    self.save_config();
+                    self.trigger_save();
                 }
             }
         }
@@ -134,13 +134,13 @@ impl eframe::App for AppState {
             if (pos.x - self.main_x).abs() > 5.0 || (pos.y - self.main_y).abs() > 5.0 {
                 self.main_x = pos.x;
                 self.main_y = pos.y;
-                self.save_config();
+                self.trigger_save();
             }
             if (inner_rect.width() - self.main_width).abs() > 5.0 || (inner_rect.height() - self.main_height).abs() > 5.0
             {
                 self.main_width = inner_rect.width();
                 self.main_height = inner_rect.height();
-                self.save_config();
+                self.trigger_save();
             }
         }
 
@@ -151,6 +151,6 @@ impl eframe::App for AppState {
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
-        self.save_config();
+        self.trigger_save();
     }
 }

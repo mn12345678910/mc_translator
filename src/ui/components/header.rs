@@ -54,7 +54,7 @@ impl AppState {
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.output_dir = path.to_string_lossy().to_string();
-                        self.save_config();
+                        self.trigger_save();
                         self.add_log(&format!("輸出資料夾已設定: {}", self.output_dir));
                     }
                 }
@@ -120,7 +120,7 @@ impl AppState {
                 if self.show_api_settings {
                     self.show_developer_mode = false;
                 }
-                self.save_config();
+                self.trigger_save();
             }
             if ui.button("📖").on_hover_text("建議詞管理器").clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
@@ -136,7 +136,7 @@ impl AppState {
                     let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
                     *opened = false;
                 }
-                self.save_config();
+                self.trigger_save();
             }
             if ui.button("🎨").on_hover_text("自定義調色盤").clicked() {
                 self.show_palette_settings = !self.show_palette_settings;
@@ -144,7 +144,7 @@ impl AppState {
                     self.show_api_settings = false;
                     self.show_developer_mode = false;
                 }
-                self.save_config();
+                self.trigger_save();
             }
             if ui.button("🌓").on_hover_text("切換主題").clicked() {
                 self.theme = if self.theme == "dark" {
@@ -152,14 +152,14 @@ impl AppState {
                 } else {
                     "dark".into()
                 };
-                self.save_config();
+                self.trigger_save();
             }
             if ui.button("🔧").on_hover_text("開發人員模式").clicked() {
                 self.show_developer_mode = !self.show_developer_mode;
                 if self.show_developer_mode {
                     self.show_api_settings = false;
                 }
-                self.save_config();
+                self.trigger_save();
             }
             ui.add_space(8.0);
         });

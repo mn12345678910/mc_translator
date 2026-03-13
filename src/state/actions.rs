@@ -93,47 +93,7 @@ impl AppState {
     }
 
     pub fn save_config(&self) {
-        let mut config = crate::config::AppConfig::load();
-        config.output_dir = self.output_dir.clone();
-        config.api_provider = self.api_provider.clone();
-        config.model = self.selected_model.clone();
-        config.ollama_url = self.ollama_url.clone();
-        config.batch_size = self.batch_size;
-        config.batch_max_chars = self.batch_max_chars;
-        config.ollama_timeout = self.ollama_timeout;
-        config.user_prompt = self.user_prompt.clone();
-        config.system_prompt = self.system_prompt.clone();
-        config.theme = self.theme.clone();
-        config.pack_format = self.pack_format;
-        config.font_size = self.font_size;
-        config.glossary_priority = self.glossary_priority.lock().unwrap().clone();
-        config.skip_json = self.skip_json;
-        config.skip_js = self.skip_js;
-        config.skip_jar = self.skip_jar;
-        config.skip_book = self.skip_book;
-        config.enable_llm_log = self.enable_llm_log;
-
-        // --- 視窗幾幾何與 UI 狀態持久化 ---
-        config.viewer_x = self.viewer_x;
-        config.viewer_y = self.viewer_y;
-        config.viewer_width = self.viewer_width;
-        config.viewer_height = self.viewer_height;
-        config.main_x = self.main_x;
-        config.main_y = self.main_y;
-        config.main_width = self.main_width;
-        config.main_height = self.main_height;
-
-        config.show_api_settings = self.show_api_settings;
-        config.show_developer_mode = self.show_developer_mode;
-        config.enable_custom_fps = self.enable_custom_fps;
-        config.custom_fps = self.custom_fps;
-
-        if self.api_provider == "Ollama" {
-            config.api_key = String::new();
-        } else if self.api_provider != "DeepL" || !self.api_key.is_empty() {
-            config.api_key = self.api_key.clone();
-        }
-        config.save();
+        self.to_config().save();
     }
 
     pub fn refresh_models(&self) {
@@ -162,7 +122,7 @@ impl AppState {
     }
 
     pub fn start_translation(&mut self, _ctx: egui::Context) {
-        self.save_config();
+        self.trigger_save();
 
         if self.is_processing_active() {
             return;

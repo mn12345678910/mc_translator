@@ -113,6 +113,43 @@ pub struct AppState {
     pub dark_text: [u8; 3],
     pub light_bg: [u8; 3],
     pub light_text: [u8; 3],
+
+    pub dark_label: [u8; 3],
+    pub light_label: [u8; 3],
+    pub dark_btn_bg: [u8; 3],
+    pub dark_btn_text: [u8; 3],
+    pub light_btn_bg: [u8; 3],
+    pub light_btn_text: [u8; 3],
+    pub dark_input_bg: [u8; 3],
+    pub light_input_bg: [u8; 3],
+    pub dark_list_bg: [u8; 3],
+    pub light_list_bg: [u8; 3],
+    pub dark_tab_active: [u8; 3],
+    pub dark_tab_inactive: [u8; 3],
+    pub light_tab_active: [u8; 3],
+    pub light_tab_inactive: [u8; 3],
+
+    pub btn_rounding_enabled: bool,
+    pub btn_rounding_value: f32,
+    pub progress_pulse_enabled: bool,
+    pub progress_pulse_speed: f32,
+
+    pub instance_overrides: HashMap<String, crate::config::ComponentStyle>,
+    
+    // --- [持久化與 UI 內部狀態] ---
+    pub save_tx: tokio::sync::mpsc::UnboundedSender<crate::config::AppConfig>,
+    pub palette_edit_slots: Vec<PaletteEditSlot>,
+    pub palette_all_selected: bool,
+    /// 屬性勾選狀態 (批次變更用)
+    pub palette_prop_sync_bg: bool,
+    pub palette_prop_sync_text: bool,
+    pub palette_prop_sync_rounding: bool,
+}
+
+#[derive(Clone, PartialEq)]
+pub struct PaletteEditSlot {
+    pub target_id: String,
+    pub is_checked: bool,
 }
 
 impl AppState {
@@ -221,7 +258,52 @@ impl AppState {
             dark_text: config.dark_text,
             light_bg: config.light_bg,
             light_text: config.light_text,
+            dark_label: config.dark_label,
+            light_label: config.light_label,
+            dark_btn_bg: config.dark_btn_bg,
+            dark_btn_text: config.dark_btn_text,
+            light_btn_bg: config.light_btn_bg,
+            light_btn_text: config.light_btn_text,
+            dark_input_bg: config.dark_input_bg,
+            light_input_bg: config.light_input_bg,
+            dark_list_bg: config.dark_list_bg,
+            light_list_bg: config.light_list_bg,
+            dark_tab_active: config.dark_tab_active,
+            dark_tab_inactive: config.dark_tab_inactive,
+            light_tab_active: config.light_tab_active,
+            light_tab_inactive: config.light_tab_inactive,
+            btn_rounding_enabled: config.btn_rounding_enabled,
+            btn_rounding_value: config.btn_rounding_value,
+            progress_pulse_enabled: config.progress_pulse_enabled,
+            progress_pulse_speed: config.progress_pulse_speed,
+            instance_overrides: config.instance_overrides.clone(),
+            save_tx: {
+                let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+                cc.egui_ctx.request_repaint(); // 確保背景任務啟動
+                let rt = Runtime::new().unwrap(); // 這裡我們需要一個獨立的 runtime 或使用現有的
+                std::thread::spawn(move || {
+                    let rt = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap();
+                    rt.block_on(async move {
+                        while let Some(cfg) = rx.recv().await {
+                            cfg.save();
+                        }
+                    });
+                });
+                tx
+            },
+            palette_edit_slots: vec![
+                PaletteEditSlot { target_id: "全部按鈕".to_string(), is_checked: true },
+            ],
+            palette_all_selected: false,
+            palette_prop_sync_bg: true,
+            palette_prop_sync_text: true,
+            palette_prop_sync_rounding: true,
         };
+
+        // 啟動背景持久化任務已在上述 thread spawn 中處理
 
         state.refresh_all_dictionaries();
         state.refresh_models();
@@ -241,5 +323,71 @@ impl AppState {
 
     pub fn is_processing_active(&self) -> bool {
         *self.is_processing.lock().unwrap()
+    }
+
+    /// 觸發非同步存檔
+    pub fn trigger_save(&self) {
+        let config = self.to_config();
+        let _ = self.save_tx.send(config);
+    }
+
+    /// 將目前狀態轉換為 AppConfig 快照
+    pub fn to_config(&self) -> crate::config::AppConfig {
+        crate::config::AppConfig {
+            api_key: self.api_key.clone(),
+            api_provider: self.api_provider.clone(),
+            model: self.selected_model.clone(),
+            ollama_url: self.ollama_url.clone(),
+            user_prompt: self.user_prompt.clone(),
+            system_prompt: self.system_prompt.clone(),
+            batch_size: self.batch_size,
+            batch_max_chars: self.batch_max_chars,
+            ollama_timeout: self.ollama_timeout,
+            glossary_priority: self.glossary_priority.lock().unwrap().clone(),
+            output_dir: self.output_dir.clone(),
+            theme: self.theme.clone(),
+            font_size: self.font_size,
+            pack_format: self.pack_format,
+            enable_custom_fps: self.enable_custom_fps,
+            custom_fps: self.custom_fps,
+            show_api_settings: self.show_api_settings,
+            show_developer_mode: self.show_developer_mode,
+            skip_json: self.skip_json,
+            skip_js: self.skip_js,
+            skip_jar: self.skip_jar,
+            skip_book: self.skip_book,
+            enable_llm_log: self.enable_llm_log,
+            main_x: self.main_x,
+            main_y: self.main_y,
+            main_width: self.main_width,
+            main_height: self.main_height,
+            viewer_x: self.viewer_x,
+            viewer_y: self.viewer_y,
+            viewer_width: self.viewer_width,
+            viewer_height: self.viewer_height,
+            dark_bg: self.dark_bg,
+            dark_text: self.dark_text,
+            light_bg: self.light_bg,
+            light_text: self.light_text,
+            dark_label: self.dark_label,
+            light_label: self.light_label,
+            dark_btn_bg: self.dark_btn_bg,
+            dark_btn_text: self.dark_btn_text,
+            light_btn_bg: self.light_btn_bg,
+            light_btn_text: self.light_btn_text,
+            dark_input_bg: self.dark_input_bg,
+            light_input_bg: self.light_input_bg,
+            dark_list_bg: self.dark_list_bg,
+            light_list_bg: self.light_list_bg,
+            dark_tab_active: self.dark_tab_active,
+            dark_tab_inactive: self.dark_tab_inactive,
+            light_tab_active: self.light_tab_active,
+            light_tab_inactive: self.light_tab_inactive,
+            btn_rounding_enabled: self.btn_rounding_enabled,
+            btn_rounding_value: self.btn_rounding_value,
+            progress_pulse_enabled: self.progress_pulse_enabled,
+            progress_pulse_speed: self.progress_pulse_speed,
+            instance_overrides: self.instance_overrides.clone(),
+        }
     }
 }

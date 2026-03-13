@@ -6,102 +6,111 @@ impl AppState {
         let is_dark = self.theme == "dark";
         let current_is_dark = ctx.style().visuals.dark_mode;
 
-        let current_font_size = ctx
-            .style()
-            .text_styles
-            .get(&egui::TextStyle::Body)
-            .map(|f| f.size)
-            .unwrap_or(0.0);
-        let font_size_changed = (current_font_size - self.font_size).abs() > 0.1;
+        // 簡化更新偵測，總是套用以確保自定義變更即時反應
+        let visuals = if is_dark {
+            let mut v = egui::Visuals::dark();
+            let bg = egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]);
+            let text = egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]);
+            let btn_bg = egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]);
+            let btn_text = egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]);
+            
+            v.window_fill = bg;
+            v.panel_fill = bg;
+            v.override_text_color = Some(text);
+            
+            // 按鈕設定
+            v.widgets.inactive.bg_fill = btn_bg;
+            v.widgets.inactive.weak_bg_fill = btn_bg;
+            v.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, btn_text);
+            
+            // 圓角設定
+            if self.btn_rounding_enabled {
+                let r = self.btn_rounding_value.into();
+                v.widgets.inactive.rounding = r;
+                v.widgets.hovered.rounding = r;
+                v.widgets.active.rounding = r;
+            }
 
-        let needs_update = if is_dark {
-            !current_is_dark || font_size_changed
-                || ctx.style().visuals.window_fill != egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2])
-                || ctx.style().visuals.override_text_color != Some(egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]))
+            v.extreme_bg_color = egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]);
+            v.faint_bg_color = egui::Color32::from_rgb(self.dark_list_bg[0], self.dark_list_bg[1], self.dark_list_bg[2]);
+            v
         } else {
-            current_is_dark
-                || ctx.style().visuals.window_fill != egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2])
-                || ctx.style().visuals.override_text_color != Some(egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]))
-                || font_size_changed
+            let mut v = egui::Visuals::light();
+            let bg = egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]);
+            let text = egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]);
+            let btn_bg = egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]);
+            let btn_text = egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]);
+
+            v.window_fill = bg;
+            v.panel_fill = bg;
+            v.override_text_color = Some(text);
+
+            v.widgets.inactive.bg_fill = btn_bg;
+            v.widgets.inactive.weak_bg_fill = btn_bg;
+            v.widgets.inactive.fg_stroke = egui::Stroke::new(1.2, btn_text);
+
+            if self.btn_rounding_enabled {
+                let r = self.btn_rounding_value.into();
+                v.widgets.inactive.rounding = r;
+                v.widgets.hovered.rounding = r;
+                v.widgets.active.rounding = r;
+            }
+
+            v.extreme_bg_color = egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]);
+            v.faint_bg_color = egui::Color32::from_rgb(self.light_list_bg[0], self.light_list_bg[1], self.light_list_bg[2]);
+            v
         };
 
-        if needs_update {
-            let visuals = if is_dark {
-                let mut v = egui::Visuals::dark();
-                v.window_fill = egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]);
-                v.panel_fill = v.window_fill;
-                v.extreme_bg_color = v.window_fill.linear_multiply(0.8);
-                v.selection.bg_fill = egui::Color32::from_rgb(60, 100, 150);
-                v.override_text_color = Some(egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]));
+        let mut style = (*ctx.style()).clone();
+        style.visuals = visuals;
+        // 更新字體大小
+        style.text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(self.font_size));
+        style.text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(self.font_size));
+        style.text_styles.insert(egui::TextStyle::Heading, egui::FontId::proportional(self.font_size * 1.5));
+        
+        ctx.set_style(style);
 
-                let _btn_bg = egui::Color32::from_rgb(60, 60, 70);
-                v.widgets.inactive.rounding = 8.0.into();
-                v.widgets.hovered.rounding = 8.0.into();
-                v.widgets.active.rounding = 8.0.into();
+        // 同步狀態至建議詞管理器
+        *self.viewer_shared.theme.write().unwrap() = self.theme.clone();
+        *self.viewer_shared.font_size.write().unwrap() = self.font_size;
+        ctx.request_repaint_of(egui::ViewportId::from_hash_of("memory_viewer"));
+    }
 
-                v.faint_bg_color = egui::Color32::from_rgb(40, 40, 45);
-                v
-            } else {
-                let mut v = egui::Visuals::light();
-                let bg_color = egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]);
-                v.window_fill = bg_color;
-                v.panel_fill = bg_color;
-
-                let btn_bg = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-                let btn_stroke_color = egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]);
-
-                v.widgets.inactive.bg_fill = btn_bg;
-                v.widgets.inactive.weak_bg_fill = btn_bg;
-                v.widgets.inactive.fg_stroke = egui::Stroke::new(1.2, btn_stroke_color);
-                v.widgets.inactive.rounding = 8.0.into();
-
-                v.widgets.hovered.bg_fill = egui::Color32::from_rgb(0xCD, 0xAA, 0x7D);
-                v.widgets.hovered.fg_stroke = egui::Stroke::new(1.8, btn_stroke_color);
-                v.widgets.hovered.rounding = 8.0.into();
-
-                v.widgets.active.bg_fill = egui::Color32::from_rgb(0xA0, 0x7B, 0x7B);
-                v.widgets.active.fg_stroke = egui::Stroke::new(1.8, btn_stroke_color);
-                v.widgets.active.rounding = 8.0.into();
-
-                v.extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-                v.selection.bg_fill = btn_bg;
-                v.widgets.noninteractive.bg_fill = btn_bg;
-                v.widgets.noninteractive.fg_stroke =
-                    egui::Stroke::new(1.0, btn_stroke_color);
-                v.faint_bg_color = egui::Color32::from_rgb(0xEF, 0xD0, 0x9E);
-                v.override_text_color = Some(btn_stroke_color);
-                v
-            };
-
-            let mut style = (*ctx.style()).clone();
-            style.visuals = visuals;
-            style.text_styles.insert(
-                egui::TextStyle::Small,
-                egui::FontId::proportional(self.font_size * 0.8),
-            );
-            style.text_styles.insert(
-                egui::TextStyle::Body,
-                egui::FontId::proportional(self.font_size),
-            );
-            style.text_styles.insert(
-                egui::TextStyle::Button,
-                egui::FontId::proportional(self.font_size),
-            );
-            style.text_styles.insert(
-                egui::TextStyle::Heading,
-                egui::FontId::proportional(self.font_size * 1.5),
-            );
-            style.text_styles.insert(
-                egui::TextStyle::Monospace,
-                egui::FontId::monospace(self.font_size),
-            );
-            ctx.set_style(style);
-
-            // 同步主題至子視窗 (Revision 14.1/14.2)
-            *self.viewer_shared.theme.write().unwrap() = self.theme.clone();
-            *self.viewer_shared.font_size.write().unwrap() = self.font_size;
-            // 立即請求重繪子視窗 (Revision 14.2)
-            ctx.request_repaint_of(egui::ViewportId::from_hash_of("memory_viewer"));
+    /// 獲取特定元件的背景與文字顏色 (解析優先級：實例 > 類別 > 全域)
+    pub fn get_instance_style(&self, id: &str) -> (egui::Color32, egui::Color32) {
+        let is_dark = self.theme == "dark";
+        
+        // 1. 優先查詢實例覆寫
+        if let Some(style) = self.instance_overrides.get(id) {
+            let bg = style.bg.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
+            let text = style.text.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
+            
+            if bg.is_some() || text.is_some() {
+                let final_bg = bg.unwrap_or_else(|| {
+                    let c = if is_dark { self.dark_bg } else { self.light_bg };
+                    egui::Color32::from_rgb(c[0], c[1], c[2])
+                });
+                let final_text = text.unwrap_or_else(|| {
+                    let c = if is_dark { self.dark_text } else { self.light_text };
+                    egui::Color32::from_rgb(c[0], c[1], c[2])
+                });
+                return (final_bg, final_text);
+            }
         }
+
+        // 2. 類別樣式
+        let (rgb_bg, rgb_text) = if id.contains("btn") {
+            (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
+             if is_dark { self.dark_btn_text } else { self.light_btn_text })
+        } else if id.contains("input") {
+            (if is_dark { self.dark_input_bg } else { self.light_input_bg },
+             if is_dark { self.dark_text } else { self.light_text })
+        } else {
+            (if is_dark { self.dark_bg } else { self.light_bg }, 
+             if is_dark { self.dark_text } else { self.light_text })
+        };
+
+        (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),
+         egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]))
     }
 }

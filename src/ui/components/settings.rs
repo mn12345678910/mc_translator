@@ -394,11 +394,30 @@ impl AppState {
                         self.dark_text = def.dark_text;
                         self.light_bg = def.light_bg;
                         self.light_text = def.light_text;
+                        self.dark_label = def.dark_label;
+                        self.light_label = def.light_label;
+                        self.dark_btn_bg = def.dark_btn_bg;
+                        self.dark_btn_text = def.dark_btn_text;
+                        self.light_btn_bg = def.light_btn_bg;
+                        self.light_btn_text = def.light_btn_text;
+                        self.dark_input_bg = def.dark_input_bg;
+                        self.light_input_bg = def.light_input_bg;
+                        self.dark_list_bg = def.dark_list_bg;
+                        self.light_list_bg = def.light_list_bg;
+                        self.dark_tab_active = def.dark_tab_active;
+                        self.dark_tab_inactive = def.dark_tab_inactive;
+                        self.light_tab_active = def.light_tab_active;
+                        self.light_tab_inactive = def.light_tab_inactive;
+                        self.btn_rounding_enabled = def.btn_rounding_enabled;
+                        self.btn_rounding_value = def.btn_rounding_value;
+                        self.progress_pulse_enabled = def.progress_pulse_enabled;
+                        self.progress_pulse_speed = def.progress_pulse_speed;
+                        self.instance_overrides = def.instance_overrides.clone();
                         {
                             let mut priority = self.glossary_priority.lock().unwrap();
                             *priority = def.glossary_priority;
                         }
-                        self.save_config();
+                        self.trigger_save();
                         self.refresh_models();
                         self.show_restore_default_confirm = false;
                     }

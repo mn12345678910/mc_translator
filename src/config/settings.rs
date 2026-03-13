@@ -2,6 +2,7 @@
 //! 負責 AppConfig 結構體定義、`.env` 環境變數的讀寫邏輯。
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 
 use super::encryption::{decrypt_string, encrypt_string};
@@ -98,12 +99,90 @@ pub struct AppConfig {
     pub light_bg: [u8; 3],
     #[serde(default = "default_light_text", rename = "淺色文字", alias = "light_text")]
     pub light_text: [u8; 3],
+
+    // --- [細部色彩自定義] ---
+    #[serde(default = "default_dark_label")]
+    pub dark_label: [u8; 3],
+    #[serde(default = "default_light_label")]
+    pub light_label: [u8; 3],
+
+    #[serde(default = "default_dark_btn_bg")]
+    pub dark_btn_bg: [u8; 3],
+    #[serde(default = "default_dark_btn_text")]
+    pub dark_btn_text: [u8; 3],
+    #[serde(default = "default_light_btn_bg")]
+    pub light_btn_bg: [u8; 3],
+    #[serde(default = "default_light_btn_text")]
+    pub light_btn_text: [u8; 3],
+
+    #[serde(default = "default_dark_input_bg")]
+    pub dark_input_bg: [u8; 3],
+    #[serde(default = "default_light_input_bg")]
+    pub light_input_bg: [u8; 3],
+
+    #[serde(default = "default_dark_list_bg")]
+    pub dark_list_bg: [u8; 3],
+    #[serde(default = "default_light_list_bg")]
+    pub light_list_bg: [u8; 3],
+
+    #[serde(default = "default_dark_tab_active")]
+    pub dark_tab_active: [u8; 3],
+    #[serde(default = "default_dark_tab_inactive")]
+    pub dark_tab_inactive: [u8; 3],
+    #[serde(default = "default_light_tab_active")]
+    pub light_tab_active: [u8; 3],
+    #[serde(default = "default_light_tab_inactive")]
+    pub light_tab_inactive: [u8; 3],
+
+    // --- [造型與動畫] ---
+    #[serde(default)]
+    pub btn_rounding_enabled: bool,
+    #[serde(default = "default_rounding")]
+    pub btn_rounding_value: f32,
+
+    #[serde(default = "default_true")]
+    pub progress_pulse_enabled: bool,
+    #[serde(default = "default_pulse_speed")]
+    pub progress_pulse_speed: f32,
+
+    // --- [特定元件覆寫] ---
+    #[serde(default)]
+    pub instance_overrides: HashMap<String, ComponentStyle>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ComponentStyle {
+    pub bg: Option<[u8; 3]>,
+    pub text: Option<[u8; 3]>,
 }
 
 fn default_dark_bg() -> [u8; 3] { [30, 30, 35] }
 fn default_dark_text() -> [u8; 3] { [200, 160, 100] }
 fn default_light_bg() -> [u8; 3] { [0xFF, 0xFD, 0xF0] }
 fn default_light_text() -> [u8; 3] { [34, 34, 34] }
+
+fn default_dark_label() -> [u8; 3] { [180, 180, 190] }
+fn default_light_label() -> [u8; 3] { [80, 80, 80] }
+
+fn default_dark_btn_bg() -> [u8; 3] { [45, 45, 50] }
+fn default_dark_btn_text() -> [u8; 3] { [220, 220, 220] }
+fn default_light_btn_bg() -> [u8; 3] { [240, 240, 230] }
+fn default_light_btn_text() -> [u8; 3] { [40, 40, 40] }
+
+fn default_dark_input_bg() -> [u8; 3] { [20, 20, 25] }
+fn default_light_input_bg() -> [u8; 3] { [250, 250, 245] }
+
+fn default_dark_list_bg() -> [u8; 3] { [25, 25, 30] }
+fn default_light_list_bg() -> [u8; 3] { [255, 255, 250] }
+
+fn default_dark_tab_active() -> [u8; 3] { [60, 60, 70] }
+fn default_dark_tab_inactive() -> [u8; 3] { [35, 35, 40] }
+fn default_light_tab_active() -> [u8; 3] { [220, 220, 210] }
+fn default_light_tab_inactive() -> [u8; 3] { [245, 245, 240] }
+
+fn default_rounding() -> f32 { 4.0 }
+fn default_pulse_speed() -> f32 { 1.0 }
+fn default_true() -> bool { true }
 
 
 impl Default for AppConfig {
@@ -146,6 +225,25 @@ impl Default for AppConfig {
             dark_text: default_dark_text(),
             light_bg: default_light_bg(),
             light_text: default_light_text(),
+            dark_label: default_dark_label(),
+            light_label: default_light_label(),
+            dark_btn_bg: default_dark_btn_bg(),
+            dark_btn_text: default_dark_btn_text(),
+            light_btn_bg: default_light_btn_bg(),
+            light_btn_text: default_light_btn_text(),
+            dark_input_bg: default_dark_input_bg(),
+            light_input_bg: default_light_input_bg(),
+            dark_list_bg: default_dark_list_bg(),
+            light_list_bg: default_light_list_bg(),
+            dark_tab_active: default_dark_tab_active(),
+            dark_tab_inactive: default_dark_tab_inactive(),
+            light_tab_active: default_light_tab_active(),
+            light_tab_inactive: default_light_tab_inactive(),
+            btn_rounding_enabled: true,
+            btn_rounding_value: default_rounding(),
+            progress_pulse_enabled: true,
+            progress_pulse_speed: default_pulse_speed(),
+            instance_overrides: HashMap::new(),
         }
     }
 }
