@@ -1,5 +1,6 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
 use crate::translation::job::{JobConfig, JobSharedState};
+use crate::file::jar_handler::repack_jar;
 use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::utils::text_processing::sync_formatting;
@@ -69,7 +70,6 @@ pub async fn process_all_files(
     _mc_lang: Arc<Mutex<Option<crate::translation::glossary::McLangFiles>>>,
     _terms: Arc<Mutex<Vec<(String, String)>>>,
     exact: Arc<Mutex<HashMap<String, String>>>,
-    inferred: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut file_tasks: Vec<FileTask> = Vec::new();
     let mut global_items: Vec<GlobalBatchItem> = Vec::new();
@@ -83,7 +83,6 @@ pub async fn process_all_files(
     let log = state.log.clone();
 
     let mut join_set = tokio::task::JoinSet::new();
-    let total_paths = paths.len();
 
     for (path, rel_path) in paths {
         if *cancelled_arc.lock().unwrap() {
@@ -115,12 +114,12 @@ pub async fn process_all_files(
         });
     }
 
-
+    let mut total_string_count = 0;
     while let Some(res) = join_set.join_next().await {
         if let Ok(Ok((tasks, items))) = res {
             let offset = file_id_counter;
-            let mut tasks: Vec<FileTask> = tasks;
-            let mut items: Vec<GlobalBatchItem> = items;
+            let mut tasks = tasks;
+            let mut items = items;
 
             for t in &mut tasks {
                 t.file_id += offset;
@@ -135,7 +134,7 @@ pub async fn process_all_files(
 
             {
                 let mut total = state.global_total.lock().unwrap();
-                *total = total_paths as f32; // 使用先存起來的總數
+                *total = file_id_counter as f32;
             }
         }
     }
@@ -152,15 +151,9 @@ pub async fn process_all_files(
     let glossary_automaton = GlossaryAutomaton::new(
         &exact.lock().unwrap(),
         &state.translation_memory.lock().unwrap(),
-        &inferred.lock().unwrap(),
-        &job_config.lock().unwrap().glossary_priority,
     );
 
     let mut item_offset = 0;
-    
-    // 用於記錄 JAR 檔案是否有被修改，以便最後決定是否 Repack
-    let mut modified_jars = std::collections::HashSet::new();
-
     for (idx, task) in file_tasks.iter().enumerate() {
         if *cancelled_arc.lock().unwrap() {
             break;
@@ -172,23 +165,14 @@ pub async fn process_all_files(
             .count();
 
         if file_item_count == 0 {
-            // 無翻譯項目，顯示略過日誌 (info 級別)
-            crate::utils::add_log(&log, &format!("(略過條目) 略過處理: {}", task.rel_path));
-            
-            // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
-            let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
-            if next_path != Some(&task.path) {
-                let mut g_prog = state.global_progress.lock().unwrap();
-                *g_prog += 1.0;
-            }
-
-            item_offset += file_item_count; // 雖然是 0 但保持邏輯完整
+            let mut g_prog = state.global_progress.lock().unwrap();
+            *g_prog = (idx + 1) as f32;
             continue;
         }
 
         let current_file_items = &mut global_items[item_offset..item_offset + file_item_count];
-        
-        // 執行翻譯
+        item_offset += file_item_count;
+
         translate_global_batches(
             current_file_items,
             job_config.clone(),
@@ -203,110 +187,97 @@ pub async fn process_all_files(
         )
         .await?;
 
-        // 立即套用結果並寫入磁碟以釋放記憶體
-        let config_locked = job_config.lock().unwrap().clone();
-        let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
-        
-        apply_single_file_results(&config_locked, task, current_file_items)?;
-
-        if is_jar_member {
-            modified_jars.insert(task.path.clone());
-        }
-
-        // 翻譯完成日誌 (需求格式: /路徑 翻譯完成)
-        let display_path = crate::utils::extract_display_path(Path::new(&task.rel_path));
-        let display_path = if display_path.starts_with('/') {
-            display_path
-        } else {
-            format!("/{}", display_path)
-        };
-        crate::utils::add_log(&log, &format!("({}) 翻譯完成", display_path));
-
-        // 釋放已翻譯項目的記憶體內容 (如果有必要，這裡可以將 translated 設為 None，
-        // 但目前 GlobalBatchItem 已經完成了任務，其生命週期在迴圈結束後就會消失)
-
-        item_offset += file_item_count;
-
-        // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
-        let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
-        if next_path != Some(&task.path) {
+        {
             let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog += 1.0;
+            *g_prog = (idx + 1) as f32;
         }
     }
 
     if !*cancelled_arc.lock().unwrap() {
         let config_locked = job_config.lock().unwrap().clone();
-        
-        // JAR Repack 階段：遍歷所有被修改過的 JAR 進行重新打包
-        for jar_path in modified_jars {
-            crate::file::jar_handler::repack_jar(&jar_path, &HashMap::new(), &config_locked)?; // HashMap 為空代表從 temp 目錄讀取
-        }
+        apply_global_results(&config_locked, &file_tasks, &global_items)?;
 
-        // 無條件嘗試生成資源包，由 output_resource_pack 內部判斷是否有內容需要壓縮
-        output_resource_pack(
-            &std::path::PathBuf::new(),
-            HashMap::new(),
-            config_locked,
-            log.clone(),
-        )
-        .await?;
+        let has_bundle = file_tasks.iter().any(|t| {
+            t.rel_path.contains("patchouli_books") || t.path.to_string_lossy().contains("mods")
+        });
+        if has_bundle {
+            output_resource_pack(
+                &std::path::PathBuf::new(),
+                HashMap::new(),
+                config_locked,
+                log.clone(),
+            )
+            .await?;
+        }
     }
 
     Ok(())
 }
 
-pub fn apply_single_file_results(
+pub fn apply_global_results(
     config: &JobConfig,
-    task: &FileTask,
-    items: &[GlobalBatchItem],
+    file_tasks: &[FileTask],
+    global_items: &[GlobalBatchItem],
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut local_map: HashMap<String, Vec<String>> = HashMap::new();
-    for item in items {
-        if let Some(ref t) = item.translated {
-            local_map
-                .entry(item.key.clone())
-                .or_default()
-                .push(t.clone());
-        }
-    }
+    let mut all_results = HashMap::new();
+    let mut jar_repack_map: HashMap<std::path::PathBuf, HashMap<String, String>> = HashMap::new();
 
-    if local_map.is_empty() {
-        return Ok(());
-    }
-
-    let final_content = if task.en_us_value.is_some() {
-        sync_formatting(&task.original_content, &local_map)
-    } else {
-        let mut replacements = Vec::new();
-        for (start, end, _, idx) in &task.js_matches {
-            if let Some(v_list) = local_map.get(&format!("js_key_{}", idx)) {
-                if let Some(t) = v_list.first() {
-                    replacements.push((*start, *end, t.clone()));
+    for task in file_tasks {
+        let mut local_map: HashMap<String, Vec<String>> = HashMap::new();
+        for item in global_items {
+            if item.file_id == task.file_id {
+                if let Some(ref t) = item.translated {
+                    local_map
+                        .entry(item.key.clone())
+                        .or_default()
+                        .push(t.clone());
                 }
             }
         }
-        replacements.sort_by_key(|r| r.0);
-        replacements.reverse();
-        let mut c = task.original_content.clone();
-        for (s, e, t) in replacements {
-            if s < e && e <= c.len() {
-                c.replace_range(s..e, &t);
-            }
-        }
-        c
-    };
 
-    let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
-    
-    if is_jar_member {
-        // JAR 內檔案：先寫入暫存盤釋放記憶體
-        crate::file::jar_handler::write_inner_temp(config, &task.path, &task.rel_path, &final_content)?;
-    } else {
-        // 普通外部檔案：直接寫入輸出目錄
-        let mut results = HashMap::new();
-        results.insert(task.rel_path.clone(), final_content);
-        write_to_temp_or_output(config, results)?;
+        if local_map.is_empty() {
+            continue;
+        }
+
+        let final_content = if task.en_us_value.is_some() {
+            sync_formatting(&task.original_content, &local_map)
+        } else {
+            let mut replacements = Vec::new();
+            for (start, end, _, idx) in &task.js_matches {
+                if let Some(v_list) = local_map.get(&format!("js_key_{}", idx)) {
+                    if let Some(t) = v_list.first() {
+                        replacements.push((*start, *end, t.clone()));
+                    }
+                }
+            }
+            replacements.sort_by_key(|r| r.0);
+            replacements.reverse();
+            let mut c = task.original_content.clone();
+            for (s, e, t) in replacements {
+                if s < e && e <= c.len() {
+                    c.replace_range(s..e, &t);
+                }
+            }
+            c
+        };
+
+        if task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js") {
+            jar_repack_map
+                .entry(task.path.clone())
+                .or_default()
+                .insert(task.rel_path.clone(), final_content.clone());
+            all_results.insert(format!("[BUNDLE]{}", task.rel_path), final_content);
+        } else {
+            all_results.insert(task.rel_path.clone(), final_content);
+        }
+    }
+
+    if !all_results.is_empty() {
+        write_to_temp_or_output(config, all_results)?;
+    }
+
+    for (jar_path, files) in jar_repack_map {
+        repack_jar(&jar_path, &files)?;
     }
 
     Ok(())

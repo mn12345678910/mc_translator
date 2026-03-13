@@ -82,20 +82,12 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        if final_path.starts_with("assets/") || final_path.contains("patchouli_books/") {
-            // 寫入暫存目錄以待最後壓縮成 Zip
-            let zip_temp_path = temp_dir.join(&final_path);
-            if let Some(parent) = zip_temp_path.parent() {
+        if final_path.starts_with("assets/") {
+            let fs_path = temp_dir.join(&final_path);
+            if let Some(parent) = fs_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }
-            let _ = fs::write(&zip_temp_path, &content);
-            
-            // 同時寫入鏡像資料夾以滿足使用者直接查看的需求
-            let folder_path = output_path.join(&final_path);
-            if let Some(parent) = folder_path.parent() {
-                let _ = fs::create_dir_all(parent);
-            }
-            let _ = fs::write(&folder_path, content);
+            let _ = fs::write(&fs_path, content);
         } else {
             // 防禦性檢查：防止 final_path 為絕對路徑導致 Path::join 置換掉基礎路徑 (Path Escape Fix)
             let safe_final_path = if Path::new(&final_path).is_absolute() {
@@ -141,19 +133,6 @@ pub async fn output_resource_pack(
             if !temp_dir.exists() {
                 return Ok(());
             }
-
-            // 檢查暫存目錄是否有實際檔案需要壓縮 (排除即將生成的 pack.mcmeta)
-            let has_files = walkdir::WalkDir::new(&temp_dir)
-                .into_iter()
-                .filter_map(|e| e.ok())
-                .any(|e| e.file_type().is_file());
-
-            if !has_files {
-                let _ = fs::remove_dir_all(&temp_dir); // 清理空目錄
-                return Ok(());
-            }
-
-            crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...");
 
             let pack_mcmeta = serde_json::json!({
                 "pack": {
