@@ -88,7 +88,23 @@ pub struct AppConfig {
     pub viewer_width: f32,
     #[serde(rename = "建議詞視窗高度", alias = "viewer_height")]
     pub viewer_height: f32,
+
+    // --- [自定義調色盤] ---
+    #[serde(default = "default_dark_bg", rename = "深色背景", alias = "dark_bg")]
+    pub dark_bg: [u8; 3],
+    #[serde(default = "default_dark_text", rename = "深色文字", alias = "dark_text")]
+    pub dark_text: [u8; 3],
+    #[serde(default = "default_light_bg", rename = "淺色背景", alias = "light_bg")]
+    pub light_bg: [u8; 3],
+    #[serde(default = "default_light_text", rename = "淺色文字", alias = "light_text")]
+    pub light_text: [u8; 3],
 }
+
+fn default_dark_bg() -> [u8; 3] { [30, 30, 35] }
+fn default_dark_text() -> [u8; 3] { [200, 160, 100] }
+fn default_light_bg() -> [u8; 3] { [0xFF, 0xFD, 0xF0] }
+fn default_light_text() -> [u8; 3] { [34, 34, 34] }
+
 
 impl Default for AppConfig {
     fn default() -> Self {
@@ -126,6 +142,10 @@ impl Default for AppConfig {
             viewer_y: 100.0,
             viewer_width: 750.0,
             viewer_height: 500.0,
+            dark_bg: default_dark_bg(),
+            dark_text: default_dark_text(),
+            light_bg: default_light_bg(),
+            light_text: default_light_text(),
         }
     }
 }
