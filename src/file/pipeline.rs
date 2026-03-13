@@ -83,6 +83,7 @@ pub async fn process_all_files(
     let log = state.log.clone();
 
     let mut join_set = tokio::task::JoinSet::new();
+    let total_paths = paths.len();
 
     for (path, rel_path) in paths {
         if *cancelled_arc.lock().unwrap() {
@@ -118,8 +119,8 @@ pub async fn process_all_files(
     while let Some(res) = join_set.join_next().await {
         if let Ok(Ok((tasks, items))) = res {
             let offset = file_id_counter;
-            let mut tasks = tasks;
-            let mut items = items;
+            let mut tasks: Vec<FileTask> = tasks;
+            let mut items: Vec<GlobalBatchItem> = items;
 
             for t in &mut tasks {
                 t.file_id += offset;
@@ -134,7 +135,7 @@ pub async fn process_all_files(
 
             {
                 let mut total = state.global_total.lock().unwrap();
-                *total = file_id_counter as f32;
+                *total = total_paths as f32; // 使用先存起來的總數
             }
         }
     }
@@ -207,24 +208,26 @@ pub async fn process_all_files(
             modified_jars.insert(task.path.clone());
         }
 
-        // 翻譯完成日誌 (需求格式: /路徑 翻譯完成 條目數)
+        // 翻譯完成日誌 (需求格式: /路徑 翻譯完成)
         let display_path = crate::utils::extract_display_path(Path::new(&task.rel_path));
         let display_path = if display_path.starts_with('/') {
             display_path
         } else {
             format!("/{}", display_path)
         };
-        crate::utils::add_log(&log, &format!("({}) 翻譯完成 ({})", display_path, file_item_count));
+        crate::utils::add_log(&log, &format!("({}) 翻譯完成", display_path));
 
         // 釋放已翻譯項目的記憶體內容 (如果有必要，這裡可以將 translated 設為 None，
         // 但目前 GlobalBatchItem 已經完成了任務，其生命週期在迴圈結束後就會消失)
 
-        {
-            let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog = (idx + 1) as f32;
-        }
-        
         item_offset += file_item_count;
+
+        // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
+        let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
+        if next_path != Some(&task.path) {
+            let mut g_prog = state.global_progress.lock().unwrap();
+            *g_prog += 1.0;
+        }
     }
 
     if !*cancelled_arc.lock().unwrap() {
@@ -235,8 +238,8 @@ pub async fn process_all_files(
             crate::file::jar_handler::repack_jar(&jar_path, &HashMap::new(), &config_locked)?; // HashMap 為空代表從 temp 目錄讀取
         }
 
-        let has_patchouli = file_tasks.iter().any(|t| t.rel_path.contains("patchouli_books"));
-        if has_patchouli {
+        let has_assets = file_tasks.iter().any(|t| t.rel_path.contains("assets/"));
+        if has_assets {
             crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...");
             output_resource_pack(
                 &std::path::PathBuf::new(),

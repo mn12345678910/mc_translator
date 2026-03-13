@@ -48,12 +48,22 @@ impl AppState {
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
         let accent_color = ui.visuals().selection.bg_fill;
         let bar_color = if processing {
-            let shimmer_val = ((ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 0.85) as f32; // 0.7 ~ 1.0
-            egui::Color32::from_rgb(
-                (accent_color.r() as f32 * shimmer_val) as u8,
-                (accent_color.g() as f32 * shimmer_val) as u8,
-                (accent_color.b() as f32 * shimmer_val) as u8,
-            )
+            if self.theme == "light" {
+                // 淺色模式：基於沙褐色 (#E3C395)，閃爍時略微變亮/變色以符合視覺期望
+                let shimmer_val = ((ctx.input(|i| i.time) * 4.0).sin() * 0.1 + 0.9) as f32; // 0.8 ~ 1.0
+                egui::Color32::from_rgb(
+                    (227.0 * shimmer_val) as u8,
+                    (195.0 * shimmer_val) as u8,
+                    (149.0 * shimmer_val) as u8,
+                )
+            } else {
+                let shimmer_val = ((ctx.input(|i| i.time) * 4.0).sin() * 0.15 + 0.85) as f32;
+                egui::Color32::from_rgb(
+                    (accent_color.r() as f32 * shimmer_val) as u8,
+                    (accent_color.g() as f32 * shimmer_val) as u8,
+                    (accent_color.b() as f32 * shimmer_val) as u8,
+                )
+            }
         } else {
             if self.theme == "light" {
                 ui.visuals().widgets.inactive.bg_fill // 統一與按鈕/輸入框背景色
