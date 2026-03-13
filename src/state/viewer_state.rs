@@ -29,6 +29,7 @@ pub struct StyleSnapshot {
     pub light_list_bg: [u8; 3],
     pub dark_tab_active: [u8; 3],
     pub light_tab_active: [u8; 3],
+    pub rounding: f32,
     pub instance_overrides: std::collections::HashMap<String, crate::config::settings::ComponentStyle>,
 }
 

@@ -55,7 +55,8 @@ impl AppState {
                                         "[特定] ⚙️ 設定按鈕", "[特定] 📖 字典按鈕",
                                         "[特定] 🎨 調色盤按鈕", "[特定] 🌓 主題按鈕",
                                         "[特定] 🔧 開發按鈕", "[特定] 建議詞搜尋框",
-                                        "[特定] 字典列表區域", "[特定] 輸出路徑標籤"
+                                        "[特定] 字典列表區域", "[特定] 輸出路徑標籤",
+                                        "[特定] 目前檔案進度條", "[特定] 總進度條"
                                     ])
                                 ];
                                 
@@ -101,11 +102,6 @@ impl AppState {
                     .map(|s| s.target_id.clone())
                     .collect();
 
-                // if active_targets.is_empty() { // V6: 至少會有一個槽位，所以不需要這個檢查
-                //     ui.label(egui::RichText::new("請先勾選上方編輯目標").weak());
-                //     return;
-                // }
-
                 egui::Grid::new("prop_grid_v6").num_columns(2).spacing([20.0, 10.0]).show(ui, |ui| {
                     // 背景顏色
                     ui.horizontal(|ui| {
@@ -125,6 +121,16 @@ impl AppState {
                     let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
                     if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
                         self.apply_batch_color(false, dummy_text);
+                    }
+                    ui.end_row();
+
+                    // 自定義圓角 (Revision 15.30+)
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut self.palette_prop_sync_rounding, "自定義圓角");
+                    });
+                    let mut dummy_rounding = self.btn_rounding_value;
+                    if ui.add(egui::DragValue::new(&mut dummy_rounding).speed(0.5).clamp_range(0.0..=30.0)).changed() && self.palette_prop_sync_rounding {
+                        self.apply_batch_rounding(dummy_rounding);
                     }
                     ui.end_row();
                 });
@@ -203,6 +209,28 @@ impl AppState {
         self.trigger_save();
     }
 
+    /// 批次套用圓角至清單中所有目標 (Revision 15.30+)
+    fn apply_batch_rounding(&mut self, val: f32) {
+        let targets: Vec<String> = self.palette_edit_slots.iter()
+            .map(|s| s.target_id.clone())
+            .collect();
+
+        for t in targets {
+            if t.contains("全部") || !t.contains("[特定]") {
+                // 類別更新
+                if t == "全部按鈕" || t == "全部進度條" || t == "頂部導覽列" {
+                    self.btn_rounding_value = val;
+                }
+            } else {
+                // 特定元件覆寫
+                let key = self.get_id_from_target_name(&t);
+                let entry = self.instance_overrides.entry(key).or_default();
+                entry.rounding = Some(val);
+            }
+        }
+        self.trigger_save();
+    }
+
     fn get_id_from_target_name(&self, name: &str) -> String {
         match name {
             "[特定] 選擇檔案按鈕" => "btn_select_file",
@@ -218,9 +246,10 @@ impl AppState {
             "[特定] 🎨 調色盤按鈕" => "btn_nav_palette",
             "[特定] 🌓 主題按鈕" => "btn_nav_theme",
             "[特定] 🔧 開發按鈕" => "btn_nav_dev",
-            "[特定] 建議詞搜尋框" => "input_dict_search",
             "[特定] 字典列表區域" => "area_dict_list",
             "[特定] 輸出路徑標籤" => "label_output_path",
+            "[特定] 目前檔案進度條" => "progress_current",
+            "[特定] 總進度條" => "progress_total",
             _ => name,
         }.to_string()
     }

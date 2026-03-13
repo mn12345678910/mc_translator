@@ -89,17 +89,25 @@ impl AppState {
         ctx.request_repaint_of(egui::ViewportId::from_hash_of("memory_viewer"));
     }
 
-    /// 獲取特定元件的背景與文字顏色 (解析優先級：實例 > 類別 > 全域)
+    /// 獲取特定元件的背景與文字顏色
     pub fn get_instance_style(&self, id: &str) -> (egui::Color32, egui::Color32) {
+        let (bg, text, _) = self.get_instance_style_full(id);
+        (bg, text)
+    }
+
+    /// 獲取特定元件的完整樣式 (含圓角) (Revision 15.30+)
+    pub fn get_instance_style_full(&self, id: &str) -> (egui::Color32, egui::Color32, f32) {
         let is_dark = self.theme == "dark";
+        let default_rounding = self.btn_rounding_value;
         
         // 1. 優先查詢實例覆寫 (精確 ID 匹配)
         if let Some(style) = self.instance_overrides.get(id) {
             let bg = style.bg.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
             let text = style.text.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
+            let rounding = style.rounding.unwrap_or(default_rounding);
             
-            if bg.is_some() || text.is_some() {
-                // 預設顏色回退 (根據 ID 特性回退至類別而非全域)
+            if bg.is_some() || text.is_some() || style.rounding.is_some() {
+                // 預設顏色回退
                 let final_bg = bg.unwrap_or_else(|| {
                     if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) } }
                     else if id.contains("input") { if is_dark { egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]) } else { egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]) } }
@@ -109,11 +117,11 @@ impl AppState {
                     if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]) } else { egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]) } }
                     else { if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } else { egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]) } }
                 });
-                return (final_bg, final_text);
+                return (final_bg, final_text, rounding);
             }
         }
 
-        // 2. 類別樣式解析 (V6 擴展)
+        // 2. 類別樣式解析
         let (rgb_bg, rgb_text) = if id.contains("btn") || id.contains("nav") {
             (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
              if is_dark { self.dark_btn_text } else { self.light_btn_text })
@@ -135,6 +143,7 @@ impl AppState {
         };
 
         (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),
-         egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]))
+         egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]),
+         default_rounding)
     }
 }

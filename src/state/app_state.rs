@@ -193,6 +193,7 @@ impl AppState {
                 light_list_bg: style_cfg.light_list_bg,
                 dark_tab_active: style_cfg.dark_tab_active,
                 light_tab_active: style_cfg.light_tab_active,
+                rounding: style_cfg.btn_rounding_value,
                 instance_overrides: style_cfg.instance_overrides.clone(),
             })),
             close_requested,
@@ -375,6 +376,7 @@ impl AppState {
                 light_list_bg: self.light_list_bg,
                 dark_tab_active: self.dark_tab_active,
                 light_tab_active: self.light_tab_active,
+                rounding: self.btn_rounding_value,
                 instance_overrides: self.instance_overrides.clone(),
             };
         }

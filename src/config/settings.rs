@@ -159,6 +159,7 @@ pub struct StyleConfig {
 pub struct ComponentStyle {
     pub bg: Option<[u8; 3]>,
     pub text: Option<[u8; 3]>,
+    pub rounding: Option<f32>,
 }
 
 fn default_dark_bg() -> [u8; 3] { [30, 30, 35] }

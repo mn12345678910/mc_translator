@@ -728,20 +728,59 @@ impl AppState {
 
 /// 從 StyleSnapshot 獲取精確樣式 (Revision 15.18)
 fn get_instance_style_from_snap(snap: &crate::state::viewer_state::StyleSnapshot, id: &str, is_dark: bool) -> (egui::Color32, egui::Color32) {
+    let (bg, text, _) = get_instance_style_from_snap_full(snap, id, is_dark);
+    (bg, text)
+}
+
+/// 獲取完整樣式 (含圓角) (Revision 15.30+)
+fn get_instance_style_from_snap_full(
+    snap: &crate::state::viewer_state::StyleSnapshot,
+    id: &str,
+    is_dark: bool,
+) -> (egui::Color32, egui::Color32, f32) {
+    use crate::state::viewer_state::StyleSnapshot; // Add this import
+
+    let default_rounding = snap.rounding;
+
     if let Some(style) = snap.instance_overrides.get(id) {
         let bg = style.bg.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
         let text = style.text.map(|c| egui::Color32::from_rgb(c[0], c[1], c[2]));
-        
-        if bg.is_some() || text.is_some() {
+        let rounding = style.rounding.unwrap_or(default_rounding);
+
+        if bg.is_some() || text.is_some() || style.rounding.is_some() {
             let final_bg = bg.unwrap_or_else(|| {
-                if id.contains("btn") { if is_dark { egui::Color32::from_rgb(snap.dark_btn_bg[0], snap.dark_btn_bg[1], snap.dark_btn_bg[2]) } else { egui::Color32::from_rgb(snap.light_btn_bg[0], snap.light_btn_bg[1], snap.light_btn_bg[2]) } }
-                else if id.contains("input") { if is_dark { egui::Color32::from_rgb(snap.dark_input_bg[0], snap.dark_input_bg[1], snap.dark_input_bg[2]) } else { egui::Color32::from_rgb(snap.light_input_bg[0], snap.light_input_bg[1], snap.light_input_bg[2]) } }
-                else { if is_dark { egui::Color32::from_rgb(snap.dark_bg[0], snap.dark_bg[1], snap.dark_bg[2]) } else { egui::Color32::from_rgb(snap.light_bg[0], snap.light_bg[1], snap.light_bg[2]) } }
+                if id.contains("btn") || id.contains("nav") {
+                    if is_dark {
+                        egui::Color32::from_rgb(snap.dark_btn_bg[0], snap.dark_btn_bg[1], snap.dark_btn_bg[2])
+                    } else {
+                        egui::Color32::from_rgb(snap.light_btn_bg[0], snap.light_btn_bg[1], snap.light_btn_bg[2])
+                    }
+                } else if id.contains("list") || id.contains("area") {
+                    if is_dark { egui::Color32::from_rgb(snap.dark_list_bg[0], snap.dark_list_bg[1], snap.dark_list_bg[2]) } else { egui::Color32::from_rgb(snap.light_list_bg[0], snap.light_list_bg[1], snap.light_list_bg[2]) }
+                } else {
+                    if is_dark {
+                        egui::Color32::from_rgb(snap.dark_bg[0], snap.dark_bg[1], snap.dark_bg[2])
+                    } else {
+                        egui::Color32::from_rgb(snap.light_bg[0], snap.light_bg[1], snap.light_bg[2])
+                    }
+                }
             });
             let final_text = text.unwrap_or_else(|| {
-                if is_dark { egui::Color32::from_rgb(snap.dark_text[0], snap.dark_text[1], snap.dark_text[2]) } else { egui::Color32::from_rgb(snap.light_text[0], snap.light_text[1], snap.light_text[2]) }
+                if id.contains("btn") || id.contains("nav") {
+                    if is_dark {
+                        egui::Color32::from_rgb(snap.dark_btn_text[0], snap.dark_btn_text[1], snap.dark_btn_text[2])
+                    } else {
+                        egui::Color32::from_rgb(snap.light_btn_text[0], snap.light_btn_text[1], snap.light_btn_text[2])
+                    }
+                } else {
+                    if is_dark {
+                        egui::Color32::from_rgb(snap.dark_text[0], snap.dark_text[1], snap.dark_text[2])
+                    } else {
+                        egui::Color32::from_rgb(snap.light_text[0], snap.light_text[1], snap.light_text[2])
+                    }
+                }
             });
-            return (final_bg, final_text);
+            return (final_bg, final_text, rounding);
         }
     }
     
@@ -755,5 +794,6 @@ fn get_instance_style_from_snap(snap: &crate::state::viewer_state::StyleSnapshot
     };
     
     (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),
-     egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]))
+     egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]),
+     default_rounding)
 }
