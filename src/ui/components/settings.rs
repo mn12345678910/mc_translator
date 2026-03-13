@@ -222,8 +222,31 @@ impl AppState {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("版本:").color(label_color).strong());
+                            ui.label(egui::RichText::new("資源包版本:").color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
+                                egui::ComboBox::from_id_source("pack_format_presets")
+                                    .selected_text("常用版本")
+                                    .width(80.0)
+                                    .show_ui(ui, |ui| {
+                                        for (ver, fmt) in &[
+                                            ("1.21.4", 46),
+                                            ("1.21.2", 42),
+                                            ("1.21", 34),
+                                            ("1.20.4", 22),
+                                            ("1.20.2", 18),
+                                            ("1.20.1", 15),
+                                            ("1.19.4", 13),
+                                            ("1.19.2", 10),
+                                            ("1.18.2", 9),
+                                            ("1.16.5", 6),
+                                        ] {
+                                            if ui.selectable_label(self.pack_format == *fmt, *ver).clicked() {
+                                                self.pack_format = *fmt;
+                                                self.save_config();
+                                            }
+                                        }
+                                    });
+
                                 if ui
                                     .add(
                                         egui::DragValue::new(&mut self.pack_format)
