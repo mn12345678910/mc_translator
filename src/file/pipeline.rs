@@ -137,6 +137,18 @@ pub async fn process_all_files(
         }
     }
 
+    // --- JAR 分組追蹤優化 (Immediate Repack) ---
+    let mut jar_group_map: HashMap<std::path::PathBuf, std::collections::HashSet<usize>> = HashMap::new();
+    for task in &file_tasks {
+        let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
+        if is_jar_member {
+            jar_group_map.entry(task.path.clone()).or_default().insert(task.file_id);
+        }
+    }
+    let mut finished_ids = std::collections::HashSet::new();
+    let mut repack_buffer: HashMap<std::path::PathBuf, HashMap<String, String>> = HashMap::new();
+    // ------------------------------------------
+
     // 更新全域進度總量 (Revision 15.40+: 使用 HashSet 獲取精確的不重複來源檔案數)
     let unique_files: std::collections::HashSet<std::path::PathBuf> = file_tasks.iter().map(|t| t.path.clone()).collect();
     if !unique_files.is_empty() {
@@ -174,17 +186,16 @@ pub async fn process_all_files(
             .count();
 
         if file_item_count == 0 {
-            // 無翻譯項目，顯示略過日誌 (info 級別)
+            // 無翻譯項目，顯示略過日誌
             crate::utils::add_log(&log, &format!("(略過條目) 略過處理: {}", task.rel_path));
+            finished_ids.insert(task.file_id);
             
-            // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
             let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
             if next_path != Some(&task.path) {
                 let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
                 state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
             }
-
-            item_offset += file_item_count; // 雖然是 0 但保持邏輯完整
+            item_offset += file_item_count;
             continue;
         }
 
@@ -206,9 +217,35 @@ pub async fn process_all_files(
         )
         .await?;
 
+        // --- 即時收集並檢查是否可執行 Repack ---
+        finished_ids.insert(task.file_id);
+        let translated_content = get_translated_content_for_task(task, current_file_items);
+        
+        let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
+        if is_jar_member {
+            repack_buffer.entry(task.path.clone()).or_default().insert(task.rel_path.clone(), translated_content);
+            
+            // 檢查該 JAR 是否已全部翻譯完成
+            if let Some(member_ids) = jar_group_map.get(&task.path) {
+                if member_ids.iter().all(|id| finished_ids.contains(id)) {
+                    // 全數完成，立即觸發 Repack
+                    if let Some(files_to_repack) = repack_buffer.remove(&task.path) {
+                        crate::utils::add_log(&log, &format!("(即時寫入) 正在封裝 JAR: {}", task.path.file_name().unwrap_or_default().to_string_lossy()));
+                        crate::file::jar_handler::repack_jar(&task.path, &files_to_repack, &job_config.lock().unwrap())?;
+                        // 此處緩存已被 repack_buffer.remove 釋放 (Memory Recovery)
+                    }
+                }
+            }
+        } else {
+            // 普通檔案：即時寫入磁碟 (同樣節省記憶體)
+            let mut results = HashMap::new();
+            results.insert(task.rel_path.clone(), translated_content);
+            write_to_temp_or_output(&job_config.lock().unwrap(), results)?;
+        }
+        // --------------------------------------
+
         item_offset += file_item_count;
 
-        // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
         let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
         if next_path != Some(&task.path) {
             let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
@@ -216,102 +253,54 @@ pub async fn process_all_files(
         }
     }
 
+    // 處理尚未觸發的（例如取消時的掃尾或 BUNDLE 資源包，在此專案目前邏輯下，大部份已在循環中處理）
     if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
-        apply_global_results(&config_locked, &file_tasks, &global_items)?;
-
-        // 還原起始狀態對於 BUNDLE 的判斷邏輯
+        
+        // 還原起始狀態對於 BUNDLE 資源包的最後處理 (如有未處理完的非 JAR BUNDLE)
         let has_bundle = file_tasks.iter().any(|t| {
-            t.rel_path.contains("patchouli_books") || t.path.to_string_lossy().contains("mods")
+            t.rel_path.contains("patchouli_books") && !t.path.to_string_lossy().contains("mods")
         });
 
         if has_bundle {
-            output_resource_pack(
-                &std::path::PathBuf::new(),
-                HashMap::new(),
-                config_locked,
-                log.clone(),
-            )
-            .await?;
+            output_resource_pack(&std::path::PathBuf::new(), HashMap::new(), config_locked, log.clone()).await?;
         }
     }
 
     Ok(())
 }
 
-pub fn apply_global_results(
-    config: &JobConfig,
-    file_tasks: &[FileTask],
-    global_items: &[GlobalBatchItem],
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut all_results = HashMap::new();
-    let mut jar_repack_map: HashMap<std::path::PathBuf, HashMap<String, String>> = HashMap::new();
-
-    for task in file_tasks {
-        let mut local_map: HashMap<String, Vec<String>> = HashMap::new();
-        for item in global_items {
-            if item.file_id == task.file_id {
-                if let Some(ref t) = item.translated {
-                    local_map
-                        .entry(item.key.clone())
-                        .or_default()
-                        .push(t.clone());
-                }
-            }
-        }
-
-        if local_map.is_empty() {
-            continue;
-        }
-
-        let final_content = if task.en_us_value.is_some() {
-            sync_formatting(&task.original_content, &local_map)
-        } else {
-            let mut replacements = Vec::new();
-            for (start, end, _, idx) in &task.js_matches {
-                if let Some(v_list) = local_map.get(&format!("js_key_{}", idx)) {
-                    if let Some(t) = v_list.first() {
-                        replacements.push((*start, *end, t.clone()));
-                    }
-                }
-            }
-            replacements.sort_by_key(|r| r.0);
-            replacements.reverse();
-            let mut c = task.original_content.clone();
-            for (s, e, t) in replacements {
-                if s < e && e <= c.len() {
-                    c.replace_range(s..e, &t);
-                }
-            }
-            c
-        };
-
-        let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
-        
-        if is_jar_member {
-            // JAR 內檔案：標記為 [BUNDLE] 供寫入器識別
-            all_results.insert(format!("[BUNDLE]{}", task.rel_path), final_content.clone());
-            jar_repack_map
-                .entry(task.path.clone())
-                .or_default()
-                .insert(task.rel_path.clone(), final_content);
-        } else {
-            // 普通外部檔案
-            all_results.insert(task.rel_path.clone(), final_content);
+fn get_translated_content_for_task(task: &FileTask, items: &[GlobalBatchItem]) -> String {
+    let mut local_map: HashMap<String, Vec<String>> = HashMap::new();
+    for item in items {
+        if let Some(ref t) = item.translated {
+            local_map.entry(item.key.clone()).or_default().push(t.clone());
         }
     }
 
-    if !all_results.is_empty() {
-        write_to_temp_or_output(config, all_results)?;
+    if task.en_us_value.is_some() {
+        sync_formatting(&task.original_content, &local_map)
+    } else {
+        let mut replacements = Vec::new();
+        for (start, end, _, idx) in &task.js_matches {
+            if let Some(v_list) = local_map.get(&format!("js_key_{}", idx)) {
+                if let Some(t) = v_list.first() {
+                    replacements.push((*start, *end, t.clone()));
+                }
+            }
+        }
+        replacements.sort_by_key(|r| r.0);
+        replacements.reverse();
+        let mut c = task.original_content.clone();
+        for (s, e, t) in replacements {
+            if s < e && e <= c.len() {
+                c.replace_range(s..e, &t);
+            }
+        }
+        c
     }
-
-    // JAR Repack
-    for (jar_path, files) in jar_repack_map {
-        crate::file::jar_handler::repack_jar(&jar_path, &files, config)?;
-    }
-
-    Ok(())
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -365,5 +354,52 @@ mod tests {
         assert_eq!(file_tasks[1].file_id, 1);
         assert_eq!(global_items[0].file_id, 0);
         assert_eq!(global_items[1].file_id, 1);
+    }
+
+    #[test]
+    fn test_jar_grouping_logic() {
+        let file_tasks = vec![
+            FileTask {
+                file_id: 0,
+                path: PathBuf::from("mods/test.jar"),
+                rel_path: "assets/a.json".to_string(),
+                original_content: "".to_string(),
+                en_us_value: None,
+                zh_tw_base: None,
+                js_matches: vec![],
+            },
+            FileTask {
+                file_id: 1,
+                path: PathBuf::from("mods/test.jar"),
+                rel_path: "assets/b.json".to_string(),
+                original_content: "".to_string(),
+                en_us_value: None,
+                zh_tw_base: None,
+                js_matches: vec![],
+            },
+            FileTask {
+                file_id: 2,
+                path: PathBuf::from("standalone.json"),
+                rel_path: "standalone.json".to_string(),
+                original_content: "".to_string(),
+                en_us_value: None,
+                zh_tw_base: None,
+                js_matches: vec![],
+            },
+        ];
+
+        let mut jar_group_map: HashMap<PathBuf, std::collections::HashSet<usize>> = HashMap::new();
+        for task in &file_tasks {
+            let is_jar_member = task.path.to_string_lossy().contains("mods") && !task.rel_path.ends_with(".js");
+            if is_jar_member {
+                jar_group_map.entry(task.path.clone()).or_default().insert(task.file_id);
+            }
+        }
+
+        assert!(jar_group_map.contains_key(&PathBuf::from("mods/test.jar")));
+        assert_eq!(jar_group_map.get(&PathBuf::from("mods/test.jar")).unwrap().len(), 2);
+        assert!(jar_group_map.get(&PathBuf::from("mods/test.jar")).unwrap().contains(&0));
+        assert!(jar_group_map.get(&PathBuf::from("mods/test.jar")).unwrap().contains(&1));
+        assert!(!jar_group_map.contains_key(&PathBuf::from("standalone.json")));
     }
 }
