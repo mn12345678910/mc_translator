@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use tokio::sync::Notify;
 use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
+use crate::ui::i18n::{I18nLabels, DEFAULT_LANG};
 use std::sync::RwLock;
 
 /// 同步存檔用的包裹
@@ -151,6 +152,9 @@ pub struct AppState {
     pub palette_prop_sync_bg: bool,
     pub palette_prop_sync_text: bool,
     pub palette_prop_sync_rounding: bool,
+
+    // --- [i18n] ---
+    pub i18n: &'static I18nLabels,
 }
 
 #[derive(Clone, PartialEq)]
@@ -331,6 +335,7 @@ impl AppState {
             palette_prop_sync_bg: true,
             palette_prop_sync_text: true,
             palette_prop_sync_rounding: true,
+            i18n: DEFAULT_LANG,
         };
 
         // 啟動背景持久化任務已在上述 thread spawn 中處理
