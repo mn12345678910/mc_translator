@@ -171,7 +171,7 @@ impl AppState {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
              if is_dark { self.dark_btn_text } else { self.light_label }) 
         } else if id.contains("progress") {
-            ([0, 200, 200], if is_dark { self.dark_btn_text } else { self.light_btn_text })
+            ([0, 200, 200], if is_dark { self.dark_label } else { self.light_btn_text })
         } else {
             (if is_dark { self.dark_bg } else { self.light_bg }, 
              if is_dark { self.dark_label } else { self.light_label })
