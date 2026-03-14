@@ -5,9 +5,9 @@ impl AppState {
     pub fn render_palette_settings(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.heading("🎨 調色盤");
+                ui.heading(self.i18n.header_palette);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button("⟲ 全部重置").on_hover_text("將全程式所有設定、顏色、圓角恢復至預設值").clicked() {
+                    if ui.button(self.i18n.btn_reset_all).on_hover_text(self.i18n.hover_reset_all).clicked() {
                         self.show_restore_default_confirm = true;
                     }
                 });
@@ -17,11 +17,11 @@ impl AppState {
 
             // 1. 編輯模式切換
             ui.horizontal(|ui| {
-                ui.label("當前編輯模式:");
-                if ui.selectable_label(!self.palette_edit_dark, "☀️ 淺色設定").clicked() {
+                ui.label(self.i18n.label_edit_mode);
+                if ui.selectable_label(!self.palette_edit_dark, self.i18n.mode_light).clicked() {
                     self.palette_edit_dark = false;
                 }
-                if ui.selectable_label(self.palette_edit_dark, "🌙 深色設定").clicked() {
+                if ui.selectable_label(self.palette_edit_dark, self.i18n.mode_dark).clicked() {
                     self.palette_edit_dark = true;
                 }
             });
@@ -30,7 +30,7 @@ impl AppState {
 
             // 2. 編輯目標選擇 (Edit Slots)
             egui::Frame::group(ui.style()).show(ui, |ui| {
-                ui.label(egui::RichText::new("【 1. 選擇編輯目標 】").strong());
+                ui.label(egui::RichText::new(self.i18n.label_palette_step_1).strong());
                 let mut remove_idx = None;
                 let slots_len = self.palette_edit_slots.len();
                 
@@ -43,20 +43,20 @@ impl AppState {
                             .width(200.0)
                             .show_ui(ui, |ui| {
                                 let target_groups = [
-                                    ("類別批量設定", vec![
-                                        "全部按鈕", "全部標籤", "全部輸入框", "全部日誌區域", 
-                                        "全部建議詞分頁", "全部進度條", "全部面板背景", "頂部導覽列"
+                                    (self.i18n.group_batch, vec![
+                                        self.i18n.cat_all_buttons, self.i18n.cat_all_labels, self.i18n.cat_all_inputs, self.i18n.cat_all_logs, 
+                                        self.i18n.cat_all_tabs, self.i18n.cat_all_progress, self.i18n.cat_all_bg, self.i18n.cat_nav_bar
                                     ]),
-                                    ("特定元件 (精確覆寫)", vec![
-                                        "[特定] 選擇檔案按鈕", "[特定] 選擇資料夾按鈕", 
-                                        "[特定] 輸出資料夾按鈕", "[特定] 打開輸出按鈕",
-                                        "[特定] 開始翻譯按鈕", "[特定] 暫停按鈕", 
-                                        "[特定] 停止按鈕", "[特定] 清除執行日誌按鈕",
-                                        "[特定] ⚙️ 設定按鈕", "[特定] 📖 字典按鈕",
-                                        "[特定] 🎨 調色盤按鈕", "[特定] 🌓 主題按鈕",
-                                        "[特定] 🔧 開發按鈕", "[特定] 建議詞搜尋框",
-                                        "[特定] 字典列表區域", "[特定] 輸出路徑標籤",
-                                        "[特定] 目前檔案進度條", "[特定] 總進度條"
+                                    (self.i18n.group_specific, vec![
+                                        self.i18n.spec_btn_select_file, self.i18n.spec_btn_select_folder, 
+                                        self.i18n.spec_btn_output_dir, self.i18n.spec_btn_open_output,
+                                        self.i18n.spec_btn_run_trans, self.i18n.spec_btn_pause, 
+                                        self.i18n.spec_btn_stop, self.i18n.spec_btn_clear_log,
+                                        self.i18n.spec_btn_nav_settings, self.i18n.spec_btn_nav_dict,
+                                        self.i18n.spec_btn_nav_palette, self.i18n.spec_btn_nav_theme,
+                                        self.i18n.spec_btn_nav_dev, self.i18n.spec_input_search,
+                                        self.i18n.spec_area_dict, self.i18n.spec_label_output,
+                                        self.i18n.spec_progress_current, self.i18n.spec_progress_total
                                     ])
                                 ];
                                 
@@ -70,7 +70,7 @@ impl AppState {
                             });
                         
                         if slots_len > 1 {
-                            if ui.button("🗑").on_hover_text("移除此編輯槽位").clicked() { 
+                            if ui.button("🗑").on_hover_text(self.i18n.hover_remove_slot).clicked() { 
                                 remove_idx = Some(idx); 
                             }
                         }
@@ -79,14 +79,14 @@ impl AppState {
                 if let Some(idx) = remove_idx { self.palette_edit_slots.remove(idx); }
 
                 ui.horizontal(|ui| {
-                    if ui.button("+ 新增目標").clicked() {
+                    if ui.button(self.i18n.btn_add_target).clicked() {
                         self.palette_edit_slots.push(PaletteEditSlot { 
-                            target_id: "全部按鈕".to_string(), 
+                            target_id: self.i18n.cat_all_buttons.to_string(), 
                             is_checked: true 
                         });
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                         ui.label(egui::RichText::new(format!("共 {} 個槽位", slots_len)).small().weak());
+                         ui.label(egui::RichText::new(self.i18n.label_slot_count.replace("{}", &slots_len.to_string())).small().weak());
                     });
                 });
             });
@@ -94,7 +94,7 @@ impl AppState {
             ui.add_space(10.0);
 
             // 3. 屬性調整區
-            ui.label(egui::RichText::new("【 2. 調整屬性樣式 】").strong());
+            ui.label(egui::RichText::new(self.i18n.label_palette_step_2).strong());
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 let is_dark = self.palette_edit_dark;
                 // V6 邏輯：所有在列表中的槽位皆視為選取
@@ -117,7 +117,7 @@ impl AppState {
                     // 背景顏色
                     if has_bg_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_bg, "背景顏色");
+                            ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color);
                         });
                         // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
                         let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
@@ -130,7 +130,7 @@ impl AppState {
                     // 文字顏色
                     if has_text_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_text, "文字顏色");
+                            ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color);
                         });
                         let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
                         if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
@@ -142,7 +142,7 @@ impl AppState {
                     // 自定義圓角
                     if has_rounding_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_rounding, "自定義圓角");
+                            ui.checkbox(&mut self.palette_prop_sync_rounding, self.i18n.label_custom_rounding);
                         });
                         let mut dummy_rounding = self.btn_rounding_value;
                         if ui.add(egui::DragValue::new(&mut dummy_rounding).speed(0.5).clamp_range(0.0..=30.0)).changed() && self.palette_prop_sync_rounding {
@@ -159,9 +159,9 @@ impl AppState {
                 if has_button {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.btn_rounding_enabled, "強制啟用全域按鈕圓角");
+                        ui.checkbox(&mut self.btn_rounding_enabled, self.i18n.label_force_global_rounding);
                         if self.btn_rounding_enabled {
-                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text("圓角數值")).changed() {
+                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text(self.i18n.label_rounding_value)).changed() {
                                 self.trigger_save();
                             }
                         }
@@ -171,11 +171,11 @@ impl AppState {
                 if has_progress {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.progress_pulse_enabled, "啟用進度條呼吸脈衝動畫");
+                        ui.checkbox(&mut self.progress_pulse_enabled, self.i18n.label_enable_pulse);
                     });
                     if self.progress_pulse_enabled {
                         ui.horizontal(|ui| {
-                            ui.label("動畫速度:");
+                            ui.label(self.i18n.label_anim_speed);
                             if ui.add(egui::Slider::new(&mut self.progress_pulse_speed, 0.1..=5.0)).changed() {
                                 self.trigger_save();
                             }
@@ -185,7 +185,7 @@ impl AppState {
             });
 
             ui.add_space(10.0);
-            ui.label(egui::RichText::new("ℹ 提示：特定元件覆寫的色彩優先級高於類別批量設定。").small().weak());
+            ui.label(egui::RichText::new(self.i18n.label_palette_hint).small().weak());
         });
     }
 
@@ -199,32 +199,38 @@ impl AppState {
         for t in targets {
             if t.contains("全部") || !t.contains("[特定]") {
                 // 類別更新 (V6 擴展)
-                match t.as_str() {
-                    "全部按鈕" => if is_bg { if is_dark { self.dark_btn_bg = color; } else { self.light_btn_bg = color; } } 
-                                  else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
-                    "全部標籤" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
-                                  else { if is_dark { self.dark_label = color; } else { self.light_label = color; } },
-                    "全部輸入框" => if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
-                                   else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
-                    "全部日誌區域" => if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
-                                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } },
-                    "全部建議詞分頁" => if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
-                                     else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
-                    "全部進度條" => if is_bg { 
-                                       if is_dark { self.dark_bg = color; } else { self.light_bg = color; } 
-                                   } else {
-                                       // 同步至進度條文字顏色 (透過覆寫確保生效)
-                                       let p_current = self.instance_overrides.entry("progress_current".to_string()).or_default();
-                                       p_current.text = Some(color);
-                                       let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
-                                       p_total.text = Some(color);
-                                       // 同時更新全域標籤顏色以供回退使用
-                                       if is_dark { self.dark_label = color; } else { self.light_label = color; }
-                                   },
-                    "全部面板背景" => if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } } else {},
-                    "頂部導覽列" => if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
-                                   else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } },
-                    _ => {}
+                if t == self.i18n.cat_all_buttons {
+                    if is_bg { if is_dark { self.dark_btn_bg = color; } else { self.light_btn_bg = color; } } 
+                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                } else if t == self.i18n.cat_all_labels {
+                    if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
+                    else { if is_dark { self.dark_label = color; } else { self.light_label = color; } }
+                } else if t == self.i18n.cat_all_inputs {
+                    if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
+                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } }
+                } else if t == self.i18n.cat_all_logs {
+                    if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
+                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } }
+                } else if t == self.i18n.cat_all_tabs {
+                    if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
+                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                } else if t == self.i18n.cat_all_progress {
+                    if is_bg { 
+                        if is_dark { self.dark_bg = color; } else { self.light_bg = color; } 
+                    } else {
+                        // 同步至進度條文字顏色 (透過覆寫確保生效)
+                        let p_current = self.instance_overrides.entry("progress_current".to_string()).or_default();
+                        p_current.text = Some(color);
+                        let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
+                        p_total.text = Some(color);
+                        // 同時更新全域標籤顏色以供回退使用
+                        if is_dark { self.dark_label = color; } else { self.light_label = color; }
+                    }
+                } else if t == self.i18n.cat_all_bg {
+                    if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
+                } else if t == self.i18n.cat_nav_bar {
+                    if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
+                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
                 }
             } else {
                 // 特定元件覆寫 (V6 映射)
@@ -245,7 +251,7 @@ impl AppState {
         for t in targets {
             if t.contains("全部") || !t.contains("[特定]") {
                 // 類別更新
-                if t == "全部按鈕" || t == "全部進度條" || t == "頂部導覽列" {
+                if t == self.i18n.cat_all_buttons || t == self.i18n.cat_all_progress || t == self.i18n.cat_nav_bar {
                     self.btn_rounding_value = val;
                 }
             } else {
@@ -260,24 +266,24 @@ impl AppState {
 
     fn get_id_from_target_name(&self, name: &str) -> String {
         match name {
-            "[特定] 選擇檔案按鈕" => "btn_select_file",
-            "[特定] 選擇資料夾按鈕" => "btn_select_folder",
-            "[特定] 輸出資料夾按鈕" => "btn_output_dir",
-            "[特定] 打開輸出按鈕" => "btn_open_output",
-            "[特定] 開始翻譯按鈕" => "btn_run_trans",
-            "[特定] 暫停按鈕" => "btn_pause",
-            "[特定] 停止按鈕" => "btn_stop",
-            "[特定] 清除執行日誌按鈕" => "btn_clear_log",
-            "[特定] ⚙️ 設定按鈕" => "btn_nav_settings",
-            "[特定] 📖 字典按鈕" => "btn_nav_dict",
-            "[特定] 🎨 調色盤按鈕" => "btn_nav_palette",
-            "[特定] 🌓 主題按鈕" => "btn_nav_theme",
-            "[特定] 🔧 開發按鈕" => "btn_nav_dev",
-            "[特定] 建議詞搜尋框" => "input_dict_search",
-            "[特定] 字典列表區域" => "area_dict_list",
-            "[特定] 輸出路徑標籤" => "label_output_path",
-            "[特定] 目前檔案進度條" => "progress_current",
-            "[特定] 總進度條" => "progress_total",
+            n if n == self.i18n.spec_btn_select_file => "btn_select_file",
+            n if n == self.i18n.spec_btn_select_folder => "btn_select_folder",
+            n if n == self.i18n.spec_btn_output_dir => "btn_output_dir",
+            n if n == self.i18n.spec_btn_open_output => "btn_open_output",
+            n if n == self.i18n.spec_btn_run_trans => "btn_run_trans",
+            n if n == self.i18n.spec_btn_pause => "btn_pause",
+            n if n == self.i18n.spec_btn_stop => "btn_stop",
+            n if n == self.i18n.spec_btn_clear_log => "btn_clear_log",
+            n if n == self.i18n.spec_btn_nav_settings => "btn_nav_settings",
+            n if n == self.i18n.spec_btn_nav_dict => "btn_nav_dict",
+            n if n == self.i18n.spec_btn_nav_palette => "btn_nav_palette",
+            n if n == self.i18n.spec_btn_nav_theme => "btn_nav_theme",
+            n if n == self.i18n.spec_btn_nav_dev => "btn_nav_dev",
+            n if n == self.i18n.spec_input_search => "input_dict_search",
+            n if n == self.i18n.spec_area_dict => "area_dict_list",
+            n if n == self.i18n.spec_label_output => "label_output_path",
+            n if n == self.i18n.spec_progress_current => "progress_current",
+            n if n == self.i18n.spec_progress_total => "progress_total",
             _ => name,
         }.to_string()
     }
@@ -285,21 +291,24 @@ impl AppState {
     /// 檢查目標是否支援特定屬性 (背景, 文字, 圓角)
     fn is_prop_supported(&self, target: &str) -> (bool, bool, bool) {
         match target {
-            "全部按鈕" | "頂部導覽列" | "[特定] 選擇檔案按鈕" | "[特定] 選擇資料夾按鈕" | 
-            "[特定] 輸出資料夾按鈕" | "[特定] 打開輸出按鈕" | "[特定] 開始翻譯按鈕" | 
-            "[特定] 暫停按鈕" | "[特定] 停止按鈕" | "[特定] 清除執行日誌按鈕" | 
-            "[特定] ⚙️ 設定按鈕" | "[特定] 📖 字典按鈕" | "[特定] 🎨 調色盤按鈕" | 
-            "[特定] 🌓 主題按鈕" | "[特定] 🔧 開發按鈕" => (true, true, true),
+            n if n == self.i18n.cat_all_buttons || n == self.i18n.cat_nav_bar || 
+            n == self.i18n.spec_btn_select_file || n == self.i18n.spec_btn_select_folder || 
+            n == self.i18n.spec_btn_output_dir || n == self.i18n.spec_btn_open_output || 
+            n == self.i18n.spec_btn_run_trans || n == self.i18n.spec_btn_pause || 
+            n == self.i18n.spec_btn_stop || n == self.i18n.spec_btn_clear_log || 
+            n == self.i18n.spec_btn_nav_settings || n == self.i18n.spec_btn_nav_dict || 
+            n == self.i18n.spec_btn_nav_palette || n == self.i18n.spec_btn_nav_theme || 
+            n == self.i18n.spec_btn_nav_dev => (true, true, true),
             
-            "全部標籤" | "[特定] 輸出路徑標籤" => (true, true, false),
+            n if n == self.i18n.cat_all_labels || n == self.i18n.spec_label_output => (true, true, false),
             
-            "全部進度條" | "[特定] 目前檔案進度條" | "[特定] 總進度條" => (true, true, true),
+            n if n == self.i18n.cat_all_progress || n == self.i18n.spec_progress_current || n == self.i18n.spec_progress_total => (true, true, true),
             
-            "全部輸入框" | "[特定] 建議詞搜尋框" => (true, true, false),
+            n if n == self.i18n.cat_all_inputs || n == self.i18n.spec_input_search => (true, true, false),
             
-            "全部日誌區域" | "全部建議詞分頁" | "[特定] 字典列表區域" => (true, true, false),
+            n if n == self.i18n.cat_all_logs || n == self.i18n.cat_all_tabs || n == self.i18n.spec_area_dict => (true, true, false),
             
-            "全部面板背景" => (true, false, false),
+            n if n == self.i18n.cat_all_bg => (true, false, false),
             
             _ => (true, true, true),
         }
