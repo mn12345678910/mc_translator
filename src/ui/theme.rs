@@ -136,7 +136,10 @@ impl AppState {
         }
 
         // 2. 類別樣式解析
-        let (rgb_bg, rgb_text) = if id.contains("btn") || id.contains("nav") {
+        let (rgb_bg, rgb_text) = if id == "cat_nav_bar" {
+            (if is_dark { self.dark_tab_inactive } else { self.light_tab_inactive }, 
+             if is_dark { self.dark_btn_text } else { self.light_label })
+        } else if id.contains("btn") || id.contains("nav") {
             (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
              if is_dark { self.dark_btn_text } else { self.light_btn_text })
         } else if id.contains("input") || id.contains("edit") {

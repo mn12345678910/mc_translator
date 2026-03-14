@@ -344,6 +344,15 @@ impl AppState {
             n if n == self.i18n.spec_label_output => "label_output_path",
             n if n == self.i18n.spec_progress_current => "progress_current",
             n if n == self.i18n.spec_progress_total => "progress_total",
+            // 類別 ID 映射 (Revision 15.65)
+            n if n == self.i18n.cat_all_buttons => "cat_all_buttons",
+            n if n == self.i18n.cat_all_labels => "cat_all_labels",
+            n if n == self.i18n.cat_all_inputs => "cat_all_inputs",
+            n if n == self.i18n.cat_all_logs => "cat_all_logs",
+            n if n == self.i18n.cat_all_tabs => "cat_all_tabs",
+            n if n == self.i18n.cat_all_progress => "cat_all_progress",
+            n if n == self.i18n.cat_all_bg => "cat_all_bg",
+            n if n == self.i18n.cat_nav_bar => "cat_nav_bar",
             _ => name,
         }.to_string()
     }
