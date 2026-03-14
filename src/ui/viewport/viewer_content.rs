@@ -7,6 +7,7 @@ use std::sync::{Arc, Mutex};
 impl AppState {
     pub fn render_memory_viewer_content(
         ctx: &egui::Context,
+        i18n: &crate::ui::i18n::I18nLabels,
         is_processing: Arc<Mutex<bool>>,
         _is_paused: Arc<Mutex<bool>>,
         viewer_shared: Arc<ViewerSharedState>,
@@ -104,15 +105,13 @@ impl AppState {
             };
 
             ui.label(
-                egui::RichText::new("📖 建議詞管理器")
+                egui::RichText::new(i18n.glossary_title)
                     .heading()
                     .color(label_color)
                     .strong(),
             );
             ui.label(
-                egui::RichText::new(
-                    "存在裡面的文字將作為術語表建議 LLM 如何翻譯該文字（僅建議，不一定會使用）",
-                )
+                egui::RichText::new(i18n.glossary_desc)
                 .color(label_color)
                 .strong(),
             );
@@ -133,13 +132,13 @@ impl AppState {
                     .inner_margin(4.0)
                     .show(ui, |ui| {
                         if ui
-                            .selectable_value(&mut *active_tab, 0, "📝 使用者建議詞")
+                            .selectable_value(&mut *active_tab, 0, i18n.glossary_tab_user)
                             .clicked()
                         {
                             *dict_page.lock().unwrap() = 0;
                         }
                         if ui
-                            .selectable_value(&mut *active_tab, 1, "📚 官方建議詞")
+                            .selectable_value(&mut *active_tab, 1, i18n.glossary_tab_official)
                             .clicked()
                         {
                             *dict_page.lock().unwrap() = 0;
@@ -160,21 +159,21 @@ impl AppState {
 
                 // 新增按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new("➕ 新增"))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_add))
                     .clicked()
                 {
                     *show_dict_add_dialog.lock().unwrap() = true;
                 }
                 // 取代按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new("🔄 取代"))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_replace))
                     .clicked()
                 {
                     *show_dict_replace_dialog.lock().unwrap() = true;
                 }
                 // 匯入按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new("📥 匯入"))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_import))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new()
@@ -204,7 +203,7 @@ impl AppState {
                     }
                 }
                 // 匯出按鈕
-                if ui.button("📤 匯出").clicked() {
+                if ui.button(i18n.btn_export).clicked() {
                     let default_name = if current_tab == 0 {
                         crate::config::USER_DICT
                     } else {
@@ -227,7 +226,7 @@ impl AppState {
                 // .json 按鈕 (Revision 14.1 強化雙開)
                 if ui
                     .button(".json")
-                    .on_hover_text("開啟編輯字典檔案並瀏覽存放資料夾")
+                    .on_hover_text(i18n.spec_btn_nav_dict) // 使用已有的 hover 文字
                     .clicked()
                 {
                     let filename = if current_tab == 0 {
@@ -261,7 +260,7 @@ impl AppState {
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .add_enabled(!processing, egui::Button::new("🗑 清空全部"))
+                        .add_enabled(!processing, egui::Button::new(i18n.btn_clear_all))
                         .clicked()
                     {
                         *show_dict_clear_confirm.lock().unwrap() = true;
@@ -271,21 +270,21 @@ impl AppState {
 
             // --- 補回新增與取代對話框區塊 (Revision 14.1) ---
             if *show_dict_add_dialog.lock().unwrap() {
-                egui::Window::new("➕ 新增建議詞")
+                egui::Window::new(i18n.glossary_add_title)
                     .collapsible(false)
                     .resizable(false)
                     .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
                     .show(ctx, |ui| {
                         ui.horizontal(|ui| {
-                            ui.label("原文 (Key):");
+                            ui.label(i18n.glossary_key);
                             ui.text_edit_singleline(&mut *dict_new_key.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            ui.label("翻譯 (Value):");
+                            ui.label(i18n.glossary_value);
                             ui.text_edit_singleline(&mut *dict_new_value.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            let confirm_btn = ui.button("確定新增");
+                            let confirm_btn = ui.button(i18n.btn_confirm_add);
                             let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
                             if confirm_btn.clicked() || enter_pressed {
                                 let key = dict_new_key.lock().unwrap().clone();
@@ -314,7 +313,7 @@ impl AppState {
                                 *dict_new_key.lock().unwrap() = String::new();
                                 *dict_new_value.lock().unwrap() = String::new();
                             }
-                            if ui.button("取消").clicked() {
+                            if ui.button(i18n.btn_cancel).clicked() {
                                 *show_dict_add_dialog.lock().unwrap() = false;
                             }
                         });
@@ -322,23 +321,23 @@ impl AppState {
             }
 
             if *show_dict_replace_dialog.lock().unwrap() {
-                egui::Window::new("🔄 批量取代翻譯")
+                egui::Window::new(i18n.glossary_replace_title)
                     .collapsible(false)
                     .resizable(false)
                     .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
                     .show(ctx, |ui| {
-                        ui.label("將目前分頁中所有符合的翻譯內容進行取代。");
+                        ui.label(i18n.glossary_replace_desc);
                         ui.horizontal(|ui| {
-                            ui.label("原Value:");
+                            ui.label(i18n.glossary_old_value);
                             ui.text_edit_singleline(&mut *dict_replace_target.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            ui.label("新Value:");
+                            ui.label(i18n.glossary_new_value);
                             ui.text_edit_singleline(&mut *dict_replace_new.lock().unwrap());
                         });
-                        ui.checkbox(&mut *dict_replace_all.lock().unwrap(), "全部符合才取代");
+                        ui.checkbox(&mut *dict_replace_all.lock().unwrap(), i18n.glossary_replace_exact);
                         ui.horizontal(|ui| {
-                            let replace_btn = ui.button("執行取代");
+                            let replace_btn = ui.button(i18n.btn_confirm_replace);
                             let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
                             if replace_btn.clicked() || enter_pressed {
                                 let target = dict_replace_target.lock().unwrap().clone();
@@ -404,7 +403,7 @@ impl AppState {
                                 }
                                 *show_dict_replace_dialog.lock().unwrap() = false;
                             }
-                            if ui.button("取消").clicked() {
+                            if ui.button(i18n.btn_cancel).clicked() {
                                 *show_dict_replace_dialog.lock().unwrap() = false;
                             }
                         });
@@ -414,14 +413,14 @@ impl AppState {
 
             // 顯示清空對話框
             if *show_dict_clear_confirm.lock().unwrap() {
-                egui::Window::new("⚠ 確認清空字典")
+                egui::Window::new(i18n.glossary_clear_title)
                     .collapsible(false)
                     .resizable(false)
                     .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                     .show(ctx, |ui| {
-                        ui.label("確定刪除全部內容？此操作無法復原。");
+                        ui.label(i18n.glossary_clear_desc);
                         ui.horizontal(|ui| {
-                            if ui.button("確定清空").clicked() {
+                            if ui.button(i18n.btn_confirm_clear).clicked() {
                                 if current_tab == 0 {
                                     translation_memory.lock().unwrap().clear();
                                     crate::config::save_translation_memory(
@@ -437,7 +436,7 @@ impl AppState {
                                 *dict_search_last.lock().unwrap() = (String::new(), usize::MAX);
                                 *show_dict_clear_confirm.lock().unwrap() = false;
                             }
-                            if ui.button("取消").clicked() {
+                            if ui.button(i18n.btn_cancel).clicked() {
                                 *show_dict_clear_confirm.lock().unwrap() = false;
                             }
                         });
@@ -483,7 +482,7 @@ impl AppState {
             let end = (start + page_size).min(total_items);
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("🔍 搜尋:").color(label_color).strong());
+                ui.label(egui::RichText::new(i18n.label_search).color(label_color).strong());
                 let (input_bg, _) = get_instance_style_from_snap(&style_snap, "input_dict_search", is_dark);
                 ui.visuals_mut().extreme_bg_color = input_bg;
                 ui.add(
@@ -495,14 +494,13 @@ impl AppState {
                     *page = page.saturating_sub(1);
                 }
                 ui.label(
-                    egui::RichText::new(format!(
-                        "第 {}/{} 頁 (顯示 {}-{}/{})",
-                        current_page + 1,
-                        total_pages,
-                        if total_items > 0 { start + 1 } else { 0 },
-                        end,
-                        total_items
-                    ))
+                    egui::RichText::new(i18n.glossary_page_info
+                        .replace("{}", &(current_page + 1).to_string())
+                        .replacen("{}", &total_pages.to_string(), 1)
+                        .replacen("{}", &(if total_items > 0 { start + 1 } else { 0 }).to_string(), 1)
+                        .replacen("{}", &end.to_string(), 1)
+                        .replacen("{}", &total_items.to_string(), 1)
+                    )
                     .color(label_color)
                     .strong(),
                 );
@@ -515,7 +513,7 @@ impl AppState {
                     let mut is_user_priority = glossary_priority.lock().unwrap().as_str() == "user";
                     if ui
                         .add(toggle(&mut is_user_priority))
-                        .on_hover_text("切換 官方優先 (關) 或 使用者優先 (開)")
+                        .on_hover_text(i18n.glossary_priority_hover)
                         .clicked()
                     {
                         *glossary_priority.lock().unwrap() = if is_user_priority {
@@ -526,9 +524,9 @@ impl AppState {
                         viewer_shared.update_tx.send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                     }
                     let priority_label = if is_user_priority {
-                        "使用者優先"
+                        i18n.glossary_priority_user
                     } else {
-                        "官方優先"
+                        i18n.glossary_priority_official
                     };
                     ui.label(
                         egui::RichText::new(priority_label)
@@ -577,7 +575,7 @@ impl AppState {
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
                                         ui.label(
-                                            egui::RichText::new("操作").color(label_color).strong(),
+                                            egui::RichText::new(i18n.glossary_col_actions).color(label_color).strong(),
                                         );
                                     },
                                 );
@@ -589,7 +587,7 @@ impl AppState {
                                 ui.allocate_ui([col_w, 30.0].into(), |ui| {
                                     ui.centered_and_justified(|ui| {
                                         ui.label(
-                                            egui::RichText::new("(目前的字典分頁是空的)")
+                                            egui::RichText::new(i18n.glossary_empty)
                                                 .color(label_color)
                                                 .strong(),
                                         );
@@ -634,7 +632,7 @@ impl AppState {
                                             if ui.button("❌").clicked() {
                                                 *dict_edit_key.lock().unwrap() = None;
                                             }
-                                            let save_btn = ui.button("💾");
+                                            let save_btn = ui.button(i18n.btn_save);
                                             let enter_pressed =
                                                 ui.input(|i| i.key_pressed(egui::Key::Enter));
                                             if save_btn.clicked() || enter_pressed {
@@ -681,7 +679,7 @@ impl AppState {
                                                 if ui
                                                     .add_enabled(
                                                         !processing,
-                                                        egui::Button::new("🗑"),
+                                                        egui::Button::new(i18n.btn_delete),
                                                     )
                                                     .clicked()
                                                 {
@@ -705,7 +703,7 @@ impl AppState {
                                                 if ui
                                                     .add_enabled(
                                                         !processing,
-                                                        egui::Button::new("✏"),
+                                                        egui::Button::new(i18n.btn_edit),
                                                     )
                                                     .clicked()
                                                 {

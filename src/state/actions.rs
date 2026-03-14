@@ -18,6 +18,7 @@ impl AppState {
             self.viewer_shared.update_tx.clone(),
             self.theme.clone(),
             self.show_memory_viewer,
+            self.i18n,
         );
     }
 
@@ -32,8 +33,9 @@ impl AppState {
         viewer_update_tx: tokio::sync::mpsc::UnboundedSender<ViewerUpdate>,
         theme_clone: String,
         show_viewer_clone: bool,
+        i18n: &'static crate::ui::i18n::I18nLabels,
     ) {
-        *status_arc.lock().unwrap() = "正在分析辭典...".to_string();
+        *status_arc.lock().unwrap() = i18n.status_analyzing_dict.to_string();
 
         runtime_handle.spawn(async move {
             if let Ok((files, exact, unfiltered)) = crate::utils::load_mc_dicts().await {
@@ -62,7 +64,7 @@ impl AppState {
                     *mc = Some(files);
                 }
             }
-            *status_arc.lock().unwrap() = "就緒".to_string();
+            *status_arc.lock().unwrap() = i18n.status_ready.to_string();
         });
     }
 
@@ -91,7 +93,7 @@ impl AppState {
 
         *self.is_paused.lock().unwrap() = false;
         self.pause_notifier.notify_waiters();
-        self.add_log(">>> 使用者恢復翻譯任務中...");
+        self.add_log(self.i18n.log_resuming);
     }
 
     pub fn save_config(&self) {
@@ -134,20 +136,20 @@ impl AppState {
 
         let is_google_free = self.api_provider == "Google Free";
         if !is_google_free && self.selected_model.is_empty() {
-             self.add_log(&format!("⚠️ 啟動失敗：目前服務商 [{}] 需要選取模型。", self.api_provider));
+             self.add_log(&self.i18n.log_start_failed.replace("{}", &self.api_provider));
              return;
         }
 
-        self.add_log(&format!(">>> 啟動翻譯任務 | 服務商: {} | 模型: {}", 
-            if self.api_provider.is_empty() { "未指定" } else { &self.api_provider },
-            if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model }
-        ));
+        self.add_log(&self.i18n.log_start_job
+            .replace("{}", if self.api_provider.is_empty() { self.i18n.status_not_ready } else { &self.api_provider })
+            .replace("{}", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model })
+        );
 
         *self.progress.lock().unwrap() = 0.0;
         *self.progress_total.lock().unwrap() = 0.0;
         *self.global_progress.lock().unwrap() = 0.0;
         *self.global_total.lock().unwrap() = 0.0;
-        *self.status.lock().unwrap() = "正在分析檔案".to_string();
+        *self.status.lock().unwrap() = self.i18n.status_analyzing_files.to_string();
 
         let log = self.log.clone();
         let paths = self.input_paths.clone();
@@ -208,15 +210,16 @@ impl AppState {
             translation_memory: translation_memory_arc.clone(),
             pause_notifier: self.pause_notifier.clone(),
             config: job_config.clone(),
+            i18n: self.i18n,
         };
 
         *processing_arc.lock().unwrap() = true;
         *cancelled_arc.lock().unwrap() = false;
         *paused_arc.lock().unwrap() = false;
 
-        let self_runtime = self.runtime.handle().clone();
+        let i18n = self.i18n;
 
-        self_runtime.spawn(async move {
+        tokio::spawn(async move {
             let res =
                 crate::file::pipeline::process_all_files(
                     paths,
@@ -231,17 +234,17 @@ impl AppState {
             *processing_arc.lock().unwrap() = false;
             let mut s = status_arc.lock().unwrap();
             if *cancelled_arc.lock().unwrap() {
-                *s = "任務已取消".to_string();
+                *s = i18n.status_cancelled.to_string();
                 let mut l = log.lock().unwrap();
-                l.push(">>> 任務已由使用者手動取消。".to_string());
+                l.push(i18n.log_cancelled.to_string());
             } else if let Err(e) = res {
-                *s = format!("發生錯誤: {}", e);
+                *s = i18n.status_error.replace("{}", &e.to_string());
                 let mut l = log.lock().unwrap();
-                l.push(format!(">>> 錯誤: {}", e));
+                l.push(i18n.log_generic_error.replace("{}", &e.to_string()));
             } else {
-                *s = "任務完成".to_string();
+                *s = i18n.status_finished.to_string();
                 let mut l = log.lock().unwrap();
-                l.push(">>> 所有翻譯任務已完成！".to_string());
+                l.push(i18n.log_finished.to_string());
             }
         });
     }
@@ -317,6 +320,7 @@ impl AppState {
                     viewer_update_tx.clone(),
                     theme.clone(),
                     show_memory_viewer,
+                    crate::ui::i18n::DEFAULT_LANG, // 使用預設語言用於監控器更新，或從 AppState 傳遞
                 );
             }
         });

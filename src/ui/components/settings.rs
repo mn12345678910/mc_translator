@@ -33,7 +33,7 @@ impl AppState {
                                     .width(140.0)
                                     .show_ui(ui, |ui| {
                                         let mut providers = vec![
-                                            "無", "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
+                                            self.i18n.label_provider_none, "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
                                             "Ollama", "Google Free",
                                         ];
                                         // 保持 "無" 在最前面，其餘排序
@@ -120,7 +120,7 @@ impl AppState {
 
                         if self.api_provider == "Ollama" {
                             ui.horizontal(|ui| {
-                                ui.label(egui::RichText::new("Ollama URL:").color(label_color).strong());
+                                ui.label(egui::RichText::new(format!("{}:", self.i18n.label_ollama_url)).color(label_color).strong());
                                 ui.add_enabled_ui(ui_enabled, |ui| {
                                     if ui
                                         .add(
@@ -229,7 +229,7 @@ impl AppState {
                             ui.label(egui::RichText::new(self.i18n.label_pack_format).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("pack_format_presets")
-                                    .selected_text("常用版本")
+                                    .selected_text(self.i18n.label_presets)
                                     .width(80.0)
                                     .show_ui(ui, |ui| {
                                         for (ver, fmt) in &[

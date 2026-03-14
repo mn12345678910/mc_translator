@@ -59,6 +59,7 @@ impl AppState {
             let show_dict_clear_confirm = self.show_dict_clear_confirm.clone();
             let glossary_priority = self.glossary_priority.clone();
             let is_memory_viewer_open = self.is_memory_viewer_open.clone();
+            let i18n = self.i18n;
 
             let mut opened_lock = self.viewer_shared.opened_last_frame.lock().unwrap();
             let opened_last_frame = *opened_lock;
@@ -67,7 +68,7 @@ impl AppState {
             // 2. 幾何引導 (Geometry Guidance): 前 10 幀持續強制套用座標與尺寸，壓制 OS 跳位 (Feedback Fix)
             let is_visible = opened_frames >= 10; // 使用者要求調至 10 幀
             let mut builder = egui::ViewportBuilder::default()
-                .with_title("📖 建議詞管理器")
+                .with_title(i18n.glossary_title)
                 .with_resizable(true)
                 .with_maximized(false)
                 .with_min_inner_size([800.0, 600.0]) // [Revision 15.15] 最小尺寸限制
@@ -161,6 +162,7 @@ impl AppState {
                     // 3. 渲染內容
                     Self::render_memory_viewer_content(
                         ctx,
+                        i18n,
                         is_processing.clone(),
                         is_paused.clone(),
                         viewer_shared.clone(),

@@ -96,16 +96,6 @@ pub async fn translate_one(
     }
 }
 
-// 移除舊的 translate_free_google 並重新命名其餘邏輯
-async fn translate_free_google(text: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    // 為相容性保留，但使用預設值
-    let url = format!(
-        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q={}",
-        urlencoding::encode(text)
-    );
-    call_google_api_raw(&url).await
-}
-
 async fn call_google_api_raw(url: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut last_error = "未知錯誤".to_string();
     for i in 0..3 {

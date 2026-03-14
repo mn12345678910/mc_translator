@@ -69,12 +69,10 @@ pub async fn translate_json_recursive(
                 None
             };
 
-            *ctx.status.lock().unwrap() = format!(
-                "正在翻譯批次 ({}/{})，檔案 ({})",
-                i + 1,
-                chunks.len(),
-                ctx.filename
-            );
+            *ctx.status.lock().unwrap() = ctx.i18n.status_processing_batch
+                .replace("{}", &(i + 1).to_string())
+                .replacen("{}", &chunks.len().to_string(), 1)
+                .replacen("{}", &ctx.filename, 1);
 
             let chunk_entries = chunk_glossary.map(|g| crate::utils::hashmap_to_entries(&g));
             let current_batch_config = ctx.config.lock().unwrap().clone();
@@ -134,10 +132,10 @@ pub async fn translate_json_recursive(
                         *c
                     };
                     *ctx.progress.lock().unwrap() = current as f32;
-                    *ctx.status.lock().unwrap() = format!(
-                        "正在處理 {} ({}/{})",
-                        ctx.filename, current, total_unique_to_translate
-                    );
+                    *ctx.status.lock().unwrap() = ctx.i18n.status_processing_batch
+                        .replace("{}", &ctx.filename)
+                        .replacen("{}", &current.to_string(), 1)
+                        .replacen("{}", &total_unique_to_translate.to_string(), 1);
                 }
                 Err(e) => {
                     let err_msg = e.to_string();
@@ -152,7 +150,7 @@ pub async fn translate_json_recursive(
                     ctx.current_log
                         .lock()
                         .unwrap()
-                        .push(format!("批次翻譯出錯: {}, 將改用單筆重試", err_msg));
+                        .push(ctx.i18n.log_batch_error.replace("{}", &err_msg));
                 }
             }
 
@@ -176,7 +174,7 @@ pub async fn translate_json_recursive(
         let (preprocessed, markers) = preprocess_text(orig_text);
         let mut finalized_str = None;
 
-        *ctx.status.lock().unwrap() = format!("正在翻譯條目 ({})", ctx.filename);
+        *ctx.status.lock().unwrap() = ctx.i18n.status_translating_item.replace("{}", &ctx.filename);
         let single_glossary = Some(
             ctx.glossary_automaton
                 .extract(std::slice::from_ref(orig_text)),
@@ -196,10 +194,9 @@ pub async fn translate_json_recursive(
 
                 // [新增] 循環產出防護
                 if detect_loop(&cleaned) {
-                    ctx.current_log.lock().unwrap().push(format!(
-                        "⚠️ 偵測到條目 ({}) 陷入翻譯循環，已跳過",
-                        ctx.filename
-                    ));
+                    ctx.current_log.lock().unwrap().push(
+                        ctx.i18n.log_loop_detected.replace("{}", &ctx.filename)
+                    );
                     finalized_str = None;
                 } else {
                     let translated = if current_single_config.target_lang == "zh_tw" {
@@ -218,7 +215,7 @@ pub async fn translate_json_recursive(
                 ctx.current_log
                     .lock()
                     .unwrap()
-                    .push(format!("單筆翻譯失敗: {}", err_msg));
+                    .push(ctx.i18n.log_single_failed.replace("{}", &err_msg));
             }
         }
 
@@ -254,10 +251,10 @@ pub async fn translate_json_recursive(
             *c
         };
         *ctx.progress.lock().unwrap() = current as f32;
-        *ctx.status.lock().unwrap() = format!(
-            "正在處理 {} ({}/{})",
-            ctx.filename, current, total_unique_to_translate
-        );
+        *ctx.status.lock().unwrap() = ctx.i18n.status_processing_item
+            .replace("{}", &ctx.filename)
+            .replacen("{}", &current.to_string(), 1)
+            .replacen("{}", &total_unique_to_translate.to_string(), 1);
 
         while *ctx.paused.lock().unwrap() {
             if *ctx.cancelled.lock().unwrap() {

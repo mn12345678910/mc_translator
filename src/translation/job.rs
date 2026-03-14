@@ -42,6 +42,7 @@ pub struct JobSharedState {
     pub global_total: Arc<Mutex<f32>>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub config: Arc<Mutex<JobConfig>>,
+    pub i18n: &'static crate::ui::i18n::I18nLabels,
 }
 
 impl JobConfig {
