@@ -135,10 +135,12 @@ pub async fn process_all_files(
             file_tasks.extend(tasks);
             global_items.extend(items.clone()); // Clone items to use its length
             total_translated_items += items.len();
-            if total_translated_items > 0 {
-                state.global_total.store((total_translated_items as f32).to_bits(), Ordering::SeqCst);
-            }
         }
+    }
+
+    // 更新全域進度總量 (Revision 15.35: 修正為檔案總量而非條目總量)
+    if !file_tasks.is_empty() {
+        state.global_total.store((file_tasks.len() as f32).to_bits(), Ordering::SeqCst);
     }
 
     {
