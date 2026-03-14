@@ -119,16 +119,28 @@ impl AppState {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
-                        // 這裡取第一個目標的顏色作為預覽 (Revision 15.32: 修正為即時反應)
-                        let mut dummy_bg = if let Some(first_target) = active_targets.first() {
+                        
+                        // 使用 Hsva 保持狀態以解決 HUE 調整問題 (Revision 15.60)
+                        let current_rgb = if let Some(first_target) = active_targets.first() {
                             let (bg, _, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
-                            [bg.r(), bg.g(), bg.b()]
+                            bg
                         } else {
-                            if is_dark { self.dark_btn_bg } else { self.light_btn_bg }
+                            if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } 
+                            else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) }
                         };
 
-                        if ui.color_edit_button_srgb(&mut dummy_bg).changed() && self.palette_prop_sync_bg {
-                            self.apply_batch_color(true, dummy_bg);
+                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(current_rgb));
+                        // 檢查 RGB 外部變更 (如同類別切換)，若不一致則強制重製 Hsva 以同步 UI
+                        if egui::Color32::from(hsva) != current_rgb {
+                            hsva = egui::ecolor::Hsva::from(current_rgb);
+                        }
+
+                        if ui.color_edit_button_hsva(&mut hsva).changed() {
+                            let new_rgb = egui::Color32::from(hsva);
+                            self.palette_hsva_bg = Some(hsva);
+                            if self.palette_prop_sync_bg {
+                                self.apply_batch_color(true, [new_rgb.r(), new_rgb.g(), new_rgb.b()]);
+                            }
                         }
                         ui.end_row();
                     }
@@ -138,15 +150,26 @@ impl AppState {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
-                        let mut dummy_text = if let Some(first_target) = active_targets.first() {
+                        
+                        let current_rgb = if let Some(first_target) = active_targets.first() {
                             let (_, text, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
-                            [text.r(), text.g(), text.b()]
+                            text
                         } else {
-                            if is_dark { self.dark_btn_text } else { self.light_btn_text }
+                            if is_dark { egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]) } 
+                            else { egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]) }
                         };
 
-                        if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
-                            self.apply_batch_color(false, dummy_text);
+                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(current_rgb));
+                        if egui::Color32::from(hsva) != current_rgb {
+                            hsva = egui::ecolor::Hsva::from(current_rgb);
+                        }
+
+                        if ui.color_edit_button_hsva(&mut hsva).changed() {
+                            let new_rgb = egui::Color32::from(hsva);
+                            self.palette_hsva_text = Some(hsva);
+                            if self.palette_prop_sync_text {
+                                self.apply_batch_color(false, [new_rgb.r(), new_rgb.g(), new_rgb.b()]);
+                            }
                         }
                         ui.end_row();
                     }
