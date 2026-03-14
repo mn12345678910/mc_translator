@@ -119,8 +119,14 @@ impl AppState {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
-                        // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
-                        let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
+                        // 這裡取第一個目標的顏色作為預覽 (Revision 15.32: 修正為即時反應)
+                        let mut dummy_bg = if let Some(first_target) = active_targets.first() {
+                            let (bg, _, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
+                            [bg.r(), bg.g(), bg.b()]
+                        } else {
+                            if is_dark { self.dark_btn_bg } else { self.light_btn_bg }
+                        };
+
                         if ui.color_edit_button_srgb(&mut dummy_bg).changed() && self.palette_prop_sync_bg {
                             self.apply_batch_color(true, dummy_bg);
                         }
@@ -132,7 +138,13 @@ impl AppState {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
-                        let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
+                        let mut dummy_text = if let Some(first_target) = active_targets.first() {
+                            let (_, text, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
+                            [text.r(), text.g(), text.b()]
+                        } else {
+                            if is_dark { self.dark_btn_text } else { self.light_btn_text }
+                        };
+
                         if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
                             self.apply_batch_color(false, dummy_text);
                         }
@@ -208,9 +220,10 @@ impl AppState {
                 } else if t == self.i18n.cat_all_inputs {
                     if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
                     else {
-                        // 針對輸入框實施覆寫，不再修改全域 dark_text/light_text
-                        let key = self.get_id_from_target_name(&self.i18n.spec_input_search);
-                        self.instance_overrides.entry(key).or_default().text = Some(color);
+                        // 針對所有輸入框實施覆寫 (Revision 15.32 補全)
+                        for id in &["input_dict_search", "dict_new_key", "dict_new_value", "dict_replace_target", "dict_replace_new", "input_api_key", "input_ollama_url"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().text = Some(color);
+                        }
                     }
                 } else if t == self.i18n.cat_all_logs {
                     if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
@@ -220,6 +233,8 @@ impl AppState {
                         self.instance_overrides.entry(key_log).or_default().text = Some(color);
                         let key_dict = self.get_id_from_target_name(&self.i18n.spec_area_dict);
                         self.instance_overrides.entry(key_dict).or_default().text = Some(color);
+                        // 同時增加對標籤內部的染色一致性 (解決日誌區域標題等)
+                        self.instance_overrides.entry("label_log_title".to_string()).or_default().text = Some(color);
                     }
                 } else if t == self.i18n.cat_all_tabs {
                     if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
@@ -239,8 +254,20 @@ impl AppState {
                 } else if t == self.i18n.cat_all_bg {
                     if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
                 } else if t == self.i18n.cat_nav_bar {
-                    if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
-                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                    if is_bg { 
+                        // 導覽列背景不再動彈 btn_bg, 改為動 inactive tab
+                        if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; }
+                        // 同時強制所有導覽按鈕覆寫
+                        for id in &["btn_nav_settings", "btn_nav_dict", "btn_nav_palette", "btn_nav_theme", "btn_nav_dev"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().bg = Some(color);
+                        }
+                    } 
+                    else {
+                        // 導覽列文字解耦
+                        for id in &["btn_nav_settings", "btn_nav_dict", "btn_nav_palette", "btn_nav_theme", "btn_nav_dev"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().text = Some(color);
+                        }
+                    }
                 }
             } else {
                 // 特定元件覆寫 (V6 映射)
