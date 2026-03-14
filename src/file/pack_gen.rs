@@ -4,10 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-pub fn write_to_temp_or_output(
-    config: &JobConfig,
-    translated_files: HashMap<String, String>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn get_output_dir(config: &JobConfig) -> std::path::PathBuf {
     let base_output = if config.output_dir.is_empty() {
         Path::new("LLMTranslator")
     } else {
@@ -15,11 +12,18 @@ pub fn write_to_temp_or_output(
     };
     
     // 統一輸出至 LLMTranslator 子目錄 (需求 1)
-    let output_path = if config.output_dir.is_empty() {
+    if config.output_dir.is_empty() {
         base_output.to_path_buf()
     } else {
         base_output.join("LLMTranslator")
-    };
+    }
+}
+
+pub fn write_to_temp_or_output(
+    config: &JobConfig,
+    translated_files: HashMap<String, String>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let output_path = get_output_dir(config);
 
     if !output_path.exists() {
         fs::create_dir_all(&output_path).unwrap_or(());

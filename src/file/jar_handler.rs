@@ -169,10 +169,12 @@ pub fn repack_jar(
         let zip_in_file = fs::File::open(source_path)?;
         let mut zip_in = zip::ZipArchive::new(zip_in_file)?;
 
-        // 1. 建立目標檔案名稱集 (將 en_us.json 對應到 zh_tw.json)
+        // 1. 建立目標檔案名稱集 (支援標準與 Patchouli 手冊路徑)
         let mut target_names = std::collections::HashSet::new();
         for name in translated_files.keys() {
-            let actual_name = if name.ends_with("en_us.json") {
+            let actual_name = if name.contains("patchouli_books/") {
+                name.replace("/en_us/", "/zh_tw/")
+            } else if name.ends_with("en_us.json") {
                 name.replace("en_us.json", "zh_tw.json")
             } else {
                 name.clone()
@@ -201,7 +203,9 @@ pub fn repack_jar(
 
         // 3. 寫入新的翻譯內容
         for (name, content) in translated_files {
-            let actual_name = if name.ends_with("en_us.json") {
+            let actual_name = if name.contains("patchouli_books/") {
+                name.replace("/en_us/", "/zh_tw/")
+            } else if name.ends_with("en_us.json") {
                 name.replace("en_us.json", "zh_tw.json")
             } else {
                 name.clone()

@@ -64,24 +64,6 @@ impl FileTask {
     }
 }
 
-fn get_output_path_for_jar(source_path: &Path, config: &crate::translation::job::JobConfig) -> std::path::PathBuf {
-    let base_output = if config.output_dir.is_empty() {
-        Path::new("LLMTranslator")
-    } else {
-        Path::new(&config.output_dir)
-    };
-    
-    // 統一輸出至 LLMTranslator 子目錄 (與 pack_gen 一致)
-    let output_dir = if config.output_dir.is_empty() {
-        base_output.to_path_buf()
-    } else {
-        base_output.join("LLMTranslator")
-    };
-
-    let filename = source_path.file_name().unwrap_or_default();
-    output_dir.join(filename)
-}
-
 pub async fn process_all_files(
     paths: Vec<(std::path::PathBuf, String)>,
     state: JobSharedState,
@@ -272,11 +254,17 @@ pub async fn process_all_files(
                 if member_ids.iter().all(|id| finished_ids.contains(id)) {
                     // 全數完成，立即觸發 Repack
                     if let Some(files_to_repack) = repack_buffer.remove(&task.path) {
-                        let config_locked = job_config.lock().unwrap();
-                        let target_path = get_output_path_for_jar(&task.path, &config_locked);
+                        let config_locked = job_config.lock().unwrap().clone();
+                        let task_path = task.path.clone();
+                        let log_clone = log.clone();
                         
-                        crate::utils::add_log(&log, &format!("(即時寫入) 正在封裝 JAR 至: {}", target_path.file_name().unwrap_or_default().to_string_lossy()));
-                        crate::file::jar_handler::repack_jar(&task.path, &target_path, &files_to_repack, &config_locked)?;
+                        tokio::task::spawn_blocking(move || {
+                            let output_dir = crate::file::pack_gen::get_output_dir(&config_locked);
+                            let target_path = output_dir.join(task_path.file_name().unwrap_or_default());
+                            
+                            crate::utils::add_log(&log_clone, &format!("(即時寫入) 正在封裝 JAR 至: {}", target_path.file_name().unwrap_or_default().to_string_lossy()));
+                            crate::file::jar_handler::repack_jar(&task_path, &target_path, &files_to_repack, &config_locked)
+                        }).await??;
                         // 此處緩存已被 repack_buffer.remove 釋放 (Memory Recovery)
                     }
                 }
@@ -285,7 +273,10 @@ pub async fn process_all_files(
             // 普通檔案：即時寫入磁碟 (同樣節省記憶體)
             let mut results = HashMap::new();
             results.insert(task.rel_path.clone(), translated_content);
-            write_to_temp_or_output(&job_config.lock().unwrap(), results)?;
+            let config_locked = job_config.lock().unwrap().clone();
+            tokio::task::spawn_blocking(move || {
+                write_to_temp_or_output(&config_locked, results)
+            }).await??;
         }
         // --------------------------------------
 
