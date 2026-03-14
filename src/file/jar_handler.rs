@@ -134,87 +134,27 @@ pub async fn collect_jar_tasks(
     Ok((file_tasks, global_items))
 }
 
-pub fn write_inner_temp(
-    config: &crate::translation::job::JobConfig,
-    jar_path: &Path,
-    inner_path: &str,
-    content: &str,
+/// 已廢棄實體臨時目錄方案，改為純內存緩存。此函數僅供兼容性佔位，稍後將在 pipeline 中移除呼叫。
+#[deprecated(note = "Use memory-based buffering instead")]
+pub fn write_translated_to_temp_fs(
+    _jar_path: &Path,
+    _inner_path: &str,
+    _content: &str,
+    _config: &crate::translation::job::JobConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let base_output = if config.output_dir.is_empty() {
-        Path::new("LLMTranslator")
-    } else {
-        Path::new(&config.output_dir)
-    };
-    
-    let output_path = if config.output_dir.is_empty() {
-        base_output.to_path_buf()
-    } else {
-        base_output.join("LLMTranslator")
-    };
-
-    let jar_name = jar_path.file_name().unwrap_or_default().to_string_lossy();
-    let temp_repack_dir = output_path.join("temp_repack").join(&*jar_name);
-    
-    let fs_path = temp_repack_dir.join(inner_path);
-    if let Some(parent) = fs_path.parent() {
-        let _ = fs::create_dir_all(parent);
-    }
-    
-    fs::write(&fs_path, content)?;
     Ok(())
 }
 
 pub fn repack_jar(
     path: &Path,
-    _translated_files: &HashMap<String, String>,
-    config: &crate::translation::job::JobConfig,
+    translated_files: &HashMap<String, String>, // 現在直接接收內存中的翻譯內容
+    _config: &crate::translation::job::JobConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let base_output = if config.output_dir.is_empty() {
-        Path::new("LLMTranslator")
-    } else {
-        Path::new(&config.output_dir)
-    };
-    
-    let output_path = if config.output_dir.is_empty() {
-        base_output.to_path_buf()
-    } else {
-        base_output.join("LLMTranslator")
-    };
-
-    let jar_name = path.file_name().unwrap_or_default().to_string_lossy();
-    let temp_repack_dir = output_path.join("temp_repack").join(&*jar_name);
-    
-    if !temp_repack_dir.exists() {
+    if translated_files.is_empty() {
         return Ok(());
     }
 
     let temp_jar_path = path.with_extension("jar.tmp");
-
-    // 建立待替換檔案列表 (從磁碟掃描)
-    let mut disk_files = HashMap::new();
-    for entry in walkdir::WalkDir::new(&temp_repack_dir) {
-        let entry = entry?;
-        if entry.file_type().is_file() {
-            let rel = entry.path().strip_prefix(&temp_repack_dir)?;
-            let rel_str = rel.to_string_lossy().replace('\\', "/");
-            let content = fs::read_to_string(entry.path())?;
-            disk_files.insert(rel_str, content);
-        }
-    }
-
-    if disk_files.is_empty() {
-        return Ok(());
-    }
-
-    let mut target_names = std::collections::HashSet::new();
-    for name in disk_files.keys() {
-        let actual_name = if name.ends_with("en_us.json") {
-            name.replace("en_us.json", "zh_tw.json")
-        } else {
-            name.clone()
-        };
-        target_names.insert(actual_name);
-    }
 
     {
         let temp_file = fs::File::create(&temp_jar_path)?;
@@ -223,12 +163,24 @@ pub fn repack_jar(
         let zip_in_file = fs::File::open(path)?;
         let mut zip_in = zip::ZipArchive::new(zip_in_file)?;
 
+        // 1. 建立目標檔案名稱集 (將 en_us.json 對應到 zh_tw.json)
+        let mut target_names = std::collections::HashSet::new();
+        for name in translated_files.keys() {
+            let actual_name = if name.ends_with("en_us.json") {
+                name.replace("en_us.json", "zh_tw.json")
+            } else {
+                name.clone()
+            };
+            target_names.insert(actual_name);
+        }
+
+        // 2. 串流式處理現有 Entry
         for i in 0..zip_in.len() {
             let mut entry = zip_in.by_index(i)?;
             let name = entry.name().to_string();
 
             if target_names.contains(&name) {
-                continue;
+                continue; // 跳過將被替換的檔案
             }
 
             let mut buffer = Vec::new();
@@ -241,7 +193,8 @@ pub fn repack_jar(
             zip_out.write_all(&buffer)?;
         }
 
-        for (name, content) in disk_files {
+        // 3. 寫入新的翻譯內容
+        for (name, content) in translated_files {
             let actual_name = if name.ends_with("en_us.json") {
                 name.replace("en_us.json", "zh_tw.json")
             } else {
@@ -258,9 +211,5 @@ pub fn repack_jar(
     }
 
     fs::rename(&temp_jar_path, path)?;
-    
-    // 清理暫存目錄
-    let _ = fs::remove_dir_all(&temp_repack_dir);
-
     Ok(())
 }
