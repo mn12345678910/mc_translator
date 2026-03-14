@@ -201,6 +201,7 @@ pub async fn run_translation_batch(
                 batch_indices: batch,
                 config: &config,
                 status_arc: &status,
+                _log: &log,
                 glossary_automaton,
                 is_retry: true,
                 i18n,
