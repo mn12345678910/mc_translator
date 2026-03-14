@@ -207,10 +207,20 @@ impl AppState {
                     else { if is_dark { self.dark_label = color; } else { self.light_label = color; } }
                 } else if t == self.i18n.cat_all_inputs {
                     if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
-                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } }
+                    else {
+                        // 針對輸入框實施覆寫，不再修改全域 dark_text/light_text
+                        let key = self.get_id_from_target_name(&self.i18n.spec_input_search);
+                        self.instance_overrides.entry(key).or_default().text = Some(color);
+                    }
                 } else if t == self.i18n.cat_all_logs {
                     if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
-                    else { if is_dark { self.dark_text = color; } else { self.light_text = color; } }
+                    else {
+                        // 針對日誌區與字典列表實施覆寫
+                        let key_log = "area_log".to_string();
+                        self.instance_overrides.entry(key_log).or_default().text = Some(color);
+                        let key_dict = self.get_id_from_target_name(&self.i18n.spec_area_dict);
+                        self.instance_overrides.entry(key_dict).or_default().text = Some(color);
+                    }
                 } else if t == self.i18n.cat_all_tabs {
                     if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
                     else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }

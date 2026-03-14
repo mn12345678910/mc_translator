@@ -9,9 +9,9 @@ impl AppState {
 
             // 左側按鈕區
             ui.horizontal(|ui| {
-                let (bg, _text, rounding) = self.get_instance_style_full("btn_select_file");
+                let (bg, text, rounding) = self.get_instance_style_full("btn_select_file");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_select_file).fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(egui::RichText::new(self.i18n.btn_select_file).color(text)).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(files) = rfd::FileDialog::new()
@@ -34,9 +34,9 @@ impl AppState {
                         *self.global_progress.lock().unwrap() = 0.0;
                     }
                 }
-                let (bg, _text, rounding) = self.get_instance_style_full("btn_select_folder");
+                let (bg, text, rounding) = self.get_instance_style_full("btn_select_folder");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_select_folder).fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(egui::RichText::new(self.i18n.btn_select_folder).color(text)).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -50,9 +50,9 @@ impl AppState {
 
                 ui.separator();
 
-                let (bg, _text, rounding) = self.get_instance_style_full("btn_output_dir");
+                let (bg, text, rounding) = self.get_instance_style_full("btn_output_dir");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_output_dir).fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(egui::RichText::new(self.i18n.btn_output_dir).color(text)).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -62,8 +62,8 @@ impl AppState {
                     }
                 }
 
-                let (bg, _text, rounding) = self.get_instance_style_full("btn_open_output");
-                if ui.add(egui::Button::new(self.i18n.btn_open_output).fill(bg).rounding(rounding)).clicked() {
+                let (bg, text, rounding) = self.get_instance_style_full("btn_open_output");
+                if ui.add(egui::Button::new(egui::RichText::new(self.i18n.btn_open_output).color(text)).fill(bg).rounding(rounding)).clicked() {
                     let target = if self.output_dir.is_empty() {
                         "LLMTranslator"
                     } else {
@@ -115,16 +115,16 @@ impl AppState {
     /// 渲染導航按鈕 (⚙ 🌓 📖 🔧)
     pub fn render_status_navigation(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let (bg_set, _text, rounding_set) = self.get_instance_style_full("btn_nav_settings");
-            if ui.add(egui::Button::new("⚙").fill(bg_set).rounding(rounding_set)).on_hover_text(self.i18n.btn_nav_settings).clicked() {
+            let (bg_set, text_set, rounding_set) = self.get_instance_style_full("btn_nav_settings");
+            if ui.add(egui::Button::new(egui::RichText::new("⚙").color(text_set)).fill(bg_set).rounding(rounding_set)).on_hover_text(self.i18n.btn_nav_settings).clicked() {
                 self.show_api_settings = !self.show_api_settings;
                 if self.show_api_settings {
                     self.show_developer_mode = false;
                 }
                 self.trigger_save();
             }
-            let (bg_dict, _text, rounding_dict) = self.get_instance_style_full("btn_nav_dict");
-            if ui.add(egui::Button::new("📖").fill(bg_dict).rounding(rounding_dict)).on_hover_text(self.i18n.btn_nav_dict).clicked() {
+            let (bg_dict, text_dict, rounding_dict) = self.get_instance_style_full("btn_nav_dict");
+            if ui.add(egui::Button::new(egui::RichText::new("📖").color(text_dict)).fill(bg_dict).rounding(rounding_dict)).on_hover_text(self.i18n.btn_nav_dict).clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
                 if self.show_memory_viewer {
                     self.viewer_opening_counter = 10;
@@ -138,8 +138,8 @@ impl AppState {
                 }
                 self.trigger_save();
             }
-            let (bg_pal, _text, rounding_pal) = self.get_instance_style_full("btn_nav_palette");
-            if ui.add(egui::Button::new("🎨").fill(bg_pal).rounding(rounding_pal)).on_hover_text(self.i18n.btn_nav_palette).clicked() {
+            let (bg_pal, text_pal, rounding_pal) = self.get_instance_style_full("btn_nav_palette");
+            if ui.add(egui::Button::new(egui::RichText::new("🎨").color(text_pal)).fill(bg_pal).rounding(rounding_pal)).on_hover_text(self.i18n.btn_nav_palette).clicked() {
                 self.show_palette_settings = !self.show_palette_settings;
                 if self.show_palette_settings {
                     self.show_api_settings = false;
@@ -147,8 +147,8 @@ impl AppState {
                 }
                 self.trigger_save();
             }
-            let (bg_theme, _text, rounding_theme) = self.get_instance_style_full("btn_nav_theme");
-            if ui.add(egui::Button::new("🌓").fill(bg_theme).rounding(rounding_theme)).on_hover_text(self.i18n.btn_nav_theme).clicked() {
+            let (bg_theme, text_theme, rounding_theme) = self.get_instance_style_full("btn_nav_theme");
+            if ui.add(egui::Button::new(egui::RichText::new("🌓").color(text_theme)).fill(bg_theme).rounding(rounding_theme)).on_hover_text(self.i18n.btn_nav_theme).clicked() {
                 self.theme = if self.theme == "dark" {
                     "light".into()
                 } else {
@@ -156,8 +156,8 @@ impl AppState {
                 };
                 self.trigger_save();
             }
-            let (bg_dev, _text, rounding_dev) = self.get_instance_style_full("btn_nav_dev");
-            if ui.add(egui::Button::new("🔧").fill(bg_dev).rounding(rounding_dev)).on_hover_text(self.i18n.btn_nav_dev).clicked() {
+            let (bg_dev, text_dev, rounding_dev) = self.get_instance_style_full("btn_nav_dev");
+            if ui.add(egui::Button::new(egui::RichText::new("🔧").color(text_dev)).fill(bg_dev).rounding(rounding_dev)).on_hover_text(self.i18n.btn_nav_dev).clicked() {
                 self.show_developer_mode = !self.show_developer_mode;
                 if self.show_developer_mode {
                     self.show_api_settings = false;

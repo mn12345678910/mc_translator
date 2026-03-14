@@ -326,7 +326,7 @@ pub const ZH_TW: I18nLabels = I18nLabels {
     spec_btn_pause: "[特定] 暫停按鈕",
     spec_btn_stop: "[特定] 停止按鈕",
     spec_btn_clear_log: "[特定] 清除執行日誌按鈕",
-    spec_btn_nav_settings: "[特定] ⚙️ 設定按鈕",
+    spec_btn_nav_settings: "[特定] ⚙ 設定按鈕",
     spec_btn_nav_dict: "[特定] 📖 字典按鈕",
     spec_btn_nav_palette: "[特定] 🎨 調色盤按鈕",
     spec_btn_nav_theme: "[特定] 🌓 主題按鈕",

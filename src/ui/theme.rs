@@ -9,7 +9,6 @@ impl AppState {
         let visuals = if is_dark {
             let mut v = egui::Visuals::dark();
             let bg = egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]);
-            let text = egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]);
             let btn_bg = egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]);
             let btn_text = egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]);
             let input_bg = egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]);
@@ -17,7 +16,6 @@ impl AppState {
             
             v.window_fill = bg;
             v.panel_fill = bg;
-            v.override_text_color = Some(text);
             
             // 按鈕與交互組件
             v.widgets.inactive.bg_fill = btn_bg;
@@ -44,7 +42,6 @@ impl AppState {
         } else {
             let mut v = egui::Visuals::light();
             let bg = egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]);
-            let text = egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]);
             let btn_bg = egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]);
             let btn_text = egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]);
             let input_bg = egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]);
@@ -52,7 +49,6 @@ impl AppState {
 
             v.window_fill = bg;
             v.panel_fill = bg;
-            v.override_text_color = Some(text);
 
             v.widgets.inactive.bg_fill = btn_bg;
             v.widgets.inactive.weak_bg_fill = btn_bg;

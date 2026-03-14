@@ -4,6 +4,7 @@
 
 |日期時間|Commit編號|類型|位置(模組路徑)|說明 （使用-或<br>清單化）|
 |:---|:---|:---|:---|:---|
+|2026-03-14 12:10|PALETTE_FINAL|修復/優化|palette, theme, i18n, header|- **調色盤邏輯深度隔離與視覺錯誤修復 (Revision 15.50)**：<br>  - **修復顏色洩漏**：隔離「全部日誌」與「全部輸入框」設定，防止其誤傷全域文字色。<br>  - **按鈕文字色生效**：透過 `RichText` 確保按鈕能顯示自定義文字顏色。<br>  - ** glyph 清理**：移除 i18n 符號中的隱形成形符號，修復「口」字框錯誤。<br>  - **渲染限制解除**：移除 `theme.rs` 中的全域文字覆寫，開放組件獨立色彩權限。|
 |2026-03-14 11:50|PALETTE_SYNC|修復/優化|theme, settings, palette|- **調色盤與主題邏輯同步修復 (Revision 15.40)**：<br>  - **數據源遷移**：修正 `theme.rs` 忽略 `dark_label`/`light_label` 變數的問題，恢復調色盤對標籤與文字色的控制權。<br>  - **預設值對齊**：更新 `settings.rs` 預設值，確保琥珀色與深灰色文字在初始狀態即生效。<br>  - **連動強化**：輸入框、列表區與分頁文字全面對齊調色盤設定。|
 |2026-03-14 11:30|UI_DEEP_SYNC|修復/優化|viewport, theme, developer, glossary|- **UI 一致性深化與回歸熱修復 (Revision 15.35)**：<br>  - **標籤色彩標準化**：修正 `theme.rs` 邏輯，確保全域標籤連動調色盤 `dark_text` (琥珀色) 或 `#222` (黑)，徹底解決開發者模式標籤回歸白色的問題。<br>  - **Viewport 深度注入**：在 `manager.rs` 中實現全域 Viewport 樣式注入，強制同步主視窗的調色盤設定與圓角至子視窗及對話框，消除硬編碼殘留。<br>  - **代碼健壯性**：修復 `developer.rs` 變數作用域與 `theme.rs` 類型轉換錯誤，並移除 `viewer_content.rs` 的硬編碼常量與未使用變量。|
 |2026-03-14 10:20|I18N_FINAL|功能/重構|ui, translation, file|- **全面國際化重構與零警告清理**：<br>  - **全組件 i18n 化**：將所有硬編碼中文 UI 標籤、狀態訊息與導覽按鈕名稱移至 `i18n.rs`，建立 `I18nLabels` 架構。<br>  - **執行緒安全 i18n 傳遞**：將 `i18n` 實例整合進 `JobSharedState` 與 `TranslationContext`，確保非同步翻譯任務能顯示正確語系日誌。<br>  - **修復編譯警告**：移除 `client.rs` 中未使用的 `translate_free_google` 函數，達成全目標零警告。<br>  - **文件同步**：更新 `specs.md`、`AI_CONTEXT.md` 及硬編碼報告以反映最新架构。|
