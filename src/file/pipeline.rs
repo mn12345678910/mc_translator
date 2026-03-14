@@ -74,8 +74,6 @@ pub async fn process_all_files(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut file_tasks: Vec<FileTask> = Vec::new();
     let mut global_items: Vec<GlobalBatchItem> = Vec::new();
-    let mut file_id_counter = 0;
-
     let job_config = state.config.clone();
     let status_arc = state.status.clone();
     let progress_arc = state.progress.clone();
@@ -119,24 +117,27 @@ pub async fn process_all_files(
 
     while let Some(res) = join_set.join_next().await {
         if let Ok(Ok((tasks, items))) = res {
-            let offset = file_id_counter;
-            let mut tasks: Vec<FileTask> = tasks;
-            let mut items: Vec<GlobalBatchItem> = items;
-
-            for t in &mut tasks {
-                t.file_id += offset;
-            }
-            for i in &mut items {
-                i.file_id += offset;
-            }
-
-            file_id_counter += tasks.len();
             file_tasks.extend(tasks);
-            global_items.extend(items.clone()); // Clone items to use its length
+            global_items.extend(items);
         }
     }
 
-    // 更新全域進度總量 (Revision 15.40+: 使用 HashSet 獲取精確的不重複檔案數)
+    // 重新校分配 file_id，確保連續性 (避免不同執行緒間的 ID 衝突)
+    let mut current_id = 0;
+    let mut id_map = HashMap::new();
+    for task in &mut file_tasks {
+        let old_id = task.file_id;
+        task.file_id = current_id;
+        id_map.insert(old_id, current_id);
+        current_id += 1;
+    }
+    for item in &mut global_items {
+        if let Some(&new_id) = id_map.get(&item.file_id) {
+            item.file_id = new_id;
+        }
+    }
+
+    // 更新全域進度總量 (Revision 15.40+: 使用 HashSet 獲取精確的不重複來源檔案數)
     let unique_files: std::collections::HashSet<std::path::PathBuf> = file_tasks.iter().map(|t| t.path.clone()).collect();
     if !unique_files.is_empty() {
         state.global_total.store((unique_files.len() as f32).to_bits(), Ordering::SeqCst);
@@ -310,4 +311,59 @@ pub fn apply_global_results(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::translation::batching::GlobalBatchItem;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_file_id_recalibration() {
+        let mut file_tasks = vec![
+            FileTask {
+                file_id: 99,
+                path: PathBuf::from("a.json"),
+                rel_path: "a.json".to_string(),
+                original_content: "".to_string(),
+                en_us_value: None,
+                zh_tw_base: None,
+                js_matches: vec![],
+            },
+            FileTask {
+                file_id: 50,
+                path: PathBuf::from("b.json"),
+                rel_path: "b.json".to_string(),
+                original_content: "".to_string(),
+                en_us_value: None,
+                zh_tw_base: None,
+                js_matches: vec![],
+            },
+        ];
+
+        let mut global_items = vec![
+            GlobalBatchItem::new("text1", 99, "key1"),
+            GlobalBatchItem::new("text2", 50, "key2"),
+        ];
+
+        let mut current_id = 0;
+        let mut id_map = HashMap::new();
+        for task in &mut file_tasks {
+            let old_id = task.file_id;
+            task.file_id = current_id;
+            id_map.insert(old_id, current_id);
+            current_id += 1;
+        }
+        for item in &mut global_items {
+            if let Some(&new_id) = id_map.get(&item.file_id) {
+                item.file_id = new_id;
+            }
+        }
+
+        assert_eq!(file_tasks[0].file_id, 0);
+        assert_eq!(file_tasks[1].file_id, 1);
+        assert_eq!(global_items[0].file_id, 0);
+        assert_eq!(global_items[1].file_id, 1);
+    }
 }

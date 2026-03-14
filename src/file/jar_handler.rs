@@ -8,7 +8,6 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
 
 pub async fn collect_jar_tasks(
     start_file_id: usize,
@@ -22,7 +21,6 @@ pub async fn collect_jar_tasks(
     let skip_book = state.config.lock().unwrap().skip_book;
 
     type JarTaskData = (String, serde_json::Value, String, serde_json::Value);
-    let g_total_arc = state.global_total.clone();
     let tasks_data = tokio::task::spawn_blocking(
         move || -> Result<Vec<JarTaskData>, Box<dyn std::error::Error + Send + Sync>> {
             let file = fs::File::open(&path_clone)?;
@@ -71,10 +69,7 @@ pub async fn collect_jar_tasks(
                         }
                         entries.push((name, value, content, zh_tw_value));
 
-                        {
-                            let current_total = f32::from_bits(g_total_arc.load(Ordering::SeqCst));
-                            g_total_arc.store((current_total + 1.0).to_bits(), Ordering::SeqCst);
-                        }
+                        // 移除此處的多餘遞增，由 pipeline 統一計算
                     }
                 }
             }

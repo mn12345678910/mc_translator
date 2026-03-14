@@ -350,24 +350,23 @@ async fn process_one_global_batch(
     match api::translate_batch(&tagged_texts, &cfg, Some(&entries)).await {
         Ok(results_map) => {
             let mut resolved_any = false;
-            // 4. 解析結果
-            for &idx in ctx.batch_indices {
-                let tag = format!("[i{}]", idx);
-                let mut translated_val = None;
-                for (orig_tagged, trans_tagged) in &results_map {
-                    if orig_tagged.contains(&tag) {
-                        let clean = trans_tagged.replace(&tag, "").trim().to_string();
-                        translated_val = Some(clean);
-                        break;
+            // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)
+            let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
+            for (orig_tagged, trans_tagged) in &results_map {
+                // 有些 LLM 會在原始標籤周圍加空格或轉換格式，我們嘗試遍歷所有結果
+                if let Some(caps) = tag_re.captures(orig_tagged) {
+                    if let Ok(tagged_idx) = caps[1].parse::<usize>() {
+                        // 檢查此 ID 是否在當前批次中
+                        if ctx.batch_indices.contains(&tagged_idx) {
+                            let item = &mut ctx.all_items[tagged_idx];
+                            // 移除翻譯結果中的標籤殘留 (容錯處理)
+                            let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
+                            let restored = postprocess_text(&clean_translated, &item.markers);
+                            let cleaned = validate_and_cleanup(&restored);
+                            item.translated = Some(hanconv::s2tw(&cleaned));
+                            resolved_any = true;
+                        }
                     }
-                }
-
-                if let Some(trans) = translated_val {
-                    let item = &mut ctx.all_items[idx];
-                    let restored = postprocess_text(&trans, &item.markers);
-                    let cleaned = validate_and_cleanup(&restored);
-                    item.translated = Some(hanconv::s2tw(&cleaned));
-                    resolved_any = true;
                 }
             }
 
