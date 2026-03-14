@@ -145,8 +145,6 @@ pub async fn run_translation_batch(
             status_arc: &status,
             _log: &log,
             glossary_automaton,
-            current_idx: batch_idx + 1,
-            total_batch: initial_batches.len(),
             is_retry: false,
             i18n,
         })
@@ -203,10 +201,7 @@ pub async fn run_translation_batch(
                 batch_indices: batch,
                 config: &config,
                 status_arc: &status,
-                _log: &log,
                 glossary_automaton,
-                current_idx: idx + 1,
-                total_batch: retry_batches.len(),
                 is_retry: true,
                 i18n,
             })
