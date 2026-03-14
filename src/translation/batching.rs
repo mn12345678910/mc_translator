@@ -192,7 +192,7 @@ pub async fn run_translation_batch(
         );
         let mut second_failed_indices = Vec::new();
 
-        for (idx, batch) in retry_batches.iter().enumerate() {
+        for (_idx, batch) in retry_batches.iter().enumerate() {
             if cancelled.load(Ordering::SeqCst) {
                 break;
             }
