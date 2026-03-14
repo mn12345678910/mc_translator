@@ -308,8 +308,6 @@ struct BatchContext<'a> {
     status_arc: &'a Arc<Mutex<String>>,
     _log: &'a Arc<Mutex<Vec<String>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    current_idx: usize,
-    total_batch: usize,
     is_retry: bool,
     i18n: &'a crate::ui::i18n::I18nLabels,
 }
