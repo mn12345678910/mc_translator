@@ -114,27 +114,26 @@ impl AppState {
                         if r { has_rounding_supported = true; }
                     }
 
+                    // 檢測目標是否切換，若切換則重置 HSVA 狀態 (Revision 15.68)
+                    let first_target_name = active_targets.first().cloned().unwrap_or_default();
+                    let first_target_id = self.get_id_from_target_name(&first_target_name);
+                    if self.palette_hsva_target != first_target_id {
+                        self.palette_hsva_target = first_target_id.clone();
+                        self.palette_hsva_bg = None;
+                        self.palette_hsva_text = None;
+                    }
+
                     // 背景顏色
                     if has_bg_supported {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
                         
-                        // 使用 Hsva 保持狀態以解決 HUE 調整問題 (Revision 15.60)
-                        let current_rgb = if let Some(first_target) = active_targets.first() {
-                            let (bg, _, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
-                            bg
-                        } else {
-                            if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } 
-                            else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) }
-                        };
+                        // 獲取當前色彩
+                        let (current_bg, _, _) = self.get_instance_style_full(&first_target_id);
 
-                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(current_rgb));
-                        // 檢查 RGB 外部變更 (如同類別切換)，若不一致則強制重製 Hsva 以同步 UI
-                        if egui::Color32::from(hsva) != current_rgb {
-                            hsva = egui::ecolor::Hsva::from(current_rgb);
-                        }
-
+                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(current_bg));
+                        
                         if ui.color_edit_button_hsva(&mut hsva).changed() {
                             let new_rgb = egui::Color32::from(hsva);
                             self.palette_hsva_bg = Some(hsva);
@@ -151,18 +150,10 @@ impl AppState {
                             ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
                         
-                        let current_rgb = if let Some(first_target) = active_targets.first() {
-                            let (_, text, _) = self.get_instance_style_full(&self.get_id_from_target_name(first_target));
-                            text
-                        } else {
-                            if is_dark { egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]) } 
-                            else { egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]) }
-                        };
+                        // 獲取當前色彩
+                        let (_, current_text, _) = self.get_instance_style_full(&first_target_id);
 
-                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(current_rgb));
-                        if egui::Color32::from(hsva) != current_rgb {
-                            hsva = egui::ecolor::Hsva::from(current_rgb);
-                        }
+                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(current_text));
 
                         if ui.color_edit_button_hsva(&mut hsva).changed() {
                             let new_rgb = egui::Color32::from(hsva);

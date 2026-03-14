@@ -135,28 +135,43 @@ impl AppState {
             }
         }
 
-        // 2. 類別樣式解析
+        // 2. 類別樣式解析 (Revision 15.68: 補全所有分組 ID 以支援調色盤同步)
         let (rgb_bg, rgb_text) = if id == "cat_nav_bar" {
             (if is_dark { self.dark_tab_inactive } else { self.light_tab_inactive }, 
              if is_dark { self.dark_btn_text } else { self.light_label })
+        } else if id == "cat_all_buttons" {
+            (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
+             if is_dark { self.dark_btn_text } else { self.light_btn_text })
+        } else if id == "cat_all_inputs" {
+            (if is_dark { self.dark_input_bg } else { self.light_input_bg },
+             if is_dark { self.dark_text } else { self.light_label })
+        } else if id == "cat_all_logs" {
+            (if is_dark { self.dark_list_bg } else { self.light_list_bg },
+             if is_dark { self.dark_text } else { self.light_label })
+        } else if id == "cat_all_tabs" {
+            (if is_dark { self.dark_tab_active } else { self.light_tab_active },
+             if is_dark { self.dark_btn_text } else { self.light_label }) 
+        } else if id == "cat_all_progress" {
+            // 背景連動 dark_bg, 文字如預覽顯示琥珀色(dark_label)
+            (if is_dark { self.dark_bg } else { self.light_bg }, 
+             if is_dark { self.dark_label } else { self.light_label })
+        } else if id == "cat_all_labels" || id == "cat_all_bg" {
+            (if is_dark { self.dark_bg } else { self.light_bg },
+             if is_dark { self.dark_label } else { self.light_label })
         } else if id.contains("btn") || id.contains("nav") {
             (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
              if is_dark { self.dark_btn_text } else { self.light_btn_text })
         } else if id.contains("input") || id.contains("edit") {
             (if is_dark { self.dark_input_bg } else { self.light_input_bg },
-             if is_dark { self.dark_text } else { self.light_label }) // 淺色強制連動 light_label
+             if is_dark { self.dark_text } else { self.light_label })
         } else if id.contains("list") || id.contains("area") || id.contains("log") {
             (if is_dark { self.dark_list_bg } else { self.light_list_bg },
-             if is_dark { self.dark_text } else { self.light_label }) // 淺色連動 light_label
+             if is_dark { self.dark_text } else { self.light_label })
         } else if id.contains("tab") {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
              if is_dark { self.dark_btn_text } else { self.light_label }) 
         } else if id.contains("progress") {
-            // 預設進度條顏色為青色 [0, 200, 200] (用戶要求)
             ([0, 200, 200], if is_dark { self.dark_btn_text } else { self.light_btn_text })
-        } else if id.contains("label") {
-            (if is_dark { self.dark_bg } else { self.light_bg },
-             if is_dark { self.dark_label } else { self.light_label })
         } else {
             (if is_dark { self.dark_bg } else { self.light_bg }, 
              if is_dark { self.dark_label } else { self.light_label })
