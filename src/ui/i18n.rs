@@ -39,9 +39,21 @@ pub struct I18nLabels {
     pub label_font_size: &'static str,
     pub label_pack_format: &'static str,
     pub label_fps: &'static str,
+    pub label_fps_preset_vsync: &'static str,
     pub btn_restore_defaults: &'static str,
+    pub btn_confirm_restore: &'static str,
+    pub btn_cancel: &'static str,
     pub confirm_restore_title: &'static str,
     pub confirm_restore_text: &'static str,
+
+    // --- 狀態與提示 ---
+    pub label_user_prompt: &'static str,
+    pub label_api_status: &'static str,
+    pub status_connected: &'static str,
+    pub status_not_ready: &'static str,
+    pub prompt_enter_key: &'static str,
+    pub prompt_select_model: &'static str,
+    pub prompt_update_list: &'static str,
 
     // --- 調色盤與主題 ---
     pub header_palette: &'static str,
@@ -87,9 +99,20 @@ pub const ZH_TW: I18nLabels = I18nLabels {
     label_font_size: "字體:",
     label_pack_format: "資源包版本:",
     label_fps: "FPS:",
+    label_fps_preset_vsync: "(預設:vsync)",
     btn_restore_defaults: "⟲ 恢復預設",
+    btn_confirm_restore: "確定恢復",
+    btn_cancel: "取消",
     confirm_restore_title: "確認恢復預設",
     confirm_restore_text: "您確定要將所有設定恢復為系統預設值嗎？\n這將覆蓋您目前的所有設定。",
+
+    label_user_prompt: "📝 使用者翻譯提示:",
+    label_api_status: "🔍 API 連線狀態:",
+    status_connected: "[已連線]",
+    status_not_ready: "[未就緒]",
+    prompt_enter_key: "請輸入 API 金鑰",
+    prompt_select_model: "請選取模型",
+    prompt_update_list: "請先更新列表...",
 
     header_palette: "🎨 調色盤管理",
     label_edit_mode: "當前編輯模式:",

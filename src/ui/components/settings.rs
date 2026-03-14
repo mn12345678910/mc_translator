@@ -26,7 +26,7 @@ impl AppState {
 
                         // --- 服務商與恢復預設 (鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("服務商:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_provider).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("provider_combo")
                                     .selected_text(&self.api_provider)
@@ -62,7 +62,7 @@ impl AppState {
                                 egui::Layout::right_to_left(egui::Align::Center),
                                 |ui| {
                                     ui.add_enabled_ui(ui_enabled, |ui| {
-                                        if ui.button("⟲ 恢復預設").clicked() {
+                                        if ui.button(self.i18n.btn_restore_defaults).clicked() {
                                             self.show_restore_default_confirm = true;
                                         }
                                     });
@@ -72,7 +72,7 @@ impl AppState {
 
                         // --- 模型選擇 (混合：ComboBox 鎖定，刷新按鈕不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("選擇模型:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_model).color(label_color).strong());
 
                             let models = self.available_models.lock().unwrap().clone();
                             let mut changed = false;
@@ -82,9 +82,9 @@ impl AppState {
                                     .selected_text(
                                         if self.api_key.is_empty() && self.api_provider != "Ollama"
                                         {
-                                            "請輸入API金鑰".to_string()
+                                            self.i18n.prompt_enter_key.to_string()
                                         } else if self.selected_model.is_empty() {
-                                            "請選取模型".to_string()
+                                            self.i18n.prompt_select_model.to_string()
                                         } else {
                                             self.selected_model.clone()
                                         },
@@ -92,7 +92,7 @@ impl AppState {
                                     .width(ui.available_width() - 40.0)
                                     .show_ui(ui, |ui| {
                                         if models.is_empty() {
-                                            ui.label("請先更新列表...");
+                                            ui.label(self.i18n.prompt_update_list);
                                         }
                                         for m in &models {
                                             if ui
@@ -137,7 +137,7 @@ impl AppState {
                         } else {
                             ui.horizontal(|ui| {
                                 ui.label(
-                                    egui::RichText::new("API Key:").color(label_color).strong(),
+                                    egui::RichText::new(self.i18n.label_api_key).color(label_color).strong(),
                                 );
                                 ui.add_enabled_ui(ui_enabled, |ui| {
                                     let resp = ui.add(
@@ -156,7 +156,7 @@ impl AppState {
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("批次量:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_batch_size).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 let mut bs = self.batch_size as i32;
                                 if ui
@@ -174,7 +174,7 @@ impl AppState {
                             ui.label(egui::RichText::new("(1-300)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new("上限:").color(label_color).strong()); // 縮短名稱避免擁擠
+                            ui.label(egui::RichText::new(self.i18n.label_max_chars).color(label_color).strong()); // 縮短名稱避免擁擠
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -191,7 +191,7 @@ impl AppState {
 
                             ui.add_space(8.0);
                             ui.label(
-                                egui::RichText::new("逾時:")
+                                egui::RichText::new(self.i18n.label_timeout)
                                     .color(label_color)
                                     .strong(),
                             );
@@ -210,7 +210,7 @@ impl AppState {
                             ui.label(egui::RichText::new("(1-600s)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new("字體:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_font_size).color(label_color).strong());
                             if ui
                                 .add(
                                     egui::DragValue::new(&mut self.font_size)
@@ -226,7 +226,7 @@ impl AppState {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("資源包版本:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_pack_format).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("pack_format_presets")
                                     .selected_text("常用版本")
@@ -265,7 +265,7 @@ impl AppState {
                             ui.label(egui::RichText::new("(1-100)").color(label_color).small());
 
                             ui.add_space(12.0);
-                            ui.label(egui::RichText::new("FPS:").color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_fps).color(label_color).strong());
                             ui.checkbox(&mut self.enable_custom_fps, "");
                             if self.enable_custom_fps {
                                 let fps_input = ui.add(
@@ -280,7 +280,7 @@ impl AppState {
                                 ui.label(egui::RichText::new("(1-240)").color(label_color).small());
                             } else {
                                 ui.label(
-                                    egui::RichText::new("(預設:vsync)")
+                                    egui::RichText::new(self.i18n.label_fps_preset_vsync)
                                         .color(label_color),
                                 );
                             }
@@ -292,7 +292,7 @@ impl AppState {
                         // --- 使用者翻譯提示 (鎖定) ---
                         ui.group(|ui| {
                             ui.label(
-                                egui::RichText::new("📝 使用者翻譯提示:")
+                                egui::RichText::new(self.i18n.label_user_prompt)
                                     .color(label_color)
                                     .strong(),
                             );
@@ -317,7 +317,7 @@ impl AppState {
                         // API 連線狀態指示燈 (不鎖定，僅供視圖偵測)
                         ui.horizontal(|ui| {
                             ui.label(
-                                egui::RichText::new("🔍 API 連線狀態:")
+                                egui::RichText::new(self.i18n.label_api_status)
                                     .color(label_color)
                                     .strong(),
                             );
@@ -328,9 +328,9 @@ impl AppState {
                                 !self.api_key.is_empty() && !models_locked.is_empty()
                             };
                             let status_text = if is_ready {
-                                "[已連線]"
+                                self.i18n.status_connected
                             } else {
-                                "[未就緒]"
+                                self.i18n.status_not_ready
                             };
                             let status_color = if is_ready {
                                 if self.theme == "light" {
@@ -358,16 +358,16 @@ impl AppState {
             return;
         }
 
-        egui::Window::new("確認恢復預設")
+        egui::Window::new(self.i18n.confirm_restore_title)
             .collapsible(false)
             .resizable(false)
             .pivot(egui::Align2::CENTER_CENTER)
             .default_pos(ctx.screen_rect().center())
             .show(ctx, |ui| {
-                ui.label("您確定要將所有設定恢復為系統預設值嗎？\n這將覆蓋您目前的所有設定。");
+                ui.label(self.i18n.confirm_restore_text);
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    if ui.button("確定恢復").clicked() {
+                    if ui.button(self.i18n.btn_confirm_restore).clicked() {
                         let def = crate::config::settings::AppConfig::default();
                         let style_def = crate::config::settings::StyleConfig::default();
                         
@@ -429,7 +429,7 @@ impl AppState {
                         self.refresh_models();
                         self.show_restore_default_confirm = false;
                     }
-                    if ui.button("取消").clicked() {
+                    if ui.button(self.i18n.btn_cancel).clicked() {
                         self.show_restore_default_confirm = false;
                     }
                 });
