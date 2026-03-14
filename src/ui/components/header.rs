@@ -63,7 +63,7 @@ impl AppState {
                 }
 
                 let (bg, _text, rounding) = self.get_instance_style_full("btn_open_output");
-                if ui.add(egui::Button::new("📂 打開輸出").fill(bg).rounding(rounding)).clicked() {
+                if ui.add(egui::Button::new(self.i18n.btn_open_output).fill(bg).rounding(rounding)).clicked() {
                     let target = if self.output_dir.is_empty() {
                         "LLMTranslator"
                     } else {
@@ -96,13 +96,13 @@ impl AppState {
         ui.horizontal(|ui| {
             let (_, label_color) = self.get_instance_style("label_output_path");
             let display_path = if self.output_dir.is_empty() {
-                "預設: ./LLMTranslator".into()
+                self.i18n.label_default_path.into()
             } else {
                 self.output_dir.clone()
             };
             ui.add(
                 egui::Label::new(
-                    egui::RichText::new(format!("輸出路徑: {}", display_path))
+                    egui::RichText::new(format!("{}{}", self.i18n.label_output_path, display_path))
                         .color(label_color)
                         .strong(),
                 )
@@ -116,7 +116,7 @@ impl AppState {
     pub fn render_status_navigation(&mut self, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let (bg_set, _text, rounding_set) = self.get_instance_style_full("btn_nav_settings");
-            if ui.add(egui::Button::new("⚙").fill(bg_set).rounding(rounding_set)).on_hover_text("API 翻譯設定").clicked() {
+            if ui.add(egui::Button::new("⚙").fill(bg_set).rounding(rounding_set)).on_hover_text(self.i18n.btn_nav_settings).clicked() {
                 self.show_api_settings = !self.show_api_settings;
                 if self.show_api_settings {
                     self.show_developer_mode = false;
@@ -124,7 +124,7 @@ impl AppState {
                 self.trigger_save();
             }
             let (bg_dict, _text, rounding_dict) = self.get_instance_style_full("btn_nav_dict");
-            if ui.add(egui::Button::new("📖").fill(bg_dict).rounding(rounding_dict)).on_hover_text("建議詞管理器").clicked() {
+            if ui.add(egui::Button::new("📖").fill(bg_dict).rounding(rounding_dict)).on_hover_text(self.i18n.btn_nav_dict).clicked() {
                 self.show_memory_viewer = !self.show_memory_viewer;
                 if self.show_memory_viewer {
                     self.viewer_opening_counter = 10;
@@ -139,7 +139,7 @@ impl AppState {
                 self.trigger_save();
             }
             let (bg_pal, _text, rounding_pal) = self.get_instance_style_full("btn_nav_palette");
-            if ui.add(egui::Button::new("🎨").fill(bg_pal).rounding(rounding_pal)).on_hover_text("自定義調色盤").clicked() {
+            if ui.add(egui::Button::new("🎨").fill(bg_pal).rounding(rounding_pal)).on_hover_text(self.i18n.btn_nav_palette).clicked() {
                 self.show_palette_settings = !self.show_palette_settings;
                 if self.show_palette_settings {
                     self.show_api_settings = false;
@@ -148,7 +148,7 @@ impl AppState {
                 self.trigger_save();
             }
             let (bg_theme, _text, rounding_theme) = self.get_instance_style_full("btn_nav_theme");
-            if ui.add(egui::Button::new("🌓").fill(bg_theme).rounding(rounding_theme)).on_hover_text("切換主題").clicked() {
+            if ui.add(egui::Button::new("🌓").fill(bg_theme).rounding(rounding_theme)).on_hover_text(self.i18n.btn_nav_theme).clicked() {
                 self.theme = if self.theme == "dark" {
                     "light".into()
                 } else {
@@ -157,7 +157,7 @@ impl AppState {
                 self.trigger_save();
             }
             let (bg_dev, _text, rounding_dev) = self.get_instance_style_full("btn_nav_dev");
-            if ui.add(egui::Button::new("🔧").fill(bg_dev).rounding(rounding_dev)).on_hover_text("開發人員模式").clicked() {
+            if ui.add(egui::Button::new("🔧").fill(bg_dev).rounding(rounding_dev)).on_hover_text(self.i18n.btn_nav_dev).clicked() {
                 self.show_developer_mode = !self.show_developer_mode;
                 if self.show_developer_mode {
                     self.show_api_settings = false;
