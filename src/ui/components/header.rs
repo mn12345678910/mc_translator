@@ -11,11 +11,11 @@ impl AppState {
             ui.horizontal(|ui| {
                 let (bg, _text, rounding) = self.get_instance_style_full("btn_select_file");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📁 選擇檔案").fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_select_file).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(files) = rfd::FileDialog::new()
-                        .add_filter("JAR, JS & JSON 檔案", &["jar", "js", "json"])
+                        .add_filter(self.i18n.dialog_filter_jar_json_js, &["jar", "js", "json"])
                         .pick_files()
                     {
                         self.input_paths = files
@@ -36,7 +36,7 @@ impl AppState {
                 }
                 let (bg, _text, rounding) = self.get_instance_style_full("btn_select_folder");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📂 選擇資料夾").fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_select_folder).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -52,7 +52,7 @@ impl AppState {
 
                 let (bg, _text, rounding) = self.get_instance_style_full("btn_output_dir");
                 if ui
-                    .add_enabled(ui_enabled, egui::Button::new("📤 輸出資料夾").fill(bg).rounding(rounding))
+                    .add_enabled(ui_enabled, egui::Button::new(self.i18n.btn_output_dir).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
