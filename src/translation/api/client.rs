@@ -382,16 +382,35 @@ fn extract_json_from_text(text: &str) -> Option<String> {
     if serde_json::from_str::<serde_json::Value>(trimmed).is_ok() {
         return Some(trimmed.to_string());
     }
+
+    // 1. 嘗試從 Markdown 代碼塊提取
     if let Some(cap) = MARKDOWN_JSON_RE.captures(trimmed) {
         let content = cap[1].trim();
         if serde_json::from_str::<serde_json::Value>(content).is_ok() {
             return Some(content.to_string());
         }
     }
+
+    // 2. 嘗試從大括號開始提取 (Self-healing 支持)
     if let Some(m) = JSON_BRACE_RE.find(trimmed) {
-        let candidate = m.as_str().trim();
-        if serde_json::from_str::<serde_json::Value>(candidate).is_ok() {
-            return Some(candidate.to_string());
+        let mut candidate = m.as_str().trim().to_string();
+        
+        // 優先嘗試直接解析 (處理完整的 JSON)
+        // 注意：這裡需要處理可能存在的後續雜質，所以我們嘗試找到最後一個 }
+        if let Some(last_brace) = candidate.rfind('}') {
+            let possible_json = &candidate[..=last_brace];
+            if serde_json::from_str::<serde_json::Value>(possible_json).is_ok() {
+                return Some(possible_json.to_string());
+            }
+        }
+
+        // --- 自我修復邏輯 (Self-healing) ---
+        // 3. 如果解析失敗，嘗試補齊結尾
+        if !candidate.ends_with('}') {
+            candidate.push('}');
+            if serde_json::from_str::<serde_json::Value>(&candidate).is_ok() {
+                return Some(candidate);
+            }
         }
     }
     None
@@ -400,7 +419,7 @@ fn extract_json_from_text(text: &str) -> Option<String> {
 lazy_static::lazy_static! {
     static ref BATCH_INDEX_RE: regex::Regex = regex::Regex::new(r"\[(\d+)\]\s*(.+)").unwrap();
     static ref MARKDOWN_JSON_RE: regex::Regex = regex::Regex::new(r"(?s)```(?:json)?\s*([\s\S]*?)```").unwrap();
-    static ref JSON_BRACE_RE: regex::Regex = regex::Regex::new(r"(?s)\{[\s\S]*\}").unwrap();
+    static ref JSON_BRACE_RE: regex::Regex = regex::Regex::new(r"(?s)\{([\s\S]*)").unwrap();
 }
 
 async fn call_ollama_raw(
@@ -569,5 +588,33 @@ pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, c
             config.ollama_timeout
         );
         let _ = file.write_all(format!("--- LLM 通訊紀錄 [{}] ---\n{}\n[發送內容]:\n{}\n\n[接收內容]:\n{}\n------------------\n\n", now, settings, prompt, response).as_bytes());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_json_self_healing() {
+        // 場景 1: 完整的 JSON
+        let raw1 = r#"{"1": "hello", "2": "world"}"#;
+        assert!(extract_json_from_text(raw1).is_some());
+
+        // 場景 2: Markdown 代碼塊
+        let raw2 = r#"Here is result:
+```json
+{"1": "hello"}
+```
+"#;
+        assert_eq!(extract_json_from_text(raw2), Some(r#"{"1": "hello"}"#.to_string()));
+
+        // 場景 3: 自我修復 - 缺少結尾括號
+        let raw3 = r#"{"1": "hello", "2": "world""#; // 缺少最後一個 }
+        assert_eq!(extract_json_from_text(raw3), Some(r#"{"1": "hello", "2": "world"}"#.to_string()));
+
+        // 場景 4: 前後有雜質但括號完整
+        let raw4 = r#"The LLM says: {"key": "val"} hope you like it."#;
+        assert_eq!(extract_json_from_text(raw4), Some(r#"{"key": "val"}"#.to_string()));
     }
 }
