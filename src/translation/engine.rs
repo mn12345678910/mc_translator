@@ -92,7 +92,11 @@ pub async fn translate_json_recursive(
                             let orig_text = &texts[p_idx];
                             let restored = postprocess_text(translated_p, &markers_list[p_idx]);
                             let finalized = validate_and_cleanup(&restored);
-                            let translated = hanconv::s2tw(&finalized);
+                            let translated = if current_batch_config.target_lang == "zh_tw" {
+                                hanconv::s2tw(&finalized)
+                            } else {
+                                finalized
+                            };
 
                             for (p_orig, path_key) in &pending_items {
                                 if p_orig == orig_text {
@@ -198,7 +202,12 @@ pub async fn translate_json_recursive(
                     ));
                     finalized_str = None;
                 } else {
-                    finalized_str = Some(hanconv::s2tw(&cleaned));
+                    let translated = if current_single_config.target_lang == "zh_tw" {
+                        hanconv::s2tw(&cleaned)
+                    } else {
+                        cleaned
+                    };
+                    finalized_str = Some(translated);
                 }
             }
             Err(e) => {

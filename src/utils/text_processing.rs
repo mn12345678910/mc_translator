@@ -99,6 +99,12 @@ pub fn validate_and_cleanup(text: &str) -> String {
         "結果：",
         "Output:",
         "Result:",
+        "Traduction :",
+        "Traducción:",
+        "Übersetzung:",
+        "Перевод:",
+        "翻訳：",
+        "번역:",
     ];
     for p in prefixes {
         if s.to_lowercase().starts_with(&p.to_lowercase()) {

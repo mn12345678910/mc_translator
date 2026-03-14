@@ -78,22 +78,68 @@ pub async fn translate_one(
     match config.api_provider.as_str() {
         "Gemini" => {
             if config.api_key.is_empty() {
-                translate_free_google(text).await
+                translate_free_google_with_config(text, config).await
             } else {
                 translate_with_gemini(text, config, glossary).await
             }
         }
         "OpenAI" | "DeepSeek" | "Mistral" => {
             if config.api_key.is_empty() {
-                translate_free_google(text).await
+                translate_free_google_with_config(text, config).await
             } else {
                 translate_with_openai_compatible(text, config, glossary).await
             }
         }
         "Ollama" => translate_with_ollama(text, config, glossary).await,
-        "DeepL" => translate_with_deepl(text, &config.api_key, &config.selected_model).await,
-        _ => translate_free_google(text).await,
+        "DeepL" => translate_with_deepl(text, config).await,
+        _ => translate_free_google_with_config(text, config).await,
     }
+}
+
+// 移除舊的 translate_free_google 並重新命名其餘邏輯
+async fn translate_free_google(text: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    // 為相容性保留，但使用預設值
+    let url = format!(
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-TW&dt=t&q={}",
+        urlencoding::encode(text)
+    );
+    call_google_api_raw(&url).await
+}
+
+async fn call_google_api_raw(url: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let mut last_error = "未知錯誤".to_string();
+    for i in 0..3 {
+        match CLIENT
+            .get(url)
+            .header("User-Agent", "Mozilla/5.0")
+            .send()
+            .await
+        {
+            Ok(resp) => {
+                if resp.status().is_success() {
+                    match resp.json::<serde_json::Value>().await {
+                        Ok(json) => {
+                            if let Some(t) = json[0][0][0].as_str() {
+                                return Ok(t.to_string());
+                            }
+                        }
+                        Err(e) => last_error = format!("JSON 解析失敗: {}", e),
+                    }
+                } else if resp.status().as_u16() == 429 {
+                    last_error = "API 限制 (429 Too Many Requests)".to_string();
+                } else {
+                    last_error = format!("HTTP 錯誤: {}", resp.status());
+                }
+            }
+            Err(e) => last_error = format!("網路連線失敗: {}", e),
+        }
+
+        if i < 2 {
+            let backoff = (i + 1) * 2;
+            tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
+        }
+    }
+    Err(last_error.into())
 }
 
 /// 批量翻譯
@@ -130,7 +176,7 @@ pub async fn translate_batch(
             call_ollama_raw(&ollama_user_prompt, config, glossary).await?
         }
         "DeepL" => {
-            translate_with_deepl(&batch_instruction, &config.api_key, &config.selected_model).await?
+            translate_with_deepl(&batch_instruction, config).await?
         }
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
@@ -181,48 +227,48 @@ pub async fn translate_batch(
     Ok(map)
 }
 
-/// 免費 Google 翻譯
-async fn translate_free_google(
+pub fn map_lang_google(lang: &str) -> &str {
+    match lang {
+        "en_us" | "en_gb" => "en",
+        "zh_tw" => "zh-TW",
+        "zh_cn" => "zh-CN",
+        "ja_jp" => "ja",
+        "ko_kr" => "ko",
+        "fr_fr" => "fr",
+        "de_de" => "de",
+        "es_es" => "es",
+        "ru_ru" => "ru",
+        _ => "en",
+    }
+}
+
+pub fn map_lang_deepl(lang: &str) -> &str {
+    match lang {
+        "en_us" => "EN-US",
+        "en_gb" => "EN-GB",
+        "zh_tw" | "zh_cn" => "ZH", // DeepL only supports ZH for target, handled by engine for TW
+        "ja_jp" => "JA",
+        "ko_kr" => "KO",
+        "fr_fr" => "FR",
+        "de_de" => "DE",
+        "es_es" => "ES",
+        "ru_ru" => "RU",
+        _ => "ZH",
+    }
+}
+
+async fn translate_free_google_with_config(
     text: &str,
+    config: &JobConfig,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let sl = map_lang_google(&config.source_lang);
+    let tl = map_lang_google(&config.target_lang);
     let url = format!(
-        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q={}",
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl={}&tl={}&dt=t&q={}",
+        sl, tl,
         urlencoding::encode(text)
     );
-
-    let mut last_error = "未知錯誤".to_string();
-    for i in 0..3 {
-        match CLIENT
-            .get(&url)
-            .header("User-Agent", "Mozilla/5.0")
-            .send()
-            .await
-        {
-            Ok(resp) => {
-                if resp.status().is_success() {
-                    match resp.json::<serde_json::Value>().await {
-                        Ok(json) => {
-                            if let Some(t) = json[0][0][0].as_str() {
-                                return Ok(t.to_string());
-                            }
-                        }
-                        Err(e) => last_error = format!("JSON 解析失敗: {}", e),
-                    }
-                } else if resp.status().as_u16() == 429 {
-                    last_error = "API 限制 (429 Too Many Requests)".to_string();
-                } else {
-                    last_error = format!("HTTP 錯誤: {}", resp.status());
-                }
-            }
-            Err(e) => last_error = format!("網路連線失敗: {}", e),
-        }
-
-        if i < 2 {
-            let backoff = (i + 1) * 2;
-            tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
-        }
-    }
-    Err(last_error.into())
+    call_google_api_raw(&url).await
 }
 
 /// Gemini API 翻譯
@@ -486,19 +532,19 @@ async fn translate_with_openai_compatible(
 
 async fn translate_with_deepl(
     text: &str,
-    api_key: &str,
-    model: &str,
+    config: &JobConfig,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let is_free = model == "deepl-free";
+    let is_free = config.selected_model == "deepl-free";
     let url = if is_free {
         "https://api-free.deepl.com/v2/translate"
     } else {
         "https://api.deepl.com/v2/translate"
     };
+    let target_lang = map_lang_deepl(&config.target_lang).to_string();
     let params = [
-        ("auth_key", api_key),
-        ("text", text),
-        ("target_lang", "ZH-HANT"),
+        ("auth_key", config.api_key.clone()),
+        ("text", text.to_string()),
+        ("target_lang", target_lang),
     ];
     let resp = CLIENT
         .post(url)

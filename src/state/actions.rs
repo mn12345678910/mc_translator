@@ -85,6 +85,8 @@ impl AppState {
             cfg.skip_jar = self.skip_jar;
             cfg.skip_book = self.skip_book;
             cfg.enable_llm_log = self.enable_llm_log;
+            cfg.source_lang = self.source_lang.clone();
+            cfg.target_lang = self.target_lang.clone();
         }
 
         *self.is_paused.lock().unwrap() = false;
@@ -189,6 +191,8 @@ impl AppState {
             self.skip_jar,
             self.skip_book,
             self.enable_llm_log,
+            self.source_lang.clone(),
+            self.target_lang.clone(),
         )));
         self.active_job_config = Some(job_config.clone());
 
