@@ -1,5 +1,5 @@
 use crate::state::app_state::AppState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT}; // 保持導入以防遺漏，但此處警告為未使用
+use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
     /// 渲染 API 設定面板 (細粒度鎖定優化：僅在翻譯時鎖定必要參數)
@@ -263,6 +263,37 @@ impl AppState {
                                 }
                             });
                             ui.label(egui::RichText::new("(1-100)").color(label_color).small());
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new(self.i18n.label_source_lang).color(label_color).strong());
+                            ui.add_enabled_ui(ui_enabled, |ui| {
+                                egui::ComboBox::from_id_source("source_lang_combo")
+                                    .selected_text(&self.source_lang)
+                                    .show_ui(ui, |ui| {
+                                        let langs = ["en_us", "en_gb", "zh_tw", "zh_cn", "ja_jp", "ko_kr", "fr_fr", "de_de", "es_es", "ru_ru"];
+                                        for l in langs {
+                                            if ui.selectable_value(&mut self.source_lang, l.to_string(), l).clicked() {
+                                                self.trigger_save();
+                                            }
+                                        }
+                                    });
+                            });
+
+                            ui.add_space(8.0);
+                            ui.label(egui::RichText::new(self.i18n.label_target_lang).color(label_color).strong());
+                            ui.add_enabled_ui(ui_enabled, |ui| {
+                                egui::ComboBox::from_id_source("target_lang_combo")
+                                    .selected_text(&self.target_lang)
+                                    .show_ui(ui, |ui| {
+                                        let langs = ["zh_tw", "zh_cn", "en_us", "ja_jp", "ko_kr", "fr_fr", "de_de", "es_es", "ru_ru"];
+                                        for l in langs {
+                                            if ui.selectable_value(&mut self.target_lang, l.to_string(), l).clicked() {
+                                                self.trigger_save();
+                                            }
+                                        }
+                                    });
+                            });
 
                             ui.add_space(12.0);
                             ui.label(egui::RichText::new(self.i18n.label_fps).color(label_color).strong());

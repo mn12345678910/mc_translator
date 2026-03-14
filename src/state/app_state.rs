@@ -63,6 +63,8 @@ pub struct AppState {
     pub skip_jar: bool,
     pub skip_book: bool,
     pub enable_llm_log: bool,
+    pub source_lang: String,
+    pub target_lang: String,
 
     // --- 建議詞管理器視窗位置/大小 ---
     pub viewer_x: f32,
@@ -247,6 +249,8 @@ impl AppState {
             skip_jar: config.skip_jar,
             skip_book: config.skip_book,
             enable_llm_log: config.enable_llm_log,
+            source_lang: config.source_lang,
+            target_lang: config.target_lang,
             viewer_x: config.viewer_x,
             viewer_y: config.viewer_y,
             viewer_width: config.viewer_width,
@@ -415,6 +419,8 @@ impl AppState {
                 skip_jar: self.skip_jar,
                 skip_book: self.skip_book,
                 enable_llm_log: self.enable_llm_log,
+                source_lang: self.source_lang.clone(),
+                target_lang: self.target_lang.clone(),
                 main_x: self.main_x,
                 main_y: self.main_y,
                 main_width: self.main_width,

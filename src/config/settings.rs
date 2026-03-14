@@ -40,6 +40,12 @@ pub struct AppConfig {
     #[serde(rename = "術語優先級", alias = "glossary_priority")]
     pub glossary_priority: String,
 
+    // --- [語言設定] ---
+    #[serde(rename = "來源語言", alias = "source_lang")]
+    pub source_lang: String,
+    #[serde(rename = "目標語言", alias = "target_lang")]
+    pub target_lang: String,
+
     // --- [輸出與路徑] ---
     #[serde(rename = "輸出路徑", alias = "output_dir")]
     pub output_dir: String,
@@ -255,6 +261,8 @@ impl Default for AppConfig {
             batch_max_chars: 3500,
             ollama_timeout: 60,
             glossary_priority: "official".to_string(),
+            source_lang: "en_us".to_string(),
+            target_lang: "zh_tw".to_string(),
             output_dir: String::new(),
             pack_format: 15,
             enable_custom_fps: false,
