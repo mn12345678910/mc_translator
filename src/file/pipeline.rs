@@ -136,9 +136,10 @@ pub async fn process_all_files(
         }
     }
 
-    // 更新全域進度總量 (Revision 15.35: 修正為檔案總量而非條目總量)
-    if !file_tasks.is_empty() {
-        state.global_total.store((file_tasks.len() as f32).to_bits(), Ordering::SeqCst);
+    // 更新全域進度總量 (Revision 15.40+: 使用 HashSet 獲取精確的不重複檔案數)
+    let unique_files: std::collections::HashSet<std::path::PathBuf> = file_tasks.iter().map(|t| t.path.clone()).collect();
+    if !unique_files.is_empty() {
+        state.global_total.store((unique_files.len() as f32).to_bits(), Ordering::SeqCst);
     }
 
     {

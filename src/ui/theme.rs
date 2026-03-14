@@ -106,7 +106,13 @@ impl AppState {
                 // 預設顏色回退
                 let final_bg = bg.unwrap_or_else(|| {
                     if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) } }
-                    else if id.contains("input") { if is_dark { egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]) } else { egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]) } }
+                        if is_dark { egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]) } 
+                        else { egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]) } 
+                    }
+                    else if id.contains("list") || id.contains("area") || id.contains("log") {
+                        if is_dark { egui::Color32::from_rgb(self.dark_list_bg[0], self.dark_list_bg[1], self.dark_list_bg[2]) }
+                        else { egui::Color32::from_rgb(self.light_list_bg[0], self.light_list_bg[1], self.light_list_bg[2]) }
+                    }
                     else { if is_dark { egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]) } else { egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]) } }
                 });
                 let final_text = text.unwrap_or_else(|| {
@@ -137,6 +143,9 @@ impl AppState {
         } else if id.contains("tab") {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
              if is_dark { self.dark_btn_text } else { self.light_label }) 
+        } else if id.contains("progress") {
+            // 預設進度條顏色為青色 [0, 200, 200] (用戶要求)
+            ([0, 200, 200], if is_dark { self.dark_btn_text } else { self.light_btn_text })
         } else if id.contains("label") {
             (if is_dark { self.dark_bg } else { self.light_bg },
              if is_dark { self.dark_label } else { self.light_label })

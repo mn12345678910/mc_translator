@@ -320,7 +320,7 @@ async fn process_one_global_batch(
     let total_items = ctx.all_items.len();
 
     *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch
-        .replace("{}", mode_str)
+        .replacen("{}", mode_str, 1)
         .replacen("{}", &format!("{}-{}", first_item_real_idx, last_item_real_idx), 1)
         .replacen("{}", &total_items.to_string(), 1);
 
