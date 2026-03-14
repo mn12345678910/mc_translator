@@ -23,6 +23,7 @@ impl AppState {
                         } else {
                             LABEL_COLOR_DARK
                         };
+                        let (_, input_text_color) = self.get_instance_style("cat_all_inputs");
 
                         // --- 服務商與恢復預設 (鎖定) ---
                         ui.horizontal(|ui| {
@@ -131,6 +132,7 @@ impl AppState {
                                     if ui
                                         .add(
                                             egui::TextEdit::singleline(&mut self.ollama_url)
+                                                .text_color(input_text_color)
                                                 .desired_width(ui.available_width()),
                                         )
                                         .changed()
@@ -149,6 +151,7 @@ impl AppState {
                                     let resp = ui.add(
                                         egui::TextEdit::singleline(&mut self.api_key)
                                             .password(true)
+                                            .text_color(input_text_color)
                                             .desired_width(ui.available_width() - 80.0),
                                     );
 
@@ -341,6 +344,7 @@ impl AppState {
                                 if ui
                                     .add(
                                         egui::TextEdit::multiline(&mut self.user_prompt)
+                                            .text_color(input_text_color)
                                             .desired_rows(2)
                                             .desired_width(ui.available_width()),
                                     )

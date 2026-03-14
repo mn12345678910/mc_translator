@@ -38,6 +38,7 @@ impl AppState {
 
             v.extreme_bg_color = input_bg;
             v.faint_bg_color = list_bg;
+            v.override_text_color = Some(egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]));
             v
         } else {
             let mut v = egui::Visuals::light();
@@ -105,7 +106,11 @@ impl AppState {
             if bg.is_some() || text.is_some() || style.rounding.is_some() {
                 // 預設顏色回退
                 let final_bg = bg.unwrap_or_else(|| {
-                    if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) } }
+                    if id.contains("btn") || id.contains("nav") { 
+                        if is_dark { egui::Color32::from_rgb(self.dark_btn_bg[0], self.dark_btn_bg[1], self.dark_btn_bg[2]) } 
+                        else { egui::Color32::from_rgb(self.light_btn_bg[0], self.light_btn_bg[1], self.light_btn_bg[2]) } 
+                    }
+                    else if id.contains("input") { 
                         if is_dark { egui::Color32::from_rgb(self.dark_input_bg[0], self.dark_input_bg[1], self.dark_input_bg[2]) } 
                         else { egui::Color32::from_rgb(self.light_input_bg[0], self.light_input_bg[1], self.light_input_bg[2]) } 
                     }
