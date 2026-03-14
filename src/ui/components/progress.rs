@@ -24,11 +24,31 @@ impl AppState {
             };
             current_status.push_str(dots);
         }
+
+        // 行 1: 狀態列 (目前狀態 + 模型資訊)
+        let engine_info = if processing {
+            format!(" [{}/{}]", self.api_provider, if self.selected_model.is_empty() { "Google" } else { &self.selected_model })
+        } else {
+            String::new()
+        };
         ui.label(
-            egui::RichText::new(format!("{}{}", self.i18n.label_current_status, current_status))
+            egui::RichText::new(format!("{}{}{}", self.i18n.label_current_status, current_status, engine_info))
                 .color(label_color)
                 .strong(),
         );
+
+        // 行 2: 路徑與批次列
+        if processing {
+            let path = self.current_processing_path.lock().unwrap().clone();
+            let c_batch = self.current_batch.load(Ordering::SeqCst);
+            let t_batch = self.total_batches.load(Ordering::SeqCst);
+            if !path.is_empty() {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("正在處理: ").color(label_color));
+                    ui.label(egui::RichText::new(format!("{}({}/{})", path, c_batch, t_batch)).color(label_color).strong());
+                });
+            }
+        }
 
         // 如果不在處理中，清空進度顯示 (除非是在暫停中)
         let (prog, total, g_prog, g_total) = {
@@ -43,7 +63,7 @@ impl AppState {
         // 目前檔案 (顯示條目進度)
         let ratio = if total > 0.0 { prog / total } else { 0.0 };
         let (c_bar_color_raw, c_text_color, c_rounding) = self.get_instance_style_full("progress_current");
-        // 脈衝動畫邏輯優化
+        // 脈脈動畫邏輯
         let bar_color = if processing && self.progress_pulse_enabled {
             let speed = self.progress_pulse_speed as f64 * 4.0;
             let shimmer_val = ((ctx.input(|i| i.time) * speed).sin() * 0.15 + 1.1) as f32;

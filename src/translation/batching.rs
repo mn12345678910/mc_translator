@@ -45,6 +45,8 @@ pub async fn translate_global_batches(
     status: Arc<Mutex<String>>,
     progress: Arc<AtomicU32>,
     progress_total: Arc<AtomicU32>, // 目前檔案總條目數
+    current_batch: Arc<AtomicU32>,  // 當前批次
+    total_batches: Arc<AtomicU32>,   // 總批次
     cancelled: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
     log: Arc<Mutex<Vec<String>>>,
@@ -60,6 +62,8 @@ pub async fn translate_global_batches(
         config,
         status,
         progress,
+        current_batch,
+        total_batches,
         counter: Arc::new(Mutex::new(0)),
         log,
         cancelled,
@@ -76,6 +80,8 @@ pub struct RunBatchContext<'a> {
     pub config: Arc<Mutex<JobConfig>>,
     pub status: Arc<Mutex<String>>,
     pub progress: Arc<AtomicU32>,
+    pub current_batch: Arc<AtomicU32>,
+    pub total_batches: Arc<AtomicU32>,
     pub counter: Arc<Mutex<usize>>,
     pub log: Arc<Mutex<Vec<String>>>,
     pub cancelled: Arc<AtomicBool>,
@@ -93,6 +99,8 @@ pub async fn run_translation_batch(
     let config = ctx.config;
     let status = ctx.status;
     let progress = ctx.progress;
+    let current_batch = ctx.current_batch;
+    let total_batches = ctx.total_batches;
     let _counter = ctx.counter;
     let log = ctx.log;
     let cancelled = ctx.cancelled;
@@ -123,11 +131,14 @@ pub async fn run_translation_batch(
     }
 
     let initial_batches = create_adaptive_batches_from_indices(items, &pending_indices, cfg.batch_size, cfg.batch_max_chars);
+    total_batches.store(initial_batches.len() as u32, Ordering::SeqCst);
 
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
         if cancelled.load(Ordering::SeqCst) {
             break;
         }
+        current_batch.store((batch_idx + 1) as u32, Ordering::SeqCst);
+        
         while paused.load(Ordering::SeqCst) {
             if cancelled.load(Ordering::SeqCst) {
                 break;

@@ -150,6 +150,11 @@ impl AppState {
         self.progress_total.store(0.0f32.to_bits(), Ordering::SeqCst);
         self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
         self.global_total.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.current_batch.store(0, Ordering::SeqCst);
+        self.total_batches.store(0, Ordering::SeqCst);
+        if let Ok(mut p) = self.current_processing_path.lock() {
+            p.clear();
+        }
         *self.status.lock().unwrap() = self.i18n.status_analyzing_files.to_string();
 
         let log = self.log.clone();
@@ -206,6 +211,9 @@ impl AppState {
             progress_total: self.progress_total.clone(),
             global_progress: self.global_progress.clone(),
             global_total: self.global_total.clone(),
+            current_processing_path: self.current_processing_path.clone(),
+            current_batch: self.current_batch.clone(),
+            total_batches: self.total_batches.clone(),
             cancelled: self.is_cancelled.clone(),
             paused: paused_arc.clone(),
             translation_memory: translation_memory_arc.clone(),

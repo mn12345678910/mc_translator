@@ -32,6 +32,9 @@ pub struct AppState {
     pub progress_total: Arc<AtomicU32>,
     pub global_progress: Arc<AtomicU32>,
     pub global_total: Arc<AtomicU32>,
+    pub current_processing_path: Arc<Mutex<String>>,
+    pub current_batch: Arc<AtomicU32>,
+    pub total_batches: Arc<AtomicU32>,
 
     // --- 語言與模型數據 ---
     pub mc_lang: Arc<Mutex<Option<utils::McLangFiles>>>,
@@ -232,6 +235,9 @@ impl AppState {
             progress_total: Arc::new(AtomicU32::new(0.0f32.to_bits())),
             global_progress: Arc::new(AtomicU32::new(0.0f32.to_bits())),
             global_total: Arc::new(AtomicU32::new(0.0f32.to_bits())),
+            current_processing_path: Arc::new(Mutex::new(String::new())),
+            current_batch: Arc::new(AtomicU32::new(0)),
+            total_batches: Arc::new(AtomicU32::new(0)),
             mc_lang: Arc::new(Mutex::new(None)),
             term_replacements: Arc::new(Mutex::new(Vec::new())),
             exact_match_map: Arc::new(Mutex::new(HashMap::new())),

@@ -282,8 +282,8 @@ impl I18nLabels {
             status_processing: "正在翻譯...".to_string(),
             status_paused: "已暫停".to_string(),
             label_current_status: "目前狀態: ".to_string(),
-            label_current_file: "目前檔案: ".to_string(),
-            label_global_progress: "總進度: ".to_string(),
+            label_current_file: "條目進度: ".to_string(),
+            label_global_progress: "檔案完成度: ".to_string(),
             label_log_area: "執行日誌:".to_string(),
 
             header_api_settings: "⚙ API 服務設定".to_string(),

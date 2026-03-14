@@ -122,6 +122,18 @@ pub async fn process_all_files(
         }
     }
 
+    // --- 進度條異常修復：全域重置與排序 (Sorting) ---
+    state.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+    state.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+    if let Ok(mut p) = state.current_processing_path.lock() {
+        p.clear();
+    }
+
+    // 依據原始路徑（檔案層級）進行排序。
+    // 這能確保同一 JAR 的檔案在任務列表中連續，從而使後續的「路徑變換進度遞增」邏輯正確。
+    file_tasks.sort_by(|a, b| a.path.cmp(&b.path));
+    // ------------------------------------------
+
     // 重新校分配 file_id，確保連續性 (避免不同執行緒間的 ID 衝突)
     let mut current_id = 0;
     let mut id_map = HashMap::new();
@@ -180,6 +192,16 @@ pub async fn process_all_files(
             break;
         }
 
+        // 即時路徑回顯 (Revision 16.20)
+        let display_path = if task.path.to_string_lossy().contains("mods") {
+            format!("{} -> {}", task.path.file_name().unwrap_or_default().to_string_lossy(), task.rel_path)
+        } else {
+            task.rel_path.clone()
+        };
+        if let Ok(mut p) = state.current_processing_path.lock() {
+            *p = display_path;
+        }
+
         let file_item_count = global_items[item_offset..]
             .iter()
             .take_while(|item| item.file_id == task.file_id)
@@ -208,6 +230,8 @@ pub async fn process_all_files(
             status_arc.clone(),
             progress_arc.clone(),
             state.progress_total.clone(),
+            state.current_batch.clone(), // 傳遞批次狀態
+            state.total_batches.clone(),   // 傳遞批次總量
             cancelled_arc.clone(),
             paused_arc.clone(),
             log.clone(),
