@@ -1,5 +1,5 @@
 use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
-use crate::translation::job::{JobConfig, JobSharedState};
+use crate::translation::job::JobSharedState;
 use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::utils::text_processing::sync_formatting;
