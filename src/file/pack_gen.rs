@@ -39,7 +39,9 @@ pub fn write_to_temp_or_output(
         }
 
         let name_unix = clean_name.replace('\\', "/");
-        let mut final_path = if name_unix.ends_with("en_us.json") {
+        let is_json = name_unix.ends_with(".json");
+
+        let mut final_path = if is_json && name_unix.ends_with("en_us.json") {
             name_unix.replace("en_us.json", "zh_tw.json")
         } else {
             name_unix.clone()
@@ -47,8 +49,10 @@ pub fn write_to_temp_or_output(
 
         let is_absolute = Path::new(&clean_name).is_absolute();
         let has_dirs = name_unix.contains("/");
+        let is_originally_resource = name_unix.starts_with("assets/") || name_unix.contains("patchouli_books/");
 
-        if is_absolute || !has_dirs {
+        // 1. 路徑轉換：僅針對 BUNDLE 中的單純 JSON 或絕對路徑 JSON 進行資源包化補全
+        if (is_absolute || !has_dirs) && is_json && is_bundle {
             let path_obj = Path::new(&clean_name);
             if let (Some(parent), Some(fname)) = (path_obj.parent(), path_obj.file_name()) {
                 let fname_str = fname.to_string_lossy();
@@ -75,10 +79,11 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        if final_path.contains("patchouli_books/") {
-            final_path = final_path.replace("/en_us/", "/zh_tw/");
-        } else if !final_path.ends_with(".js") {
-            if let Some(pos) = final_path.rfind('/') {
+        // 2. 語法/手冊路徑調整 (僅針對 JSON)
+        if is_json {
+            if final_path.contains("patchouli_books/") {
+                final_path = final_path.replace("/en_us/", "/zh_tw/");
+            } else if let Some(pos) = final_path.rfind('/') {
                 let dir = &final_path[..=pos];
                 if dir.ends_with("lang/") {
                     final_path = format!("{}zh_tw.json", dir);
@@ -86,26 +91,30 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        // 核心邏輯：區分資源包內容與獨立鏡像
-        // 1. 如果是來自 JAR (is_bundle) 或路徑包含 assets/patchouli，則進入 Zip 暫存區
-        // 2. 否則（獨立檔案），直接寫入鏡像資料夾
-        if is_bundle || final_path.starts_with("assets/") || final_path.contains("patchouli_books/") {
+        // 3. 輸出分流：
+        //    - 只有 BUNDLE (JAR/Mods) 或原本就位於資源結構中的 JSON 進入 ZIP 暫存區
+        //    - 獨立檔案 (JS, 非 BUNDLE JSON) 直接鏡像輸出
+        let should_zip = (is_bundle || is_originally_resource) && is_json;
+
+        if should_zip {
             let zip_temp_path = temp_dir.join(&final_path);
             if let Some(parent) = zip_temp_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }
             let _ = fs::write(&zip_temp_path, &content);
         } else {
-            // 獨立檔案鏡像
-            let safe_final_path = if Path::new(&final_path).is_absolute() {
-                Path::new(&final_path).file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or(final_path)
-            } else {
-                final_path
-            };
+            // 獨立檔案鏡像 (保持相對路徑)
+            // 移除領先斜線以確保 join 正常工作 (Fix missing folders)
+            let mut final_path_stripped = final_path.trim_start_matches('/').to_string();
+            
+            // 如果是 Windows 磁碟機格式 (如 C:/)，也需要處理 (通常 scanner 不應產出此格式於 rel_path)
+            if final_path_stripped.contains(':') {
+                if let Some(pos) = final_path_stripped.find(':') {
+                    final_path_stripped = final_path_stripped[pos + 1..].trim_start_matches('/').to_string();
+                }
+            }
 
-            let fs_path = output_path.join(&safe_final_path);
+            let fs_path = output_path.join(&final_path_stripped);
             if let Some(parent) = fs_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }

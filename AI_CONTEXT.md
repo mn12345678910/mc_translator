@@ -7,23 +7,18 @@
 >    - **翻譯匹配順序**：官方建議詞 (Official) > 翻譯記憶體 (User) > LLM 翻譯。
 >    - **規範化辭典**：系統統一使用 `dicts/user.json` 與 `dicts/official.json`。
 >    - **遷移邏輯 (Migration Mode)**：對「官方建議詞」進行任何編輯或取代操作後，該條目必須「移入」使用者字典 (`user.json`) 並從官方字典 (`official.json`) 中移除。
-> 2. **狀態管理與併發規範 (Atomic Refactor)**：
->    - **原子化狀態**: 為消除鎖競爭，高頻旗標 (`is_processing`, `is_paused`, `is_cancelled`) 與進度值 均使用原子類型 (`AtomicBool`, `AtomicU32`)。
->    - **存取規範**: 使用 `.load(Ordering::SeqCst)` 與 `.store(...)`。對於 `f32` 進度，透過位元轉換 (`to_bits`/`from_bits`) 儲存於 `AtomicU32`。
->    - **Runtime 安全**: 從 UI 觸發的非同步任務必須使用 `self.runtime.spawn`。
->    - **鎖定範圍**: 僅對複雜容器（如 `Vec`, `HashMap`）使用 `Arc<Mutex<T>>`。
-    - **色彩狀態 (HSVA)**: 調色盤編輯應使用 `palette_hsva_bg`/`text` 與 `palette_hsva_target` 暫存狀態，以避免直接操作 SRGB 時因色相丟失（HUE Reset）導致的選色圓圈跳回問題。
-> 3. **設定與持久化**：
->    - **設定檔隔離**: 分為 `config.cfg` (核心功能) 與 `style.cfg` (視覺樣式)。
->    - **即時存檔**: 變更後立即調用 `trigger_save()` 進行非同步寫入。
->    - **金鑰安全**: `api_key` 僅存於 `.env`，禁止寫入設定檔。
-> 4. **國際化與 UI 規範 (i18n & UI)**：
->    - **JSON 驅動**: UI 標籤支援從 `langs/{lang}.json` 動態載入，不再硬編碼。
-    - **視覺連動**: 全域套用自定義調色盤 (Palette)，包含進度條脈衝動畫與各組件色彩同步。
-    - **色彩解耦**: 導覽列與一般組件的樣式應通過 `instance_overrides` 進行解耦，避免類別批量更動影響特定區域。
-    - **深色模式**: 標籤預設連動 `LABEL_COLOR_DARK` (琥珀色)。
-    - **視窗穩定**: 具備 Drift Fix (5.0 閾值) 與幾何穩定延遲機制。
-    - **進度計算法**: 全域進度條 (`global_progress`) 統一按「檔案數量」計增，而狀態列則顯示精確的「條目處理索引範圍」。
+> 2. **狀態管理與併發規範 (Pipeline & Concurrency)**：
+>    - **原子化狀態**: 高頻旗標與進度值均使用原子類型 (`AtomicBool`, `AtomicU32`)。進度值透過位元轉換儲存。
+>    - **I/O 隔離**: 所有涉及實體磁碟、JAR 重構等同步 I/O 操作**必須**包裹於 `tokio::task::spawn_blocking` 中，嚴禁直接在 async 循環內呼叫，以防止 UI 凍結。
+>    - **Runtime 安全**: 非同步任務必須使用引用的 `self.runtime.spawn` 執行。
+> 3. **檔案處理與流水線 (File Pipeline)**：
+>    - **有序分組 (Task Grouping)**: `file_tasks` 按物理路徑排序，依 `source_path` 進行「窗口式」跨檔案批次翻譯，避免頻繁請求 API 以大幅提升效能。
+>    - **資源包聚合 (ZIP Output)**: 來自 JAR 的成員以 `[BUNDLE]` 標記進入暫存流，管線結束時觸發 `output_resource_pack` 生成單一 `LLMTranslator.zip`。
+>    - **獨立檔案鏡像 (Mirroring)**: JS 檔案與非模組 JSON 執行「完整相對路徑鏡像」，輸出至 `LLMTranslator/` 下並保留原始層次結構。
+>    - **Patchouli 修復**: 強制執行目錄級取代 (`/en_us/` -> `/zh_tw/`)。
+> 4. **國際化與精準進度 (i18n & Progress UX)**：
+>    - **三層進度架構**: UI 層次：`Status` -> `Current Processing Path` -> `Global Progress` (模組完成度) & `Batch Progress` (條目進度)。
+>    - **JSON 驅動**: UI 標籤支援從 `langs/{lang}.json` 動態載入，確保界面顯示無硬編碼。
 > 5. **Git 與紀錄規範**：
 >    - **同步提交**：階段性修改後執行 `git add .`。
 >    - **繁體中文 Commit**：所有 Commit 紀錄必須使用**繁體中文**。
@@ -31,9 +26,9 @@
 
 ## 系統快速索引 (Quick Lookup)
 - **[核心架構與流程](docs/architecture/overview.md)**
-  - 包含 [狀態管理](docs/architecture/state_management.md) 與 [錯誤處理](docs/architecture/error_handling.md)。
+  - 包含 [狀態管理](docs/architecture/state_management.md) 與 [錯誤處理](docs/architecture/error_handling.md)
 - **[翻譯核心與模組](docs/modules/translation_core.md)**
-  - 包含 [檔案流水線](docs/modules/file_pipeline.md)、[術語系統](docs/modules/glossary_system.md) 與 [翻譯記憶體](docs/modules/translation_memory.md)。
+  - 包含 [檔案流水線](docs/modules/file_pipeline.md)、[術語系統](docs/modules/glossary_system.md) 與 [翻譯記憶體](docs/modules/translation_memory.md)
 - **[UI 規格與交互](docs/ui/specs.md)**
 - **[測試策略與規範](docs/guides/testing_strategy.md)**
 - **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**

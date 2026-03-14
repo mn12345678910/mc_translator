@@ -1,0 +1,11 @@
+   Compiling mc_translator_rs v0.2.0 (X:\D\MCTEST\mc_translator_rs)
+warning: unused variable: `is_js`
+  --> src\file\pack_gen.rs:43:13
+   |
+43 |         let is_js = name_unix.ends_with(".js");
+   |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_is_js`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mc_translator_rs` (lib) generated 1 warning (run `cargo fix --lib -p mc_translator_rs` to apply 1 suggestion)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.18s
