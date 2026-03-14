@@ -96,7 +96,6 @@ impl AppState {
             // 3. 屬性調整區
             ui.label(egui::RichText::new(self.i18n.label_palette_step_2.clone()).strong());
             egui::Frame::group(ui.style()).show(ui, |ui| {
-                let is_dark = self.palette_edit_dark;
                 // V6 邏輯：所有在列表中的槽位皆視為選取
                 let active_targets: Vec<String> = self.palette_edit_slots.iter()
                     .map(|s| s.target_id.clone())
