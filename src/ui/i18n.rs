@@ -209,6 +209,7 @@ pub struct I18nLabels {
     pub status_retry: String,
     pub status_translating: String,
     pub status_translating_batch_simple: String,
+    pub status_translating_batch: String,
     pub log_batch_invalid: String,
 }
 
@@ -451,6 +452,7 @@ impl I18nLabels {
             status_retry: "重試".to_string(),
             status_translating: "翻譯".to_string(),
             status_translating_batch_simple: "{}中 (批次 {}/{})".to_string(),
+            status_translating_batch: "{}中 ({}/{})".to_string(),
             log_batch_invalid: "批次翻譯結果無效，無法解析任何條目".to_string(),
         }
     }
