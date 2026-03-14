@@ -114,12 +114,13 @@ impl AppState {
                     }
                 });
             });
-            let (prompt_bg, _) = self.get_instance_style("input_system_prompt");
+            let (prompt_bg, input_text_color) = self.get_instance_style("input_system_prompt");
             ui.visuals_mut().extreme_bg_color = prompt_bg;
 
             if ui
                 .add(
                     egui::TextEdit::multiline(&mut self.system_prompt)
+                        .text_color(input_text_color)
                         .desired_rows(4)
                         .desired_width(ui.available_width()),
                 )

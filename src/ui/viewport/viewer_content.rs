@@ -98,7 +98,8 @@ impl AppState {
             ui.set_style(style);
             let processing = is_processing.load(Ordering::SeqCst);
             let current_tab = dict_active_tab.load(Ordering::SeqCst);
-            let (_label_bg, label_color) = get_instance_style_from_snap(&style_snap, "label_viewer", is_dark);
+            let (_, label_color) = get_instance_style_from_snap(&style_snap, "label_viewer", is_dark);
+            let (_, input_text_color) = get_instance_style_from_snap(&style_snap, "cat_all_inputs", is_dark);
 
             ui.label(
                 egui::RichText::new(i18n.glossary_title.clone())
@@ -278,11 +279,11 @@ impl AppState {
                     .show(ctx, |ui| {
                         ui.horizontal(|ui| {
                             ui.label(i18n.glossary_key.clone());
-                            ui.text_edit_singleline(&mut *dict_new_key.lock().unwrap());
+                            ui.add(egui::TextEdit::singleline(&mut *dict_new_key.lock().unwrap()).text_color(input_text_color));
                         });
                         ui.horizontal(|ui| {
                             ui.label(i18n.glossary_value.clone());
-                            ui.text_edit_singleline(&mut *dict_new_value.lock().unwrap());
+                            ui.add(egui::TextEdit::singleline(&mut *dict_new_value.lock().unwrap()).text_color(input_text_color));
                         });
                         ui.horizontal(|ui| {
                             let confirm_btn = ui.button(i18n.btn_confirm_add.clone());
@@ -330,11 +331,11 @@ impl AppState {
                         ui.label(i18n.glossary_replace_desc.clone());
                         ui.horizontal(|ui| {
                             ui.label(i18n.glossary_old_value.clone());
-                            ui.text_edit_singleline(&mut *dict_replace_target.lock().unwrap());
+                            ui.add(egui::TextEdit::singleline(&mut *dict_replace_target.lock().unwrap()).text_color(input_text_color));
                         });
                         ui.horizontal(|ui| {
                             ui.label(i18n.glossary_new_value.clone());
-                            ui.text_edit_singleline(&mut *dict_replace_new.lock().unwrap());
+                            ui.add(egui::TextEdit::singleline(&mut *dict_replace_new.lock().unwrap()).text_color(input_text_color));
                         });
                         
                         let current_replace_all = dict_replace_all.load(Ordering::SeqCst);
@@ -497,6 +498,7 @@ impl AppState {
                 ui.visuals_mut().extreme_bg_color = input_bg;
                 ui.add(
                     egui::TextEdit::singleline(&mut *dict_search.lock().unwrap())
+                        .text_color(input_text_color)
                         .desired_width(120.0),
                 );
                 ui.add_space(20.0);

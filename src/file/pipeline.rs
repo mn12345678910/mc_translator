@@ -75,7 +75,6 @@ pub async fn process_all_files(
     let mut file_tasks: Vec<FileTask> = Vec::new();
     let mut global_items: Vec<GlobalBatchItem> = Vec::new();
     let mut file_id_counter = 0;
-    let mut total_translated_items = 0;
 
     let job_config = state.config.clone();
     let status_arc = state.status.clone();
@@ -134,11 +133,13 @@ pub async fn process_all_files(
             file_id_counter += tasks.len();
             file_tasks.extend(tasks);
             global_items.extend(items.clone()); // Clone items to use its length
-            total_translated_items += items.len();
-            if total_translated_items > 0 {
-                state.global_total.store((total_translated_items as f32).to_bits(), Ordering::SeqCst);
-            }
         }
+    }
+
+    // 更新全域進度總量 (Revision 15.40+: 使用 HashSet 獲取精確的不重複檔案數)
+    let unique_files: std::collections::HashSet<std::path::PathBuf> = file_tasks.iter().map(|t| t.path.clone()).collect();
+    if !unique_files.is_empty() {
+        state.global_total.store((unique_files.len() as f32).to_bits(), Ordering::SeqCst);
     }
 
     {

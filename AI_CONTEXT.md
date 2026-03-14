@@ -12,6 +12,7 @@
 >    - **存取規範**: 使用 `.load(Ordering::SeqCst)` 與 `.store(...)`。對於 `f32` 進度，透過位元轉換 (`to_bits`/`from_bits`) 儲存於 `AtomicU32`。
 >    - **Runtime 安全**: 從 UI 觸發的非同步任務必須使用 `self.runtime.spawn`。
 >    - **鎖定範圍**: 僅對複雜容器（如 `Vec`, `HashMap`）使用 `Arc<Mutex<T>>`。
+    - **色彩狀態 (HSVA)**: 調色盤編輯應使用 `palette_hsva_bg`/`text` 與 `palette_hsva_target` 暫存狀態，以避免直接操作 SRGB 時因色相丟失（HUE Reset）導致的選色圓圈跳回問題。
 > 3. **設定與持久化**：
 >    - **設定檔隔離**: 分為 `config.cfg` (核心功能) 與 `style.cfg` (視覺樣式)。
 >    - **即時存檔**: 變更後立即調用 `trigger_save()` 進行非同步寫入。

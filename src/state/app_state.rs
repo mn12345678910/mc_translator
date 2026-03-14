@@ -158,6 +158,11 @@ pub struct AppState {
 
     // --- [i18n] ---
     pub i18n: I18nLabels,
+
+    /// 暫存的 Hsva 色彩狀態 (解決 HUE 無法調整問題)
+    pub palette_hsva_bg: Option<egui::ecolor::Hsva>,
+    pub palette_hsva_text: Option<egui::ecolor::Hsva>,
+    pub palette_hsva_target: String,
 }
 
 #[derive(Clone, PartialEq)]
@@ -345,6 +350,9 @@ impl AppState {
             palette_prop_sync_text: true,
             palette_prop_sync_rounding: true,
             i18n,
+            palette_hsva_bg: None,
+            palette_hsva_text: None,
+            palette_hsva_target: String::new(),
         };
 
         // 啟動背景持久化任務已在上述 thread spawn 中處理

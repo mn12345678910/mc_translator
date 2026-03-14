@@ -96,7 +96,6 @@ impl AppState {
             // 3. 屬性調整區
             ui.label(egui::RichText::new(self.i18n.label_palette_step_2.clone()).strong());
             egui::Frame::group(ui.style()).show(ui, |ui| {
-                let is_dark = self.palette_edit_dark;
                 // V6 邏輯：所有在列表中的槽位皆視為選取
                 let active_targets: Vec<String> = self.palette_edit_slots.iter()
                     .map(|s| s.target_id.clone())
@@ -114,15 +113,32 @@ impl AppState {
                         if r { has_rounding_supported = true; }
                     }
 
+                    // 檢測目標是否切換，若切換則重置 HSVA 狀態 (Revision 15.68)
+                    let first_target_name = active_targets.first().cloned().unwrap_or_default();
+                    let first_target_id = self.get_id_from_target_name(&first_target_name);
+                    if self.palette_hsva_target != first_target_id {
+                        self.palette_hsva_target = first_target_id.clone();
+                        self.palette_hsva_bg = None;
+                        self.palette_hsva_text = None;
+                    }
+
                     // 背景顏色
                     if has_bg_supported {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
-                        // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
-                        let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
-                        if ui.color_edit_button_srgb(&mut dummy_bg).changed() && self.palette_prop_sync_bg {
-                            self.apply_batch_color(true, dummy_bg);
+                        
+                        // 獲取當前色彩
+                        let (current_bg, _, _) = self.get_instance_style_full(&first_target_id);
+
+                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(current_bg));
+                        
+                        if ui.color_edit_button_hsva(&mut hsva).changed() {
+                            let new_rgb = egui::Color32::from(hsva);
+                            self.palette_hsva_bg = Some(hsva);
+                            if self.palette_prop_sync_bg {
+                                self.apply_batch_color(true, [new_rgb.r(), new_rgb.g(), new_rgb.b()]);
+                            }
                         }
                         ui.end_row();
                     }
@@ -132,9 +148,18 @@ impl AppState {
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
-                        let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
-                        if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
-                            self.apply_batch_color(false, dummy_text);
+                        
+                        // 獲取當前色彩
+                        let (_, current_text, _) = self.get_instance_style_full(&first_target_id);
+
+                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(current_text));
+
+                        if ui.color_edit_button_hsva(&mut hsva).changed() {
+                            let new_rgb = egui::Color32::from(hsva);
+                            self.palette_hsva_text = Some(hsva);
+                            if self.palette_prop_sync_text {
+                                self.apply_batch_color(false, [new_rgb.r(), new_rgb.g(), new_rgb.b()]);
+                            }
                         }
                         ui.end_row();
                     }
@@ -208,9 +233,10 @@ impl AppState {
                 } else if t == self.i18n.cat_all_inputs {
                     if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
                     else {
-                        // 針對輸入框實施覆寫，不再修改全域 dark_text/light_text
-                        let key = self.get_id_from_target_name(&self.i18n.spec_input_search);
-                        self.instance_overrides.entry(key).or_default().text = Some(color);
+                        // 針對所有輸入框實施覆寫 (Revision 15.32 補全)
+                        for id in &["input_dict_search", "dict_new_key", "dict_new_value", "dict_replace_target", "dict_replace_new", "input_api_key", "input_ollama_url"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().text = Some(color);
+                        }
                     }
                 } else if t == self.i18n.cat_all_logs {
                     if is_bg { if is_dark { self.dark_list_bg = color; } else { self.light_list_bg = color; } } 
@@ -220,6 +246,8 @@ impl AppState {
                         self.instance_overrides.entry(key_log).or_default().text = Some(color);
                         let key_dict = self.get_id_from_target_name(&self.i18n.spec_area_dict);
                         self.instance_overrides.entry(key_dict).or_default().text = Some(color);
+                        // 同時增加對標籤內部的染色一致性 (解決日誌區域標題等)
+                        self.instance_overrides.entry("label_log_title".to_string()).or_default().text = Some(color);
                     }
                 } else if t == self.i18n.cat_all_tabs {
                     if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
@@ -239,8 +267,20 @@ impl AppState {
                 } else if t == self.i18n.cat_all_bg {
                     if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
                 } else if t == self.i18n.cat_nav_bar {
-                    if is_bg { if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; } } 
-                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                    if is_bg { 
+                        // 導覽列背景不再動彈 btn_bg, 改為動 inactive tab
+                        if is_dark { self.dark_tab_inactive = color; } else { self.light_tab_inactive = color; }
+                        // 同時強制所有導覽按鈕覆寫
+                        for id in &["btn_nav_settings", "btn_nav_dict", "btn_nav_palette", "btn_nav_theme", "btn_nav_dev"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().bg = Some(color);
+                        }
+                    } 
+                    else {
+                        // 導覽列文字解耦
+                        for id in &["btn_nav_settings", "btn_nav_dict", "btn_nav_palette", "btn_nav_theme", "btn_nav_dev"] {
+                            self.instance_overrides.entry(id.to_string()).or_default().text = Some(color);
+                        }
+                    }
                 }
             } else {
                 // 特定元件覆寫 (V6 映射)
@@ -294,6 +334,15 @@ impl AppState {
             n if n == self.i18n.spec_label_output => "label_output_path",
             n if n == self.i18n.spec_progress_current => "progress_current",
             n if n == self.i18n.spec_progress_total => "progress_total",
+            // 類別 ID 映射 (Revision 15.65)
+            n if n == self.i18n.cat_all_buttons => "cat_all_buttons",
+            n if n == self.i18n.cat_all_labels => "cat_all_labels",
+            n if n == self.i18n.cat_all_inputs => "cat_all_inputs",
+            n if n == self.i18n.cat_all_logs => "cat_all_logs",
+            n if n == self.i18n.cat_all_tabs => "cat_all_tabs",
+            n if n == self.i18n.cat_all_progress => "cat_all_progress",
+            n if n == self.i18n.cat_all_bg => "cat_all_bg",
+            n if n == self.i18n.cat_nav_bar => "cat_nav_bar",
             _ => name,
         }.to_string()
     }

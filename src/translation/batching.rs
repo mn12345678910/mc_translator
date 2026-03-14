@@ -145,8 +145,6 @@ pub async fn run_translation_batch(
             status_arc: &status,
             _log: &log,
             glossary_automaton,
-            current_idx: batch_idx + 1,
-            total_batch: initial_batches.len(),
             is_retry: false,
             i18n,
         })
@@ -194,7 +192,7 @@ pub async fn run_translation_batch(
         );
         let mut second_failed_indices = Vec::new();
 
-        for (idx, batch) in retry_batches.iter().enumerate() {
+        for (_idx, batch) in retry_batches.iter().enumerate() {
             if cancelled.load(Ordering::SeqCst) {
                 break;
             }
@@ -205,8 +203,6 @@ pub async fn run_translation_batch(
                 status_arc: &status,
                 _log: &log,
                 glossary_automaton,
-                current_idx: idx + 1,
-                total_batch: retry_batches.len(),
                 is_retry: true,
                 i18n,
             })
@@ -308,8 +304,6 @@ struct BatchContext<'a> {
     status_arc: &'a Arc<Mutex<String>>,
     _log: &'a Arc<Mutex<Vec<String>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    current_idx: usize,
-    total_batch: usize,
     is_retry: bool,
     i18n: &'a crate::ui::i18n::I18nLabels,
 }
@@ -319,10 +313,16 @@ async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
-    *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch_simple
-        .replace("{}", mode_str)
-        .replacen("{}", &ctx.current_idx.to_string(), 1)
-        .replacen("{}", &ctx.total_batch.to_string(), 1);
+    
+    // 計算目前的條目起點與終點 (Revision 15.35: 精確顯示條目進度)
+    let first_item_real_idx = ctx.batch_indices.first().map(|&i| i + 1).unwrap_or(0);
+    let last_item_real_idx = ctx.batch_indices.last().map(|&i| i + 1).unwrap_or(0);
+    let total_items = ctx.all_items.len();
+
+    *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch
+        .replacen("{}", mode_str, 1)
+        .replacen("{}", &format!("{}-{}", first_item_real_idx, last_item_real_idx), 1)
+        .replacen("{}", &total_items.to_string(), 1);
 
     // 1. 準備批次文本
     let mut texts_to_translate = Vec::new();
