@@ -18,7 +18,7 @@ impl AppState {
             self.viewer_shared.update_tx.clone(),
             self.theme.clone(),
             self.show_memory_viewer,
-            self.i18n,
+            self.i18n.clone(),
         );
     }
 
@@ -33,9 +33,9 @@ impl AppState {
         viewer_update_tx: tokio::sync::mpsc::UnboundedSender<ViewerUpdate>,
         theme_clone: String,
         show_viewer_clone: bool,
-        i18n: &'static crate::ui::i18n::I18nLabels,
+        i18n: crate::ui::i18n::I18nLabels,
     ) {
-        *status_arc.lock().unwrap() = i18n.status_analyzing_dict.to_string();
+        *status_arc.lock().unwrap() = i18n.status_analyzing_dict.clone();
 
         runtime_handle.spawn(async move {
             if let Ok((files, exact, unfiltered)) = crate::utils::load_mc_dicts().await {
@@ -64,7 +64,7 @@ impl AppState {
                     *mc = Some(files);
                 }
             }
-            *status_arc.lock().unwrap() = i18n.status_ready.to_string();
+            *status_arc.lock().unwrap() = i18n.status_ready.clone();
         });
     }
 
@@ -93,7 +93,7 @@ impl AppState {
 
         *self.is_paused.lock().unwrap() = false;
         self.pause_notifier.notify_waiters();
-        self.add_log(self.i18n.log_resuming);
+        self.add_log(&self.i18n.log_resuming);
     }
 
     pub fn save_config(&self) {
@@ -141,7 +141,7 @@ impl AppState {
         }
 
         self.add_log(&self.i18n.log_start_job
-            .replace("{}", if self.api_provider.is_empty() { self.i18n.status_not_ready } else { &self.api_provider })
+            .replace("{}", if self.api_provider.is_empty() { &self.i18n.status_not_ready } else { &self.api_provider })
             .replace("{}", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model })
         );
 
@@ -210,14 +210,14 @@ impl AppState {
             translation_memory: translation_memory_arc.clone(),
             pause_notifier: self.pause_notifier.clone(),
             config: job_config.clone(),
-            i18n: self.i18n,
+            i18n: self.i18n.clone(),
         };
 
         *processing_arc.lock().unwrap() = true;
         *cancelled_arc.lock().unwrap() = false;
         *paused_arc.lock().unwrap() = false;
 
-        let i18n = self.i18n;
+        let i18n = self.i18n.clone();
 
         tokio::spawn(async move {
             let res =
@@ -320,7 +320,7 @@ impl AppState {
                     viewer_update_tx.clone(),
                     theme.clone(),
                     show_memory_viewer,
-                    crate::ui::i18n::DEFAULT_LANG, // 使用預設語言用於監控器更新，或從 AppState 傳遞
+                    crate::ui::i18n::I18nLabels::load_or_default(crate::ui::i18n::DEFAULT_LANG), // 使用預設語言用於監控器更新，或從 AppState 傳遞
                 );
             }
         });

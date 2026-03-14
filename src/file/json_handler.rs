@@ -66,7 +66,7 @@ pub async fn collect_json_task(
         translation_memory: state.translation_memory.clone(),
         skip_memory: false,
         pause_notifier: state.pause_notifier.clone(),
-        i18n: state.i18n,
+        i18n: &state.i18n,
     });
 
     engine::collect_translatable_strings(&en_us_value, &zh_tw_value, None, &mut pending, &ctx);

@@ -49,7 +49,7 @@ pub async fn translate_global_batches(
     log: Arc<Mutex<Vec<String>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
-    i18n: &'static crate::ui::i18n::I18nLabels,
+    i18n: &crate::ui::i18n::I18nLabels,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 首先設定目前的條目總數
     *progress_total.lock().unwrap() = items.len() as f32;
@@ -81,7 +81,7 @@ pub struct RunBatchContext<'a> {
     pub paused: Arc<Mutex<bool>>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    pub i18n: &'static crate::ui::i18n::I18nLabels,
+    pub i18n: &'a crate::ui::i18n::I18nLabels,
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)
@@ -310,14 +310,14 @@ struct BatchContext<'a> {
     current_idx: usize,
     total_batch: usize,
     is_retry: bool,
-    i18n: &'static crate::ui::i18n::I18nLabels,
+    i18n: &'a crate::ui::i18n::I18nLabels,
 }
 
 /// 執行單一批次的 LLM 翻譯請求
 async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mode_str = if ctx.is_retry { ctx.i18n.status_retry } else { ctx.i18n.status_translating };
+    let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
     *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch_simple
         .replace("{}", mode_str)
         .replacen("{}", &ctx.current_idx.to_string(), 1)
@@ -373,7 +373,7 @@ async fn process_one_global_batch(
             if resolved_any {
                 Ok(())
             } else {
-                Err(ctx.i18n.log_batch_invalid.into())
+                Err(ctx.i18n.log_batch_invalid.clone().into())
             }
         }
         Err(e) => Err(e),

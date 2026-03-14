@@ -5,9 +5,9 @@ impl AppState {
     pub fn render_palette_settings(&mut self, ui: &mut egui::Ui) {
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.heading(self.i18n.header_palette);
+                ui.heading(self.i18n.header_palette.clone());
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.button(self.i18n.btn_reset_all).on_hover_text(self.i18n.hover_reset_all).clicked() {
+                    if ui.button(self.i18n.btn_reset_all.clone()).on_hover_text(self.i18n.hover_reset_all.clone()).clicked() {
                         self.show_restore_default_confirm = true;
                     }
                 });
@@ -17,11 +17,11 @@ impl AppState {
 
             // 1. 編輯模式切換
             ui.horizontal(|ui| {
-                ui.label(self.i18n.label_edit_mode);
-                if ui.selectable_label(!self.palette_edit_dark, self.i18n.mode_light).clicked() {
+                ui.label(self.i18n.label_edit_mode.clone());
+                if ui.selectable_label(!self.palette_edit_dark, self.i18n.mode_light.clone()).clicked() {
                     self.palette_edit_dark = false;
                 }
-                if ui.selectable_label(self.palette_edit_dark, self.i18n.mode_dark).clicked() {
+                if ui.selectable_label(self.palette_edit_dark, self.i18n.mode_dark.clone()).clicked() {
                     self.palette_edit_dark = true;
                 }
             });
@@ -30,7 +30,7 @@ impl AppState {
 
             // 2. 編輯目標選擇 (Edit Slots)
             egui::Frame::group(ui.style()).show(ui, |ui| {
-                ui.label(egui::RichText::new(self.i18n.label_palette_step_1).strong());
+                ui.label(egui::RichText::new(self.i18n.label_palette_step_1.clone()).strong());
                 let mut remove_idx = None;
                 let slots_len = self.palette_edit_slots.len();
                 
@@ -43,20 +43,20 @@ impl AppState {
                             .width(200.0)
                             .show_ui(ui, |ui| {
                                 let target_groups = [
-                                    (self.i18n.group_batch, vec![
-                                        self.i18n.cat_all_buttons, self.i18n.cat_all_labels, self.i18n.cat_all_inputs, self.i18n.cat_all_logs, 
-                                        self.i18n.cat_all_tabs, self.i18n.cat_all_progress, self.i18n.cat_all_bg, self.i18n.cat_nav_bar
+                                    (self.i18n.group_batch.clone(), vec![
+                                        self.i18n.cat_all_buttons.clone(), self.i18n.cat_all_labels.clone(), self.i18n.cat_all_inputs.clone(), self.i18n.cat_all_logs.clone(), 
+                                        self.i18n.cat_all_tabs.clone(), self.i18n.cat_all_progress.clone(), self.i18n.cat_all_bg.clone(), self.i18n.cat_nav_bar.clone()
                                     ]),
-                                    (self.i18n.group_specific, vec![
-                                        self.i18n.spec_btn_select_file, self.i18n.spec_btn_select_folder, 
-                                        self.i18n.spec_btn_output_dir, self.i18n.spec_btn_open_output,
-                                        self.i18n.spec_btn_run_trans, self.i18n.spec_btn_pause, 
-                                        self.i18n.spec_btn_stop, self.i18n.spec_btn_clear_log,
-                                        self.i18n.spec_btn_nav_settings, self.i18n.spec_btn_nav_dict,
-                                        self.i18n.spec_btn_nav_palette, self.i18n.spec_btn_nav_theme,
-                                        self.i18n.spec_btn_nav_dev, self.i18n.spec_input_search,
-                                        self.i18n.spec_area_dict, self.i18n.spec_label_output,
-                                        self.i18n.spec_progress_current, self.i18n.spec_progress_total
+                                    (self.i18n.group_specific.clone(), vec![
+                                        self.i18n.spec_btn_select_file.clone(), self.i18n.spec_btn_select_folder.clone(), 
+                                        self.i18n.spec_btn_output_dir.clone(), self.i18n.spec_btn_open_output.clone(),
+                                        self.i18n.spec_btn_run_trans.clone(), self.i18n.spec_btn_pause.clone(), 
+                                        self.i18n.spec_btn_stop.clone(), self.i18n.spec_btn_clear_log.clone(),
+                                        self.i18n.spec_btn_nav_settings.clone(), self.i18n.spec_btn_nav_dict.clone(),
+                                        self.i18n.spec_btn_nav_palette.clone(), self.i18n.spec_btn_nav_theme.clone(),
+                                        self.i18n.spec_btn_nav_dev.clone(), self.i18n.spec_input_search.clone(),
+                                        self.i18n.spec_area_dict.clone(), self.i18n.spec_label_output.clone(),
+                                        self.i18n.spec_progress_current.clone(), self.i18n.spec_progress_total.clone()
                                     ])
                                 ];
                                 
@@ -70,7 +70,7 @@ impl AppState {
                             });
                         
                         if slots_len > 1 {
-                            if ui.button("🗑").on_hover_text(self.i18n.hover_remove_slot).clicked() { 
+                            if ui.button("🗑").on_hover_text(self.i18n.hover_remove_slot.clone()).clicked() { 
                                 remove_idx = Some(idx); 
                             }
                         }
@@ -79,9 +79,9 @@ impl AppState {
                 if let Some(idx) = remove_idx { self.palette_edit_slots.remove(idx); }
 
                 ui.horizontal(|ui| {
-                    if ui.button(self.i18n.btn_add_target).clicked() {
+                    if ui.button(self.i18n.btn_add_target.clone()).clicked() {
                         self.palette_edit_slots.push(PaletteEditSlot { 
-                            target_id: self.i18n.cat_all_buttons.to_string(), 
+                            target_id: self.i18n.cat_all_buttons.clone(), 
                             is_checked: true 
                         });
                     }
@@ -94,7 +94,7 @@ impl AppState {
             ui.add_space(10.0);
 
             // 3. 屬性調整區
-            ui.label(egui::RichText::new(self.i18n.label_palette_step_2).strong());
+            ui.label(egui::RichText::new(self.i18n.label_palette_step_2.clone()).strong());
             egui::Frame::group(ui.style()).show(ui, |ui| {
                 let is_dark = self.palette_edit_dark;
                 // V6 邏輯：所有在列表中的槽位皆視為選取
@@ -117,7 +117,7 @@ impl AppState {
                     // 背景顏色
                     if has_bg_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color);
+                            ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
                         // 這裡取第一個目標的顏色作為預覽，實際變更會同步所有
                         let mut dummy_bg = if is_dark { self.dark_btn_bg } else { self.light_btn_bg };
@@ -130,7 +130,7 @@ impl AppState {
                     // 文字顏色
                     if has_text_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color);
+                            ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
                         let mut dummy_text = if is_dark { self.dark_btn_text } else { self.light_btn_text };
                         if ui.color_edit_button_srgb(&mut dummy_text).changed() && self.palette_prop_sync_text {
@@ -142,7 +142,7 @@ impl AppState {
                     // 自定義圓角
                     if has_rounding_supported {
                         ui.horizontal(|ui| {
-                            ui.checkbox(&mut self.palette_prop_sync_rounding, self.i18n.label_custom_rounding);
+                            ui.checkbox(&mut self.palette_prop_sync_rounding, self.i18n.label_custom_rounding.clone());
                         });
                         let mut dummy_rounding = self.btn_rounding_value;
                         if ui.add(egui::DragValue::new(&mut dummy_rounding).speed(0.5).clamp_range(0.0..=30.0)).changed() && self.palette_prop_sync_rounding {
@@ -159,9 +159,9 @@ impl AppState {
                 if has_button {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.btn_rounding_enabled, self.i18n.label_force_global_rounding);
+                        ui.checkbox(&mut self.btn_rounding_enabled, self.i18n.label_force_global_rounding.clone());
                         if self.btn_rounding_enabled {
-                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text(self.i18n.label_rounding_value)).changed() {
+                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text(self.i18n.label_rounding_value.clone())).changed() {
                                 self.trigger_save();
                             }
                         }
@@ -171,11 +171,11 @@ impl AppState {
                 if has_progress {
                     ui.separator();
                     ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.progress_pulse_enabled, self.i18n.label_enable_pulse);
+                        ui.checkbox(&mut self.progress_pulse_enabled, self.i18n.label_enable_pulse.clone());
                     });
                     if self.progress_pulse_enabled {
                         ui.horizontal(|ui| {
-                            ui.label(self.i18n.label_anim_speed);
+                            ui.label(self.i18n.label_anim_speed.clone());
                             if ui.add(egui::Slider::new(&mut self.progress_pulse_speed, 0.1..=5.0)).changed() {
                                 self.trigger_save();
                             }
@@ -185,7 +185,7 @@ impl AppState {
             });
 
             ui.add_space(10.0);
-            ui.label(egui::RichText::new(self.i18n.label_palette_hint).small().weak());
+            ui.label(egui::RichText::new(self.i18n.label_palette_hint.clone()).small().weak());
         });
     }
 

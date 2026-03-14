@@ -109,7 +109,7 @@ pub async fn collect_jar_tasks(
             translation_memory: state.translation_memory.clone(),
             skip_memory: false,
             pause_notifier: state.pause_notifier.clone(),
-            i18n: state.i18n,
+            i18n: &state.i18n,
         });
 
         engine::collect_translatable_strings(&en_us, &zh_tw, None, &mut pending, &ctx);

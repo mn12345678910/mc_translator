@@ -24,7 +24,7 @@ impl AppState {
             current_status.push_str(dots);
         }
         ui.label(
-            egui::RichText::new(format!("目前狀態: {}", current_status))
+            egui::RichText::new(format!("{}{}", self.i18n.label_current_status, current_status))
                 .color(label_color)
                 .strong(),
         );
@@ -56,7 +56,7 @@ impl AppState {
         };
 
         ui.add(egui::ProgressBar::new(ratio).fill(bar_color).rounding(c_rounding).show_percentage().text(
-            egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32))
+            egui::RichText::new(format!("{} ({}/{})", self.i18n.label_current_file, prog as u32, total as u32))
                 .color(c_text_color)
                 .strong(),
         ));
@@ -82,7 +82,8 @@ impl AppState {
                 .rounding(t_rounding)
                 .text(
                 egui::RichText::new(format!(
-                    "總進度: ({}/{}) {}%",
+                    "{} ({}/{}) {}%",
+                    self.i18n.label_global_progress,
                     g_prog as u32,
                     g_total as u32,
                     (g_ratio * 100.0) as u32

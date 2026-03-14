@@ -100,13 +100,13 @@ impl AppState {
             let (_label_bg, label_color) = get_instance_style_from_snap(&style_snap, "label_viewer", is_dark);
 
             ui.label(
-                egui::RichText::new(i18n.glossary_title)
+                egui::RichText::new(i18n.glossary_title.clone())
                     .heading()
                     .color(label_color)
                     .strong(),
             );
             ui.label(
-                egui::RichText::new(i18n.glossary_desc)
+                egui::RichText::new(i18n.glossary_desc.clone())
                 .color(label_color)
                 .strong(),
             );
@@ -127,13 +127,13 @@ impl AppState {
                     .inner_margin(4.0)
                     .show(ui, |ui| {
                         if ui
-                            .selectable_value(&mut *active_tab, 0, i18n.glossary_tab_user)
+                            .selectable_value(&mut *active_tab, 0, i18n.glossary_tab_user.clone())
                             .clicked()
                         {
                             *dict_page.lock().unwrap() = 0;
                         }
                         if ui
-                            .selectable_value(&mut *active_tab, 1, i18n.glossary_tab_official)
+                            .selectable_value(&mut *active_tab, 1, i18n.glossary_tab_official.clone())
                             .clicked()
                         {
                             *dict_page.lock().unwrap() = 0;
@@ -154,21 +154,21 @@ impl AppState {
 
                 // 新增按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new(i18n.btn_add))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_add.clone()))
                     .clicked()
                 {
                     *show_dict_add_dialog.lock().unwrap() = true;
                 }
                 // 取代按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new(i18n.btn_replace))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_replace.clone()))
                     .clicked()
                 {
                     *show_dict_replace_dialog.lock().unwrap() = true;
                 }
                 // 匯入按鈕
                 if ui
-                    .add_enabled(!processing, egui::Button::new(i18n.btn_import))
+                    .add_enabled(!processing, egui::Button::new(i18n.btn_import.clone()))
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new()
@@ -198,7 +198,7 @@ impl AppState {
                     }
                 }
                 // 匯出按鈕
-                if ui.button(i18n.btn_export).clicked() {
+                if ui.button(i18n.btn_export.clone()).clicked() {
                     let default_name = if current_tab == 0 {
                         crate::config::USER_DICT
                     } else {
@@ -221,7 +221,7 @@ impl AppState {
                 // .json 按鈕 (Revision 14.1 強化雙開)
                 if ui
                     .button(".json")
-                    .on_hover_text(i18n.spec_btn_nav_dict) // 使用已有的 hover 文字
+                    .on_hover_text(i18n.spec_btn_nav_dict.clone()) // 使用已有的 hover 文字
                     .clicked()
                 {
                     let filename = if current_tab == 0 {
@@ -255,7 +255,7 @@ impl AppState {
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
-                        .add_enabled(!processing, egui::Button::new(i18n.btn_clear_all))
+                        .add_enabled(!processing, egui::Button::new(i18n.btn_clear_all.clone()))
                         .clicked()
                     {
                         *show_dict_clear_confirm.lock().unwrap() = true;
@@ -265,21 +265,21 @@ impl AppState {
 
             // --- 補回新增與取代對話框區塊 (Revision 14.1) ---
             if *show_dict_add_dialog.lock().unwrap() {
-                egui::Window::new(i18n.glossary_add_title)
+                egui::Window::new(i18n.glossary_add_title.clone())
                     .collapsible(false)
                     .resizable(false)
                     .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
                     .show(ctx, |ui| {
                         ui.horizontal(|ui| {
-                            ui.label(i18n.glossary_key);
+                            ui.label(i18n.glossary_key.clone());
                             ui.text_edit_singleline(&mut *dict_new_key.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            ui.label(i18n.glossary_value);
+                            ui.label(i18n.glossary_value.clone());
                             ui.text_edit_singleline(&mut *dict_new_value.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            let confirm_btn = ui.button(i18n.btn_confirm_add);
+                            let confirm_btn = ui.button(i18n.btn_confirm_add.clone());
                             let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
                             if confirm_btn.clicked() || enter_pressed {
                                 let key = dict_new_key.lock().unwrap().clone();
@@ -308,7 +308,7 @@ impl AppState {
                                 *dict_new_key.lock().unwrap() = String::new();
                                 *dict_new_value.lock().unwrap() = String::new();
                             }
-                            if ui.button(i18n.btn_cancel).clicked() {
+                            if ui.button(i18n.btn_cancel.clone()).clicked() {
                                 *show_dict_add_dialog.lock().unwrap() = false;
                             }
                         });
@@ -316,23 +316,23 @@ impl AppState {
             }
 
             if *show_dict_replace_dialog.lock().unwrap() {
-                egui::Window::new(i18n.glossary_replace_title)
+                egui::Window::new(i18n.glossary_replace_title.clone())
                     .collapsible(false)
                     .resizable(false)
                     .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
                     .show(ctx, |ui| {
-                        ui.label(i18n.glossary_replace_desc);
+                        ui.label(i18n.glossary_replace_desc.clone());
                         ui.horizontal(|ui| {
-                            ui.label(i18n.glossary_old_value);
+                            ui.label(i18n.glossary_old_value.clone());
                             ui.text_edit_singleline(&mut *dict_replace_target.lock().unwrap());
                         });
                         ui.horizontal(|ui| {
-                            ui.label(i18n.glossary_new_value);
+                            ui.label(i18n.glossary_new_value.clone());
                             ui.text_edit_singleline(&mut *dict_replace_new.lock().unwrap());
                         });
-                        ui.checkbox(&mut *dict_replace_all.lock().unwrap(), i18n.glossary_replace_exact);
+                        ui.checkbox(&mut *dict_replace_all.lock().unwrap(), i18n.glossary_replace_exact.clone());
                         ui.horizontal(|ui| {
-                            let replace_btn = ui.button(i18n.btn_confirm_replace);
+                            let replace_btn = ui.button(i18n.btn_confirm_replace.clone());
                             let enter_pressed = ui.input(|i| i.key_pressed(egui::Key::Enter));
                             if replace_btn.clicked() || enter_pressed {
                                 let target = dict_replace_target.lock().unwrap().clone();
@@ -398,7 +398,7 @@ impl AppState {
                                 }
                                 *show_dict_replace_dialog.lock().unwrap() = false;
                             }
-                            if ui.button(i18n.btn_cancel).clicked() {
+                            if ui.button(i18n.btn_cancel.clone()).clicked() {
                                 *show_dict_replace_dialog.lock().unwrap() = false;
                             }
                         });
@@ -408,14 +408,14 @@ impl AppState {
 
             // 顯示清空對話框
             if *show_dict_clear_confirm.lock().unwrap() {
-                egui::Window::new(i18n.glossary_clear_title)
+                egui::Window::new(i18n.glossary_clear_title.clone())
                     .collapsible(false)
                     .resizable(false)
                     .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                     .show(ctx, |ui| {
-                        ui.label(i18n.glossary_clear_desc);
+                        ui.label(i18n.glossary_clear_desc.clone());
                         ui.horizontal(|ui| {
-                            if ui.button(i18n.btn_confirm_clear).clicked() {
+                            if ui.button(i18n.btn_confirm_clear.clone()).clicked() {
                                 if current_tab == 0 {
                                     translation_memory.lock().unwrap().clear();
                                     crate::config::save_translation_memory(
@@ -431,7 +431,7 @@ impl AppState {
                                 *dict_search_last.lock().unwrap() = (String::new(), usize::MAX);
                                 *show_dict_clear_confirm.lock().unwrap() = false;
                             }
-                            if ui.button(i18n.btn_cancel).clicked() {
+                            if ui.button(i18n.btn_cancel.clone()).clicked() {
                                 *show_dict_clear_confirm.lock().unwrap() = false;
                             }
                         });
@@ -477,7 +477,7 @@ impl AppState {
             let end = (start + page_size).min(total_items);
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(i18n.label_search).color(label_color).strong());
+                ui.label(egui::RichText::new(i18n.label_search.clone()).color(label_color).strong());
                 let (input_bg, _) = get_instance_style_from_snap(&style_snap, "input_dict_search", is_dark);
                 ui.visuals_mut().extreme_bg_color = input_bg;
                 ui.add(
@@ -489,7 +489,7 @@ impl AppState {
                     *page = page.saturating_sub(1);
                 }
                 ui.label(
-                    egui::RichText::new(i18n.glossary_page_info
+                    egui::RichText::new(i18n.glossary_page_info.clone()
                         .replace("{}", &(current_page + 1).to_string())
                         .replacen("{}", &total_pages.to_string(), 1)
                         .replacen("{}", &(if total_items > 0 { start + 1 } else { 0 }).to_string(), 1)
@@ -508,7 +508,7 @@ impl AppState {
                     let mut is_user_priority = glossary_priority.lock().unwrap().as_str() == "user";
                     if ui
                         .add(toggle(&mut is_user_priority))
-                        .on_hover_text(i18n.glossary_priority_hover)
+                        .on_hover_text(i18n.glossary_priority_hover.clone())
                         .clicked()
                     {
                         *glossary_priority.lock().unwrap() = if is_user_priority {
@@ -519,9 +519,9 @@ impl AppState {
                         viewer_shared.update_tx.send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                     }
                     let priority_label = if is_user_priority {
-                        i18n.glossary_priority_user
+                        i18n.glossary_priority_user.clone()
                     } else {
-                        i18n.glossary_priority_official
+                        i18n.glossary_priority_official.clone()
                     };
                     ui.label(
                         egui::RichText::new(priority_label)
@@ -570,7 +570,7 @@ impl AppState {
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
                                         ui.label(
-                                            egui::RichText::new(i18n.glossary_col_actions).color(label_color).strong(),
+                                            egui::RichText::new(i18n.glossary_col_actions.clone()).color(label_color).strong(),
                                         );
                                     },
                                 );
@@ -582,7 +582,7 @@ impl AppState {
                                 ui.allocate_ui([col_w, 30.0].into(), |ui| {
                                     ui.centered_and_justified(|ui| {
                                         ui.label(
-                                            egui::RichText::new(i18n.glossary_empty)
+                                            egui::RichText::new(i18n.glossary_empty.clone())
                                                 .color(label_color)
                                                 .strong(),
                                         );
@@ -627,7 +627,7 @@ impl AppState {
                                             if ui.button("❌").clicked() {
                                                 *dict_edit_key.lock().unwrap() = None;
                                             }
-                                            let save_btn = ui.button(i18n.btn_save);
+                                            let save_btn = ui.button(i18n.btn_save.clone());
                                             let enter_pressed =
                                                 ui.input(|i| i.key_pressed(egui::Key::Enter));
                                             if save_btn.clicked() || enter_pressed {
@@ -674,7 +674,7 @@ impl AppState {
                                                 if ui
                                                     .add_enabled(
                                                         !processing,
-                                                        egui::Button::new(i18n.btn_delete),
+                                                        egui::Button::new(i18n.btn_delete.clone()),
                                                     )
                                                     .clicked()
                                                 {
@@ -698,7 +698,7 @@ impl AppState {
                                                 if ui
                                                     .add_enabled(
                                                         !processing,
-                                                        egui::Button::new(i18n.btn_edit),
+                                                        egui::Button::new(i18n.btn_edit.clone()),
                                                     )
                                                     .clicked()
                                                 {

@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use tokio::sync::Notify;
 use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
-use crate::ui::i18n::{I18nLabels, DEFAULT_LANG};
+use crate::ui::i18n::I18nLabels;
 use std::sync::RwLock;
 
 /// 同步存檔用的包裹
@@ -156,7 +156,7 @@ pub struct AppState {
     pub palette_prop_sync_rounding: bool,
 
     // --- [i18n] ---
-    pub i18n: &'static I18nLabels,
+    pub i18n: I18nLabels,
 }
 
 #[derive(Clone, PartialEq)]
@@ -175,6 +175,10 @@ impl AppState {
         // 載入設定檔
         let config = crate::config::AppConfig::load();
         let style_cfg = crate::config::StyleConfig::load();
+
+        // [i18n] 確保目錄並載入語系
+        let _ = I18nLabels::ensure_langs_exists();
+        let i18n = I18nLabels::load_or_default(&config.target_lang);
 
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -339,7 +343,7 @@ impl AppState {
             palette_prop_sync_bg: true,
             palette_prop_sync_text: true,
             palette_prop_sync_rounding: true,
-            i18n: DEFAULT_LANG,
+            i18n,
         };
 
         // 啟動背景持久化任務已在上述 thread spawn 中處理

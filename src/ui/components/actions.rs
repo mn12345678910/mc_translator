@@ -13,15 +13,15 @@ impl AppState {
                 let can_start = !self.input_paths.is_empty() && (is_google_free || has_model);
                 
                 let (bg, text, rounding) = self.get_instance_style_full("btn_run_trans");
-                let start_btn = egui::Button::new(egui::RichText::new(self.i18n.btn_run_trans).color(text))
+                let start_btn = egui::Button::new(egui::RichText::new(self.i18n.btn_run_trans.clone()).color(text))
                     .min_size([120.0, 32.0].into()).fill(bg).rounding(rounding);
                 let mut resp = ui.add_enabled(can_start, start_btn);
                 
                 if !can_start {
                     if self.input_paths.is_empty() {
-                        resp = resp.on_disabled_hover_text(self.i18n.hover_select_file_first);
+                        resp = resp.on_disabled_hover_text(self.i18n.hover_select_file_first.clone());
                     } else if !is_google_free && !has_model {
-                        resp = resp.on_disabled_hover_text(self.i18n.hover_select_model_first);
+                        resp = resp.on_disabled_hover_text(self.i18n.hover_select_model_first.clone());
                     }
                 }
 
@@ -31,16 +31,16 @@ impl AppState {
             } else if !is_paused {
                 let (bg, text, rounding) = self.get_instance_style_full("btn_pause");
                 if ui
-                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_pause).color(text))
+                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_pause.clone()).color(text))
                         .min_size([80.0, 32.0].into()).fill(bg).rounding(rounding))
                     .clicked()
                 {
                     *self.is_paused.lock().unwrap() = true;
-                    self.add_log(self.i18n.log_pause_requested);
+                    self.add_log(&self.i18n.log_pause_requested);
                 }
                 let (bg_stop, text_stop, rounding_stop) = self.get_instance_style_full("btn_stop");
                 if ui
-                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_stop).color(text_stop))
+                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_stop.clone()).color(text_stop))
                         .min_size([80.0, 32.0].into()).fill(bg_stop).rounding(rounding_stop))
                     .clicked()
                 {
@@ -49,7 +49,7 @@ impl AppState {
             } else {
                 let (bg_res, text_res, rounding_res) = self.get_instance_style_full("btn_pause"); // 繼續按鈕與暫停同色
                 if ui
-                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_resume).color(text_res))
+                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_resume.clone()).color(text_res))
                         .min_size([80.0, 32.0].into()).fill(bg_res).rounding(rounding_res))
                     .clicked()
                 {
@@ -57,7 +57,7 @@ impl AppState {
                 }
                 let (bg_stop, text_stop, rounding_stop) = self.get_instance_style_full("btn_stop");
                 if ui
-                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_stop).color(text_stop))
+                    .add(egui::Button::new(egui::RichText::new(self.i18n.btn_stop.clone()).color(text_stop))
                         .min_size([80.0, 32.0].into()).fill(bg_stop).rounding(rounding_stop))
                     .clicked()
                 {
@@ -67,24 +67,24 @@ impl AppState {
         });
 
         if self.show_stop_confirm {
-            egui::Window::new(self.i18n.title_confirm_stop)
+            egui::Window::new(self.i18n.title_confirm_stop.clone())
                 .collapsible(false)
                 .resizable(false)
                 .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                 .show(ctx, |ui| {
-                    ui.label(self.i18n.text_confirm_stop);
+                    ui.label(self.i18n.text_confirm_stop.clone());
                     ui.horizontal(|ui| {
-                        if ui.button(self.i18n.btn_confirm_stop).clicked() {
+                        if ui.button(self.i18n.btn_confirm_stop.clone()).clicked() {
                             let _ = std::fs::remove_file("progress_state.json");
                             *self.is_cancelled.lock().unwrap() = true;
                             *self.is_paused.lock().unwrap() = false;
                             *self.is_processing.lock().unwrap() = false;
                             self.active_job_config = None;
-                            *self.status.lock().unwrap() = self.i18n.status_stopped.to_string();
-                            self.add_log(self.i18n.log_stopped);
+                            *self.status.lock().unwrap() = self.i18n.status_stopped.clone();
+                            self.add_log(&self.i18n.log_stopped);
                             self.show_stop_confirm = false;
                         }
-                        if ui.button(self.i18n.btn_cancel).clicked() {
+                        if ui.button(self.i18n.btn_cancel.clone()).clicked() {
                             self.show_stop_confirm = false;
                         }
                     });

@@ -198,7 +198,7 @@ pub async fn process_all_files(
             log.clone(),
             state.pause_notifier.clone(),
             &glossary_automaton,
-            state.i18n,
+            &state.i18n,
         )
         .await?;
 

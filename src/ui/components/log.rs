@@ -5,7 +5,7 @@ impl AppState {
     pub fn render_log_area(&mut self, ui: &mut egui::Ui) {
         let (log_bg, label_color) = self.get_instance_style("area_log");
         ui.separator();
-        ui.label(egui::RichText::new("執行日誌:").color(label_color).strong());
+        ui.label(egui::RichText::new(self.i18n.label_log_area.clone()).color(label_color).strong());
         let log = self.log.lock().unwrap();
 
         egui::Frame::none()

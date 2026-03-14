@@ -12,7 +12,7 @@ impl AppState {
         let header_color = label_color;
         ui.group(|ui| {
             ui.label(
-                egui::RichText::new(self.i18n.header_dev_mode)
+                egui::RichText::new(self.i18n.header_dev_mode.clone())
                     .color(header_color)
                     .strong(),
             );
@@ -22,9 +22,9 @@ impl AppState {
                 .show(ui, |ui| {
                     // 第一列：JSON 與 JAR
                     let json_label = if self.skip_json {
-                        self.i18n.label_skip_json
+                        self.i18n.label_skip_json.clone()
                     } else {
-                        self.i18n.label_no_skip_json
+                        self.i18n.label_no_skip_json.clone()
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -37,9 +37,9 @@ impl AppState {
                     }
 
                     let jar_label = if self.skip_jar {
-                        self.i18n.label_skip_jar
+                        self.i18n.label_skip_jar.clone()
                     } else {
-                        self.i18n.label_no_skip_jar
+                        self.i18n.label_no_skip_jar.clone()
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -54,9 +54,9 @@ impl AppState {
 
                     // 第二列：JS 與 Patchouli Book
                     let js_label = if self.skip_js {
-                        self.i18n.label_skip_js
+                        self.i18n.label_skip_js.clone()
                     } else {
-                        self.i18n.label_no_skip_js
+                        self.i18n.label_no_skip_js.clone()
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -67,9 +67,9 @@ impl AppState {
                     }
 
                     let book_label = if self.skip_book {
-                        self.i18n.label_skip_book
+                        self.i18n.label_skip_book.clone()
                     } else {
-                        self.i18n.label_no_skip_book
+                        self.i18n.label_no_skip_book.clone()
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -84,9 +84,9 @@ impl AppState {
 
                     // 第三列：LLM Log (其他空間保留)
                     let log_label = if self.enable_llm_log {
-                        self.i18n.label_enable_log
+                        self.i18n.label_enable_log.clone()
                     } else {
-                        self.i18n.label_disable_log
+                        self.i18n.label_disable_log.clone()
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -103,13 +103,13 @@ impl AppState {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.label(
-                    egui::RichText::new(self.i18n.label_system_prompt)
+                    egui::RichText::new(self.i18n.label_system_prompt.clone())
                         .color(header_color)
                         .strong(),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let (bg, _) = self.get_instance_style("btn_clear_log");
-                    if ui.add(egui::Button::new(self.i18n.btn_clear_log).fill(bg)).clicked() {
+                    if ui.add(egui::Button::new(self.i18n.btn_clear_log.clone()).fill(bg)).clicked() {
                         self.show_clear_log_confirm = true;
                     }
                 });
@@ -137,22 +137,22 @@ impl AppState {
             return;
         }
 
-        egui::Window::new(self.i18n.title_confirm_clear_log)
+        egui::Window::new(self.i18n.title_confirm_clear_log.clone())
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
                 let (_, label_color) = self.get_instance_style("label_dev");
-                ui.label(egui::RichText::new(self.i18n.text_confirm_clear_log).color(label_color));
+                ui.label(egui::RichText::new(self.i18n.text_confirm_clear_log.clone()).color(label_color));
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    if ui.button(self.i18n.btn_confirm_clear_log).clicked() {
+                    if ui.button(self.i18n.btn_confirm_clear_log.clone()).clicked() {
                         let mut log = self.log.lock().unwrap();
                         log.clear();
-                        log.push(self.i18n.log_log_cleared.to_string());
+                        log.push(self.i18n.log_log_cleared.clone());
                         self.show_clear_log_confirm = false;
                     }
-                    if ui.button(self.i18n.btn_cancel).clicked() {
+                    if ui.button(self.i18n.btn_cancel.clone()).clicked() {
                         self.show_clear_log_confirm = false;
                     }
                 });
