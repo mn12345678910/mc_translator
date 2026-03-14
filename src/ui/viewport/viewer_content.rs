@@ -1,6 +1,6 @@
 use crate::state::app_state::AppState;
 use crate::state::viewer_state::ViewerSharedState;
-use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
+// 移除硬編碼常量引用
 use crate::ui::widgets::toggle::toggle;
 use std::sync::{Arc, Mutex};
 
@@ -97,12 +97,7 @@ impl AppState {
             ui.set_style(style);
             let processing = *is_processing.lock().unwrap();
             let current_tab = *dict_active_tab.lock().unwrap();
-            let theme_val = viewer_shared.theme.read().unwrap().clone();
-            let label_color = if theme_val == "light" {
-                LABEL_COLOR_LIGHT
-            } else {
-                LABEL_COLOR_DARK
-            };
+            let (_label_bg, label_color) = get_instance_style_from_snap(&style_snap, "label_viewer", is_dark);
 
             ui.label(
                 egui::RichText::new(i18n.glossary_title)

@@ -93,14 +93,45 @@ impl AppState {
                 egui::ViewportId::from_hash_of("memory_viewer"),
                 builder,
                 move |ctx, _viewport_id| {
-                    // 1. 視覺初始化: 消彌白閃
+                    // 1. 深度樣式注入 (Revision 15.35): 從快照重建樣式並套用至 Viewport Context
                     let is_dark = *viewer_shared.theme.read().unwrap() == "dark";
-                    let bg_color = if is_dark {
-                        egui::Color32::from_rgb(30, 30, 35)
-                    } else {
-                        egui::Color32::from_rgb(0xFF, 0xDE, 0xAD)
-                    };
-                    ctx.style_mut(|s| s.visuals.window_fill = bg_color);
+                    let style_snap = viewer_shared.style.read().unwrap();
+                    
+                    let mut style = (*ctx.style()).clone();
+                    let mut visuals = if is_dark { egui::Visuals::dark() } else { egui::Visuals::light() };
+                    
+                    let bg = if is_dark { style_snap.dark_bg } else { style_snap.light_bg };
+                    let text = if is_dark { style_snap.dark_text } else { style_snap.light_text };
+                    let btn_bg = if is_dark { style_snap.dark_btn_bg } else { style_snap.light_btn_bg };
+                    let btn_text = if is_dark { style_snap.dark_btn_text } else { style_snap.light_btn_text };
+                    let input_bg = if is_dark { style_snap.dark_input_bg } else { style_snap.light_input_bg };
+                    let list_bg = if is_dark { style_snap.dark_list_bg } else { style_snap.light_list_bg };
+                    
+                    let bg_color = egui::Color32::from_rgb(bg[0], bg[1], bg[2]);
+                    let text_color = egui::Color32::from_rgb(text[0], text[1], text[2]);
+                    let btn_bg_color = egui::Color32::from_rgb(btn_bg[0], btn_bg[1], btn_bg[2]);
+                    let btn_text_color = egui::Color32::from_rgb(btn_text[0], btn_text[1], btn_text[2]);
+                    
+                    visuals.window_fill = bg_color;
+                    visuals.panel_fill = bg_color;
+                    visuals.override_text_color = Some(text_color);
+                    
+                    visuals.widgets.inactive.bg_fill = btn_bg_color;
+                    visuals.widgets.inactive.weak_bg_fill = btn_bg_color;
+                    visuals.widgets.inactive.fg_stroke = egui::Stroke::new(1.0, btn_text_color);
+                    visuals.widgets.hovered.bg_fill = btn_bg_color.linear_multiply(if is_dark { 1.1 } else { 0.95 });
+                    
+                    let r = style_snap.rounding.into();
+                    visuals.widgets.inactive.rounding = r;
+                    visuals.widgets.hovered.rounding = r;
+                    visuals.widgets.active.rounding = r;
+                    visuals.window_rounding = r;
+                    
+                    visuals.extreme_bg_color = egui::Color32::from_rgb(input_bg[0], input_bg[1], input_bg[2]);
+                    visuals.faint_bg_color = egui::Color32::from_rgb(list_bg[0], list_bg[1], list_bg[2]);
+                    
+                    style.visuals = visuals;
+                    ctx.set_style(style);
 
                     // 監聽關閉事件 (Revision 15.12: Deferred Save)
                     if ctx.input(|i| i.viewport().close_requested()) {

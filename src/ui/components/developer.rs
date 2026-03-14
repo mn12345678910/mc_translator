@@ -9,11 +9,11 @@ impl AppState {
             return;
         }
         let (_, label_color) = self.get_instance_style("label_dev");
-
+        let header_color = label_color;
         ui.group(|ui| {
             ui.label(
                 egui::RichText::new(self.i18n.header_dev_mode)
-                    .color(label_color)
+                    .color(header_color)
                     .strong(),
             );
             egui::Grid::new("developer_grid")
@@ -104,7 +104,7 @@ impl AppState {
             ui.horizontal(|ui| {
                 ui.label(
                     egui::RichText::new(self.i18n.label_system_prompt)
-                        .color(label_color)
+                        .color(header_color)
                         .strong(),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -142,7 +142,8 @@ impl AppState {
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
-                ui.label(self.i18n.text_confirm_clear_log);
+                let (_, label_color) = self.get_instance_style("label_dev");
+                ui.label(egui::RichText::new(self.i18n.text_confirm_clear_log).color(label_color));
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
                     if ui.button(self.i18n.btn_confirm_clear_log).clicked() {

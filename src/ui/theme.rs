@@ -115,8 +115,8 @@ impl AppState {
                 });
                 let final_text = text.unwrap_or_else(|| {
                     if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]) } else { egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]) } }
-                    else if id.contains("progress") { if is_dark { egui::Color32::from_rgb(self.dark_label[0], self.dark_label[1], self.dark_label[2]) } else { egui::Color32::from_rgb(self.light_label[0], self.light_label[1], self.light_label[2]) } }
-                    else { if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } else { egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]) } }
+                    else if id.contains("progress") || id.contains("label") { if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } else { egui::Color32::from_rgb(34, 34, 34) } }
+                    else { if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } else { egui::Color32::from_rgb(34, 34, 34) } }
                 });
                 return (final_bg, final_text, rounding);
             }
@@ -128,19 +128,19 @@ impl AppState {
              if is_dark { self.dark_btn_text } else { self.light_btn_text })
         } else if id.contains("input") || id.contains("edit") {
             (if is_dark { self.dark_input_bg } else { self.light_input_bg },
-             if is_dark { self.dark_text } else { self.light_text })
+             if is_dark { self.dark_text } else { [34, 34, 34] }) // 淺色強制 #222
         } else if id.contains("list") || id.contains("area") || id.contains("log") {
             (if is_dark { self.dark_list_bg } else { self.light_list_bg },
-             if is_dark { self.dark_text } else { self.light_text })
+             if is_dark { self.dark_text } else { [34, 34, 34] }) // 淺色強制 #222
         } else if id.contains("tab") {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
-             if is_dark { self.dark_btn_text } else { self.light_btn_text })
+             if is_dark { self.dark_btn_text } else { [34, 34, 34] }) // 淺色強制 #222
         } else if id.contains("label") {
             (if is_dark { self.dark_bg } else { self.light_bg },
-             if is_dark { self.dark_label } else { self.light_label })
+             if is_dark { self.dark_text } else { [34, 34, 34] }) // 修正：標籤預設連動 dark_text/琥珀色
         } else {
             (if is_dark { self.dark_bg } else { self.light_bg }, 
-             if is_dark { self.dark_text } else { self.light_text })
+             if is_dark { self.dark_text } else { [34, 34, 34] })
         };
 
         (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),

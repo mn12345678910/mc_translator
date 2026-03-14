@@ -4,6 +4,7 @@
 
 |日期時間|Commit編號|類型|位置(模組路徑)|說明 （使用-或<br>清單化）|
 |:---|:---|:---|:---|:---|
+|2026-03-14 11:30|UI_DEEP_SYNC|修復/優化|viewport, theme, developer, glossary|- **UI 一致性深化與回歸熱修復 (Revision 15.35)**：<br>  - **標籤色彩標準化**：修正 `theme.rs` 邏輯，確保全域標籤連動調色盤 `dark_text` (琥珀色) 或 `#222` (黑)，徹底解決開發者模式標籤回歸白色的問題。<br>  - **Viewport 深度注入**：在 `manager.rs` 中實現全域 Viewport 樣式注入，強制同步主視窗的調色盤設定與圓角至子視窗及對話框，消除硬編碼殘留。<br>  - **代碼健壯性**：修復 `developer.rs` 變數作用域與 `theme.rs` 類型轉換錯誤，並移除 `viewer_content.rs` 的硬編碼常量與未使用變量。|
 |2026-03-14 10:20|I18N_FINAL|功能/重構|ui, translation, file|- **全面國際化重構與零警告清理**：<br>  - **全組件 i18n 化**：將所有硬編碼中文 UI 標籤、狀態訊息與導覽按鈕名稱移至 `i18n.rs`，建立 `I18nLabels` 架構。<br>  - **執行緒安全 i18n 傳遞**：將 `i18n` 實例整合進 `JobSharedState` 與 `TranslationContext`，確保非同步翻譯任務能顯示正確語系日誌。<br>  - **修復編譯警告**：移除 `client.rs` 中未使用的 `translate_free_google` 函數，達成全目標零警告。<br>  - **文件同步**：更新 `specs.md`、`AI_CONTEXT.md` 及硬編碼報告以反映最新架构。|
 |2026-03-13 20:45|UI_PAL_SYNC|修復/優化|palette, progress, theme, buttons|- **調色盤連動深度修正與 UI 體驗優化**：<br>  - **進度條文字變色修復**：修正 `progress.rs` 中硬編碼變數問題，確保調色盤「文字顏色」能即時反映至進度條。<br>  - **按鈕圓角全面化**：重構 `header.rs` 與 `actions.rs` 按鈕渲染逻辑，全面支持從調色盤讀取個別圓角設定。<br>  - **UI 屬性動態隱藏**：實作 `is_prop_supported` 檢查，根據目標自動隱藏不支援的調整選項（如面板背景隱藏文字顏色）。<br>  - **標題簡化**：將標題更名為簡潔的「🎨 調色盤」。|
 |2026-03-13 20:30|ROUND_FIX|功能/修復|palette, rounding, progress|- **按鈕圓角個別化與進度條調色補全**：<br>  - **個別圓角自定義**：實作 `ComponentStyle` 圓角屬性，特定按鈕或元件可擁有獨立圓角數值，脫離全域強制同步。<br>  - **進度條補全**：將「目前檔案進度條」與「總進度條」納入自定義元件清單，支援動態變色與圓角調整。<br>  - **代碼健壯性**：修正 `DragValue::clamp_range` 與類型解析錯誤，優化脈衝動畫色彩計算邏輯。|
