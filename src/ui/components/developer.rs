@@ -12,7 +12,7 @@ impl AppState {
 
         ui.group(|ui| {
             ui.label(
-                egui::RichText::new("🔧 開發人員模式")
+                egui::RichText::new(self.i18n.header_dev_mode)
                     .color(label_color)
                     .strong(),
             );
@@ -22,9 +22,9 @@ impl AppState {
                 .show(ui, |ui| {
                     // 第一列：JSON 與 JAR
                     let json_label = if self.skip_json {
-                        "跳過 .json"
+                        self.i18n.label_skip_json
                     } else {
-                        "不跳過 .json"
+                        self.i18n.label_no_skip_json
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -37,9 +37,9 @@ impl AppState {
                     }
 
                     let jar_label = if self.skip_jar {
-                        "跳過 .jar"
+                        self.i18n.label_skip_jar
                     } else {
-                        "不跳過 .jar"
+                        self.i18n.label_no_skip_jar
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -54,9 +54,9 @@ impl AppState {
 
                     // 第二列：JS 與 Patchouli Book
                     let js_label = if self.skip_js {
-                        "跳過 .js"
+                        self.i18n.label_skip_js
                     } else {
-                        "不跳過 .js"
+                        self.i18n.label_no_skip_js
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -67,9 +67,9 @@ impl AppState {
                     }
 
                     let book_label = if self.skip_book {
-                        "跳過手冊"
+                        self.i18n.label_skip_book
                     } else {
-                        "不跳過手冊"
+                        self.i18n.label_no_skip_book
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -84,9 +84,9 @@ impl AppState {
 
                     // 第三列：LLM Log (其他空間保留)
                     let log_label = if self.enable_llm_log {
-                        "開啟記錄日誌"
+                        self.i18n.label_enable_log
                     } else {
-                        "關閉記錄日誌"
+                        self.i18n.label_disable_log
                     };
                     ui.add_sized(
                         [105.0, 20.0],
@@ -103,13 +103,13 @@ impl AppState {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 ui.label(
-                    egui::RichText::new("📜 系統技術指令")
+                    egui::RichText::new(self.i18n.label_system_prompt)
                         .color(label_color)
                         .strong(),
                 );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     let (bg, _) = self.get_instance_style("btn_clear_log");
-                    if ui.add(egui::Button::new("🗑 清除執行日誌").fill(bg)).clicked() {
+                    if ui.add(egui::Button::new(self.i18n.btn_clear_log).fill(bg)).clicked() {
                         self.show_clear_log_confirm = true;
                     }
                 });
@@ -137,21 +137,21 @@ impl AppState {
             return;
         }
 
-        egui::Window::new("⚠ 確認清除日誌")
+        egui::Window::new(self.i18n.title_confirm_clear_log)
             .collapsible(false)
             .resizable(false)
             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
             .show(ctx, |ui| {
-                ui.label("確定要清除目前所有的執行日誌嗎？\n此操作無法復原。");
+                ui.label(self.i18n.text_confirm_clear_log);
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    if ui.button("確定清除").clicked() {
+                    if ui.button(self.i18n.btn_confirm_clear_log).clicked() {
                         let mut log = self.log.lock().unwrap();
                         log.clear();
-                        log.push(">>> 使用者已清除執行日誌。".to_string());
+                        log.push(self.i18n.log_log_cleared.to_string());
                         self.show_clear_log_confirm = false;
                     }
-                    if ui.button("取消").clicked() {
+                    if ui.button(self.i18n.btn_cancel).clicked() {
                         self.show_clear_log_confirm = false;
                     }
                 });
