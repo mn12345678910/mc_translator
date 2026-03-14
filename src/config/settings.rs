@@ -173,8 +173,8 @@ fn default_dark_text() -> [u8; 3] { [200, 160, 100] }
 fn default_light_bg() -> [u8; 3] { [0xFF, 0xFD, 0xF0] }
 fn default_light_text() -> [u8; 3] { [34, 34, 34] }
 
-fn default_dark_label() -> [u8; 3] { [180, 180, 190] }
-fn default_light_label() -> [u8; 3] { [80, 80, 80] }
+fn default_dark_label() -> [u8; 3] { [200, 160, 100] }
+fn default_light_label() -> [u8; 3] { [34, 34, 34] }
 
 fn default_dark_btn_bg() -> [u8; 3] { [45, 45, 50] }
 fn default_dark_btn_text() -> [u8; 3] { [220, 220, 220] }
