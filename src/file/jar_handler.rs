@@ -146,7 +146,8 @@ pub fn write_translated_to_temp_fs(
 }
 
 pub fn repack_jar(
-    path: &Path,
+    source_path: &Path,
+    target_path: &Path,
     translated_files: &HashMap<String, String>, // 現在直接接收內存中的翻譯內容
     _config: &crate::translation::job::JobConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -154,13 +155,18 @@ pub fn repack_jar(
         return Ok(());
     }
 
-    let temp_jar_path = path.with_extension("jar.tmp");
+    // 確保目標資料夾存在
+    if let Some(parent) = target_path.parent() {
+        fs::create_dir_all(parent).unwrap_or(());
+    }
+
+    let temp_jar_path = target_path.with_extension("jar.tmp");
 
     {
         let temp_file = fs::File::create(&temp_jar_path)?;
         let mut zip_out = zip::ZipWriter::new(temp_file);
 
-        let zip_in_file = fs::File::open(path)?;
+        let zip_in_file = fs::File::open(source_path)?;
         let mut zip_in = zip::ZipArchive::new(zip_in_file)?;
 
         // 1. 建立目標檔案名稱集 (將 en_us.json 對應到 zh_tw.json)
@@ -210,6 +216,6 @@ pub fn repack_jar(
         zip_out.finish()?;
     }
 
-    fs::rename(&temp_jar_path, path)?;
+    fs::rename(&temp_jar_path, target_path)?;
     Ok(())
 }
