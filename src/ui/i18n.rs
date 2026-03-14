@@ -78,6 +78,16 @@ pub struct I18nLabels {
     pub label_palette_hint: &'static str,
     pub hover_remove_slot: &'static str,
 
+    pub btn_resume: &'static str,
+    pub hover_select_file_first: &'static str,
+    pub hover_select_model_first: &'static str,
+    pub title_confirm_stop: &'static str,
+    pub text_confirm_stop: &'static str,
+    pub btn_confirm_stop: &'static str,
+    pub log_pause_requested: &'static str,
+    pub log_stopped: &'static str,
+    pub status_stopped: &'static str,
+
     // --- 類別名稱 ---
     pub group_batch: &'static str,
     pub group_specific: &'static str,
@@ -144,6 +154,16 @@ pub const ZH_TW: I18nLabels = I18nLabels {
     label_timeout: "逾時:",
     label_font_size: "字體:",
     label_pack_format: "資源包版本:",
+    btn_resume: "▶ 繼續",
+    hover_select_file_first: "請先選取檔案或資料夾",
+    hover_select_model_first: "請先於設定中選取翻譯模型",
+    title_confirm_stop: "⚠ 確認停止翻譯",
+    text_confirm_stop: "確定要停止翻譯嗎？此操作無法復原。",
+    btn_confirm_stop: "確定停止",
+    log_pause_requested: ">>> 使用者請求暫停...",
+    log_stopped: ">>> 翻譯已中斷。",
+    status_stopped: "已中止",
+
     label_fps: "FPS:",
     label_fps_preset_vsync: "(預設:vsync)",
     btn_restore_defaults: "⟲ 恢復預設",
