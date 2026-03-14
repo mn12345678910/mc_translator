@@ -1,4 +1,5 @@
 use crate::state::app_state::AppState;
+use std::sync::atomic::Ordering;
 // use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
@@ -24,7 +25,7 @@ impl AppState {
             current_status.push_str(dots);
         }
         ui.label(
-            egui::RichText::new(format!("目前狀態: {}", current_status))
+            egui::RichText::new(format!("{}{}", self.i18n.label_current_status, current_status))
                 .color(label_color)
                 .strong(),
         );
@@ -32,10 +33,10 @@ impl AppState {
         // 如果不在處理中，清空進度顯示 (除非是在暫停中)
         let (prog, total, g_prog, g_total) = {
             (
-                *self.progress.lock().unwrap(),
-                *self.progress_total.lock().unwrap(),
-                *self.global_progress.lock().unwrap(),
-                *self.global_total.lock().unwrap(),
+                f32::from_bits(self.progress.load(Ordering::SeqCst)),
+                f32::from_bits(self.progress_total.load(Ordering::SeqCst)),
+                f32::from_bits(self.global_progress.load(Ordering::SeqCst)),
+                f32::from_bits(self.global_total.load(Ordering::SeqCst)),
             )
         };
 
@@ -56,7 +57,7 @@ impl AppState {
         };
 
         ui.add(egui::ProgressBar::new(ratio).fill(bar_color).rounding(c_rounding).show_percentage().text(
-            egui::RichText::new(format!("目前檔案: ({}/{})", prog as u32, total as u32))
+            egui::RichText::new(format!("{} ({}/{})", self.i18n.label_current_file, prog as u32, total as u32))
                 .color(c_text_color)
                 .strong(),
         ));
@@ -82,7 +83,8 @@ impl AppState {
                 .rounding(t_rounding)
                 .text(
                 egui::RichText::new(format!(
-                    "總進度: ({}/{}) {}%",
+                    "{} ({}/{}) {}%",
+                    self.i18n.label_global_progress,
                     g_prog as u32,
                     g_total as u32,
                     (g_ratio * 100.0) as u32

@@ -8,6 +8,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 pub async fn collect_jar_tasks(
     start_file_id: usize,
@@ -71,8 +72,8 @@ pub async fn collect_jar_tasks(
                         entries.push((name, value, content, zh_tw_value));
 
                         {
-                            let mut total = g_total_arc.lock().unwrap();
-                            *total += 1.0;
+                            let current_total = f32::from_bits(g_total_arc.load(Ordering::SeqCst));
+                            g_total_arc.store((current_total + 1.0).to_bits(), Ordering::SeqCst);
                         }
                     }
                 }
@@ -105,11 +106,11 @@ pub async fn collect_jar_tasks(
             cancelled: state.cancelled.clone(),
             paused: state.paused.clone(),
             current_log: state.log.clone(),
-            filename: name.clone(),
             translation_memory: state.translation_memory.clone(),
             skip_memory: false,
             pause_notifier: state.pause_notifier.clone(),
-            i18n: state.i18n,
+            i18n: &state.i18n,
+            filename: name.clone(),
         });
 
         engine::collect_translatable_strings(&en_us, &zh_tw, None, &mut pending, &ctx);

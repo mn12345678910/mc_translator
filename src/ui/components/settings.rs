@@ -26,15 +26,21 @@ impl AppState {
 
                         // --- 服務商與恢復預設 (鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_provider).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_provider.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("provider_combo")
                                     .selected_text(&self.api_provider)
                                     .width(140.0)
                                     .show_ui(ui, |ui| {
                                         let mut providers = vec![
-                                            self.i18n.label_provider_none, "Gemini", "OpenAI", "DeepSeek", "Mistral", "DeepL",
-                                            "Ollama", "Google Free",
+                                            self.i18n.label_provider_none.clone(),
+                                            "Gemini".to_string(),
+                                            "OpenAI".to_string(),
+                                            "DeepSeek".to_string(),
+                                            "Mistral".to_string(),
+                                            "DeepL".to_string(),
+                                            "Ollama".to_string(),
+                                            "Google Free".to_string(),
                                         ];
                                         // 保持 "無" 在最前面，其餘排序
                                         let none_provider = providers.remove(0);
@@ -62,7 +68,7 @@ impl AppState {
                                 egui::Layout::right_to_left(egui::Align::Center),
                                 |ui| {
                                     ui.add_enabled_ui(ui_enabled, |ui| {
-                                        if ui.button(self.i18n.btn_restore_defaults).clicked() {
+                                        if ui.button(self.i18n.btn_restore_defaults.clone()).clicked() {
                                             self.show_restore_default_confirm = true;
                                         }
                                     });
@@ -72,7 +78,7 @@ impl AppState {
 
                         // --- 模型選擇 (混合：ComboBox 鎖定，刷新按鈕不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_model).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_model.clone()).color(label_color).strong());
 
                             let models = self.available_models.lock().unwrap().clone();
                             let mut changed = false;
@@ -82,9 +88,9 @@ impl AppState {
                                     .selected_text(
                                         if self.api_key.is_empty() && self.api_provider != "Ollama"
                                         {
-                                            self.i18n.prompt_enter_key.to_string()
+                                            self.i18n.prompt_enter_key.clone()
                                         } else if self.selected_model.is_empty() {
-                                            self.i18n.prompt_select_model.to_string()
+                                            self.i18n.prompt_select_model.clone()
                                         } else {
                                             self.selected_model.clone()
                                         },
@@ -92,7 +98,7 @@ impl AppState {
                                     .width(ui.available_width() - 40.0)
                                     .show_ui(ui, |ui| {
                                         if models.is_empty() {
-                                            ui.label(self.i18n.prompt_update_list);
+                                            ui.label(self.i18n.prompt_update_list.clone());
                                         }
                                         for m in &models {
                                             if ui
@@ -137,7 +143,7 @@ impl AppState {
                         } else {
                             ui.horizontal(|ui| {
                                 ui.label(
-                                    egui::RichText::new(self.i18n.label_api_key).color(label_color).strong(),
+                                    egui::RichText::new(self.i18n.label_api_key.clone()).color(label_color).strong(),
                                 );
                                 ui.add_enabled_ui(ui_enabled, |ui| {
                                     let resp = ui.add(
@@ -156,7 +162,7 @@ impl AppState {
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_batch_size).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_batch_size.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 let mut bs = self.batch_size as i32;
                                 if ui
@@ -174,7 +180,7 @@ impl AppState {
                             ui.label(egui::RichText::new("(1-300)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new(self.i18n.label_max_chars).color(label_color).strong()); // 縮短名稱避免擁擠
+                            ui.label(egui::RichText::new(self.i18n.label_max_chars.clone()).color(label_color).strong()); // 縮短名稱避免擁擠
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
@@ -191,7 +197,7 @@ impl AppState {
 
                             ui.add_space(8.0);
                             ui.label(
-                                egui::RichText::new(self.i18n.label_timeout)
+                                egui::RichText::new(self.i18n.label_timeout.clone())
                                     .color(label_color)
                                     .strong(),
                             );
@@ -210,7 +216,7 @@ impl AppState {
                             ui.label(egui::RichText::new("(1-600s)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new(self.i18n.label_font_size).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_font_size.clone()).color(label_color).strong());
                             if ui
                                 .add(
                                     egui::DragValue::new(&mut self.font_size)
@@ -226,10 +232,10 @@ impl AppState {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_pack_format).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_pack_format.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("pack_format_presets")
-                                    .selected_text(self.i18n.label_presets)
+                                    .selected_text(self.i18n.label_presets.clone())
                                     .width(80.0)
                                     .show_ui(ui, |ui| {
                                         for (ver, fmt) in &[
@@ -266,7 +272,7 @@ impl AppState {
                         });
 
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_source_lang).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_source_lang.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("source_lang_combo")
                                     .selected_text(&self.source_lang)
@@ -281,7 +287,7 @@ impl AppState {
                             });
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new(self.i18n.label_target_lang).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_target_lang.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("target_lang_combo")
                                     .selected_text(&self.target_lang)
@@ -296,7 +302,7 @@ impl AppState {
                             });
 
                             ui.add_space(12.0);
-                            ui.label(egui::RichText::new(self.i18n.label_fps).color(label_color).strong());
+                            ui.label(egui::RichText::new(self.i18n.label_fps.clone()).color(label_color).strong());
                             ui.checkbox(&mut self.enable_custom_fps, "");
                             if self.enable_custom_fps {
                                 let fps_input = ui.add(
@@ -311,7 +317,7 @@ impl AppState {
                                 ui.label(egui::RichText::new("(1-240)").color(label_color).small());
                             } else {
                                 ui.label(
-                                    egui::RichText::new(self.i18n.label_fps_preset_vsync)
+                                    egui::RichText::new(self.i18n.label_fps_preset_vsync.clone())
                                         .color(label_color),
                                 );
                             }
@@ -323,7 +329,7 @@ impl AppState {
                         // --- 使用者翻譯提示 (鎖定) ---
                         ui.group(|ui| {
                             ui.label(
-                                egui::RichText::new(self.i18n.label_user_prompt)
+                                egui::RichText::new(self.i18n.label_user_prompt.clone())
                                     .color(label_color)
                                     .strong(),
                             );
@@ -348,7 +354,7 @@ impl AppState {
                         // API 連線狀態指示燈 (不鎖定，僅供視圖偵測)
                         ui.horizontal(|ui| {
                             ui.label(
-                                egui::RichText::new(self.i18n.label_api_status)
+                                egui::RichText::new(self.i18n.label_api_status.clone())
                                     .color(label_color)
                                     .strong(),
                             );
@@ -359,9 +365,9 @@ impl AppState {
                                 !self.api_key.is_empty() && !models_locked.is_empty()
                             };
                             let status_text = if is_ready {
-                                self.i18n.status_connected
+                                self.i18n.status_connected.clone()
                             } else {
-                                self.i18n.status_not_ready
+                                self.i18n.status_not_ready.clone()
                             };
                             let status_color = if is_ready {
                                 if self.theme == "light" {
@@ -389,16 +395,16 @@ impl AppState {
             return;
         }
 
-        egui::Window::new(self.i18n.confirm_restore_title)
+        egui::Window::new(self.i18n.confirm_restore_title.clone())
             .collapsible(false)
             .resizable(false)
             .pivot(egui::Align2::CENTER_CENTER)
             .default_pos(ctx.screen_rect().center())
             .show(ctx, |ui| {
-                ui.label(self.i18n.confirm_restore_text);
+                ui.label(self.i18n.confirm_restore_text.clone());
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
-                    if ui.button(self.i18n.btn_confirm_restore).clicked() {
+                    if ui.button(self.i18n.btn_confirm_restore.clone()).clicked() {
                         let def = crate::config::settings::AppConfig::default();
                         let style_def = crate::config::settings::StyleConfig::default();
                         
@@ -460,7 +466,7 @@ impl AppState {
                         self.refresh_models();
                         self.show_restore_default_confirm = false;
                     }
-                    if ui.button(self.i18n.btn_cancel).clicked() {
+                    if ui.button(self.i18n.btn_cancel.clone()).clicked() {
                         self.show_restore_default_confirm = false;
                     }
                 });

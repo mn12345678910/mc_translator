@@ -4,6 +4,7 @@ use crate::utils::text_processing::{
     postprocess_text, preprocess_text, validate_and_cleanup,
 };
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 /// 在全域模式下的一個翻譯項目
 #[derive(Debug, Clone)]
@@ -42,17 +43,17 @@ pub async fn translate_global_batches(
     items: &mut [GlobalBatchItem],
     config: Arc<Mutex<JobConfig>>,
     status: Arc<Mutex<String>>,
-    progress: Arc<Mutex<f32>>,
-    progress_total: Arc<Mutex<f32>>, // 目前檔案總條目數
-    cancelled: Arc<Mutex<bool>>,
-    paused: Arc<Mutex<bool>>,
+    progress: Arc<AtomicU32>,
+    progress_total: Arc<AtomicU32>, // 目前檔案總條目數
+    cancelled: Arc<AtomicBool>,
+    paused: Arc<AtomicBool>,
     log: Arc<Mutex<Vec<String>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
-    i18n: &'static crate::ui::i18n::I18nLabels,
+    i18n: &crate::ui::i18n::I18nLabels,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 首先設定目前的條目總數
-    *progress_total.lock().unwrap() = items.len() as f32;
+    progress_total.store((items.len() as f32).to_bits(), Ordering::SeqCst);
 
     run_translation_batch(RunBatchContext {
         items,
@@ -74,14 +75,14 @@ pub struct RunBatchContext<'a> {
     pub items: &'a mut [GlobalBatchItem],
     pub config: Arc<Mutex<JobConfig>>,
     pub status: Arc<Mutex<String>>,
-    pub progress: Arc<Mutex<f32>>,
+    pub progress: Arc<AtomicU32>,
     pub counter: Arc<Mutex<usize>>,
     pub log: Arc<Mutex<Vec<String>>>,
-    pub cancelled: Arc<Mutex<bool>>,
-    pub paused: Arc<Mutex<bool>>,
+    pub cancelled: Arc<AtomicBool>,
+    pub paused: Arc<AtomicBool>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    pub i18n: &'static crate::ui::i18n::I18nLabels,
+    pub i18n: &'a crate::ui::i18n::I18nLabels,
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)
@@ -105,7 +106,8 @@ pub async fn run_translation_batch(
     if total_items == 0 {
         return Ok(());
     }
-    *progress.lock().unwrap() = 0.0;
+    // 首先設定目前的條目總數
+    progress.store(0.0f32.to_bits(), Ordering::SeqCst);
 
     let mut success_count = 0;
     let mut failed_indices = Vec::new();
@@ -116,24 +118,23 @@ pub async fn run_translation_batch(
         .collect();
 
     if pending_indices.is_empty() {
-        *progress.lock().unwrap() = total_items as f32;
+        progress.store((total_items as f32).to_bits(), Ordering::SeqCst);
         return Ok(());
     }
 
     let initial_batches = create_adaptive_batches_from_indices(items, &pending_indices, cfg.batch_size, cfg.batch_max_chars);
 
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
-        if *cancelled.lock().unwrap() {
+        if cancelled.load(Ordering::SeqCst) {
             break;
         }
-        while *paused.lock().unwrap() {
-            if *cancelled.lock().unwrap() {
+        while paused.load(Ordering::SeqCst) {
+            if cancelled.load(Ordering::SeqCst) {
                 break;
             }
-            *status.lock().unwrap() = i18n.status_paused.to_string();
             pause_notifier.notified().await;
         }
-        if *cancelled.lock().unwrap() {
+        if cancelled.load(Ordering::SeqCst) {
             break;
         }
 
@@ -156,7 +157,7 @@ pub async fn run_translation_batch(
                 success_count += batch_item_indices.len();
                 // 進度應包含原本就已翻譯的項目
                 let already_done = total_items - pending_indices.len();
-                *progress.lock().unwrap() = (already_done + success_count) as f32;
+                progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
             }
             Err(e) => {
                 let err_msg = e.to_string();
@@ -176,7 +177,7 @@ pub async fn run_translation_batch(
     }
 
     // 2. 失敗重試階段：收集失敗項目，切割更細批次 (降級：批次與字元上限減半)
-    if !failed_indices.is_empty() && !*cancelled.lock().unwrap() {
+    if !failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
         crate::utils::add_log(
             &log,
             &i18n.log_retry_start.replace("{}", &failed_indices.len().to_string()),
@@ -194,7 +195,7 @@ pub async fn run_translation_batch(
         let mut second_failed_indices = Vec::new();
 
         for (idx, batch) in retry_batches.iter().enumerate() {
-            if *cancelled.lock().unwrap() {
+            if cancelled.load(Ordering::SeqCst) {
                 break;
             }
             let res = process_one_global_batch(BatchContext {
@@ -215,7 +216,7 @@ pub async fn run_translation_batch(
                 Ok(_) => {
                     success_count += batch.len();
                     let already_done = total_items - pending_indices.len();
-                    *progress.lock().unwrap() = (already_done + success_count) as f32;
+                    progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                 }
                 Err(_) => {
                     second_failed_indices.extend(batch.clone());
@@ -224,13 +225,13 @@ pub async fn run_translation_batch(
         }
 
         // 3. 最終回退階段：單筆翻譯
-        if !second_failed_indices.is_empty() && !*cancelled.lock().unwrap() {
+        if !second_failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
             crate::utils::add_log(
                 &log,
                 &i18n.log_single_retry_start.replace("{}", &second_failed_indices.len().to_string()),
             );
             for &idx in &second_failed_indices {
-                if *cancelled.lock().unwrap() {
+                if cancelled.load(Ordering::SeqCst) {
                     break;
                 }
                 let item = &mut items[idx];
@@ -252,7 +253,7 @@ pub async fn run_translation_batch(
                         item.translated = Some(hanconv::s2tw(&cleaned));
                         success_count += 1;
                         let already_done = total_items - pending_indices.len();
-                        *progress.lock().unwrap() = (already_done + success_count) as f32;
+                        progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                     }
                     Err(e) => {
                         crate::utils::add_log(&log, &i18n.log_single_final_failed.replace("{}", &e.to_string()));
@@ -310,14 +311,14 @@ struct BatchContext<'a> {
     current_idx: usize,
     total_batch: usize,
     is_retry: bool,
-    i18n: &'static crate::ui::i18n::I18nLabels,
+    i18n: &'a crate::ui::i18n::I18nLabels,
 }
 
 /// 執行單一批次的 LLM 翻譯請求
 async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mode_str = if ctx.is_retry { ctx.i18n.status_retry } else { ctx.i18n.status_translating };
+    let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
     *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch_simple
         .replace("{}", mode_str)
         .replacen("{}", &ctx.current_idx.to_string(), 1)
@@ -373,7 +374,7 @@ async fn process_one_global_batch(
             if resolved_any {
                 Ok(())
             } else {
-                Err(ctx.i18n.log_batch_invalid.into())
+                Err(ctx.i18n.log_batch_invalid.clone().into())
             }
         }
         Err(e) => Err(e),

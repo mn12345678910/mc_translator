@@ -3,10 +3,11 @@ use crate::utils;
 use eframe::egui;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicUsize, AtomicU32, Ordering};
 use tokio::runtime::Runtime;
 use tokio::sync::Notify;
 use crate::state::viewer_state::{ViewerSharedState, ViewerUpdate};
-use crate::ui::i18n::{I18nLabels, DEFAULT_LANG};
+use crate::ui::i18n::I18nLabels;
 use std::sync::RwLock;
 
 /// 同步存檔用的包裹
@@ -23,14 +24,14 @@ pub struct AppState {
 
     // --- 非同步翻譯狀態 (共用 Arc) ---
     pub log: Arc<Mutex<Vec<String>>>,
-    pub is_processing: Arc<Mutex<bool>>,
-    pub is_cancelled: Arc<Mutex<bool>>,
-    pub is_paused: Arc<Mutex<bool>>,
+    pub is_processing: Arc<AtomicBool>,
+    pub is_cancelled: Arc<AtomicBool>,
+    pub is_paused: Arc<AtomicBool>,
     pub status: Arc<Mutex<String>>,
-    pub progress: Arc<Mutex<f32>>,
-    pub progress_total: Arc<Mutex<f32>>,
-    pub global_progress: Arc<Mutex<f32>>,
-    pub global_total: Arc<Mutex<f32>>,
+    pub progress: Arc<AtomicU32>,
+    pub progress_total: Arc<AtomicU32>,
+    pub global_progress: Arc<AtomicU32>,
+    pub global_total: Arc<AtomicU32>,
 
     // --- 語言與模型數據 ---
     pub mc_lang: Arc<Mutex<Option<utils::McLangFiles>>>,
@@ -83,26 +84,26 @@ pub struct AppState {
     pub show_palette_settings: bool,
     pub palette_edit_dark: bool,
     pub show_memory_viewer: bool,
-    pub is_memory_viewer_open: Arc<std::sync::atomic::AtomicBool>,
+    pub is_memory_viewer_open: Arc<AtomicBool>,
     pub show_stop_confirm: bool,
     pub show_clear_log_confirm: bool,
     pub show_restore_default_confirm: bool,
-    pub dict_active_tab: Arc<Mutex<usize>>,
+    pub dict_active_tab: Arc<AtomicUsize>,
     pub _update_rx: tokio::sync::mpsc::UnboundedReceiver<ViewerUpdate>,
 
     // --- 建議詞管理器 UI 狀態 ---
     pub dict_search: Arc<Mutex<String>>,
-    pub dict_page: Arc<Mutex<usize>>,
+    pub dict_page: Arc<AtomicUsize>,
     pub dict_edit_key: Arc<Mutex<Option<String>>>,
     pub dict_edit_value: Arc<Mutex<String>>,
-    pub show_dict_add_dialog: Arc<Mutex<bool>>,
+    pub show_dict_add_dialog: Arc<AtomicBool>,
     pub dict_new_key: Arc<Mutex<String>>,
     pub dict_new_value: Arc<Mutex<String>>,
-    pub show_dict_replace_dialog: Arc<Mutex<bool>>,
+    pub show_dict_replace_dialog: Arc<AtomicBool>,
     pub dict_replace_target: Arc<Mutex<String>>,
     pub dict_replace_new: Arc<Mutex<String>>,
-    pub dict_replace_all: Arc<Mutex<bool>>,
-    pub show_dict_clear_confirm: Arc<Mutex<bool>>,
+    pub dict_replace_all: Arc<AtomicBool>,
+    pub show_dict_clear_confirm: Arc<AtomicBool>,
     pub dict_cache: Arc<Mutex<Vec<(String, String)>>>,
     pub dict_search_last: Arc<Mutex<(String, usize)>>, // (搜尋詞, 總結果數)
 
@@ -156,7 +157,7 @@ pub struct AppState {
     pub palette_prop_sync_rounding: bool,
 
     // --- [i18n] ---
-    pub i18n: &'static I18nLabels,
+    pub i18n: I18nLabels,
 }
 
 #[derive(Clone, PartialEq)]
@@ -176,8 +177,12 @@ impl AppState {
         let config = crate::config::AppConfig::load();
         let style_cfg = crate::config::StyleConfig::load();
 
+        // [i18n] 確保目錄並載入語系
+        let _ = I18nLabels::ensure_langs_exists();
+        let i18n = I18nLabels::load_or_default(&config.target_lang);
+
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
-        let close_requested = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let close_requested = Arc::new(AtomicBool::new(false));
 
         let viewer_shared = Arc::new(ViewerSharedState {
             theme: Arc::new(RwLock::new(style_cfg.theme.clone())),
@@ -214,14 +219,14 @@ impl AppState {
             input_paths: Vec::new(),
             output_dir: config.output_dir.clone(),
             log: Arc::new(Mutex::new(Vec::new())),
-            is_processing: Arc::new(Mutex::new(false)),
-            is_cancelled: Arc::new(Mutex::new(false)),
-            is_paused: Arc::new(Mutex::new(false)),
+            is_processing: Arc::new(AtomicBool::new(false)),
+            is_cancelled: Arc::new(AtomicBool::new(false)),
+            is_paused: Arc::new(AtomicBool::new(false)),
             status: Arc::new(Mutex::new("待機中".to_string())),
-            progress: Arc::new(Mutex::new(0.0)),
-            progress_total: Arc::new(Mutex::new(0.0)),
-            global_progress: Arc::new(Mutex::new(0.0)),
-            global_total: Arc::new(Mutex::new(0.0)),
+            progress: Arc::new(AtomicU32::new(0.0f32.to_bits())),
+            progress_total: Arc::new(AtomicU32::new(0.0f32.to_bits())),
+            global_progress: Arc::new(AtomicU32::new(0.0f32.to_bits())),
+            global_total: Arc::new(AtomicU32::new(0.0f32.to_bits())),
             mc_lang: Arc::new(Mutex::new(None)),
             term_replacements: Arc::new(Mutex::new(Vec::new())),
             exact_match_map: Arc::new(Mutex::new(HashMap::new())),
@@ -264,23 +269,23 @@ impl AppState {
             show_palette_settings: false,
             palette_edit_dark: style_cfg.theme == "dark",
             show_memory_viewer: false,
-            is_memory_viewer_open: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            is_memory_viewer_open: Arc::new(AtomicBool::new(false)),
             show_stop_confirm: false,
             show_clear_log_confirm: false,
             show_restore_default_confirm: false,
-            dict_active_tab: Arc::new(Mutex::new(0)),
+            dict_active_tab: Arc::new(AtomicUsize::new(0)),
             dict_search: Arc::new(Mutex::new(String::new())),
-            dict_page: Arc::new(Mutex::new(0)),
+            dict_page: Arc::new(AtomicUsize::new(0)),
             dict_edit_key: Arc::new(Mutex::new(None)),
             dict_edit_value: Arc::new(Mutex::new(String::new())),
-            show_dict_add_dialog: Arc::new(Mutex::new(false)),
+            show_dict_add_dialog: Arc::new(AtomicBool::new(false)),
             dict_new_key: Arc::new(Mutex::new(String::new())),
             dict_new_value: Arc::new(Mutex::new(String::new())),
-            show_dict_replace_dialog: Arc::new(Mutex::new(false)),
+            show_dict_replace_dialog: Arc::new(AtomicBool::new(false)),
             dict_replace_target: Arc::new(Mutex::new(String::new())),
             dict_replace_new: Arc::new(Mutex::new(String::new())),
-            dict_replace_all: Arc::new(Mutex::new(true)),
-            show_dict_clear_confirm: Arc::new(Mutex::new(false)),
+            dict_replace_all: Arc::new(AtomicBool::new(true)),
+            show_dict_clear_confirm: Arc::new(AtomicBool::new(false)),
             dict_cache: Arc::new(Mutex::new(Vec::new())),
             dict_search_last: Arc::new(Mutex::new((String::new(), 0usize))),
             active_job_config: None,
@@ -339,7 +344,7 @@ impl AppState {
             palette_prop_sync_bg: true,
             palette_prop_sync_text: true,
             palette_prop_sync_rounding: true,
-            i18n: DEFAULT_LANG,
+            i18n,
         };
 
         // 啟動背景持久化任務已在上述 thread spawn 中處理
@@ -361,7 +366,7 @@ impl AppState {
     }
 
     pub fn is_processing_active(&self) -> bool {
-        *self.is_processing.lock().unwrap()
+        self.is_processing.load(Ordering::SeqCst)
     }
 
     /// 觸發非同步存檔

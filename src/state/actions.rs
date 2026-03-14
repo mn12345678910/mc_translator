@@ -5,6 +5,7 @@ use crate::utils;
 use eframe::egui;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::Ordering;
 
 impl AppState {
     pub fn refresh_all_dictionaries(&self) {
@@ -18,7 +19,7 @@ impl AppState {
             self.viewer_shared.update_tx.clone(),
             self.theme.clone(),
             self.show_memory_viewer,
-            self.i18n,
+            self.i18n.clone(),
         );
     }
 
@@ -33,9 +34,9 @@ impl AppState {
         viewer_update_tx: tokio::sync::mpsc::UnboundedSender<ViewerUpdate>,
         theme_clone: String,
         show_viewer_clone: bool,
-        i18n: &'static crate::ui::i18n::I18nLabels,
+        i18n: crate::ui::i18n::I18nLabels,
     ) {
-        *status_arc.lock().unwrap() = i18n.status_analyzing_dict.to_string();
+        *status_arc.lock().unwrap() = i18n.status_analyzing_dict.clone();
 
         runtime_handle.spawn(async move {
             if let Ok((files, exact, unfiltered)) = crate::utils::load_mc_dicts().await {
@@ -64,7 +65,7 @@ impl AppState {
                     *mc = Some(files);
                 }
             }
-            *status_arc.lock().unwrap() = i18n.status_ready.to_string();
+            *status_arc.lock().unwrap() = i18n.status_ready.clone();
         });
     }
 
@@ -91,9 +92,9 @@ impl AppState {
             cfg.target_lang = self.target_lang.clone();
         }
 
-        *self.is_paused.lock().unwrap() = false;
+        self.is_paused.store(false, Ordering::SeqCst);
         self.pause_notifier.notify_waiters();
-        self.add_log(self.i18n.log_resuming);
+        self.add_log(&self.i18n.log_resuming);
     }
 
     pub fn save_config(&self) {
@@ -141,14 +142,14 @@ impl AppState {
         }
 
         self.add_log(&self.i18n.log_start_job
-            .replace("{}", if self.api_provider.is_empty() { self.i18n.status_not_ready } else { &self.api_provider })
+            .replace("{}", if self.api_provider.is_empty() { &self.i18n.status_not_ready } else { &self.api_provider })
             .replace("{}", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model })
         );
 
-        *self.progress.lock().unwrap() = 0.0;
-        *self.progress_total.lock().unwrap() = 0.0;
-        *self.global_progress.lock().unwrap() = 0.0;
-        *self.global_total.lock().unwrap() = 0.0;
+        self.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.progress_total.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.global_total.store(0.0f32.to_bits(), Ordering::SeqCst);
         *self.status.lock().unwrap() = self.i18n.status_analyzing_files.to_string();
 
         let log = self.log.clone();
@@ -210,16 +211,16 @@ impl AppState {
             translation_memory: translation_memory_arc.clone(),
             pause_notifier: self.pause_notifier.clone(),
             config: job_config.clone(),
-            i18n: self.i18n,
+            i18n: self.i18n.clone(),
         };
 
-        *processing_arc.lock().unwrap() = true;
-        *cancelled_arc.lock().unwrap() = false;
-        *paused_arc.lock().unwrap() = false;
+        processing_arc.store(true, Ordering::SeqCst);
+        cancelled_arc.store(false, Ordering::SeqCst);
+        paused_arc.store(false, Ordering::SeqCst);
 
-        let i18n = self.i18n;
+        let i18n = self.i18n.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let res =
                 crate::file::pipeline::process_all_files(
                     paths,
@@ -231,9 +232,9 @@ impl AppState {
                 )
                     .await;
 
-            *processing_arc.lock().unwrap() = false;
+            processing_arc.store(false, Ordering::SeqCst);
             let mut s = status_arc.lock().unwrap();
-            if *cancelled_arc.lock().unwrap() {
+            if cancelled_arc.load(Ordering::SeqCst) {
                 *s = i18n.status_cancelled.to_string();
                 let mut l = log.lock().unwrap();
                 l.push(i18n.log_cancelled.to_string());
@@ -250,13 +251,13 @@ impl AppState {
     }
 
     pub fn stop_translation(&self) {
-        *self.is_cancelled.lock().unwrap() = true;
-        *self.is_paused.lock().unwrap() = false;
+        self.is_cancelled.store(true, Ordering::SeqCst);
+        self.is_paused.store(false, Ordering::SeqCst);
         self.pause_notifier.notify_waiters();
     }
 
     pub fn pause_translation(&self) {
-        *self.is_paused.lock().unwrap() = true;
+        self.is_paused.store(true, Ordering::SeqCst);
     }
 
     pub fn start_dict_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -320,7 +321,7 @@ impl AppState {
                     viewer_update_tx.clone(),
                     theme.clone(),
                     show_memory_viewer,
-                    crate::ui::i18n::DEFAULT_LANG, // 使用預設語言用於監控器更新，或從 AppState 傳遞
+                    crate::ui::i18n::I18nLabels::load_or_default(crate::ui::i18n::DEFAULT_LANG), // 使用預設語言用於監控器更新，或從 AppState 傳遞
                 );
             }
         });
