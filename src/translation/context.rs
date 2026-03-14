@@ -1,6 +1,7 @@
 use crate::translation::job::JobConfig;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU32};
 
 /// 翻譯上下文，攜帶字典與當前任務狀態等資訊
 pub struct TranslationContext<'a> {
@@ -9,10 +10,10 @@ pub struct TranslationContext<'a> {
     pub terms: &'a Vec<(String, String)>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub status: Arc<Mutex<String>>,
-    pub progress: Arc<Mutex<f32>>,
-    pub total_progress: Arc<Mutex<f32>>,
-    pub cancelled: Arc<Mutex<bool>>,
-    pub paused: Arc<Mutex<bool>>,
+    pub progress: Arc<AtomicU32>,
+    pub total_progress: Arc<AtomicU32>,
+    pub cancelled: Arc<AtomicBool>,
+    pub paused: Arc<AtomicBool>,
     pub current_log: Arc<Mutex<Vec<String>>>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub filename: String,
@@ -31,10 +32,10 @@ pub struct ContextOptions<'a> {
     pub terms: &'a Vec<(String, String)>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub status: Arc<Mutex<String>>,
-    pub progress: Arc<Mutex<f32>>,
-    pub total_progress: Arc<Mutex<f32>>,
-    pub cancelled: Arc<Mutex<bool>>,
-    pub paused: Arc<Mutex<bool>>,
+    pub progress: Arc<AtomicU32>,
+    pub total_progress: Arc<AtomicU32>,
+    pub cancelled: Arc<AtomicBool>,
+    pub paused: Arc<AtomicBool>,
     pub current_log: Arc<Mutex<Vec<String>>>,
     pub filename: String,
     pub translation_memory: Arc<Mutex<HashMap<String, String>>>,

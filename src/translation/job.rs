@@ -3,6 +3,8 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, AtomicU32};
+use crate::ui::i18n::I18nLabels;
 
 /// 翻譯任務的靜態設定參數
 #[derive(Clone)]
@@ -33,16 +35,16 @@ pub struct JobConfig {
 pub struct JobSharedState {
     pub log: Arc<Mutex<Vec<String>>>,
     pub status: Arc<Mutex<String>>,
-    pub progress: Arc<Mutex<f32>>,
-    pub progress_total: Arc<Mutex<f32>>,
-    pub cancelled: Arc<Mutex<bool>>,
-    pub paused: Arc<Mutex<bool>>,
+    pub progress: Arc<AtomicU32>,
+    pub progress_total: Arc<AtomicU32>,
+    pub cancelled: Arc<AtomicBool>,
+    pub paused: Arc<AtomicBool>,
     pub translation_memory: Arc<Mutex<HashMap<String, String>>>,
-    pub global_progress: Arc<Mutex<f32>>,
-    pub global_total: Arc<Mutex<f32>>,
+    pub global_progress: Arc<AtomicU32>,
+    pub global_total: Arc<AtomicU32>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub config: Arc<Mutex<JobConfig>>,
-    pub i18n: crate::ui::i18n::I18nLabels,
+    pub i18n: I18nLabels,
 }
 
 impl JobConfig {

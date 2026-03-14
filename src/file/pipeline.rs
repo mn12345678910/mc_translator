@@ -6,6 +6,7 @@ use crate::utils::text_processing::sync_formatting;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::Ordering;
 
 #[derive(Debug, Clone)]
 pub enum FileStatus {
@@ -74,6 +75,7 @@ pub async fn process_all_files(
     let mut file_tasks: Vec<FileTask> = Vec::new();
     let mut global_items: Vec<GlobalBatchItem> = Vec::new();
     let mut file_id_counter = 0;
+    let mut total_translated_items = 0;
 
     let job_config = state.config.clone();
     let status_arc = state.status.clone();
@@ -83,10 +85,10 @@ pub async fn process_all_files(
     let log = state.log.clone();
 
     let mut join_set = tokio::task::JoinSet::new();
-    let total_paths = paths.len();
+
 
     for (path, rel_path) in paths {
-        if *cancelled_arc.lock().unwrap() {
+        if cancelled_arc.load(Ordering::SeqCst) {
             break;
         }
         let state_clone = state.clone();
@@ -131,11 +133,10 @@ pub async fn process_all_files(
 
             file_id_counter += tasks.len();
             file_tasks.extend(tasks);
-            global_items.extend(items);
-
-            {
-                let mut total = state.global_total.lock().unwrap();
-                *total = total_paths as f32; // 使用先存起來的總數
+            global_items.extend(items.clone()); // Clone items to use its length
+            total_translated_items += items.len();
+            if total_translated_items > 0 {
+                state.global_total.store((total_translated_items as f32).to_bits(), Ordering::SeqCst);
             }
         }
     }
@@ -157,10 +158,11 @@ pub async fn process_all_files(
     );
 
     let mut item_offset = 0;
+    progress_arc.store(0.0f32.to_bits(), Ordering::SeqCst);
     
 
     for (idx, task) in file_tasks.iter().enumerate() {
-        if *cancelled_arc.lock().unwrap() {
+        if cancelled_arc.load(Ordering::SeqCst) {
             break;
         }
 
@@ -176,8 +178,8 @@ pub async fn process_all_files(
             // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
             let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
             if next_path != Some(&task.path) {
-                let mut g_prog = state.global_progress.lock().unwrap();
-                *g_prog += 1.0;
+                let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
+                state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
             }
 
             item_offset += file_item_count; // 雖然是 0 但保持邏輯完整
@@ -207,12 +209,12 @@ pub async fn process_all_files(
         // 更新全域進度：如果下一個任務的來源路徑不同，或是這是最後一個任務，則增加進度
         let next_path = file_tasks.get(idx + 1).map(|t| &t.path);
         if next_path != Some(&task.path) {
-            let mut g_prog = state.global_progress.lock().unwrap();
-            *g_prog += 1.0;
+            let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
+            state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
         }
     }
 
-    if !*cancelled_arc.lock().unwrap() {
+    if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
         apply_global_results(&config_locked, &file_tasks, &global_items)?;
 

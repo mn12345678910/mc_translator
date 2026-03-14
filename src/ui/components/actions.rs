@@ -1,10 +1,11 @@
 use crate::state::app_state::AppState;
+use std::sync::atomic::Ordering;
 
 impl AppState {
     pub fn render_action_buttons(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, processing: bool) {
         ui.separator();
         ui.add_space(1.0);
-        let is_paused = *self.is_paused.lock().unwrap();
+        let is_paused = self.is_paused.load(Ordering::SeqCst);
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 10.0;
             if !processing {
@@ -35,7 +36,7 @@ impl AppState {
                         .min_size([80.0, 32.0].into()).fill(bg).rounding(rounding))
                     .clicked()
                 {
-                    *self.is_paused.lock().unwrap() = true;
+                    self.is_paused.store(true, Ordering::SeqCst);
                     self.add_log(&self.i18n.log_pause_requested);
                 }
                 let (bg_stop, text_stop, rounding_stop) = self.get_instance_style_full("btn_stop");
@@ -76,9 +77,9 @@ impl AppState {
                     ui.horizontal(|ui| {
                         if ui.button(self.i18n.btn_confirm_stop.clone()).clicked() {
                             let _ = std::fs::remove_file("progress_state.json");
-                            *self.is_cancelled.lock().unwrap() = true;
-                            *self.is_paused.lock().unwrap() = false;
-                            *self.is_processing.lock().unwrap() = false;
+                            self.is_cancelled.store(true, Ordering::SeqCst);
+                            self.is_paused.store(false, Ordering::SeqCst);
+                            self.is_processing.store(false, Ordering::SeqCst);
                             self.active_job_config = None;
                             *self.status.lock().unwrap() = self.i18n.status_stopped.clone();
                             self.add_log(&self.i18n.log_stopped);

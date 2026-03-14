@@ -1,4 +1,5 @@
 use crate::state::app_state::AppState;
+use std::sync::atomic::Ordering;
 // use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
@@ -30,8 +31,8 @@ impl AppState {
                             })
                             .collect();
                         self.add_log(&format!("已選擇 {} 個檔案", self.input_paths.len()));
-                        *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
-                        *self.global_progress.lock().unwrap() = 0.0;
+                        self.global_total.store((self.input_paths.len() as f32).to_bits(), Ordering::SeqCst);
+                        self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
                     }
                 }
                 let (bg, text, rounding) = self.get_instance_style_full("btn_select_folder");
@@ -43,8 +44,8 @@ impl AppState {
                         let files = crate::file::scanner::scan_files_recursive(&path, &path);
                         self.add_log(&format!("已選擇 {} 個檔案", files.len()));
                         self.input_paths = files;
-                        *self.global_total.lock().unwrap() = self.input_paths.len() as f32;
-                        *self.global_progress.lock().unwrap() = 0.0;
+                        self.global_total.store((self.input_paths.len() as f32).to_bits(), Ordering::SeqCst);
+                        self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
                     }
                 }
 

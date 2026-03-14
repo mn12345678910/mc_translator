@@ -1,5 +1,6 @@
 use crate::state::app_state::AppState;
 use crate::state::viewer_state::ViewerUpdate;
+use std::sync::atomic::Ordering;
 
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -91,8 +92,8 @@ impl eframe::App for AppState {
             )
             .show(ctx, |ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(10.0, 4.0);
-                let processing = *self.is_processing.lock().unwrap();
-                let ui_enabled = !processing || *self.is_paused.lock().unwrap();
+                let processing = self.is_processing.load(Ordering::SeqCst);
+                let ui_enabled = !processing || self.is_paused.load(Ordering::SeqCst);
 
                 // 2. 標頭控制項 (檔案/資料夾/輸出路徑)
                 self.render_header_controls(ui, ui_enabled);
@@ -146,7 +147,7 @@ impl eframe::App for AppState {
         }
 
         // 處理中時持續重繪
-        if *self.is_processing.lock().unwrap() {
+        if self.is_processing.load(Ordering::SeqCst) {
             ctx.request_repaint();
         }
     }

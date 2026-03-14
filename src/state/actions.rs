@@ -5,6 +5,7 @@ use crate::utils;
 use eframe::egui;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::Ordering;
 
 impl AppState {
     pub fn refresh_all_dictionaries(&self) {
@@ -91,7 +92,7 @@ impl AppState {
             cfg.target_lang = self.target_lang.clone();
         }
 
-        *self.is_paused.lock().unwrap() = false;
+        self.is_paused.store(false, Ordering::SeqCst);
         self.pause_notifier.notify_waiters();
         self.add_log(&self.i18n.log_resuming);
     }
@@ -145,10 +146,10 @@ impl AppState {
             .replace("{}", if self.selected_model.is_empty() { "Google Free" } else { &self.selected_model })
         );
 
-        *self.progress.lock().unwrap() = 0.0;
-        *self.progress_total.lock().unwrap() = 0.0;
-        *self.global_progress.lock().unwrap() = 0.0;
-        *self.global_total.lock().unwrap() = 0.0;
+        self.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.progress_total.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+        self.global_total.store(0.0f32.to_bits(), Ordering::SeqCst);
         *self.status.lock().unwrap() = self.i18n.status_analyzing_files.to_string();
 
         let log = self.log.clone();
@@ -213,13 +214,13 @@ impl AppState {
             i18n: self.i18n.clone(),
         };
 
-        *processing_arc.lock().unwrap() = true;
-        *cancelled_arc.lock().unwrap() = false;
-        *paused_arc.lock().unwrap() = false;
+        processing_arc.store(true, Ordering::SeqCst);
+        cancelled_arc.store(false, Ordering::SeqCst);
+        paused_arc.store(false, Ordering::SeqCst);
 
         let i18n = self.i18n.clone();
 
-        tokio::spawn(async move {
+        self.runtime.spawn(async move {
             let res =
                 crate::file::pipeline::process_all_files(
                     paths,
@@ -231,9 +232,9 @@ impl AppState {
                 )
                     .await;
 
-            *processing_arc.lock().unwrap() = false;
+            processing_arc.store(false, Ordering::SeqCst);
             let mut s = status_arc.lock().unwrap();
-            if *cancelled_arc.lock().unwrap() {
+            if cancelled_arc.load(Ordering::SeqCst) {
                 *s = i18n.status_cancelled.to_string();
                 let mut l = log.lock().unwrap();
                 l.push(i18n.log_cancelled.to_string());
@@ -250,13 +251,13 @@ impl AppState {
     }
 
     pub fn stop_translation(&self) {
-        *self.is_cancelled.lock().unwrap() = true;
-        *self.is_paused.lock().unwrap() = false;
+        self.is_cancelled.store(true, Ordering::SeqCst);
+        self.is_paused.store(false, Ordering::SeqCst);
         self.pause_notifier.notify_waiters();
     }
 
     pub fn pause_translation(&self) {
-        *self.is_paused.lock().unwrap() = true;
+        self.is_paused.store(true, Ordering::SeqCst);
     }
 
     pub fn start_dict_watcher(&mut self) -> Result<(), Box<dyn std::error::Error>> {

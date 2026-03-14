@@ -5,6 +5,7 @@ use crate::utils::text_processing::{
     detect_loop, postprocess_text, preprocess_text, sync_formatting, validate_and_cleanup,
 };
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 /// 根據介面提供規則過濾是否需要翻譯
 pub async fn translate_json_recursive(
@@ -19,14 +20,14 @@ pub async fn translate_json_recursive(
     collect_translatable_strings(en_us, zh_tw_base, key_name, &mut pending_items, ctx);
 
     if pending_items.is_empty() {
-        *ctx.total_progress.lock().unwrap() = 0.0;
-        *ctx.progress.lock().unwrap() = 0.0;
+        ctx.total_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+        ctx.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
         return Ok(());
     }
 
     let total_to_translate = pending_items.len();
-    *ctx.total_progress.lock().unwrap() = total_to_translate as f32;
-    *ctx.progress.lock().unwrap() = 0.0;
+    ctx.total_progress.store((total_to_translate as f32).to_bits(), Ordering::SeqCst);
+    ctx.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
     *ctx.counter.lock().unwrap() = 0;
 
     let mut results = HashMap::new();
@@ -38,8 +39,8 @@ pub async fn translate_json_recursive(
     let unique_pending: Vec<String> = unique_texts.into_iter().collect();
     let total_unique_to_translate = unique_pending.len();
 
-    *ctx.total_progress.lock().unwrap() = total_unique_to_translate as f32;
-    *ctx.progress.lock().unwrap() = 0.0;
+    ctx.total_progress.store((total_unique_to_translate as f32).to_bits(), Ordering::SeqCst);
+    ctx.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
     *ctx.counter.lock().unwrap() = 0;
 
     let current_config = ctx.config.lock().unwrap().clone();
@@ -131,7 +132,7 @@ pub async fn translate_json_recursive(
                         *c += unique_resolved;
                         *c
                     };
-                    *ctx.progress.lock().unwrap() = current as f32;
+                    ctx.progress.store((current as f32).to_bits(), Ordering::SeqCst);
                     *ctx.status.lock().unwrap() = ctx.i18n.status_processing_batch
                         .replace("{}", &ctx.filename)
                         .replacen("{}", &current.to_string(), 1)
@@ -154,13 +155,13 @@ pub async fn translate_json_recursive(
                 }
             }
 
-            while *ctx.paused.lock().unwrap() {
-                if *ctx.cancelled.lock().unwrap() {
-                    break;
+            while ctx.paused.load(Ordering::SeqCst) {
+                if ctx.cancelled.load(Ordering::SeqCst) {
+                    return Ok(());
                 }
                 ctx.pause_notifier.notified().await;
             }
-            if *ctx.cancelled.lock().unwrap() {
+            if ctx.cancelled.load(Ordering::SeqCst) {
                 break;
             }
         }
@@ -250,19 +251,19 @@ pub async fn translate_json_recursive(
             *c += 1;
             *c
         };
-        *ctx.progress.lock().unwrap() = current as f32;
+        ctx.progress.store((current as f32).to_bits(), Ordering::SeqCst);
         *ctx.status.lock().unwrap() = ctx.i18n.status_processing_item
             .replace("{}", &ctx.filename)
             .replacen("{}", &current.to_string(), 1)
             .replacen("{}", &total_unique_to_translate.to_string(), 1);
 
-        while *ctx.paused.lock().unwrap() {
-            if *ctx.cancelled.lock().unwrap() {
-                break;
+        while ctx.paused.load(Ordering::SeqCst) {
+            if ctx.cancelled.load(Ordering::SeqCst) {
+                return Ok(());
             }
             ctx.pause_notifier.notified().await;
         }
-        if *ctx.cancelled.lock().unwrap() {
+        if ctx.cancelled.load(Ordering::SeqCst) {
             break;
         }
     }

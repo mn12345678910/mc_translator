@@ -21,7 +21,14 @@
     - **深色模式標籤統一**：開發者模式與全視窗標籤在深色模式下預設連動琥珀色 (`dark_text`)，達成視覺絕對統一。
     - **子視窗樣式注入**：建議詞管理器等 Viewport 採用全域樣式注入機制，確保標題列圓角、按鈕圓角及內部彈出對話框 (Window) 與主視窗調色盤同步，徹底解決硬編碼 (NavajoWhite) 殘留問題。
   - **進度條自定義**：支援分別調整「目前檔案」與「總進度條」的色調與文字顏色同步。
-  - **國際化架構 (i18n)**：全系統 UI 標籤、狀態與執行日誌全面國際化。標籤定義於 `src/ui/i18n.rs`，透過 `AppState.i18n` (及其衍生的 `JobSharedState.i18n` 與 `TranslationContext.i18n`) 全域傳遞。
+  - **進度與狀態原子化 (Atomic Refactor)**:
+    - **原理**: 為了消除鎖競爭 (Lock Contention)，將所有頻繁變動的旗標 (`is_processing`, `is_paused`, `is_cancelled`) 與進度值 (`progress`, `global_progress`) 轉向原子類型 (`AtomicBool`, `AtomicU32`)。
+    - **規範**: 讀寫這些欄位應使用 `.load(Ordering::SeqCst)` 與 `.store(...)`。對於 `f32` 進度，使用位元轉換 (`to_bits`/`from_bits`) 儲存於 `AtomicU32`。
+    - ** runtime 呼叫**: 從 UI 點擊（非同步上下文外）觸發的任務必須使用 `self.runtime.spawn` 而非 `tokio::spawn`，以確保擁有有效的 Reactor。
+  - **國際化架構 (i18n JSON)**：
+    - **規範**: UI 標籤不再硬編碼。支援從 `langs/{lang}.json` 動態載入。
+    - **模板生成**: 系統啟動時若偵測不到 JSON，會自動將內部預設值導出為模板。
+    - **引用途徑**: 標籤定義於 `I18nLabels` 結構，透過 `AppState.i18n` 全域傳遞。
   - **警告清理規範**: 專案維持 `cargo check --all-targets` 零警告標準，對於未使用的舊邏輯 (如舊版 Google Free 接口) 應果斷移除而非註解。
     - **圓角規範**: 全域按鈕統一套用 **可調圓角** (預設 4.0/8.0)。唯一例外為「檔案/資料夾」選擇按鈕，維持 0.0 圓角以提升辨識度。
     - **進度條動畫**: 運行中具備脈衝 (Pulse) 動畫，頻率可自定義。
@@ -54,7 +61,7 @@
 >    - **繁體中文 Commit**：所有 Commit 紀錄必須使用**繁體中文**撰寫，以維護開發歷程對使用者的直覺性與可讀性。
 >    - **日誌倒序**：`MAINTENANCE_LOG.md` 與其他歷史紀錄文件必須遵循「**最新紀錄置於最上方**」的規則，確保開發者能第一時間查閱最新變動。
 > 5. **執行緒安全**：
->    - 使用 `tokio::sync::mpsc` 處理主子視窗通訊，並透過 `Arc<Mutex<T>>` / `Atomic` 確保多執行緒下的資料一致性。
+>    - 使用 `tokio::sync::mpsc` 處理主子視窗通訊，並透過 `Atomic` 類型處理高頻狀態（進度、旗標），僅對複雜容器使用 `Arc<Mutex<T>>`。
 
 ## 系統快速索引 (Quick Lookup)
 - **[核心架構與流程](docs/architecture/overview.md)**

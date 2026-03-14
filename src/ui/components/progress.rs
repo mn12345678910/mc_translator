@@ -1,4 +1,5 @@
 use crate::state::app_state::AppState;
+use std::sync::atomic::Ordering;
 // use crate::ui::constants::{LABEL_COLOR_DARK, LABEL_COLOR_LIGHT};
 
 impl AppState {
@@ -32,10 +33,10 @@ impl AppState {
         // 如果不在處理中，清空進度顯示 (除非是在暫停中)
         let (prog, total, g_prog, g_total) = {
             (
-                *self.progress.lock().unwrap(),
-                *self.progress_total.lock().unwrap(),
-                *self.global_progress.lock().unwrap(),
-                *self.global_total.lock().unwrap(),
+                f32::from_bits(self.progress.load(Ordering::SeqCst)),
+                f32::from_bits(self.progress_total.load(Ordering::SeqCst)),
+                f32::from_bits(self.global_progress.load(Ordering::SeqCst)),
+                f32::from_bits(self.global_total.load(Ordering::SeqCst)),
             )
         };
 
