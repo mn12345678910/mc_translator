@@ -276,12 +276,12 @@ impl Default for AppConfig {
             enable_llm_log: false,
             main_x: 50.0,
             main_y: 50.0,
-            main_width: 750.0,
-            main_height: 550.0,
+            main_width: 800.0,
+            main_height: 600.0,
             viewer_x: 100.0,
             viewer_y: 100.0,
-            viewer_width: 750.0,
-            viewer_height: 500.0,
+            viewer_width: 800.0,
+            viewer_height: 600.0,
         }
     }
 }
