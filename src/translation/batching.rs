@@ -183,9 +183,6 @@ pub async fn run_translation_batch(
             }
             Err(e) => {
                 let err_msg = e.to_string();
-                if err_msg.starts_with("OLLAMA_TIMEOUT:") {
-                    return Err(e);
-                }
                 crate::utils::add_log(
                     &log,
                     &i18n.log_batch_failed_retry
