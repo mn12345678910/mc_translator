@@ -4,9 +4,9 @@
 > **AI 接手與未來開發指引 (Handover & Future Roadmap)**  
 > 致下一位開發 AI：以下是目前核心邏輯與架構規範：
 > 1. **核心譯文匹配與術語同步**：
->    - **翻譯匹配順序**：官方建議詞 (Official) > 翻譯記憶體 (User) > LLM 翻譯。
->    - **規範化辭典**：系統統一使用 `dicts/user.json` 與 `dicts/official.json`。
->    - **遷移邏輯 (Migration Mode)**：對「官方建議詞」進行任何編輯或取代操作後，該條目必須「移入」使用者字典 (`user.json`) 並從官方字典 (`official.json`) 中移除。
+>    - **無本地點對點預填替換**：為保證翻譯語境完整性，所有條目 **100% 遞交給 LLM**（除了既存翻譯不等於原文的增量條目會跳過）。
+>    - **字典與術語連動 (Glossary)**：官方與使用者新增的建議詞 (`dicts/user.json`) 僅純粹作為 **Glossary (術語提示)** 合併提取。隨 Request 一併 **餵給 LLM 作為指導參數**，而非替代原文。
+>    - **既存比對 (Incremental)**：巡檢核心只在 `existing != Source`（既存比對不等於原文）時，才跳過該單一條目進行增量，維持最大彈性。
 > 2. **狀態管理與併發規範 (Pipeline & Concurrency)**：
 >    - **原子化狀態**: 高頻旗標與進度值均使用原子類型 (`AtomicBool`, `AtomicU32`)。進度值透過位元轉換儲存。
 >    - **I/O 隔離**: 所有涉及實體磁碟、JAR 重構等同步 I/O 操作**必須**包裹於 `tokio::task::spawn_blocking` 中，嚴禁直接在 async 循環內呼叫，以防止 UI 凍結。

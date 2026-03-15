@@ -182,6 +182,8 @@ pub async fn process_all_files(
     if unique_files_count > 0 {
         state.global_total.store((unique_files_count as f32).to_bits(), Ordering::SeqCst);
     }
+    // 定錨全域條目總數
+    state.progress_total.store((global_items.len() as f32).to_bits(), Ordering::SeqCst);
     // ----------------------------
 
     if global_items.is_empty() {
@@ -198,6 +200,7 @@ pub async fn process_all_files(
     // --- 階段三：窗口式跨檔案翻譯迴圈 ---
     let mut task_ptr = 0;
     let mut item_ptr = 0;
+    let mut global_items_offset = 0; // 新增：全域累加 Offset
 
     while task_ptr < file_tasks.len() {
         if cancelled_arc.load(Ordering::SeqCst) {
@@ -222,6 +225,7 @@ pub async fn process_all_files(
         if items_in_source.is_empty() {
             let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
             state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
+            global_items_offset += items_in_source.len();
             continue;
         }
 
@@ -241,7 +245,6 @@ pub async fn process_all_files(
             job_config.clone(),
             status_arc.clone(),
             progress_arc.clone(),
-            state.progress_total.clone(),
             state.current_batch.clone(),
             state.total_batches.clone(),
             cancelled_arc.clone(),
@@ -251,6 +254,7 @@ pub async fn process_all_files(
             &glossary_automaton,
             &state.i18n,
             &display_name,
+            global_items_offset, // 新增：傳入全域偏移
         )
         .await?;
 
@@ -271,6 +275,9 @@ pub async fn process_all_files(
 
         let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
         state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
+
+        // 累計全域 Offset
+        global_items_offset += items_in_source.len();
     }
 
     if !cancelled_arc.load(Ordering::SeqCst) {

@@ -44,7 +44,6 @@ pub async fn translate_global_batches(
     config: Arc<Mutex<JobConfig>>,
     status: Arc<Mutex<String>>,
     progress: Arc<AtomicU32>,
-    progress_total: Arc<AtomicU32>, // 目前檔案總條目數
     current_batch: Arc<AtomicU32>,  // 當前批次
     total_batches: Arc<AtomicU32>,   // 總批次
     cancelled: Arc<AtomicBool>,
@@ -54,10 +53,8 @@ pub async fn translate_global_batches(
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
     i18n: &crate::ui::i18n::I18nLabels,
     file_name: &str,
+    global_items_offset: usize, // 新增：全域 offset
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // 首先設定目前的條目總數
-    progress_total.store((items.len() as f32).to_bits(), Ordering::SeqCst);
-
     run_translation_batch(RunBatchContext {
         items,
         config,
@@ -73,6 +70,7 @@ pub async fn translate_global_batches(
         glossary_automaton,
         i18n,
         file_name: file_name.to_string(),
+        global_items_offset, // 傳遞 offset
     })
     .await
 }
@@ -92,6 +90,7 @@ pub struct RunBatchContext<'a> {
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub i18n: &'a crate::ui::i18n::I18nLabels,
     pub file_name: String,
+    pub global_items_offset: usize, // 新增
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)
@@ -117,9 +116,6 @@ pub async fn run_translation_batch(
     if total_items == 0 {
         return Ok(());
     }
-    // 首先設定目前的條目總數
-    progress.store(0.0f32.to_bits(), Ordering::SeqCst);
-
     let mut success_count = 0;
     let mut failed_indices = Vec::new();
 
@@ -128,8 +124,12 @@ pub async fn run_translation_batch(
         .filter(|&i| items[i].translated.is_none())
         .collect();
 
+    // 初始化本批次進度（包含全域 Offset 與原本就已翻譯的項目）
+    let already_done = total_items - pending_indices.len();
+    progress.store(((ctx.global_items_offset + already_done) as f32).to_bits(), Ordering::SeqCst);
+
     if pending_indices.is_empty() {
-        progress.store((total_items as f32).to_bits(), Ordering::SeqCst);
+        progress.store(((ctx.global_items_offset + total_items) as f32).to_bits(), Ordering::SeqCst);
         return Ok(());
     }
 
@@ -176,9 +176,10 @@ pub async fn run_translation_batch(
                     }
                 }
                 success_count += batch_success;
-                // 進度應包含原本就已翻譯的項目
+                // 進度應包含原本就已翻譯的項目與 Offset
                 let already_done = total_items - pending_indices.len();
-                progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
+                let current_progress = ctx.global_items_offset + already_done + success_count;
+                progress.store((current_progress as f32).to_bits(), Ordering::SeqCst);
             }
             Err(e) => {
                 let err_msg = e.to_string();
@@ -363,15 +364,13 @@ async fn process_one_global_batch(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
     
-    // 計算目前的條目起點與終點 (Revision 15.35: 精確顯示條目進度)
-    let first_item_real_idx = ctx.batch_indices.first().map(|&i| i + 1).unwrap_or(0);
-    let last_item_real_idx = ctx.batch_indices.last().map(|&i| i + 1).unwrap_or(0);
-    let total_items = ctx.all_items.len();
-
-    *ctx.status_arc.lock().unwrap() = ctx.i18n.status_translating_batch
-        .replacen("{}", mode_str, 1)
-        .replacen("{}", &format!("{}-{}", first_item_real_idx, last_item_real_idx), 1)
-        .replacen("{}", &total_items.to_string(), 1);
+    let cfg = ctx.config.lock().unwrap().clone();
+    *ctx.status_arc.lock().unwrap() = format!(
+        "{} [{}: {}]...", 
+        mode_str, 
+        cfg.api_provider, 
+        cfg.selected_model
+    );
 
     // 1. 準備批次文本
     let mut texts_to_translate = Vec::new();

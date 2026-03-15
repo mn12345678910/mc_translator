@@ -321,40 +321,7 @@ pub fn collect_translatable_strings(
                 }
             }
 
-            // [還原] 次高優先級：官方建議詞精確匹配 (inferred)
-            if let Some(matched) = ctx.inferred.get(&s.to_lowercase()) {
-                let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
-                ctx.translations
-                    .lock()
-                    .unwrap()
-                    .entry(key.clone())
-                    .or_default()
-                    .push(matched.clone());
-                ctx.prefilled
-                    .lock()
-                    .unwrap()
-                    .push((s.clone(), key, matched.clone()));
-                return;
-            }
 
-            // [還原] 次高優先級：翻譯記憶體 (TM)
-            if let Some(cached) = ctx.translation_memory.lock().unwrap().get(s) {
-                let has_diff = false;
-                if !has_diff {
-                    let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
-                    ctx.translations
-                        .lock()
-                        .unwrap()
-                        .entry(key.clone())
-                        .or_default()
-                        .push(cached.clone());
-                    ctx.prefilled
-                        .lock()
-                        .unwrap()
-                        .push((s.clone(), key, cached.clone()));
-                    return;
-                }
-            }
 
             pending.push((
                 s.clone(),
