@@ -4,8 +4,8 @@ use mc_translator_rs;
 fn test_config_initialization() {
     // 這裡示範如何測試公開的 AppConfig
     let config = mc_translator_rs::config::AppConfig::default();
-    assert_eq!(config.main_width, 750.0);
-    assert_eq!(config.main_height, 550.0);
+    assert_eq!(config.main_width, 800.0);
+    assert_eq!(config.main_height, 600.0);
 }
 
 #[test]
