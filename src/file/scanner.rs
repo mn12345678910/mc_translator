@@ -1,5 +1,4 @@
 use std::fs;
-use std::path::Path;
 
 pub fn scan_files_recursive(
     dir: &std::path::Path,
