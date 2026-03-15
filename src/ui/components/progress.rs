@@ -14,6 +14,7 @@ impl AppState {
         ui.add_space(1.0);
 
         let current_status = self.status.lock().unwrap().clone();
+        let clean_status = current_status.trim_end_matches('.');
         let mut dots = "";
         if processing {
             let time = ctx.input(|i| i.time);
@@ -24,7 +25,7 @@ impl AppState {
                 _ => "",
             };
         }
-
+    
         // 行 1: 狀態列 (目前狀態 + 模型資訊 + 動畫)
         let engine_info = if processing {
             format!(" [{}/{}]", self.api_provider, if self.selected_model.is_empty() { "Google" } else { &self.selected_model })
@@ -32,7 +33,7 @@ impl AppState {
             String::new()
         };
         ui.label(
-            egui::RichText::new(format!("{}{}{}{}", self.i18n.label_current_status, current_status, engine_info, dots))
+            egui::RichText::new(format!("{}{}{}{}", self.i18n.label_current_status, clean_status, engine_info, dots))
                 .color(label_color)
                 .strong(),
         );
