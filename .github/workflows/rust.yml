@@ -28,12 +28,16 @@ jobs:
     - name: Build Release
       if: startsWith(github.ref, 'refs/tags/v')
       run: cargo build --release --verbose
+    - name: Copy Binary to Workspace
+      if: startsWith(github.ref, 'refs/tags/v')
+      shell: pwsh
+      run: Copy-Item -Path ../cargo-target/release/mc_translator_rs.exe -Destination ./mc_translator_rs.exe
     - name: Upload Artifact
       if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-artifact@v7
       with:
         name: mc_translator_rs-windows
-        path: ../cargo-target/release/mc_translator_rs.exe
+        path: mc_translator_rs.exe
 
   release:
     name: Create Release
