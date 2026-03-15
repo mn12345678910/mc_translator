@@ -53,6 +53,7 @@ pub async fn translate_global_batches(
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
     i18n: &crate::ui::i18n::I18nLabels,
+    file_name: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 首先設定目前的條目總數
     progress_total.store((items.len() as f32).to_bits(), Ordering::SeqCst);
@@ -71,6 +72,7 @@ pub async fn translate_global_batches(
         pause_notifier,
         glossary_automaton,
         i18n,
+        file_name: file_name.to_string(),
     })
     .await
 }
@@ -89,6 +91,7 @@ pub struct RunBatchContext<'a> {
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub i18n: &'a crate::ui::i18n::I18nLabels,
+    pub file_name: String,
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)
@@ -158,6 +161,7 @@ pub async fn run_translation_batch(
             glossary_automaton,
             is_retry: false,
             i18n,
+            file_name: &ctx.file_name,
         })
         .await;
 
@@ -179,6 +183,9 @@ pub async fn run_translation_batch(
                         .replace("{}", &(batch_idx + 1).to_string())
                         .replacen("{}", &initial_batches.len().to_string(), 1)
                         .replacen("{}", &err_msg, 1),
+                    &cfg.source_lang,
+                    &cfg.target_lang,
+                    &ctx.file_name,
                 );
                 failed_indices.extend(batch_item_indices.clone());
             }
@@ -190,6 +197,9 @@ pub async fn run_translation_batch(
         crate::utils::add_log(
             &log,
             &i18n.log_retry_start.replace("{}", &failed_indices.len().to_string()),
+            &cfg.source_lang,
+            &cfg.target_lang,
+            &ctx.file_name,
         );
 
         let retry_batch_size = (cfg.batch_size / 2).max(1);
@@ -216,6 +226,7 @@ pub async fn run_translation_batch(
                 glossary_automaton,
                 is_retry: true,
                 i18n,
+                file_name: &ctx.file_name,
             })
             .await;
 
@@ -236,6 +247,9 @@ pub async fn run_translation_batch(
             crate::utils::add_log(
                 &log,
                 &i18n.log_single_retry_start.replace("{}", &second_failed_indices.len().to_string()),
+                &cfg.source_lang,
+                &cfg.target_lang,
+                &ctx.file_name,
             );
             for &idx in &second_failed_indices {
                 if cancelled.load(Ordering::SeqCst) {
@@ -250,6 +264,7 @@ pub async fn run_translation_batch(
                 match api::translate_one(
                     &item.preprocessed,
                     &cfg_snapshot,
+                    &ctx.file_name,
                     Some(&entries),
                 )
                 .await
@@ -263,7 +278,13 @@ pub async fn run_translation_batch(
                         progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                     }
                     Err(e) => {
-                        crate::utils::add_log(&log, &i18n.log_single_final_failed.replace("{}", &e.to_string()));
+                        crate::utils::add_log(
+                            &log,
+                            &i18n.log_single_final_failed.replace("{}", &e.to_string()),
+                            &cfg.source_lang,
+                            &cfg.target_lang,
+                            &ctx.file_name,
+                        );
                     }
                 }
             }
@@ -317,6 +338,7 @@ struct BatchContext<'a> {
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     is_retry: bool,
     i18n: &'a crate::ui::i18n::I18nLabels,
+    file_name: &'a str,
 }
 
 /// 執行單一批次的 LLM 翻譯請求
@@ -358,7 +380,7 @@ async fn process_one_global_batch(
 
     // 3. 呼叫翻譯服務
     let cfg = ctx.config.lock().unwrap().clone();
-    match api::translate_batch(&tagged_texts, &cfg, Some(&entries)).await {
+    match api::translate_batch(&tagged_texts, &cfg, ctx.file_name, Some(&entries)).await {
         Ok(results_map) => {
             let mut resolved_any = false;
             // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)

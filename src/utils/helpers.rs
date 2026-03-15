@@ -24,13 +24,32 @@ pub fn extract_display_path(path: &Path) -> String {
         .to_string()
 }
 
-pub fn add_log(log_arc: &Arc<Mutex<Vec<String>>>, msg: &str) {
+pub fn add_log(
+    log_arc: &Arc<Mutex<Vec<String>>>,
+    msg: &str,
+    source_lang: &str,
+    target_lang: &str,
+    file_name: &str,
+) {
     let mut log = log_arc.lock().unwrap();
     let now = chrono::Local::now();
     let timestamp = now.format("%H:%M:%S").to_string();
+    
+    let lang_info = if source_lang.is_empty() && target_lang.is_empty() {
+        String::new()
+    } else {
+        format!("<{}->{}> ", source_lang, target_lang)
+    };
+    
+    let file_info = if file_name.is_empty() {
+        String::new()
+    } else {
+        format!("[{}] ", file_name)
+    };
+
     for line in msg.lines() {
         if !line.trim().is_empty() {
-            log.push(format!("[{}] {}", timestamp, line));
+            log.push(format!("[{}] {}{}{}", timestamp, lang_info, file_info, line));
         } else {
             log.push("".to_string());
         }

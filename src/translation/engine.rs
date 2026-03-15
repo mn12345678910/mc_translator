@@ -80,6 +80,7 @@ pub async fn translate_json_recursive(
             match api::translate_batch(
                 &preprocessed_texts,
                 &current_batch_config,
+                &ctx.filename,
                 chunk_entries.as_deref(),
             )
             .await
@@ -185,6 +186,7 @@ pub async fn translate_json_recursive(
         match api::translate_one(
             &preprocessed,
             &current_single_config,
+            &ctx.filename,
             single_entries.as_deref(),
         )
         .await

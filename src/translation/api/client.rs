@@ -73,6 +73,7 @@ pub(crate) static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
 pub async fn translate_one(
     text: &str,
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     match config.api_provider.as_str() {
@@ -80,17 +81,17 @@ pub async fn translate_one(
             if config.api_key.is_empty() {
                 translate_free_google_with_config(text, config).await
             } else {
-                translate_with_gemini(text, config, glossary).await
+                translate_with_gemini(text, config, file_name, glossary).await
             }
         }
         "OpenAI" | "DeepSeek" | "Mistral" => {
             if config.api_key.is_empty() {
                 translate_free_google_with_config(text, config).await
             } else {
-                translate_with_openai_compatible(text, config, glossary).await
+                translate_with_openai_compatible(text, config, file_name, glossary).await
             }
         }
-        "Ollama" => translate_with_ollama(text, config, glossary).await,
+        "Ollama" => translate_with_ollama(text, config, file_name, glossary).await,
         "DeepL" => translate_with_deepl(text, config).await,
         _ => translate_free_google_with_config(text, config).await,
     }
@@ -137,6 +138,7 @@ async fn call_google_api_raw(url: &str) -> Result<String, Box<dyn std::error::Er
 pub async fn translate_batch(
     texts: &[String],
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error + Send + Sync>> {
     if texts.is_empty() {
@@ -154,16 +156,16 @@ pub async fn translate_batch(
     );
 
     let result = match config.api_provider.as_str() {
-        "Gemini" => translate_with_gemini(&batch_instruction, config, glossary).await?,
+        "Gemini" => translate_with_gemini(&batch_instruction, config, file_name, glossary).await?,
         "OpenAI" | "DeepSeek" | "Mistral" => {
-            translate_with_openai_compatible(&batch_instruction, config, glossary).await?
+            translate_with_openai_compatible(&batch_instruction, config, file_name, glossary).await?
         }
         "Ollama" => {
             let ollama_user_prompt = format!(
                 "以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
                 numbered.join("\n")
             );
-            call_ollama_raw(&ollama_user_prompt, config, glossary).await?
+            call_ollama_raw(&ollama_user_prompt, config, file_name, glossary).await?
         }
         "DeepL" => {
             translate_with_deepl(&batch_instruction, config).await?
@@ -265,6 +267,7 @@ async fn translate_free_google_with_config(
 async fn translate_with_gemini(
     text: &str,
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!(
@@ -304,6 +307,7 @@ async fn translate_with_gemini(
                 &format!("API_ERROR: {}", err_text),
                 config,
                 text.len(),
+                file_name,
             );
         }
         return Err(format!("API_ERROR:Gemini API Error: {}", err_text).into());
@@ -321,6 +325,7 @@ async fn translate_with_gemini(
             translated,
             config,
             text.len(),
+            file_name,
         );
     }
 
@@ -331,6 +336,7 @@ async fn translate_with_gemini(
 pub async fn translate_with_ollama(
     text: &str,
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let enhanced_prompt = if text.len() < 500 {
@@ -339,7 +345,7 @@ pub async fn translate_with_ollama(
         text.to_string()
     };
 
-    let response_str = call_ollama_raw(&enhanced_prompt, config, glossary).await?;
+    let response_str = call_ollama_raw(&enhanced_prompt, config, file_name, glossary).await?;
     let response_trimmed = response_str.trim();
 
     let translated = if let Some(json_str) = extract_json_from_text(response_trimmed) {
@@ -425,6 +431,7 @@ lazy_static::lazy_static! {
 async fn call_ollama_raw(
     text: &str,
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = format!("{}/api/generate", config.ollama_url.trim_end_matches('/'));
@@ -482,6 +489,7 @@ async fn call_ollama_raw(
             &response,
             config,
             text.len(),
+            file_name,
         );
     }
     Ok(response)
@@ -490,6 +498,7 @@ async fn call_ollama_raw(
 async fn translate_with_openai_compatible(
     text: &str,
     config: &JobConfig,
+    file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let url = match config.api_provider.as_str() {
@@ -534,6 +543,7 @@ async fn translate_with_openai_compatible(
             translated,
             config,
             text.len(),
+            file_name,
         );
     }
     Ok(translated.trim_matches('"').to_string())
@@ -571,7 +581,7 @@ async fn translate_with_deepl(
     Ok(translated.to_string())
 }
 
-pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, char_count: usize) {
+pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, char_count: usize, file_name: &str) {
     use std::io::Write;
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     if let Ok(mut file) = std::fs::OpenOptions::new()
@@ -580,9 +590,12 @@ pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, c
         .open("llm_communication.log")
     {
         let settings = format!(
-            "[設定]: {} / {} / 批次量: {} / 文字數量: {} / 逾時: {}s",
+            "[設定]: {} / {} / <{}->{}> / 檔案: {} / 批次量: {} / 文字數量: {} / 逾時: {}s",
             config.api_provider,
             config.selected_model,
+            config.source_lang,
+            config.target_lang,
+            if file_name.is_empty() { "無" } else { file_name },
             config.batch_size,
             char_count,
             config.ollama_timeout

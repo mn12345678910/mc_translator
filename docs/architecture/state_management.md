@@ -25,7 +25,8 @@ stateDiagram-v2
 ```
 
 ## 3. 跨執行緒同步機制
-- **MPSC Channel**: 主視窗透過 `tokio::sync::mpsc` 接收來自背景任務的進度更新與日誌。
+- **Atomic & Mutex**: UI 層直接讀取 `AppState` 中的 `Arc<Atomic*>` (進度、狀態) 與 `Arc<Mutex>` (日誌)，免除 Channel 通訊開銷。
+- **MPSC Channel**: 用於 Viewport (如建議詞管理器) 的主題、字體大小及設定持久化指令同步。
 - **Atomic Flags**: 使用 `AtomicBool` 進行即時的暫停與取消信號傳遞，確保無鎖高性能通訊。
 
 ## 4. 視窗與設定持久化 (Persistence)
@@ -33,7 +34,7 @@ stateDiagram-v2
     - 主視窗與建議詞管理器視窗在每幀 `update()` 期間會自動同步至 `AppState`。
     - **同步閾值 (Drift Protection)**：為了防止 Windows 系統在處理邊框、陰影或高 DPI 時產生的座標抖動，系統設有 `5.0` 像素的同步閾值。只有當座標位移超過此值時才會更新狀態，有效解決了視窗位置「自動飄移」的問題。
     - **內外尺寸對齊**：主視窗持久化已對齊為儲存「內容區域尺寸 (Inner Size)」，確保載入與還原時的幾何一致性。
-- **即時存檔 (Immediate Save)**：當使用者在 UI 上更動任何設定項（如主題、API 服務商、優先級、`user_prompt` 或 `system_prompt`）或視窗幾何變更時，會立即觸發 `save_config()` 將 `AppState` 狀態寫入 `config.cfg` 與 `.env`。
+- **即時存檔 (Immediate Save)**：當使用者在 UI 上更動任何設定（如主題、API 服務商、優先級、`user_prompt` 與 `system_prompt`）或視窗幾何變更時，會立即觸發 `trigger_save()` 通過非同步 MPSC Channel (`save_tx`) 寫入設定檔，確保不卡住框架渲染。
 - **配置優化 (Config Optimization)**：`config.cfg` 採用繁體中文鍵名並按邏輯分組。核心提示詞欄位更名為 `user_prompt` 與 `system_prompt` 以符合 LLM 標準。
 - **安全隔離 (Security)**：`api_key` 使用 `#[serde(skip)]` 標記，僅在 `.env` 中透過 `save()` 顯式存檔，嚴禁存入公眾可讀的 `config.cfg`。
 - **狀態例外 (Persistence Exclusion)**：為了確保介面精簡，建議詞管理器的「開啟狀態」不予記憶，每次啟動時強制預設為關閉。

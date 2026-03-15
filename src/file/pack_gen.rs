@@ -161,7 +161,7 @@ pub async fn output_resource_pack(
                 return Ok(());
             }
 
-            crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...");
+            crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...", &config.source_lang, &config.target_lang, "");
 
             let pack_mcmeta = serde_json::json!({
                 "pack": {

@@ -43,11 +43,11 @@ sequenceDiagram
     
     U->>UI: 點擊 "開始翻譯"
     UI->>S: 更新狀態為 Running
-    S->>F: 啟動並行掃描 (JoinSet)
-    F-->>S: 回報發現的檔案與字串
-    S->>T: 發送翻譯請求 (Batch)
-    T-->>S: 回傳翻譯結果
-    S->>UI: 更新進度條與日誌
-    S->>F: 寫入目標檔案
+    S->>F: 啟動循序掃描與條目收集
+    F-->>S: 彙整待翻譯批次項目
+    S->>T: 窗型跨檔案批次翻譯 (Adaptive Batching)
+    T-->>S: 直接寫入 Atomic 進度與 Mutex 日誌
+    S->>UI: 更新進度條與日誌 (Polling 讀取)
+    S->>F: 內存串流打包或結果寫入
     F-->>U: 完成
 ```

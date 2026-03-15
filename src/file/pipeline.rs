@@ -147,7 +147,29 @@ pub async fn process_all_files(
         p.clear();
     }
 
-    file_tasks.sort_by(|a, b| a.path.cmp(&b.path));
+    let get_group_key = |path: &std::path::Path| -> std::path::PathBuf {
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        if ext.eq_ignore_ascii_case("jar") {
+            path.to_path_buf()
+        } else {
+            path.parent().unwrap_or(path).to_path_buf()
+        }
+    };
+
+    file_tasks.sort_by(|a, b| get_group_key(&a.path).cmp(&get_group_key(&b.path)));
+    
+    // [Bug Fix] 重新規整 global_items，使其與已排序的 file_tasks 順序一致，防範切片失配
+    let mut task_item_groups: std::collections::HashMap<usize, Vec<GlobalBatchItem>> = std::collections::HashMap::new();
+    for item in global_items {
+        task_item_groups.entry(item.file_id).or_default().push(item);
+    }
+    let mut reordered_items = Vec::new();
+    for task in &file_tasks {
+        if let Some(mut items) = task_item_groups.remove(&task.file_id) {
+            reordered_items.append(&mut items);
+        }
+    }
+    global_items = reordered_items;
     
     // 更新全域進度總量 (以此來源數量為準)
     let unique_files_count = {
@@ -183,8 +205,9 @@ pub async fn process_all_files(
         }
 
         let source_path = file_tasks[task_ptr].path.clone();
+        let group_key = get_group_key(&source_path);
         let mut group_tasks = Vec::new();
-        while task_ptr < file_tasks.len() && file_tasks[task_ptr].path == source_path {
+        while task_ptr < file_tasks.len() && get_group_key(&file_tasks[task_ptr].path) == group_key {
             group_tasks.push(&file_tasks[task_ptr]);
             task_ptr += 1;
         }
@@ -202,8 +225,15 @@ pub async fn process_all_files(
             continue;
         }
 
+        let display_name = if source_path.extension().and_then(|e| e.to_str()).unwrap_or("").eq_ignore_ascii_case("jar") {
+            source_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+        } else {
+            let parent = source_path.parent().unwrap_or(&source_path);
+            format!("{}/", parent.file_name().unwrap_or_default().to_string_lossy())
+        };
+
         if let Ok(mut p) = state.current_processing_path.lock() {
-            *p = source_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            *p = display_name.clone();
         }
 
         translate_global_batches(
@@ -220,6 +250,7 @@ pub async fn process_all_files(
             state.pause_notifier.clone(),
             &glossary_automaton,
             &state.i18n,
+            &display_name,
         )
         .await?;
 
