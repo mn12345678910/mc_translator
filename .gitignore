@@ -2,3 +2,7 @@
 .env
 config.cfg
 *.rs.bk
+
+# 快取與使用者設定 (Cache and user dicts)
+dicts/inferred_cache.json
+dicts/user.json
