@@ -167,7 +167,15 @@ pub async fn run_translation_batch(
 
         match batch_result {
             Ok(_) => {
-                success_count += batch_item_indices.len();
+                let mut batch_success = 0;
+                for &idx in batch_item_indices {
+                    if items[idx].translated.is_none() {
+                        failed_indices.push(idx);
+                    } else {
+                        batch_success += 1;
+                    }
+                }
+                success_count += batch_success;
                 // 進度應包含原本就已翻譯的項目
                 let already_done = total_items - pending_indices.len();
                 progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
@@ -232,7 +240,15 @@ pub async fn run_translation_batch(
 
             match res {
                 Ok(_) => {
-                    success_count += batch.len();
+                    let mut batch_success = 0;
+                    for &idx in batch {
+                        if items[idx].translated.is_none() {
+                            second_failed_indices.push(idx);
+                        } else {
+                            batch_success += 1;
+                        }
+                    }
+                    success_count += batch_success;
                     let already_done = total_items - pending_indices.len();
                     progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                 }
