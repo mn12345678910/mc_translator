@@ -92,8 +92,14 @@ pub fn should_skip_value(val: &str) -> bool {
         return true;
     }
 
-    // snake_case ID 或技術性識別符 (無空格，全小寫字母、數字、底線、連字號等)
+    // SHA-256 雜湊碼過濾 (64 位元，無空格，全由小寫及數字組成)
+    if s.len() == 64 && !contains_space && bytes.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit()) {
+        return true;
+    }
+
+    // snake_case ID (無空格，包含底線，組成字符均為小寫、數字、底線、斜槓、點或連字號)
     if !contains_space
+        && s.contains('_')
         && bytes.iter().all(|&c| {
             c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-'
         })
