@@ -231,11 +231,17 @@ impl AppState {
                     if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
                     else { if is_dark { self.dark_label = color; } else { self.light_label = color; } }
                 } else if t == self.i18n.cat_all_inputs {
-                    if is_bg { if is_dark { self.dark_input_bg = color; } else { self.light_input_bg = color; } } 
-                    else {
-                        // 針對所有輸入框實施覆寫 (Revision 15.32 補全)
-                        for id in &["input_dict_search", "dict_new_key", "dict_new_value", "dict_replace_target", "dict_replace_new", "input_api_key", "input_ollama_url"] {
-                            self.instance_overrides.entry(id.to_string()).or_default().text = Some(color);
+                    let ids = [
+                        "input_dict_search", "dict_new_key", "dict_new_value", 
+                        "dict_replace_target", "dict_replace_new", "input_api_key", 
+                        "input_ollama_url", "input_user_prompt", "input_system_prompt"
+                    ];
+                    for id in &ids {
+                        let entry = self.instance_overrides.entry(id.to_string()).or_default();
+                        if is_bg {
+                            entry.bg = Some(color);
+                        } else {
+                            entry.text = Some(color);
                         }
                     }
                 } else if t == self.i18n.cat_all_logs {
@@ -254,15 +260,17 @@ impl AppState {
                     else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
                 } else if t == self.i18n.cat_all_progress {
                     if is_bg { 
-                        if is_dark { self.dark_bg = color; } else { self.light_bg = color; } 
+                        // 修正：進度條背景不再動全域 dark_bg/light_bg，改用實體覆寫
+                        let p_current = self.instance_overrides.entry("progress_current".to_string()).or_default();
+                        p_current.bg = Some(color);
+                        let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
+                        p_total.bg = Some(color);
                     } else {
                         // 同步至進度條文字顏色 (透過覆寫確保生效)
                         let p_current = self.instance_overrides.entry("progress_current".to_string()).or_default();
                         p_current.text = Some(color);
                         let p_total = self.instance_overrides.entry("progress_total".to_string()).or_default();
                         p_total.text = Some(color);
-                        // 同時更新全域標籤顏色以供回退使用
-                        if is_dark { self.dark_label = color; } else { self.light_label = color; }
                     }
                 } else if t == self.i18n.cat_all_bg {
                     if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
@@ -359,7 +367,7 @@ impl AppState {
             n == self.i18n.spec_btn_nav_palette || n == self.i18n.spec_btn_nav_theme || 
             n == self.i18n.spec_btn_nav_dev => (true, true, true),
             
-            n if n == self.i18n.cat_all_labels || n == self.i18n.spec_label_output => (true, true, false),
+            n if n == self.i18n.cat_all_labels || n == self.i18n.spec_label_output => (false, true, false),
             
             n if n == self.i18n.cat_all_progress || n == self.i18n.spec_progress_current || n == self.i18n.spec_progress_total => (true, true, true),
             

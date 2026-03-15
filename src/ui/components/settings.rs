@@ -23,7 +23,6 @@ impl AppState {
                         } else {
                             LABEL_COLOR_DARK
                         };
-                        let (_, input_text_color) = self.get_instance_style("cat_all_inputs");
 
                         // --- 服務商與恢復預設 (鎖定) ---
                         ui.horizontal(|ui| {
@@ -129,17 +128,21 @@ impl AppState {
                             ui.horizontal(|ui| {
                                 ui.label(egui::RichText::new(format!("{}:", self.i18n.label_ollama_url)).color(label_color).strong());
                                 ui.add_enabled_ui(ui_enabled, |ui| {
-                                    if ui
-                                        .add(
-                                            egui::TextEdit::singleline(&mut self.ollama_url)
-                                                .text_color(input_text_color)
-                                                .desired_width(ui.available_width()),
-                                        )
-                                        .changed()
-                                    {
-                                        self.save_config();
-                                        self.refresh_models();
-                                    }
+                                    let (input_bg, input_text) = self.get_instance_style("input_ollama_url");
+                                    ui.scope(|ui| {
+                                        ui.visuals_mut().extreme_bg_color = input_bg;
+                                        if ui
+                                            .add(
+                                                egui::TextEdit::singleline(&mut self.ollama_url)
+                                                    .text_color(input_text)
+                                                    .desired_width(ui.available_width()),
+                                            )
+                                            .changed()
+                                        {
+                                            self.save_config();
+                                            self.refresh_models();
+                                        }
+                                    });
                                 });
                             });
                         } else {
@@ -148,17 +151,21 @@ impl AppState {
                                     egui::RichText::new(self.i18n.label_api_key.clone()).color(label_color).strong(),
                                 );
                                 ui.add_enabled_ui(ui_enabled, |ui| {
-                                    let resp = ui.add(
-                                        egui::TextEdit::singleline(&mut self.api_key)
-                                            .password(true)
-                                            .text_color(input_text_color)
-                                            .desired_width(ui.available_width() - 80.0),
-                                    );
+                                    let (input_bg, input_text) = self.get_instance_style("input_api_key");
+                                    ui.scope(|ui| {
+                                        ui.visuals_mut().extreme_bg_color = input_bg;
+                                        let resp = ui.add(
+                                            egui::TextEdit::singleline(&mut self.api_key)
+                                                .password(true)
+                                                .text_color(input_text)
+                                                .desired_width(ui.available_width() - 80.0),
+                                        );
 
-                                    if resp.lost_focus() || resp.changed() {
-                                        self.save_config();
-                                        self.refresh_models();
-                                    }
+                                        if resp.lost_focus() || resp.changed() {
+                                            self.save_config();
+                                            self.refresh_models();
+                                        }
+                                    });
                                 });
                             });
                         }
@@ -337,14 +344,13 @@ impl AppState {
                                     .strong(),
                             );
                             ui.add_enabled_ui(ui_enabled, |ui| {
-                                if self.theme == "light" {
-                                    ui.visuals_mut().extreme_bg_color = egui::Color32::from_rgb(0xE3, 0xC3, 0x95);
-                                }
+                                let (prompt_bg, input_text) = self.get_instance_style("input_user_prompt");
+                                ui.visuals_mut().extreme_bg_color = prompt_bg;
 
                                 if ui
                                     .add(
                                         egui::TextEdit::multiline(&mut self.user_prompt)
-                                            .text_color(input_text_color)
+                                            .text_color(input_text)
                                             .desired_rows(2)
                                             .desired_width(ui.available_width()),
                                     )
@@ -409,33 +415,11 @@ impl AppState {
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
                     if ui.button(self.i18n.btn_confirm_restore.clone()).clicked() {
-                        let def = crate::config::settings::AppConfig::default();
+                        // 僅重置外觀相關設定 (從調色盤觸發)
                         let style_def = crate::config::settings::StyleConfig::default();
                         
-                        self.api_provider = def.api_provider;
-                        self.api_key = def.api_key;
-                        self.selected_model = def.model;
-                        self.ollama_url = def.ollama_url;
-                        self.batch_size = def.batch_size;
-                        self.batch_max_chars = def.batch_max_chars;
-                        self.ollama_timeout = def.ollama_timeout;
-                        self.user_prompt = def.user_prompt;
-                        self.system_prompt = def.system_prompt;
-                        self.output_dir = def.output_dir;
                         self.theme = style_def.theme;
                         self.font_size = style_def.font_size;
-                        self.pack_format = def.pack_format;
-                        self.skip_json = def.skip_json;
-                        self.skip_js = def.skip_js;
-                        self.skip_jar = def.skip_jar;
-                        self.skip_book = def.skip_book;
-                        self.enable_llm_log = def.enable_llm_log;
-                        self.enable_custom_fps = def.enable_custom_fps;
-                        self.custom_fps = def.custom_fps;
-                        self.show_api_settings = def.show_api_settings;
-                        self.show_developer_mode = def.show_developer_mode;
-                        // 不再從 Config 恢復 show_memory_viewer，預設關閉
-                        self.show_memory_viewer = false;
                         
                         // 外觀相關
                         self.dark_bg = style_def.dark_bg;
@@ -462,12 +446,7 @@ impl AppState {
                         self.progress_pulse_speed = style_def.progress_pulse_speed;
                         self.instance_overrides = style_def.instance_overrides.clone();
                         
-                        {
-                            let mut priority = self.glossary_priority.lock().unwrap();
-                            *priority = def.glossary_priority;
-                        }
                         self.trigger_save();
-                        self.refresh_models();
                         self.show_restore_default_confirm = false;
                     }
                     if ui.button(self.i18n.btn_cancel.clone()).clicked() {

@@ -13,26 +13,26 @@ impl AppState {
         ui.separator();
         ui.add_space(1.0);
 
-        let mut current_status = self.status.lock().unwrap().clone();
+        let current_status = self.status.lock().unwrap().clone();
+        let mut dots = "";
         if processing {
             let time = ctx.input(|i| i.time);
-            let dots = match (time * 2.0) as i32 % 4 {
+            dots = match (time * 2.0) as i32 % 4 {
                 1 => ".",
                 2 => "..",
                 3 => "...",
                 _ => "",
             };
-            current_status.push_str(dots);
         }
 
-        // 行 1: 狀態列 (目前狀態 + 模型資訊)
+        // 行 1: 狀態列 (目前狀態 + 模型資訊 + 動畫)
         let engine_info = if processing {
             format!(" [{}/{}]", self.api_provider, if self.selected_model.is_empty() { "Google" } else { &self.selected_model })
         } else {
             String::new()
         };
         ui.label(
-            egui::RichText::new(format!("{}{}{}", self.i18n.label_current_status, current_status, engine_info))
+            egui::RichText::new(format!("{}{}{}{}", self.i18n.label_current_status, current_status, engine_info, dots))
                 .color(label_color)
                 .strong(),
         );

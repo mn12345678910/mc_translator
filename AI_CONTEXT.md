@@ -23,6 +23,10 @@
 >    - **同步提交**：階段性修改後執行 `git add .`。
 >    - **繁體中文 Commit**：所有 Commit 紀錄必須使用**繁體中文**。
 >    - **日誌倒序**：`MAINTENANCE_LOG.md` 等文件遵循「最新紀錄置於最上方」。
+6. **UI 樣式管理與隔離規範 (Style Isolation & Theme)**：
+   - **避免全域洩漏**：調整類別顏色（例如：全部輸入框背景）時，**嚴禁**直接修改與 egui 共享的全域 `Visuals` 變量（如 `v.extreme_bg_color` 或 `v.selection.bg_fill`），以防波及 `Slider` 或 `ComboBox` 等原生元件。
+   - **純覆寫機制 (Instance Overrides)**：批次更新類別顏色應轉向對清單內的所有 IDs 疊加 `instance_overrides`。
+   - **局部畫布壓印**：渲染端查詢特定 ID 樣式後，使用 `ui.visuals_mut().extreme_bg_color = override_bg` 等區域內壓印或 `Frame/scope` 加掛方式渲染，達致 100% 視覺乾淨隔離。
 
 ## 系統快速索引 (Quick Lookup)
 - **[核心架構與流程](docs/architecture/overview.md)**

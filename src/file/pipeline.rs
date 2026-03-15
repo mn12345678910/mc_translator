@@ -96,6 +96,11 @@ pub async fn process_all_files(
     let mut global_items = Vec::new();
     let mut current_file_id = 0;
 
+    let (skip_json, skip_js, skip_jar) = {
+        let cfg = job_config.lock().unwrap();
+        (cfg.skip_json, cfg.skip_js, cfg.skip_jar)
+    };
+
     for (path, rel_path) in paths {
         if cancelled_arc.load(Ordering::SeqCst) {
             return Ok(());
@@ -104,6 +109,7 @@ pub async fn process_all_files(
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         match ext {
             "json" => {
+                if skip_json { continue; }
                 if let Ok(Some((task, items))) = collect_json_task(current_file_id, &path, rel_path, &state).await {
                     file_tasks.push(task);
                     global_items.extend(items);
@@ -111,6 +117,7 @@ pub async fn process_all_files(
                 }
             }
             "js" => {
+                if skip_js { continue; }
                 if let Ok(Some((task, items))) = collect_js_task(current_file_id, &path, rel_path, &state).await {
                     file_tasks.push(task);
                     global_items.extend(items);
@@ -118,6 +125,7 @@ pub async fn process_all_files(
                 }
             }
             "jar" => {
+                if skip_jar { continue; }
                 if let Ok((tasks, items)) = collect_jar_tasks(current_file_id, &path, &state).await {
                     let tasks: Vec<FileTask> = tasks;
                     let items: Vec<GlobalBatchItem> = items;
