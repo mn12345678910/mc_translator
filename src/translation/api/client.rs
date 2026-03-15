@@ -289,31 +289,47 @@ async fn translate_with_gemini(
         }
     });
 
-    let resp: reqwest::Response = CLIENT
-        .post(url)
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await?;
+    let full_future = async {
+        let resp = CLIENT
+            .post(url)
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await?;
 
-    if !resp.status().is_success() {
-        let err_text = resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "Unknown error".to_string());
-        if config.enable_llm_log {
-            log_llm_communication(
-                &format!("(System): {}\n(User): {}", sys_prompt, text),
-                &format!("API_ERROR: {}", err_text),
-                config,
-                text.len(),
-                file_name,
+        if !resp.status().is_success() {
+            let err_text = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
+            if config.enable_llm_log {
+                log_llm_communication(
+                    &format!("(System): {}\n(User): {}", sys_prompt, text),
+                    &format!("API_ERROR: {}", err_text),
+                    config,
+                    text.len(),
+                    file_name,
+                );
+            }
+            return Err::<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>(
+                format!("API_ERROR:Gemini API Error: {}", err_text).into(),
             );
         }
-        return Err(format!("API_ERROR:Gemini API Error: {}", err_text).into());
-    }
 
-    let json: serde_json::Value = resp.json().await?;
+        Ok(resp.json::<serde_json::Value>().await?)
+    };
+
+    let json: serde_json::Value = match tokio::time::timeout(
+        std::time::Duration::from_secs(config.ollama_timeout),
+        full_future,
+    )
+    .await
+    {
+        Ok(Ok(v)) => v,
+        Ok(Err(e)) => return Err(e),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+    };
+
     let translated = json["candidates"][0]["content"]["parts"][0]["text"]
         .as_str()
         .ok_or_else(|| format!("解析 Gemini 回傳失敗: {:?}", json))?
