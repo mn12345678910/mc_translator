@@ -563,7 +563,21 @@ impl AppState {
                 .hscroll(false) // 禁用水平捲動防止無限放大 (Revision 14.2)
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
-                    ui.visuals_mut().faint_bg_color = area_bg;
+                    // 創造條紋對比色：深色加亮、淺色變暗 (以防與 area_bg 融為一體)
+                    let stripe_bg = if is_dark {
+                        egui::Color32::from_rgb(
+                            area_bg.r().saturating_add(10),
+                            area_bg.g().saturating_add(10),
+                            area_bg.b().saturating_add(15),
+                        )
+                    } else {
+                        egui::Color32::from_rgb(
+                            area_bg.r().saturating_sub(10),
+                            area_bg.g().saturating_sub(10),
+                            area_bg.b().saturating_sub(12),
+                        )
+                    };
+                    ui.visuals_mut().faint_bg_color = stripe_bg;
                     egui::Frame::none().fill(area_bg).show(ui, |ui| {
                         // 計算欄位寬度，扣除間距與操作欄固定寬度，並實施 150px 最小寬度保護
                     let spacing = 12.0;
