@@ -73,8 +73,16 @@ pub fn should_skip_value(val: &str) -> bool {
         return true;
     }
 
-    // 命名空間 ID，例如 "tconstruct:broad_axe"
+    // 檔名、副檔名或路徑 (無空格，以特定後綴結尾)
     let contains_space = s.contains(' ');
+    if !contains_space && (
+        s.ends_with(".jar") || s.ends_with(".zip") || s.ends_with(".json") ||
+        s.ends_with(".js") || s.ends_with(".png") || s.ends_with(".jpg")
+    ) {
+        return true;
+    }
+
+    // 命名空間 ID，例如 "tconstruct:broad_axe"
     if !contains_space && s.contains(':') {
         return true;
     }
@@ -84,11 +92,10 @@ pub fn should_skip_value(val: &str) -> bool {
         return true;
     }
 
-    // snake_case ID
+    // snake_case ID 或技術性識別符 (無空格，全小寫字母、數字、底線、連字號等)
     if !contains_space
-        && s.contains('_')
         && bytes.iter().all(|&c| {
-            c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.'
+            c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-'
         })
     {
         return true;
