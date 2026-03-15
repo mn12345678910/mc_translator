@@ -109,3 +109,45 @@ pub fn decrypt_string(encoded_data: &str) -> Result<String, String> {
         .map_err(|_| "Base64 decode failed".to_string())?;
     String::from_utf8(decoded).map_err(|e| e.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 1. 正常路徑測試 (Happy Path)
+    #[test]
+    fn test_encryption_cycle_standard() {
+        let original = "Hello World 123";
+        let encrypted = encrypt_string(original).expect("Encryption failed");
+        let decrypted = decrypt_string(&encrypted).expect("Decryption failed");
+        assert_eq!(original, decrypted);
+    }
+
+    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    #[test]
+    fn test_encryption_cycle_utf8() {
+        let original = "測試文字 ❄️ 表情符號 繁體中文";
+        let encrypted = encrypt_string(original).expect("Encryption failed");
+        let decrypted = decrypt_string(&encrypted).expect("Decryption failed");
+        assert_eq!(original, decrypted);
+    }
+
+    /// 3. 強韌性與異常處理 (Robustness / Negative Cases)
+    #[test]
+    fn test_decryption_invalid_base64() {
+        // 提供無效的 Base64 字串
+        let invalid = "Invalid!Base64!String";
+        let result = decrypt_string(invalid);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Base64 decode failed");
+    }
+
+    #[test]
+    fn test_encryption_empty_string() {
+        // 空字串應安全返回空字串
+        let original = "";
+        let encrypted = encrypt_string(original).expect("Encryption failed");
+        let decrypted = decrypt_string(&encrypted).expect("Decryption failed");
+        assert_eq!(original, decrypted);
+    }
+}
