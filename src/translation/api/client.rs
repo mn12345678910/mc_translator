@@ -597,16 +597,34 @@ async fn translate_with_deepl(
         ("text", text.to_string()),
         ("target_lang", target_lang),
     ];
-    let resp = CLIENT
-        .post(url)
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .form(&params)
-        .send()
-        .await?;
-    if !resp.status().is_success() {
-        return Err(format!("API_ERROR:DeepL API Error: {}", resp.text().await?).into());
-    }
-    let json: serde_json::Value = resp.json().await?;
+    let full_future = async {
+        let resp = CLIENT
+            .post(url)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .form(&params)
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            return Err::<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>(
+                format!("API_ERROR:DeepL API Error: {}", resp.text().await?).into(),
+            );
+        }
+
+        Ok(resp.json::<serde_json::Value>().await?)
+    };
+
+    let json: serde_json::Value = match tokio::time::timeout(
+        std::time::Duration::from_secs(config.ollama_timeout),
+        full_future,
+    )
+    .await
+    {
+        Ok(Ok(v)) => v,
+        Ok(Err(e)) => return Err(e),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+    };
+
     let translated = json["translations"][0]["text"]
         .as_str()
         .ok_or("解析 DeepL 失敗")?;
