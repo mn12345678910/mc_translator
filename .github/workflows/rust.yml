@@ -33,7 +33,7 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: mc_translator_rs-windows
-        path: target/release/mc_translator_rs.exe
+        path: ../cargo-target/release/mc_translator_rs.exe
 
   release:
     name: Create Release
