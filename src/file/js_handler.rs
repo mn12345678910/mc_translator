@@ -106,9 +106,16 @@ pub async fn collect_js_task(
     }
 
     let mut global_items = Vec::new();
-    for (_, _, text, idx) in &filtered_matches {
-        let key = format!("js_key_{}", idx);
-        global_items.push(GlobalBatchItem::new(text, file_id, &key));
+    {
+        let tm = _state.translation_memory.lock().unwrap();
+        for (_, _, text, idx) in &filtered_matches {
+            let key = format!("js_key_{}", idx);
+            let mut item = GlobalBatchItem::new(text, file_id, &key);
+            if let Some(cached) = tm.get(text) {
+                item.translated = Some(cached.clone());
+            }
+            global_items.push(item);
+        }
     }
 
     Ok(Some((
