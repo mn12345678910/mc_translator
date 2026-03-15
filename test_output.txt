@@ -1,0 +1,26 @@
+
+running 3 tests
+test config::dictionary::tests::test_load_corrupt_dict_fallback ... FAILED
+test config::dictionary::tests::test_save_load_dict_standard ... FAILED
+test config::dictionary::tests::test_save_load_dict_utf8_edge ... ok
+
+failures:
+
+---- config::dictionary::tests::test_load_corrupt_dict_fallback stdout ----
+
+thread 'config::dictionary::tests::test_load_corrupt_dict_fallback' (37644) panicked at src\config\dictionary.rs:96:9:
+assertion failed: loaded.is_empty()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- config::dictionary::tests::test_save_load_dict_standard stdout ----
+
+thread 'config::dictionary::tests::test_save_load_dict_standard' (28412) panicked at src\config\dictionary.rs:64:40:
+called `Option::unwrap()` on a `None` value
+
+
+failures:
+    config::dictionary::tests::test_load_corrupt_dict_fallback
+    config::dictionary::tests::test_save_load_dict_standard
+
+test result: FAILED. 1 passed; 2 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.00s
+

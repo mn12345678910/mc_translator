@@ -1,7 +1,14 @@
 # Minecraft Mod Auto-Translator (mc_translator_rs)
 
+> [!CAUTION]
+> **免責聲明**
+> 本工具雖使用微軟 DPAPI 對 API KEY 進行加密，但由於本工具 100% 使用 AI 開發，如有疑慮者請 **"不要"** 使用需要填入 API KEY 的服務商。
+
+> [!IMPORTANT]
+> **翻譯品質須知**
+> 本工具只能用於快速翻譯，品質絕對沒辦法達到 100% 人工翻譯精準。請 **不要** 將本工具產出翻譯用於提交給模組作者。
+
 這是一款為 Minecraft 整合包開發者設計的自動化翻譯工具，利用 LLM (Gemini, OpenAI, Ollama, DeepSeek, Mistral, DeepL) 技術，實現自動翻譯 JAR、JS、JSON 檔案。
-100%由AI撰寫，如有疑慮**千萬不要填入APIKEY**。
 
 ## 🌟 核心功能
 
