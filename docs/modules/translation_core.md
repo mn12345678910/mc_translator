@@ -1,29 +1,37 @@
-# 翻譯核心與辭典系統 (Translation Core & Glossary)
+# 翻譯核心
 
-## 1. 翻譯與儲存機制 (Translation & Storage)
+## 翻譯流程摘要
 
-### 翻譯流程
-- **即時磁碟寫入 (Temp Partitioning)**: 翻譯產出後立即寫入 `temp_translator` 目錄，降低 RAM 占用。
-- **JAR `zh_tw` 提取**: 優先檢查並提取已存在的 `zh_tw.json`。
-- **資源包匯出**: 產出 `LLMTranslator.zip`。
+1. 收集可翻譯字串並去重
+2. 依批次大小與字元上限切分
+3. 呼叫翻譯服務
+4. 清理與格式同步
+5. 回寫至全域批次結果
 
-### 辭典系統
-- **雙分頁設計**: 分為「📝 使用者建議詞」與「📚 官方建議詞」。
-- **術語自動匹配 (AC Automaton)**: 採用 Aho-Corasick 演算法快速找出術語。
+## 服務商路由
 
-## 2. 穩定性與錯誤處理 (Stability & Error Handling)
+- Gemini：`generateContent`
+- OpenAI / DeepSeek / Mistral：OpenAI 相容 Chat Completions
+- Ollama：本機 `/api/generate`
+- DeepL：`api-free` 或 `api` 端點
+- Google Free：`translate.googleapis.com`
 
-### 失敗降級策略 (Adaptive Batching)
-1. **正常重試**: 網路或超時失敗時自動重試。
-2. **二分降級 (Halving)**: 批次失敗後自動將 `batch_size` 減半。
-3. **單筆回退 (Single-item fallback)**: 最終退回至單筆強制翻譯，確保進度。
+## 批次與降級
 
-### 執行緒與崩潰防護
-- **Panic Prevention**: 嚴禁在未經校驗情況下直接對字串進行 Raw Slicing，必須使用 UTF-8 安全 API（如 `ends_with`, `starts_with`）。
-- **非同步互斥**: 透過 `Arc<Mutex<T>>` 或 `tokio::sync::Notify` 進行狀態同步。
+- 批次限制為「條目數」與「字元上限」雙重限制
+- 失敗時依序降級為半批次與單筆
+- `GlobalBatchItem` 會保留預處理標記，以確保格式還原
 
-## 3. API 模型整合規範
+## 文本處理
 
-- **Ollama 推理模型**: 針對具備 CoT 能力的模型，將 `num_predict` 提升至 `8192`。
-- **輕量化模型**: 處理 `translategemma` 等模型時，建議將 `batch_size` 限制在 20 筆以內，防止上下文混亂。
-- **Gemini API**: 注意免費額度的 429 請求限制。
+- `preprocess_text`：保護格式字元與佔位符
+- `postprocess_text`：還原格式
+- `validate_and_cleanup`：清理空白與雜訊
+- `detect_loop`：偵測翻譯循環輸出
+
+## Glossary 注入
+
+- Glossary 以提示詞方式注入，不做硬替換
+- 由官方詞庫、推論詞庫、使用者詞庫組合
+- 每次最多注入 30 條術語建議
+

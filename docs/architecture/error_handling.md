@@ -1,34 +1,35 @@
-# 錯誤處理分類與重試 (Error Handling & Retry)
+# 錯誤處理與重試策略
 
-## 1. 錯誤處理分類
+## 錯誤類型
 
-### 網路級錯誤 (Network Errors)
-- **HTTP 429 (Too Many Requests)**: 觸發指數退避 (Exponential Backoff) 並降低併發。
-- **Timeout**: 尤其在 Ollama 本機推理時常見，觸發自動暫停機制以保護系統。
+**可識別的錯誤前綴**
+- `OLLAMA_TIMEOUT:`
+- `API_ERROR:`
+- `NETWORK_ERROR:`
+- `PARSE_ERROR:`
+- `UNSUPPORTED:`
 
-### API 級錯誤 (API Errors)
-- **Invalid API Key**: 提示使用者檢查設定。
-- **Token Limit Exceeded**: 自動縮減該批次的字數或啟動二分降級。
+這些錯誤會中止當前翻譯流程並回傳給上層處理，其餘錯誤會記錄日誌並繼續。
 
-## 2. 重試與降級邏輯
+## 批次重試與降級
 
-```mermaid
-graph TD
-    Error[偵測到翻譯失敗] --> Retry{重試次數 < 3?}
-    Retry -- Yes --> Backoff[指數退避重試]
-    Retry -- No --> Degradation{支援降級?}
-    Degradation -- Yes --> Halving[二分降級 - Halve Batch Size]
-    Halving --> ReProcess[重新處理該批次]
-    Degradation -- No --> Skip[標記為已跳過]
-```
+`translation/batching.rs` 會對失敗項目進行三段降級處理：
 
-## 3. 異常防範機制 (Panic Prevention)
-- **UTF-8 安全切片**: 嚴禁在未經校驗的情況下對字串進行 Raw Slicing。
-## 4. 防禦性程式設計 (Defensive Programming)
+1. 先嘗試原始批次
+2. 失敗項目改為「半批次」並降低字元上限
+3. 仍失敗則改為單筆翻譯
 
-### 路徑安全防護 (Path Safety Protection)
-- **路徑規範化**：所有輸入與輸出路徑在處理前均執行 `canonicalize()`，消除 Windows 平台磁碟機代號大小寫差異與符號連結導致的 `strip_prefix` 失敗。
-- **防止路徑溢出 (Path Escape Fix)**：在寫入檔案前強制將目標路徑轉換為相對路徑，防止絕對路徑置換基礎目錄，確保輸出的檔案絕對不會逃選出目標資源包目錄。
+## JSON 遞迴與防護
 
-### 啟動前參數校驗 (Pre-flight Validation)
-- 為避免無效的 AI 請求（例如未選模型卻啟動），系統在 UI 層級與 `actions` 層級皆設有檢查點。若非法參數嘗試啟動任務，系統會攔截請求、鎖定按鈕並在日誌終端顯示明確的警告資訊（如：`⚠️ 啟動失敗：目前服務商需要選取模型`）。
+- 字串處理採用安全 API，避免 UTF-8 直接切片。
+- 翻譯結果會經過清理與循環檢測，偵測到重複循環時會跳過該條目。
+
+## 路徑安全
+
+- 掃描階段會規範化路徑，避免 Windows 驅動器大小寫差異造成 `strip_prefix` 失敗。
+- 輸出階段會移除前導斜線與磁碟機前綴，避免路徑跳脫。
+
+## 啟動前檢查
+
+- 除 `Google Free` 外，未選模型會阻止啟動並寫入日誌。
+

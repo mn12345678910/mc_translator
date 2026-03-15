@@ -1,20 +1,30 @@
-# 術語系統與自動機 (Glossary System)
+# 術語系統
 
-## 1. 術語優先級規範
-當原文中出現多個術語衝突時，系統遵循以下優先級：
-1. **官方建議詞 (Official)**: 全球統一或專用術語。
-2. **使用者建議詞 (User)**: 使用者自定義的特定翻譯。
-3. **機器推論 (Inference)**: LLM 根據上下文自動產出的內容。
+## 資料來源
 
-## 2. Aho-Corasick 演算法應用
-為了在海量字串中精確且快速地進行術語替換，本專案整合了 `aho-corasick` 算法。
+- 官方詞庫：由 Minecraft 官方語言檔 (`dicts/en_us.json` 與 `dicts/zh_tw.json`) 對照產生
+- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導並存到 `dicts/official.json`
+- 使用者詞庫：`dicts/user.json`
 
-### 運作原理
-- **Pattern Tree (Trie)**: 將所有辭典中的術語預先編譯為字典樹。
-- **Single Pass**: 僅需遍歷一次原文，即可找出所有匹配的術語，並根據優先級進行取代或傳遞給 LLM 作為 `hint`。
-- **決定論分析 (Deterministic Analysis)**：在統計辭典出現頻率時，若遇到頻率與長度完全相同的條目，系統會使用字串內容（字典序）作為最後一階決定因素，確保分析結果在每次執行中始終如一。
+## 優先級
 
-## 3. 自動監視與遷移機制
-- **即時監控 (Dict Watcher)**：系統使用 `notify` crate 監控 `dicts/` 目錄。當 `en_us.json`、`zh_tw.json` 等來源辭典變動時，會自動觸發背景分析任務，無需人工重新載入。
-- **循環排除**：為了防止寫入結果導致的無限分析迴圈，監控器會自動忽略 `official.json` 與 `user.json` 的變動。
-- **自動遷移**：當使用者在 UI 中編輯「官方建議詞」時，系統不會直接修改唯讀的 `official.json`。該條目會自動轉存至 `user.json`，確保使用者自定義內容的持久化。
+- `glossary_priority` 決定同 key 的覆蓋順序
+- `official` 優先時：官方詞庫先載入，再載入使用者詞庫
+- `user` 優先時：使用者詞庫先載入，再載入官方詞庫
+
+## Aho-Corasick 自動機
+
+- 以 `LeftmostLongest` 匹配策略
+- 大小寫不敏感
+- 僅在英文字邊界符合時視為有效術語
+
+## UI 行為摘要
+
+- 官方分頁的編輯內容會轉存到使用者詞庫
+- 字典管理器支援匯入、匯出、搜尋、批次取代
+
+## 監控與刷新
+
+- `dicts/` 目錄中的 `en_us.json` / `zh_cn.json` / `zh_tw.json` 變動會觸發重新推論
+- 推論結果會覆寫 `dicts/official.json`
+

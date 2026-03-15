@@ -1,44 +1,63 @@
-# AI Context: Quick Lookup System (mc_translator_rs)
+# AI Context: mc_translator_rs 快速接手說明
 
-> [!IMPORTANT]
-> **AI 接手與未來開發指引 (Handover & Future Roadmap)**  
-> 致下一位開發 AI：以下是目前核心邏輯與架構規範：
-> 1. **核心譯文匹配與術語同步**：
->    - **無本地點對點預填替換**：為保證翻譯語境完整性，所有條目 **100% 遞交給 LLM**（除了既存翻譯不等於原文的增量條目會跳過）。
->    - **字典與術語連動 (Glossary)**：官方與使用者新增的建議詞 (`dicts/user.json`) 僅純粹作為 **Glossary (術語提示)** 合併提取。隨 Request 一併 **餵給 LLM 作為指導參數**，而非替代原文。
->    - **既存比對 (Incremental)**：巡檢核心只在 `existing != Source`（既存比對不等於原文）時，才跳過該單一條目進行增量，維持最大彈性。
-> 2. **狀態管理與併發規範 (Pipeline & Concurrency)**：
->    - **原子化狀態**: 高頻旗標與進度值均使用原子類型 (`AtomicBool`, `AtomicU32`)。進度值透過位元轉換儲存。
->    - **I/O 隔離**: 所有涉及實體磁碟、JAR 重構等同步 I/O 操作**必須**包裹於 `tokio::task::spawn_blocking` 中，嚴禁直接在 async 循環內呼叫，以防止 UI 凍結。
->    - **Runtime 安全**: 非同步任務必須使用引用的 `self.runtime.spawn` 執行。
-    - **漏答救援防護 (Retry Coalescing)**: `run_translation_batch` 在批次獲得 Partial Success (部分答覆) 時，會將仍為 `None` 的殘留條目推入 `failed_indices`。這確保了 Adaptive Batching 等 3 級降級重試 100% 覆蓋所有漏答項。
-> 3. **檔案處理與流水線 (File Pipeline)**：
->    - **有序分組 (Task Grouping / Folder Merging)**: 使用 `get_group_key`（JAR 按檔案路徑，獨立文件按 `.parent()` 父資料夾）進行 **Hybrid 混合排序分組**。此舉能在維護來源隔離的前提下，將同目錄獨立檔案「打碎合併」進單一批次，根除 fragment skipping 缺陷並最大化 Batch 吞吐力。
->    - **資源包聚合 (ZIP Output)**: 來自 JAR 的成員以 `[BUNDLE]` 標記進入暫存流，管線結束時觸發 `output_resource_pack` 生成單一 `LLMTranslator.zip`。
->    - **獨立檔案鏡像 (Mirroring)**: JS 檔案與非模組 JSON 執行「完整相對路徑鏡像」，輸出至 `LLMTranslator/` 下並保留原始層次結構。
->    - **Patchouli 修復**: 強制執行目錄級取代 (`/en_us/` -> `/zh_tw/`)。
-> 4. **國際化與精準進度 (i18n & Progress UX)**：
->    - **三層進度架構**: UI 層次：`Status` -> `Current Processing Path` -> `Global Progress` (模組完成度) & `Batch Progress` (條目進度)。
->    - **JSON 驅動**: UI 標籤支援從 `langs/{lang}.json` 動態載入，確保界面顯示無硬編碼。
-    - **日誌情境標記 (Context Logs)**: 通訊紀錄現行貫穿 `file_name` 與語言配置。日誌首尾預置 `<來源->目標>` 語言配對及 `[檔案]` 標頭，大幅減降 LLM API 軌跡之排查成本。
-> 5. **Git 與紀錄規範**：
->    - **同步提交**：階段性修改後執行 `git add .`。
->    - **繁體中文 Commit**：所有 Commit 紀錄必須使用**繁體中文**。
->    - **日誌倒序**：`MAINTENANCE_LOG.md` 等文件遵循「最新紀錄置於最上方」。
-6. **UI 樣式管理與隔離規範 (Style Isolation & Theme)**：
-   - **避免全域洩漏**：調整類別顏色（例如：全部輸入框背景）時，**嚴禁**直接修改與 egui 共享的全域 `Visuals` 變量（如 `v.extreme_bg_color` 或 `v.selection.bg_fill`），以防波及 `Slider` 或 `ComboBox` 等原生元件。
-   - **純覆寫機制 (Instance Overrides)**：批次更新類別顏色應轉向對清單內的所有 IDs 疊加 `instance_overrides`。
-   - **局部畫布壓印**：渲染端查詢特定 ID 樣式後，使用 `ui.visuals_mut().extreme_bg_color = override_bg` 等區域內壓印或 `Frame/scope` 加掛方式渲染，達致 100% 視覺乾淨隔離。
+這份文件是給後續維護者的「事實對照版」。內容以目前程式碼為準，避免與現況脫節。
 
-## 系統快速索引 (Quick Lookup)
-- **[核心架構與流程](docs/architecture/overview.md)**
-  - 包含 [狀態管理](docs/architecture/state_management.md) 與 [錯誤處理](docs/architecture/error_handling.md)
-- **[翻譯核心與模組](docs/modules/translation_core.md)**
-  - 包含 [檔案流水線](docs/modules/file_pipeline.md)、[術語系統](docs/modules/glossary_system.md) 與 [翻譯記憶體](docs/modules/translation_memory.md)
-- **[UI 規格與交互](docs/ui/specs.md)**
-- **[測試策略與規範](docs/guides/testing_strategy.md)**
-- **[Git 指南](docs/guides/GIT_GITHUB_GUIDE.md)**
-- **[歷史維護紀錄](docs/guides/MAINTENANCE_LOG.md)**
+## 核心行為摘要
+
+**翻譯資料流**
+- 掃描 `.jar` / `.json` / `.js`，建立 `FileTask` 與全域 `GlobalBatchItem`。
+- 依群組鍵分批：JAR 依檔案本身，非 JAR 依「父資料夾」。
+- 批次翻譯採三段降級：原批次 -> 半批次 -> 單筆。
+- 進度包含全域 offset，避免跨檔案窗口時進度倒退。
+
+**增量與跳過**
+- `zh_tw` 既有翻譯且與原文不同時視為已翻譯，直接預填。
+- `should_skip_key` / `should_skip_value` 會跳過 ID、布林值、純數字、snake_case、命名空間 ID 等。
+
+**輸出規則**
+- 輸出根目錄固定為 `LLMTranslator/`。
+- 只要是 JAR 來源或原本在 `assets/`/`patchouli_books/` 內的 JSON 會進入資源包暫存，再由 `LLMTranslator.zip` 輸出。
+- 非資源結構 JSON 與 JS 會以原相對路徑輸出為實體檔案。
+- `en_us.json` 會轉成 `zh_tw.json`；Patchouli 會將 `/en_us/` 轉為 `/zh_tw/`。
+
+## 術語與字典
+
+**資料來源**
+- 官方詞庫：由 `dicts/en_us.json` 與 `dicts/zh_tw.json` 的對照生成精確匹配。
+- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導，存到 `dicts/official.json`。
+- 使用者詞庫：`dicts/user.json`，由字典管理器維護。
+
+**使用方式**
+- Glossary 只作提示，不做替換。
+- Priority 由 `glossary_priority` 控制，同 key 時「先載入的優先」。
+- Prompt 注入僅挑選最多 30 筆術語。
+
+## 併發與 I/O 規範
+
+- 長耗時 I/O 必須放入 `tokio::task::spawn_blocking`。
+- UI 狀態以 `Atomic*` + `Arc<Mutex<...>>` 控制。
+- 背景任務統一用 `runtime.spawn`。
+
+## i18n
+
+- UI 文字來自 `langs/<lang>.json`，預設 `zh_tw`。
+- `I18nLabels::ensure_langs_exists()` 會確保預設語系檔案存在。
+
+## 字典監控
+
+- 監控 `dicts/` 目錄中的 `en_us.json`/`zh_cn.json`/`zh_tw.json`。
+- 變動會觸發 `refresh_dictionaries_core` 重新推論並更新 `official.json`。
+
+## LLM 記錄
+
+- `enable_llm_log` 開啟時會將完整對話寫入 `llm_communication.log`。
+
+## Git 規範 (維護習慣)
+
+- 重要修改後請先 `git add .`。
+- Commit 請使用繁體中文。
+- 新分支命名請遵循 `codex/` 前綴。
 
 ---
-*備註：此檔案為「快查系統」的入口。若需開發，請務必先閱讀對應的細節文件。*
+此檔案只記錄「目前程式確定存在的行為」。若功能變更，請同步更新本文檔。
+
