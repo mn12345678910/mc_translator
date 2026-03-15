@@ -532,24 +532,40 @@ async fn translate_with_openai_compatible(
         "temperature": 0.3
     });
 
-    let resp: reqwest::Response = CLIENT
-        .post(url)
-        .header("Authorization", format!("Bearer {}", config.api_key))
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await?;
+    let full_future = async {
+        let resp = CLIENT
+            .post(url)
+            .header("Authorization", format!("Bearer {}", config.api_key))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await?;
 
-    if !resp.status().is_success() {
-        return Err(format!(
-            "API_ERROR:{} API Error: {}",
-            config.api_provider,
-            resp.text().await?
-        )
-        .into());
-    }
+        if !resp.status().is_success() {
+            return Err::<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>(
+                format!(
+                    "API_ERROR:{} API Error: {}",
+                    config.api_provider,
+                    resp.text().await?
+                )
+                .into(),
+            );
+        }
 
-    let json: serde_json::Value = resp.json().await?;
+        Ok(resp.json::<serde_json::Value>().await?)
+    };
+
+    let json: serde_json::Value = match tokio::time::timeout(
+        std::time::Duration::from_secs(config.ollama_timeout),
+        full_future,
+    )
+    .await
+    {
+        Ok(Ok(v)) => v,
+        Ok(Err(e)) => return Err(e),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+    };
+
     let translated = json["choices"][0]["message"]["content"]
         .as_str()
         .ok_or("解析回傳失敗")?;
