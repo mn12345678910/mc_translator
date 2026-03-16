@@ -215,6 +215,14 @@ pub async fn process_all_files(
             task_ptr += 1;
         }
 
+        let group_file_count = {
+            let mut seen = std::collections::HashSet::new();
+            for t in &group_tasks {
+                seen.insert(t.path.clone());
+            }
+            seen.len() as f32
+        };
+
         let group_file_ids: std::collections::HashSet<usize> = group_tasks.iter().map(|t| t.file_id).collect();
         let start_item_idx = item_ptr;
         while item_ptr < global_items.len() && group_file_ids.contains(&global_items[item_ptr].file_id) {
@@ -224,7 +232,7 @@ pub async fn process_all_files(
 
         if items_in_source.is_empty() {
             let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
-            state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
+            state.global_progress.store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
             global_items_offset += items_in_source.len();
             continue;
         }
@@ -284,7 +292,7 @@ pub async fn process_all_files(
         );
 
         let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
-        state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
+        state.global_progress.store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
 
         // 累計全域 Offset
         global_items_offset += items_in_source.len();
