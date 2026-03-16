@@ -20,6 +20,9 @@ impl AppState {
             self.theme.clone(),
             self.show_memory_viewer,
             self.i18n.clone(),
+            self.available_langs.clone(),
+            self.source_lang.clone(),
+            self.target_lang.clone(),
         );
     }
 
@@ -35,11 +38,14 @@ impl AppState {
         theme_clone: String,
         show_viewer_clone: bool,
         i18n: crate::ui::i18n::I18nLabels,
+        available_langs_arc: Arc<Mutex<Vec<String>>>,
+        source_lang: String,
+        target_lang: String,
     ) {
         *status_arc.lock().unwrap() = i18n.status_analyzing_dict.clone();
 
         runtime_handle.spawn(async move {
-            if let Ok((files, exact, unfiltered)) = crate::utils::load_mc_dicts().await {
+            if let Ok((files, exact, unfiltered)) = crate::utils::load_mc_dicts(&source_lang, &target_lang).await {
                 {
                     let mut exact_map = exact_arc.lock().unwrap();
                     *exact_map = exact.clone();
@@ -62,7 +68,14 @@ impl AppState {
                 crate::config::save_dict(crate::config::OFFICIAL_DICT, &inferred);
 
                 if let Ok(mut mc) = mc_lang_arc.lock() {
-                    *mc = Some(files);
+                    *mc = Some(files.clone());
+                }
+
+                // 更新可用語言清單給 UI 下拉選單使用
+                let mut langs: Vec<String> = files.langs.keys().cloned().collect();
+                langs.sort();
+                if let Ok(mut av) = available_langs_arc.lock() {
+                    *av = langs;
                 }
             }
             *status_arc.lock().unwrap() = i18n.status_ready.clone();
@@ -285,12 +298,8 @@ impl AppState {
             move |res: notify::Result<notify::Event>| {
                 if let Ok(event) = res {
                     if event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove() {
-                        let dict_files = ["en_us.json", "zh_cn.json", "zh_tw.json"];
                         let is_target = event.paths.iter().any(|p| {
-                            p.file_name()
-                                .and_then(|n| n.to_str())
-                                .map(|s| dict_files.contains(&s))
-                                .unwrap_or(false)
+                            p.extension().map(|ext| ext == "json").unwrap_or(false)
                         });
 
                         if is_target {
@@ -308,7 +317,9 @@ impl AppState {
         }
         watcher.watch(dict_path, RecursiveMode::NonRecursive)?;
 
-        self._dict_watcher = Some(Box::new(watcher));
+                let available_langs_arc = self.available_langs.clone();
+        let source_lang_clone = self.source_lang.clone();
+        let target_lang_clone = self.target_lang.clone();
 
         let h_inner = runtime_handle.clone();
         runtime_handle.spawn(async move {
@@ -326,7 +337,10 @@ impl AppState {
                     viewer_update_tx.clone(),
                     theme.clone(),
                     show_memory_viewer,
-                    crate::ui::i18n::I18nLabels::load_or_default(crate::ui::i18n::DEFAULT_LANG), // 使用預設語言用於監控器更新，或從 AppState 傳遞
+                    crate::ui::i18n::I18nLabels::load_or_default(crate::ui::i18n::DEFAULT_LANG),
+                    available_langs_arc.clone(),
+                    source_lang_clone.clone(),
+                    target_lang_clone.clone(),
                 );
             }
         });
