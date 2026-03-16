@@ -1,12 +1,13 @@
 # Minecraft Mod Auto-Translator (mc_translator_rs)
 
 > [!CAUTION]
-> 免責聲明
-> 本工具使用 Windows DPAPI 加密 API Key，但仍屬於 AI 自動化工具。若對安全性有疑慮，請不要使用需要填入 API Key 的服務商。
+> 免責聲明:
+> 本工具雖使用微軟DPAPI對API KEY進行加密，但由於本工具100%使用AI開發，
+> 如有疑慮者請"不要"使用需要填入API KEY的服務商。
 
 > [!IMPORTANT]
 > 翻譯品質須知
-> 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請不要將輸出內容直接提交給模組作者。
+> 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請"不要"將輸出內容直接提交給模組作者。
 
 `mc_translator_rs` 是一款為 Minecraft 整合包與模組本地化設計的 GUI 工具，以 Rust + egui 實作。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
 
