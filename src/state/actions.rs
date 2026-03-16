@@ -244,16 +244,13 @@ impl AppState {
             let mut s = status_arc.lock().unwrap();
             if cancelled_arc.load(Ordering::SeqCst) {
                 *s = i18n.status_cancelled.to_string();
-                let mut l = log.lock().unwrap();
-                l.push(i18n.log_cancelled.to_string());
+                crate::utils::add_log(&log, &i18n.log_cancelled, "", "", "");
             } else if let Err(e) = res {
                 *s = i18n.status_error.replace("{}", &e.to_string());
-                let mut l = log.lock().unwrap();
-                l.push(i18n.log_generic_error.replace("{}", &e.to_string()));
+                crate::utils::add_log(&log, &i18n.log_generic_error.replace("{}", &e.to_string()), "", "", "");
             } else {
                 *s = i18n.status_finished.to_string();
-                let mut l = log.lock().unwrap();
-                l.push(i18n.log_finished.to_string());
+                crate::utils::add_log(&log, &i18n.log_finished, "", "", "");
             }
         });
     }
