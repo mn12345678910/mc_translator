@@ -1,4 +1,3 @@
-use mc_translator_rs;
 
 #[test]
 fn test_config_initialization() {
