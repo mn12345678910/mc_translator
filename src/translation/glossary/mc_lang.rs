@@ -3,110 +3,111 @@ use std::path::Path;
 use std::fs;
 use serde::{Deserialize, Serialize};
 
-/// Minecraft 官方語言檔案集合
+/// Minecraft 官方語言檔案集合 (動態快取)
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct McLangFiles {
-    pub en_us: HashMap<String, String>,
-    pub zh_cn: HashMap<String, String>,
-    pub zh_tw: HashMap<String, String>,
+    pub langs: HashMap<String, HashMap<String, String>>, // "en_us" -> { "key": "value" }
+}
+
+#[derive(Deserialize)]
+struct GithubContentItem {
+    name: String,
+    download_url: Option<String>,
 }
 
 /// 從本地快取或 GitHub 下載並建構 mc_lang 字典
 /// 回傳: (語言檔案, 精確匹配表, 常規差異表)
-pub async fn load_mc_dicts() -> Result<
+pub async fn load_mc_dicts(source_lang: &str, target_lang: &str) -> Result<
     (McLangFiles, HashMap<String, String>, Vec<(String, String)>),
     Box<dyn std::error::Error + Send + Sync>,
 > {
     let dict_dir = Path::new("dicts");
-    let en_us_path = dict_dir.join("en_us.json");
-    let zh_cn_path = dict_dir.join("zh_cn.json");
-    let zh_tw_path = dict_dir.join("zh_tw.json");
+    if !dict_dir.exists() {
+        let _ = fs::create_dir_all(dict_dir);
+    }
 
     let mut files = McLangFiles::default();
-    let mut use_local = false;
 
-    // 嘗試從本地讀取
-    if en_us_path.exists() && zh_cn_path.exists() && zh_tw_path.exists() {
-        if let (Ok(en), Ok(cn), Ok(tw)) = (
-            fs::read_to_string(&en_us_path),
-            fs::read_to_string(&zh_cn_path),
-            fs::read_to_string(&zh_tw_path),
-        ) {
-            if let (Ok(en_json), Ok(cn_json), Ok(tw_json)) = (
-                serde_json::from_str(&en),
-                serde_json::from_str(&cn),
-                serde_json::from_str(&tw),
-            ) {
-                files.en_us = en_json;
-                files.zh_cn = cn_json;
-                files.zh_tw = tw_json;
-                use_local = true;
-            }
-        }
-    }
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .user_agent("mc_translator_rs") // GitHub API 必要 Header
+        .build()?;
 
-    // 若本地無有效快取，則從網路下載
-    if !use_local {
-        let base = "https://raw.githubusercontent.com/SkyEye-FAST/mc_lang/master/valid/";
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
-            .build()?;
+    // 1. 取得目錄下的檔案清單 (優先透過 API 獲取所有官方支援字典)
+    let api_url = "https://api.github.com/repos/SkyEye-FAST/mc_lang/contents/valid";
+    let mut available_langs = Vec::new();
 
-        files.en_us = client
-            .get(format!("{}en_us.json", base))
-            .send()
-            .await?
-            .json()
-            .await?;
-        files.zh_cn = client
-            .get(format!("{}zh_cn.json", base))
-            .send()
-            .await?
-            .json()
-            .await?;
-        files.zh_tw = client
-            .get(format!("{}zh_tw.json", base))
-            .send()
-            .await?
-            .json()
-            .await?;
+    if let Ok(resp) = client.get(api_url).send().await {
+        if resp.status().is_success() {
+            if let Ok(items) = resp.json::<Vec<GithubContentItem>>().await {
+                for item in items {
+                    if item.name.ends_with(".json") {
+                        let code = item.name.replace(".json", "");
+                        available_langs.push(code.clone());
 
-        // 儲存至本地快取
-        if !dict_dir.exists() {
-            let _ = fs::create_dir_all(dict_dir);
-        }
-        if let Ok(en_str) = serde_json::to_string(&files.en_us) {
-            let _ = fs::write(&en_us_path, en_str);
-        }
-        if let Ok(cn_str) = serde_json::to_string(&files.zh_cn) {
-            let _ = fs::write(&zh_cn_path, cn_str);
-        }
-        if let Ok(tw_str) = serde_json::to_string(&files.zh_tw) {
-            let _ = fs::write(&zh_tw_path, tw_str);
-        }
-    }
-
-    // 建構精確匹配表
-    let mut exact = HashMap::new();
-    for (k, v) in &files.en_us {
-        if let Some(tw) = files.zh_tw.get(k) {
-            exact.insert(v.to_lowercase(), tw.clone());
-        }
-    }
-
-    // 1. 常規差異表 (Unfiltered)
-    let mut unfiltered_diffs = Vec::new();
-    for (k, cn) in &files.zh_cn {
-        if let Some(tw) = files.zh_tw.get(k) {
-            if cn != tw {
-                let converted = hanconv::s2tw(cn);
-                if converted != *tw {
-                    unfiltered_diffs.push((cn.clone(), tw.clone()));
+                        // 確保下載至快取
+                        let cache_path = dict_dir.join(&item.name);
+                        if !cache_path.exists() {
+                            if let Some(dl_url) = item.download_url {
+                                if let Ok(dl_resp) = client.get(&dl_url).send().await {
+                                    if let Ok(txt) = dl_resp.text().await {
+                                        let _ = fs::write(&cache_path, txt);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+
+    // 2. 載入本地所有快取檔 (作為 Fallback 或主要的載入來源)
+    if let Ok(entries) = fs::read_dir(dict_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().is_some_and(|ext| ext == "json") {
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        if let Ok(json_map) = serde_json::from_str::<HashMap<String, String>>(&content) {
+                            files.langs.insert(stem.to_string(), json_map);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut exact = HashMap::new();
+    let mut unfiltered_diffs = Vec::new();
+
+    // 3. 僅當條件為 en_us -> zh_tw 時，進入術語系統處理
+    if source_lang == "en_us" && target_lang == "zh_tw" {
+        if let (Some(en), Some(tw)) = (files.langs.get("en_us"), files.langs.get("zh_tw")) {
+            // 建構精確匹配表
+            for (k, v) in en {
+                if let Some(tw_val) = tw.get(k) {
+                    exact.insert(v.to_lowercase(), tw_val.clone());
+                }
+            }
+        }
+
+        if let (Some(cn), Some(tw)) = (files.langs.get("zh_cn"), files.langs.get("zh_tw")) {
+            // 建構常規差異表 (Unfiltered)
+            for (k, cn_val) in cn {
+                if let Some(tw_val) = tw.get(k) {
+                    if cn_val != tw_val {
+                        let converted = hanconv::s2tw(cn_val);
+                        if converted != *tw_val {
+                            unfiltered_diffs.push((cn_val.clone(), tw_val.clone()));
+                        }
+                    }
+                }
+            }
+            unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        }
+    }
 
     Ok((files, exact, unfiltered_diffs))
 }
+
