@@ -78,7 +78,7 @@ impl AppState {
             cfg.ollama_url = self.ollama_url.clone();
             cfg.user_prompt = self.user_prompt.clone();
             cfg.system_prompt = self.system_prompt.clone();
-            cfg.ollama_timeout = self.ollama_timeout as u64;
+            cfg.timeout = self.timeout as u64;
             cfg.batch_size = self.batch_size;
             cfg.batch_max_chars = self.batch_max_chars;
             cfg.pack_format = self.pack_format;
@@ -175,7 +175,7 @@ impl AppState {
         let ollama_url = self.ollama_url.clone();
         let batch_size = self.batch_size;
         let batch_max_chars = self.batch_max_chars;
-        let ollama_timeout = self.ollama_timeout;
+        let timeout = self.timeout;
         let user_prompt = self.user_prompt.clone();
         let system_prompt = self.system_prompt.clone();
         let output_dir_val = self.output_dir.clone();
@@ -188,7 +188,7 @@ impl AppState {
             ollama_url,
             user_prompt,
             system_prompt,
-            ollama_timeout,
+            timeout,
             batch_size,
             batch_max_chars,
             output_dir_val,

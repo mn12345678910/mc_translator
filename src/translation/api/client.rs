@@ -318,14 +318,14 @@ async fn translate_with_gemini(
     };
 
     let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.ollama_timeout),
+        std::time::Duration::from_secs(config.timeout),
         full_future,
     )
     .await
     {
         Ok(Ok(v)) => v,
         Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
     };
 
     let translated = json["candidates"][0]["content"]["parts"][0]["text"]
@@ -483,14 +483,14 @@ async fn call_ollama_raw(
     };
 
     let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.ollama_timeout),
+        std::time::Duration::from_secs(config.timeout),
         full_future,
     )
     .await
     {
         Ok(Ok(v)) => v,
         Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
     };
 
     let response = json["response"]
@@ -554,14 +554,14 @@ async fn translate_with_openai_compatible(
     };
 
     let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.ollama_timeout),
+        std::time::Duration::from_secs(config.timeout),
         full_future,
     )
     .await
     {
         Ok(Ok(v)) => v,
         Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
     };
 
     let translated = json["choices"][0]["message"]["content"]
@@ -613,14 +613,14 @@ async fn translate_with_deepl(
     };
 
     let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.ollama_timeout),
+        std::time::Duration::from_secs(config.timeout),
         full_future,
     )
     .await
     {
         Ok(Ok(v)) => v,
         Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.ollama_timeout).into()),
+        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
     };
 
     let translated = json["translations"][0]["text"]
@@ -646,7 +646,7 @@ pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, c
             if file_name.is_empty() { "無" } else { file_name },
             config.batch_size,
             char_count,
-            config.ollama_timeout
+            config.timeout
         );
         let _ = file.write_all(format!("--- LLM 通訊紀錄 [{}] ---\n{}\n[發送內容]:\n{}\n\n[接收內容]:\n{}\n------------------\n\n", now, settings, prompt, response).as_bytes());
     }

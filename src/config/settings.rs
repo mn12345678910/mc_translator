@@ -35,8 +35,8 @@ pub struct AppConfig {
     pub batch_size: u32,
     #[serde(rename = "批次字數上限", alias = "batch_max_chars")]
     pub batch_max_chars: u32,
-    #[serde(rename = "API逾時秒數", alias = "ollama_timeout")]
-    pub ollama_timeout: u32,
+    #[serde(rename = "API逾時秒數", alias = "timeout")]
+    pub timeout: u32,
     #[serde(rename = "術語優先級", alias = "glossary_priority")]
     pub glossary_priority: String,
 
@@ -231,7 +231,8 @@ impl Default for StyleConfig {
 
 impl StyleConfig {
     pub fn load() -> Self {
-        if let Ok(content) = fs::read_to_string("style.cfg") {
+        let _ = fs::create_dir_all("settings");
+        if let Ok(content) = fs::read_to_string("settings/style.cfg") {
             if let Ok(config) = serde_json::from_str::<Self>(&content) {
                 return config;
             }
@@ -240,8 +241,9 @@ impl StyleConfig {
     }
 
     pub fn save(&self) {
+        let _ = fs::create_dir_all("settings");
         if let Ok(json) = serde_json::to_string_pretty(self) {
-            let _ = fs::write("style.cfg", json);
+            let _ = fs::write("settings/style.cfg", json);
         }
     }
 }
@@ -259,7 +261,7 @@ impl Default for AppConfig {
 2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
             batch_size: 150,
             batch_max_chars: 3500,
-            ollama_timeout: 60,
+            timeout: 60,
             glossary_priority: "official".to_string(),
             source_lang: "en_us".to_string(),
             target_lang: "zh_tw".to_string(),
@@ -289,7 +291,8 @@ impl Default for AppConfig {
 impl AppConfig {
     /// 載入設定：從 .env 讀取 API_KEY，其餘從 config.cfg 讀取
     pub fn load() -> Self {
-        dotenvy::dotenv_override().ok();
+        let _ = fs::create_dir_all("settings");
+        dotenvy::from_path("settings/.env").ok();
 
         let mut config = Self::load_from_config_cfg();
 
@@ -306,7 +309,7 @@ impl AppConfig {
     }
 
     fn load_from_config_cfg() -> Self {
-        if let Ok(content) = fs::read_to_string("config.cfg") {
+        if let Ok(content) = fs::read_to_string("settings/config.cfg") {
             if let Ok(config) = serde_json::from_str::<Self>(&content) {
                 return config;
             }
@@ -315,6 +318,7 @@ impl AppConfig {
     }
 
     pub fn save(&self) {
+        let _ = fs::create_dir_all("settings");
         // 1. 儲存 API_KEY 於 .env
         let encrypted_key = if !self.api_key.is_empty() {
             match encrypt_string(&self.api_key) {
@@ -324,11 +328,11 @@ impl AppConfig {
         } else {
             String::new()
         };
-        let _ = fs::write(".env", format!("API_KEY={}", encrypted_key));
+        let _ = fs::write("settings/.env", format!("API_KEY={}", encrypted_key));
 
         // 2. 儲存其餘設定於 config.cfg
         if let Ok(json) = serde_json::to_string_pretty(self) {
-            let _ = fs::write("config.cfg", json);
+            let _ = fs::write("settings/config.cfg", json);
         }
     }
 }

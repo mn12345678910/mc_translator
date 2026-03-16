@@ -214,7 +214,7 @@ impl AppState {
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 if ui
                                     .add(
-                                        egui::DragValue::new(&mut self.ollama_timeout)
+                                        egui::DragValue::new(&mut self.timeout)
                                             .clamp_range(1..=600)
                                             .speed(1.0),
                                     )
