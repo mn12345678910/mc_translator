@@ -25,6 +25,31 @@ stateDiagram-v2
     Cancelled --> Idle
 ```
 
+## 執行緒同步與資料流模型
+
+以下說明「UI 主執行緒」與「背景任務執行緒」如何透過 `Arc<Mutex>` 與 `Atomic` 變數安全地共享與同步狀態。
+
+```mermaid
+graph LR
+    subgraph UI_Thread [UI 主執行緒 (egui)]
+        A[Render Loop] --> B{讀取狀態}
+        B -- Atomic --> C[讀取 進度/狀態]
+        B -- Mutex --> D[讀取 紀錄日誌]
+        E[使用者點擊] --> F[更新 Atomic狀態取消/暫停]
+    end
+
+    subgraph Background_Thread [背景任務執行緒 (Tokio)]
+        G[翻譯 Task] --> H{更新狀態}
+        H -- Atomic --> C
+        H -- Mutex --> D
+        G --> I[監聽 Cancel/Pause]
+        I -.-> F
+    end
+
+    style UI_Thread fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style Background_Thread fill:#fff2e6,stroke:#333,stroke-width:1px
+```
+
 ## 同步與併發
 
 - `AtomicBool/AtomicU32` 供 UI 即時讀取。

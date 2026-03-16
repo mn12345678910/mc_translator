@@ -28,3 +28,45 @@
 - `dicts/` 目錄中的 `en_us.json` / `zh_cn.json` / `zh_tw.json` 變動會觸發重新推論
 - 推論結果會覆寫 `dicts/official.json`
 
+## 術語載入與優先級覆蓋權
+
+以下說明「官方」與「使用者」詞庫在不同優先級設定下，如何透過 **「先載入者優先 (不覆蓋已存在的 Key)」** 的邏輯進行整合。
+
+```mermaid
+graph TD
+    Start([啟動 / 字典變動]) --> CheckMonitor{監聽 dicts/ 變動?}
+    CheckMonitor -- 是 --> ReInference[背景觸發自動推論] --> SaveOfficial[覆寫 official.json]
+    
+    Start --> Load[載入字典]
+    Load --> CheckPriority{優先級設定 (glossary_priority)}
+    
+    CheckPriority -- 1. 官方優先 --> OfficialFirst[1. 優先載入 官方/推論 詞庫] --> FillUser[2. 常規填入 使用者詞庫<br/>不覆蓋已存在 Key]
+    CheckPriority -- 2. 使用者優先 --> UserFirst[1. 優先載入 使用者 詞庫] --> FillOfficial[2. 常規填入 官方/推論 詞庫<br/>不覆蓋已存在 Key]
+    
+    FillUser --> BuildAho[建立 Aho-Corasick 自動機]
+    FillOfficial --> BuildAho
+    
+    BuildAho --> End([術語系統 Ready])
+```
+
+## 術語 Aho-Corasick 匹配決策樹
+
+說明 Aho-Corasick 自動機在掃描原文時的過濾與校驗規則。
+
+```mermaid
+graph TD
+    Start([掃描原文文本]) --> MatchNode{找到符合的術語 Key?}
+    MatchNode -- 否 --> Skip[跳過]
+    
+    MatchNode -- 是 --> CheckCase{大小寫是否不敏感相符?}
+    CheckCase -- 否 --> Skip
+    
+    CheckCase -- 是 --> CheckBoundary{是否在英文字體邊界?<br/>(避免單字內匹配)}
+    CheckBoundary -- 否 --> Skip
+    
+    CheckBoundary -- 是 --> CheckLongest{當前是否為「最長匹配」?<br/>(LeftmostLongest)}
+    CheckLongest -- 否 --> Skip
+    
+    CheckLongest -- 是 --> Valid[標記為有效術語建議] --> AppendPrompt[注入翻譯提示詞]
+```
+
