@@ -222,7 +222,7 @@ pub async fn translate_batch(
     let result = crate::utils::text_processing::validate_and_cleanup(&result);
     let mut map = HashMap::new();
 
-    if config.api_provider == "Ollama" || result.trim().starts_with('{') || result.contains("```") {
+    if config.api_provider == "Ollama" || result.contains('{') {
         if let Some(value) = parse_json_from_text(&result) {
             if let Some(obj) = value.as_object() {
                 for (idx_str, trans_val) in obj {
