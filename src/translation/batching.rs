@@ -370,20 +370,48 @@ async fn process_one_global_batch(
     );
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
+    let (tagged_texts, texts_to_translate) = build_tagged_batch_texts(ctx.all_items, ctx.batch_indices);
+
+    // 2. 提取術語
+    let glossary = ctx
+        .glossary_automaton
+        .extract(texts_to_translate.as_slice());
+    let entries = crate::utils::hashmap_to_entries(&glossary);
+
+    // 3. 呼叫翻譯服務
+    let cfg = ctx.config.lock().unwrap().clone();
+    match api::translate_batch(&tagged_texts, &cfg, ctx.file_name, Some(&entries)).await {
+        Ok(results_map) => {
+            // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)
+            let resolved_any = apply_batch_results(ctx.all_items, ctx.batch_indices, &results_map);
+
+            if resolved_any {
+                Ok(())
+            } else {
+                Err(ctx.i18n.log_batch_invalid.clone().into())
+            }
+        }
+        Err(e) => Err(e),
+    }
+}
+
+/// 準備批次文本 (優化：使用批次內相對索引)
+fn build_tagged_batch_texts(
+    all_items: &[GlobalBatchItem],
+    batch_indices: &[usize],
+) -> (Vec<String>, Vec<String>) {
     let mut texts_to_translate = Vec::new();
     let mut current_file_id = usize::MAX;
     let mut file_relative_id = 0;
     let mut file_map = std::collections::HashMap::new();
 
     let mut tagged_texts = Vec::new();
-    let mut seen_texts = std::collections::HashSet::new(); // [新增] 批次內去重
+    let mut seen_texts = std::collections::HashSet::new();
 
-    for (p_idx, &idx) in ctx.batch_indices.iter().enumerate() {
-        let item = &ctx.all_items[idx];
-        
-        // [新增] 避開批次內重複
+    for (p_idx, &idx) in batch_indices.iter().enumerate() {
+        let item = &all_items[idx];
         if seen_texts.contains(&item.preprocessed) {
-            continue; 
+            continue;
         }
         seen_texts.insert(item.preprocessed.clone());
 
@@ -399,55 +427,41 @@ async fn process_one_global_batch(
         tagged_texts.push(format!("[i{}]{}", p_idx, item.preprocessed));
         texts_to_translate.push(item.preprocessed.clone());
     }
+    (tagged_texts, texts_to_translate)
+}
 
-    // 2. 提取術語
-    let glossary = ctx
-        .glossary_automaton
-        .extract(texts_to_translate.as_slice());
-    let entries = crate::utils::hashmap_to_entries(&glossary);
-
-    // 3. 呼叫翻譯服務
-    let cfg = ctx.config.lock().unwrap().clone();
-    match api::translate_batch(&tagged_texts, &cfg, ctx.file_name, Some(&entries)).await {
-        Ok(results_map) => {
-            let mut resolved_any = false;
-            // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)
-            let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
-            for (orig_tagged, trans_tagged) in &results_map {
-                // 有些 LLM 會在原始標籤周圍加空格或轉換格式，我們嘗試遍歷所有結果
-                if let Some(caps) = tag_re.captures(orig_tagged) {
-                    if let Ok(relative_idx) = caps[1].parse::<usize>() {
-                        if relative_idx < ctx.batch_indices.len() {
-                            let abs_idx = ctx.batch_indices[relative_idx];
-                            let orig_text = ctx.all_items[abs_idx].original.clone(); // [新增]
-                            
-                            // 移除翻譯結果中的標籤殘留 (容錯處理)
-                            let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
-                            let restored = postprocess_text(&clean_translated, &ctx.all_items[abs_idx].markers);
-                            let cleaned = validate_and_cleanup(&restored);
-                            let final_trans = hanconv::s2tw(&cleaned);
-                            
-                            // [新增] 將翻譯結果套用到批次內所有相同 original 的項目
-                            for &other_abs_idx in ctx.batch_indices {
-                                if ctx.all_items[other_abs_idx].original == orig_text {
-                                    ctx.all_items[other_abs_idx].translated = Some(final_trans.clone());
-                                }
-                            }
-
-                            resolved_any = true;
+/// 解析配對並套用批次結果
+fn apply_batch_results(
+    all_items: &mut [GlobalBatchItem],
+    batch_indices: &[usize],
+    results_map: &std::collections::HashMap<String, String>,
+) -> bool {
+    let mut resolved_any = false;
+    let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
+    
+    for (orig_tagged, trans_tagged) in results_map {
+        if let Some(caps) = tag_re.captures(orig_tagged) {
+            if let Ok(relative_idx) = caps[1].parse::<usize>() {
+                if relative_idx < batch_indices.len() {
+                    let abs_idx = batch_indices[relative_idx];
+                    let orig_text = all_items[abs_idx].original.clone();
+                    
+                    let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
+                    let restored = postprocess_text(&clean_translated, &all_items[abs_idx].markers);
+                    let cleaned = validate_and_cleanup(&restored);
+                    let final_trans = hanconv::s2tw(&cleaned);
+                    
+                    for &other_abs_idx in batch_indices {
+                        if all_items[other_abs_idx].original == orig_text {
+                            all_items[other_abs_idx].translated = Some(final_trans.clone());
                         }
                     }
+                    resolved_any = true;
                 }
             }
-
-            if resolved_any {
-                Ok(())
-            } else {
-                Err(ctx.i18n.log_batch_invalid.clone().into())
-            }
         }
-        Err(e) => Err(e),
     }
+    resolved_any
 }
 
 
