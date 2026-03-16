@@ -385,12 +385,10 @@ impl AppState {
                                 } else {
                                     egui::Color32::GREEN
                                 }
+                            } else if self.theme == "light" {
+                                egui::Color32::from_rgb(180, 100, 0) // 深橘
                             } else {
-                                if self.theme == "light" {
-                                    egui::Color32::from_rgb(180, 100, 0) // 深橘
-                                } else {
-                                    egui::Color32::from_rgb(255, 165, 0) // 亮橘
-                                }
+                                egui::Color32::from_rgb(255, 165, 0) // 亮橘
                             };
                             ui.label(egui::RichText::new(status_text).color(status_color));
                         });
