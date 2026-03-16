@@ -248,10 +248,16 @@ impl AppState {
                                 egui::ComboBox::from_id_source("source_lang_combo")
                                     .selected_text(&self.source_lang)
                                     .show_ui(ui, |ui| {
-                                        let langs = ["en_us", "en_gb", "zh_tw", "zh_cn", "ja_jp", "ko_kr", "fr_fr", "de_de", "es_es", "ru_ru"];
-                                        for l in langs {
-                                            if ui.selectable_value(&mut self.source_lang, l.to_string(), l).clicked() {
+                                        let langs_locked = self.available_langs.lock().unwrap();
+                                        let langs = if langs_locked.is_empty() {
+                                            vec!["en_us".to_string(), "en_gb".to_string(), "zh_tw".to_string(), "zh_cn".to_string()]
+                                        } else {
+                                            langs_locked.clone()
+                                        };
+                                        for l in &langs {
+                                            if ui.selectable_value(&mut self.source_lang, l.clone(), l).clicked() {
                                                 self.trigger_save();
+                                                self.refresh_all_dictionaries(); // 切換語言時重新讀取/載入術語系統
                                             }
                                         }
                                     });
@@ -263,10 +269,16 @@ impl AppState {
                                 egui::ComboBox::from_id_source("target_lang_combo")
                                     .selected_text(&self.target_lang)
                                     .show_ui(ui, |ui| {
-                                        let langs = ["zh_tw", "zh_cn", "en_us", "ja_jp", "ko_kr", "fr_fr", "de_de", "es_es", "ru_ru"];
-                                        for l in langs {
-                                            if ui.selectable_value(&mut self.target_lang, l.to_string(), l).clicked() {
+                                        let langs_locked = self.available_langs.lock().unwrap();
+                                        let langs = if langs_locked.is_empty() {
+                                            vec!["zh_tw".to_string(), "zh_cn".to_string(), "en_us".to_string()]
+                                        } else {
+                                            langs_locked.clone()
+                                        };
+                                        for l in &langs {
+                                            if ui.selectable_value(&mut self.target_lang, l.clone(), l).clicked() {
                                                 self.trigger_save();
+                                                self.refresh_all_dictionaries(); // 切換語言時重新讀取/載入術語系統
                                             }
                                         }
                                     });

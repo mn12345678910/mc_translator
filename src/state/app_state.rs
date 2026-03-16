@@ -69,6 +69,8 @@ pub struct AppState {
     pub enable_llm_log: bool,
     pub source_lang: String,
     pub target_lang: String,
+    pub ui_lang: String,
+    pub available_langs: Arc<Mutex<Vec<String>>>,
 
     // --- 建議詞管理器視窗位置/大小 ---
     pub viewer_x: f32,
@@ -187,7 +189,7 @@ impl AppState {
 
         // [i18n] 確保目錄並載入語系
         let _ = I18nLabels::ensure_langs_exists();
-        let i18n = I18nLabels::load_or_default(&config.target_lang);
+        let i18n = I18nLabels::load_or_default(&config.ui_lang);
 
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(AtomicBool::new(false));
@@ -267,6 +269,8 @@ impl AppState {
             enable_llm_log: config.enable_llm_log,
             source_lang: config.source_lang,
             target_lang: config.target_lang,
+            ui_lang: config.ui_lang.clone(),
+            available_langs: Arc::new(Mutex::new(Vec::new())),
             viewer_x: config.viewer_x,
             viewer_y: config.viewer_y,
             viewer_width: config.viewer_width,
@@ -439,6 +443,7 @@ impl AppState {
             enable_llm_log: self.enable_llm_log,
             source_lang: self.source_lang.clone(),
             target_lang: self.target_lang.clone(),
+            ui_lang: self.ui_lang.clone(),
             main_x: self.main_x,
             main_y: self.main_y,
             main_width: self.main_width,

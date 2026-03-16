@@ -247,7 +247,7 @@ impl I18nLabels {
         if let Some(labels) = Self::load_from_file(lang) {
             return labels;
         }
-        // 若指定語言無效，嘗試載入 zh_tw
+    // 若指定語言無效，嘗試載入 zh_tw
         if lang != "zh_tw" {
             if let Some(zh_tw) = Self::load_from_file("zh_tw") {
                 return zh_tw;
@@ -255,6 +255,26 @@ impl I18nLabels {
         }
         // 最後回退至內置的 default_zh_tw
         Self::default_zh_tw()
+    }
+
+    pub fn get_available_ui_langs() -> Vec<String> {
+        let mut langs = Vec::new();
+        if let Ok(entries) = std::fs::read_dir("langs") {
+            for entry in entries.flatten() {
+                if let Some(ext) = entry.path().extension() {
+                    if ext == "json" {
+                        if let Some(stem) = entry.path().file_stem() {
+                            langs.push(stem.to_string_lossy().to_string());
+                        }
+                    }
+                }
+            }
+        }
+        if langs.is_empty() {
+            langs.push("zh_tw".to_string());
+        }
+        langs.sort();
+        langs
     }
 
     pub fn default_zh_tw() -> Self {

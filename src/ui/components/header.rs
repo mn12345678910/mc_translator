@@ -166,6 +166,19 @@ impl AppState {
                 self.trigger_save();
             }
             ui.add_space(8.0);
+
+            // UI 介面語言切換下拉選單 (放置在左側)
+            let ui_langs = crate::ui::i18n::I18nLabels::get_available_ui_langs();
+            egui::ComboBox::from_id_source("ui_lang_combo")
+                .selected_text(&self.ui_lang)
+                .show_ui(ui, |ui| {
+                    for l in ui_langs {
+                        if ui.selectable_value(&mut self.ui_lang, l.clone(), l.clone()).clicked() {
+                            self.i18n = crate::ui::i18n::I18nLabels::load_or_default(&self.ui_lang);
+                            self.trigger_save();
+                        }
+                    }
+                });
         });
     }
 }

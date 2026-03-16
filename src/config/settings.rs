@@ -45,6 +45,8 @@ pub struct AppConfig {
     pub source_lang: String,
     #[serde(rename = "目標語言", alias = "target_lang")]
     pub target_lang: String,
+    #[serde(rename = "介面語言", alias = "ui_lang", default = "default_ui_lang")]
+    pub ui_lang: String,
 
     // --- [輸出與路徑] ---
     #[serde(rename = "輸出路徑", alias = "output_dir")]
@@ -195,6 +197,7 @@ fn default_light_tab_inactive() -> [u8; 3] { [245, 245, 240] }
 fn default_rounding() -> f32 { 4.0 }
 fn default_pulse_speed() -> f32 { 1.0 }
 fn default_true() -> bool { true }
+fn default_ui_lang() -> String { "zh_tw".to_string() }
 
 
 impl Default for StyleConfig {
@@ -265,6 +268,7 @@ impl Default for AppConfig {
             glossary_priority: "official".to_string(),
             source_lang: "en_us".to_string(),
             target_lang: "zh_tw".to_string(),
+            ui_lang: "zh_tw".to_string(),
             output_dir: String::new(),
             pack_format: 15,
             enable_custom_fps: false,
