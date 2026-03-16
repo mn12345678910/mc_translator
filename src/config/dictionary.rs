@@ -48,7 +48,7 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    /// 1. 正常路徑測試 (Happy Path)
+    /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_save_load_dict_standard() {
         const TEST_DICT: &str = "test_temp_dictionary_standard.json";
@@ -65,7 +65,7 @@ mod tests {
         let _ = std::fs::remove_file(path);
     }
 
-    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_save_load_dict_utf8_edge() {
         const TEST_DICT: &str = "test_temp_dictionary_utf8.json";
@@ -82,7 +82,7 @@ mod tests {
         let _ = std::fs::remove_file(path);
     }
 
-    /// 3. 強韌性與異常處理 (Robustness / Negative Cases)
+    /// 3. 強韌性與異常處理（健壯性 / 負向案例）
     #[test]
     fn test_load_corrupt_dict_fallback() {
         const TEST_DICT: &str = "test_temp_dictionary_corrupt.json";

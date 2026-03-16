@@ -134,7 +134,7 @@ pub async fn collect_jar_tasks(
     Ok((file_tasks, global_items))
 }
 
-/// 已廢棄實體臨時目錄方案，改為純內存緩存。此函數僅供兼容性佔位，稍後將在 pipeline 中移除呼叫。
+/// 已廢棄實體臨時目錄方案，改為純記憶體快取。此函數僅供相容性佔位，稍後將在 pipeline 中移除呼叫。
 #[deprecated(note = "Use memory-based buffering instead")]
 pub fn write_translated_to_temp_fs(
     _jar_path: &Path,
@@ -148,7 +148,7 @@ pub fn write_translated_to_temp_fs(
 pub fn repack_jar(
     source_path: &Path,
     target_path: &Path,
-    translated_files: &HashMap<String, String>, // 現在直接接收內存中的翻譯內容
+    translated_files: &HashMap<String, String>, // 現在直接接收記憶體中的翻譯內容
     _config: &crate::translation::job::JobConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if translated_files.is_empty() {

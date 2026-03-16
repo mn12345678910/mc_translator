@@ -114,7 +114,7 @@ pub fn decrypt_string(encoded_data: &str) -> Result<String, String> {
 mod tests {
     use super::*;
 
-    /// 1. 正常路徑測試 (Happy Path)
+    /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_encryption_cycle_standard() {
         let original = "Hello World 123";
@@ -123,7 +123,7 @@ mod tests {
         assert_eq!(original, decrypted);
     }
 
-    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_encryption_cycle_utf8() {
         let original = "測試文字 ❄️ 表情符號 繁體中文";
@@ -132,7 +132,7 @@ mod tests {
         assert_eq!(original, decrypted);
     }
 
-    /// 3. 強韌性與異常處理 (Robustness / Negative Cases)
+    /// 3. 強韌性與異常處理（健壯性 / 負向案例）
     #[test]
     fn test_decryption_invalid_base64() {
         // 提供無效的 Base64 字串

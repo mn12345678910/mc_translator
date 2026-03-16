@@ -3,9 +3,7 @@ use crate::translation::glossary::TermType;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-// 移除硬編碼 TECHNICAL_CONSTRAINTS 與重複的 DEFAULT_SYSTEM_PROMPT，改由設定模組統一管理
-
-// 移除硬編碼 TECHNICAL_CONSTRAINTS，改為從 JobConfig 讀取
+// 移除硬編碼的 TECHNICAL_CONSTRAINTS 與 DEFAULT_SYSTEM_PROMPT，改由設定模組統一管理
 
 /// 建立包含術語表的系統提示詞
 pub fn build_system_prompt(
@@ -33,7 +31,7 @@ pub fn build_system_prompt(
             official.sort_by_key(|t| &t.original);
             inferred.sort_by_key(|t| &t.original);
 
-            // 1. 處理術語建議 (Official + Inferred)
+            // 1. 處理術語建議（官方 + 推論）
             if !official.is_empty() || !inferred.is_empty() {
                 prompt.push_str("\n\n請根據以下【術語建議】進行翻譯（僅供參考，請靈活使用）：\n");
                 let max_terms = 30;
@@ -413,12 +411,12 @@ fn extract_json_from_text(text: &str) -> Option<String> {
         }
     }
 
-    // 2. 嘗試從大括號開始提取 (Self-healing 支持)
+    // 2. 嘗試從大括號開始提取（自我修復支援）
     if let Some(m) = JSON_BRACE_RE.find(trimmed) {
         let mut candidate = m.as_str().trim().to_string();
         
-        // 優先嘗試直接解析 (處理完整的 JSON)
-        // 注意：這裡需要處理可能存在的後續雜質，所以我們嘗試找到最後一個 }
+        // 優先嘗試直接解析（處理完整的 JSON）
+        // 注意：這裡需要處理可能存在的後續雜質，所以嘗試找到最後一個 }
         if let Some(last_brace) = candidate.rfind('}') {
             let possible_json = &candidate[..=last_brace];
             if serde_json::from_str::<serde_json::Value>(possible_json).is_ok() {
@@ -426,7 +424,7 @@ fn extract_json_from_text(text: &str) -> Option<String> {
             }
         }
 
-        // --- 自我修復邏輯 (Self-healing) ---
+        // --- 自我修復邏輯 ---
         // 3. 如果解析失敗，嘗試補齊結尾
         if !candidate.ends_with('}') {
             candidate.push('}');

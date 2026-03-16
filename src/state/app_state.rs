@@ -117,7 +117,7 @@ pub struct AppState {
     pub last_frame_time: std::time::Instant,
     /// 建議詞管理器開啟延遲計數器 (0.5s 延遲防閃爍)
     pub viewer_opening_counter: u32,
-    // --- 視窗同步 (ses_342b) ---
+    // --- 視窗同步 ---
     pub viewer_shared: Arc<ViewerSharedState>,
     /// 辭典檔案監控器 (保持生命週期)
     pub _dict_watcher: Option<Box<dyn std::any::Any>>,
@@ -385,7 +385,7 @@ impl AppState {
 
     /// 觸發非同步存檔
     pub fn trigger_save(&self) {
-        // 同步樣式至 Viewport (Revision 15.12+)
+        // 同步樣式至 Viewport
         if let Ok(mut style_lock) = self.viewer_shared.style.write() {
             *style_lock = crate::state::viewer_state::StyleSnapshot {
                 dark_bg: self.dark_bg,

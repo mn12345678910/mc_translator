@@ -292,7 +292,7 @@ pub fn sync_formatting(original: &str, translations: &HashMap<String, Vec<String
 mod tests {
     use super::*;
 
-    /// 1. 正常路徑測試 (Happy Path)
+    /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_cleanup_standard() {
         let input = "Translation: \"Hello World\"";
@@ -302,7 +302,7 @@ mod tests {
         assert_eq!(validate_and_cleanup(md_input), "測試文字");
     }
 
-    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_cleanup_utf8_edge_cases() {
         // 測試中文引號與繁簡轉換支援 (UTF-8)
@@ -314,7 +314,7 @@ mod tests {
         assert_eq!(validate_and_cleanup("{}"), "");
     }
 
-    /// 3. 強韌性與無限迴圈偵測 (Robustness / Loop Prevention)
+    /// 3. 強韌性與無限迴圈偵測（健壯性 / 迴圈防護）
     #[test]
     fn test_detect_loop_infinite_prevention() {
         // 測試重複文字偵測

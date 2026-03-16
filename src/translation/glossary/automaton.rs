@@ -148,7 +148,7 @@ pub struct GlossaryEntry {
 mod tests {
     use super::*;
 
-    /// 1. 正常路徑測試 (Happy Path)
+    /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_glossary_match_standard() {
         let mut exact = HashMap::new();
@@ -163,7 +163,7 @@ mod tests {
         assert!(results.contains_key("stone"));
     }
 
-    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_glossary_match_utf8() {
         let mut exact = HashMap::new();
@@ -178,7 +178,7 @@ mod tests {
         assert_eq!(results.get("❄️ ice方塊").unwrap().0, "冰塊");
     }
 
-    /// 3. 強韌性與邏輯防錯 (Robustness / Logic Flow)
+    /// 3. 強韌性與邏輯防錯（健壯性 / 邏輯防錯）
     #[test]
     fn test_glossary_circular_definition_safety() {
         let mut exact = HashMap::new();

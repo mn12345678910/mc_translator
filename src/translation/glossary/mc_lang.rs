@@ -11,7 +11,7 @@ pub struct McLangFiles {
     pub zh_tw: HashMap<String, String>,
 }
 
-/// 從本地緩存或 GitHub 下載並建構 mc_lang 字典
+/// 從本地快取或 GitHub 下載並建構 mc_lang 字典
 /// 回傳: (語言檔案, 精確匹配表, 常規差異表)
 pub async fn load_mc_dicts() -> Result<
     (McLangFiles, HashMap<String, String>, Vec<(String, String)>),
@@ -45,7 +45,7 @@ pub async fn load_mc_dicts() -> Result<
         }
     }
 
-    // 若本地無有效緩存，則從網路下載
+    // 若本地無有效快取，則從網路下載
     if !use_local {
         let base = "https://raw.githubusercontent.com/SkyEye-FAST/mc_lang/master/valid/";
         let client = reqwest::Client::builder()

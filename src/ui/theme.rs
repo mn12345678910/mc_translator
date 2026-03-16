@@ -92,7 +92,7 @@ impl AppState {
         (bg, text)
     }
 
-    /// 獲取特定元件的完整樣式 (含圓角) (Revision 15.30+)
+    /// 獲取特定元件的完整樣式 (含圓角)
     pub fn get_instance_style_full(&self, id: &str) -> (egui::Color32, egui::Color32, f32) {
         let is_dark = self.theme == "dark";
         let default_rounding = self.btn_rounding_value;
@@ -133,7 +133,7 @@ impl AppState {
             }
         }
 
-        // 2. 類別樣式解析 (Revision 15.68: 補全所有分組 ID 以支援調色盤同步)
+        // 2. 類別樣式解析
         let (rgb_bg, rgb_text) = if id == "cat_nav_bar" {
             (if is_dark { self.dark_tab_inactive } else { self.light_tab_inactive }, 
              if is_dark { self.dark_btn_text } else { self.light_label })

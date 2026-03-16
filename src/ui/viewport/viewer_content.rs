@@ -38,7 +38,7 @@ impl AppState {
         
         let mut style = (*ctx.style()).clone();
 
-        // 完整移植主視窗的視覺參數，確保按鈕、選取色與主題高度一致 (Revision 15.18)
+        // 完整移植主視窗的視覺參數，確保按鈕、選取色與主題高度一致
         let visuals = if is_dark {
             let mut v = egui::Visuals::dark();
             let bg = egui::Color32::from_rgb(style_snap.dark_bg[0], style_snap.dark_bg[1], style_snap.dark_bg[2]);
@@ -94,7 +94,7 @@ impl AppState {
         );
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // 在此處套用 style，限制樣式僅影響子視窗 ui，不影響全域 ctx (解決主畫面主題消失)
+            // 在此處套用 style，限制樣式只影響子視窗 UI，不影響全域 ctx，以避免主畫面主題消失
             ui.set_style(style);
             let processing = is_processing.load(Ordering::SeqCst);
             let current_tab = dict_active_tab.load(Ordering::SeqCst);
@@ -147,32 +147,27 @@ impl AppState {
                 }
             });
 
-            // 優先級開關與搜尋框
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(10.0, 10.0);
             });
 
             ui.separator();
 
-            // 功能按鈕列
             ui.horizontal_wrapped(|ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(10.0, 10.0);
 
-                // 新增按鈕
                 if ui
                     .add_enabled(!processing, egui::Button::new(i18n.btn_add.clone()))
                     .clicked()
                 {
                     show_dict_add_dialog.store(true, Ordering::SeqCst);
                 }
-                // 取代按鈕
                 if ui
                     .add_enabled(!processing, egui::Button::new(i18n.btn_replace.clone()))
                     .clicked()
                 {
                     show_dict_replace_dialog.store(true, Ordering::SeqCst);
                 }
-                // 匯入按鈕
                 if ui
                     .add_enabled(!processing, egui::Button::new(i18n.btn_import.clone()))
                     .clicked()
@@ -203,7 +198,6 @@ impl AppState {
                         }
                     }
                 }
-                // 匯出按鈕
                 if ui.button(i18n.btn_export.clone()).clicked() {
                     let default_name = if current_tab == 0 {
                         crate::config::USER_DICT
@@ -224,10 +218,10 @@ impl AppState {
                         }
                     }
                 }
-                // .json 按鈕 (Revision 14.1 強化雙開)
+                // .json 按鈕
                 if ui
                     .button(".json")
-                    .on_hover_text(i18n.spec_btn_nav_dict.clone()) // 使用已有的 hover 文字
+                    .on_hover_text(i18n.spec_btn_nav_dict.clone()) // 使用既有提示文字
                     .clicked()
                 {
                     let filename = if current_tab == 0 {
@@ -269,12 +263,12 @@ impl AppState {
                 });
             });
 
-            // --- 補回新增與取代對話框區塊 (Revision 14.1) ---
+            // --- 新增與取代對話框區塊 ---
             if show_dict_add_dialog.load(Ordering::SeqCst) {
                 egui::Window::new(i18n.glossary_add_title.clone())
                     .collapsible(false)
                     .resizable(false)
-                    .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
+                    .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動
                     .show(ctx, |ui| {
                         ui.horizontal(|ui| {
                             ui.label(i18n.glossary_key.clone());
@@ -300,7 +294,7 @@ impl AppState {
                                         mem.insert(key, val);
                                         crate::config::save_translation_memory(&mem);
                                     } else {
-                                        // 官方分頁編輯也存入使用者字典並從官方移除 (Migration)
+                                        // 官方分頁編輯也存入使用者字典並從官方移除（遷移）
                                         let mut mem = translation_memory.lock().unwrap();
                                         mem.insert(key.clone(), val);
                                         crate::config::save_translation_memory(&mem);
@@ -329,7 +323,7 @@ impl AppState {
                 egui::Window::new(i18n.glossary_replace_title.clone())
                     .collapsible(false)
                     .resizable(false)
-                    .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動 (Revision 14.4)
+                    .default_pos([400.0, 300.0]) // 移除 anchor 使其可移動
                     .show(ctx, |ui| {
                         ui.label(i18n.glossary_replace_desc.clone());
                         ui.horizontal(|ui| {
@@ -359,7 +353,7 @@ impl AppState {
                                 let new_val = dict_replace_new.lock().unwrap().clone();
                                 let is_exact = dict_replace_all.load(Ordering::SeqCst);
 
-                                // Revision 14.5: 空值保護與計數
+                                // 空值保護與計數
                                 if !target.is_empty() {
                                     let mut count = 0;
                                     let mut mem = translation_memory.lock().unwrap();
@@ -378,8 +372,8 @@ impl AppState {
                                             }
                                         }
                                     } else {
-                                        // 官方建議詞取代：同時更新內存與存入 user.json
-                                        // Revision 14.6: 對官方字典操作後移入使用者分頁
+                                        // 官方建議詞取代：同時更新記憶體並寫入 user.json
+                                        // 對官方字典操作後，移入使用者分頁
                                         let mut inferred = inferred_match_map.lock().unwrap();
                                         let mut keys_to_remove = Vec::new();
                                         for (k, v) in inferred.iter_mut() {
@@ -412,7 +406,7 @@ impl AppState {
 
                                     if count > 0 {
                                         crate::config::save_translation_memory(&mem);
-                                        // 確保 UI 立即反應 (針對搜尋快取等可能的延遲)
+                                        // 確保 UI 立即反應，避免搜尋快取等延遲
                                         ctx.request_repaint();
                                     }
                                 }
@@ -560,7 +554,7 @@ impl AppState {
             ui.separator();
             let (area_bg, _) = get_instance_style_from_snap(&style_snap, "area_dict_list", is_dark);
             egui::ScrollArea::vertical().id_source("memory_viewer_dict_scroll")
-                .hscroll(false) // 禁用水平捲動防止無限放大 (Revision 14.2)
+                .hscroll(false) // 禁用水平捲動，避免無限放大
                 .auto_shrink([false; 2])
                 .show(ui, |ui| {
                     // 創造條紋對比色：深色加亮、淺色變暗 (以防與 area_bg 融為一體)
@@ -590,7 +584,7 @@ impl AppState {
                         .spacing([spacing, 8.0])
                         .striped(true)
                         .show(ui, |ui| {
-                            // 標題置中對齊且不鎖死寬度 (Revision 15.15: 使用 allocate_ui 使其可縮小)
+                            // 標題置中對齊且不鎖死寬度
                             ui.allocate_ui([col_w, 20.0].into(), |ui| {
                                 ui.centered_and_justified(|ui| {
                                     ui.label(
@@ -636,7 +630,7 @@ impl AppState {
                             let end = (start + page_size).min(total_items);
 
                             for (k, v) in &items[start..end] {
-                                // 使用 Layout 確保水平與垂直置中 (Revision 15.15)
+                                // 使用 Layout 確保水平與垂直置中
                                 ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                                     ui.set_max_width(col_w);
                                     ui.add(
@@ -705,7 +699,7 @@ impl AppState {
                                         },
                                     );
 
-                                    // 確保按鈕群組在 Grid 內置右對齊且順序正確 (Revision 15.17)
+                                    // 確保按鈕群組在 Grid 內置右對齊且順序正確
                                     ui.allocate_ui([actions_w, 20.0].into(), |ui| {
                                         ui.with_layout(
                                             egui::Layout::right_to_left(egui::Align::Center),
@@ -759,13 +753,13 @@ impl AppState {
     }
 }
 
-/// 從 StyleSnapshot 獲取精確樣式 (Revision 15.18)
+/// 從 StyleSnapshot 獲取精確樣式
 fn get_instance_style_from_snap(snap: &crate::state::viewer_state::StyleSnapshot, id: &str, is_dark: bool) -> (egui::Color32, egui::Color32) {
     let (bg, text, _) = get_instance_style_from_snap_full(snap, id, is_dark);
     (bg, text)
 }
 
-/// 獲取完整樣式 (含圓角) (Revision 15.30+)
+/// 獲取完整樣式 (含圓角)
 fn get_instance_style_from_snap_full(
     snap: &crate::state::viewer_state::StyleSnapshot,
     id: &str,

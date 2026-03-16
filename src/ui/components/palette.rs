@@ -112,7 +112,7 @@ impl AppState {
                         if r { has_rounding_supported = true; }
                     }
 
-                    // 檢測目標是否切換，若切換則重置 HSVA 狀態 (Revision 15.68)
+                    // 檢測目標是否切換，若切換則重置 HSVA 狀態
                     let first_target_name = active_targets.first().cloned().unwrap_or_default();
                     let first_target_id = self.get_id_from_target_name(&first_target_name);
                     if self.palette_hsva_target != first_target_id {
@@ -298,7 +298,7 @@ impl AppState {
         self.trigger_save();
     }
 
-    /// 批次套用圓角至清單中所有目標 (Revision 15.30+)
+    /// 批次套用圓角至清單中所有目標
     fn apply_batch_rounding(&mut self, val: f32) {
         let targets: Vec<String> = self.palette_edit_slots.iter()
             .map(|s| s.target_id.clone())
@@ -340,7 +340,7 @@ impl AppState {
             n if n == self.i18n.spec_label_output => "label_output_path",
             n if n == self.i18n.spec_progress_current => "progress_current",
             n if n == self.i18n.spec_progress_total => "progress_total",
-            // 類別 ID 映射 (Revision 15.65)
+            // 類別 ID 映射
             n if n == self.i18n.cat_all_buttons => "cat_all_buttons",
             n if n == self.i18n.cat_all_labels => "cat_all_labels",
             n if n == self.i18n.cat_all_inputs => "cat_all_inputs",

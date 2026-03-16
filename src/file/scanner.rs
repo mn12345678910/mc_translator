@@ -6,7 +6,7 @@ pub fn scan_files_recursive(
 ) -> Vec<(std::path::PathBuf, String)> {
     let mut files = Vec::new();
     if let Ok(entries) = fs::read_dir(dir) {
-        // 規範化基準路徑以避免 Windows 磁碟機代號大小寫造成的 strip_prefix 失敗 (Scan Fix)
+        // 規範化基準路徑以避免 Windows 磁碟機代號大小寫造成的 strip_prefix 失敗
         let base_norm = base_dir.canonicalize().unwrap_or(base_dir.to_path_buf());
         
         for entry in entries.flatten() {

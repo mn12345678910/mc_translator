@@ -4,7 +4,7 @@ use std::sync::atomic::Ordering;
 
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // 0. 處理來自 Viewport 的非同步更新訊息 (Revision 15.12)
+        // 0. 處理來自 Viewport 的非同步更新訊息
         while let Ok(update) = self._update_rx.try_recv() {
             match update {
                 ViewerUpdate::Theme(t) => {
@@ -20,11 +20,11 @@ impl eframe::App for AppState {
             }
         }
 
-        // 0.5 視窗同步 (ses_342b): 提前於儲存前同步，且不限視覺狀態 (fix_save_race)
+        // 0.5 視窗同步：提前於儲存前同步，且不限視覺狀態
         {
             if let Ok(pos_lock) = self.viewer_shared.position.read() {
                 if let Some(pos) = *pos_lock {
-                    // 提升閾值至 5.0 以防止 Windows 系統邊框微調產生的飄移 (Drift Fix)
+                    // 提升閾值至 5.0，避免 Windows 系統邊框微調造成飄移
                     if (pos.x - self.viewer_x).abs() > 5.0 || (pos.y - self.viewer_y).abs() > 5.0 {
                         self.viewer_x = pos.x;
                         self.viewer_y = pos.y;
@@ -41,7 +41,6 @@ impl eframe::App for AppState {
             }
         }
 
-        // 0. 更新啟動延遲計數器 (Revision 15.13: V6 終極整合 - 補回被誤刪的遞減邏輯)
         if self.viewer_opening_counter > 0 {
             self.viewer_opening_counter -= 1;
             ctx.request_repaint(); // 確保計數器遞減期間持續重繪
@@ -57,10 +56,10 @@ impl eframe::App for AppState {
                 .store(false, std::sync::atomic::Ordering::SeqCst);
 
             self.show_memory_viewer = false;
-            // 重要：重置旗標以利下次開啟時重新整理辭典
+            // 重要：重置旗標，讓下次開啟時重新整理辭典
             let mut opened = self.viewer_shared.opened_last_frame.lock().unwrap();
             *opened = false;
-            // 重置計數器，確保下次開啟時能再次套用引導座標 (Reset Fix)
+            // 重置計數器，確保下次開啟仍可套用引導座標
             let mut frames = self.viewer_shared.opened_frames.lock().unwrap();
             *frames = 0;
         }
@@ -128,8 +127,8 @@ impl eframe::App for AppState {
             self.show_viewport_if_needed(ctx);
         }
 
-        // --- 同步主視窗幾幾何至 AppState (Revision 15.17) ---
-        // 注意：此處需使用 inner_size (screen_rect) 以對齊 main.rs 的載入邏輯，防止視窗不斷長大 (Size Drift Fix)
+        // --- 同步主視窗幾何至 AppState ---
+        // 注意：此處需使用 inner_size (screen_rect) 以對齊 main.rs 的載入邏輯，避免視窗不斷長大
         let inner_rect = ctx.screen_rect();
         if let Some(outer_rect) = ctx.input(|i| i.viewport().outer_rect) {
             let pos = outer_rect.min;

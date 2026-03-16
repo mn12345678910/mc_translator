@@ -90,14 +90,14 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    /// 1. 正常路徑測試 (Happy Path)
+    /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_extract_display_path_standard() {
         let path = std::path::Path::new("some/assets/minecraft/lang/en_us.json");
         assert_eq!(extract_display_path(path), "minecraft/en_us.json");
     }
 
-    /// 2. 邊界值與 UTF-8 測試 (Edge Cases / UTF-8)
+    /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_extract_display_path_utf8_edge() {
         // 包含中文字元與空白
@@ -105,7 +105,7 @@ mod tests {
         assert_eq!(extract_display_path(path), "範例 目錄/en_us.json");
     }
 
-    /// 3. 強韌性與異常處理 (Robustness / Negative Cases)
+    /// 3. 強韌性與異常處理（健壯性 / 負向案例）
     #[test]
     fn test_extract_display_path_fallback() {
         // 沒有 assets 的路徑，應直接顯示檔名

@@ -1,16 +1,21 @@
 use crate::state::app_state::AppState;
 
 impl AppState {
+    const VIEWER_OPENED_FRAMES_MAX: u32 = 150;
+    const VIEWER_GUIDANCE_REPAINT_FRAMES: u32 = 65;
+    const VIEWER_VISIBLE_AFTER_FRAMES: u32 = 10;
+    const VIEWER_FORCE_GEOMETRY_FRAMES: u32 = 20;
+
     /// 若有需要則顯示建議詞管理器 Viewport
     pub fn show_viewport_if_needed(&mut self, ctx: &egui::Context) {
         if !self.show_memory_viewer || self.viewer_opening_counter > 0 {
             return;
         }
 
-        // 1. 在主執行緒更新幀數計數器，用於隱形展現與幾何引導 (Revision 15.10)
+        // 1. 在主執行緒更新幀數計數器，用於隱形展現與幾何引導
         let count_val = {
             let mut count = self.viewer_shared.opened_frames.lock().unwrap();
-            if *count < 150 {
+            if *count < Self::VIEWER_OPENED_FRAMES_MAX {
                 *count += 1;
             }
             *count
@@ -23,11 +28,11 @@ impl AppState {
         }
         drop(opened);
 
-        // 每 frame 都必須調用 show_viewport_deferred 才能保持 viewport 持績顯示
+        // 每個 frame 都必須呼叫 show_viewport_deferred，才能保持 Viewport 持續顯示
         self.create_viewport_deferred(ctx, count_val);
 
-        // 確保在開啟初期的引導與亮顯階段持續重繪，防止計數器卡住 (Deadlock Prevention)
-        if count_val < 65 {
+        // 開啟初期持續重繪，避免計數器卡住而導致死鎖
+        if count_val < Self::VIEWER_GUIDANCE_REPAINT_FRAMES {
             ctx.request_repaint();
         }
     }
@@ -64,18 +69,18 @@ impl AppState {
             let mut opened_lock = self.viewer_shared.opened_last_frame.lock().unwrap();
             let opened_last_frame = *opened_lock;
 
-            // 1. 隱形啟動策略 (Invisible-First): 初始設為 invisible (Revision 15.10)
-            // 2. 幾何引導 (Geometry Guidance): 前 10 幀持續強制套用座標與尺寸，壓制 OS 跳位 (Feedback Fix)
-            let is_visible = opened_frames >= 10; // 使用者要求調至 10 幀
+            // 1. 先隱後顯：初始設為 invisible
+            // 2. 幾何引導：前 10 幀持續強制套用座標與尺寸，壓制 OS 跳位
+            let is_visible = opened_frames >= Self::VIEWER_VISIBLE_AFTER_FRAMES; // 使用者要求調至 10 幀
             let mut builder = egui::ViewportBuilder::default()
                 .with_title(i18n.glossary_title.clone())
                 .with_resizable(true)
                 .with_maximized(false)
-                .with_min_inner_size([800.0, 600.0]) // [Revision 15.15] 最小尺寸限制
+                .with_min_inner_size([800.0, 600.0]) // 最小尺寸限制
                 .with_visible(is_visible);
 
-            // 只有在穩定前（前 20 幀，涵蓋 10 幀亮顯期）持續強制套位，壓制 OS 隨機跳位 (Revision 15.13)
-            if opened_frames < 20 {
+            // 只有在穩定前（前 20 幀，涵蓋 10 幀亮顯期）持續強制套位，壓制 OS 隨機跳位
+            if opened_frames < Self::VIEWER_FORCE_GEOMETRY_FRAMES {
                 builder = builder
                     .with_inner_size([self.viewer_width, self.viewer_height])
                     .with_position([self.viewer_x, self.viewer_y]);
@@ -93,7 +98,7 @@ impl AppState {
                 egui::ViewportId::from_hash_of("memory_viewer"),
                 builder,
                 move |ctx, _viewport_id| {
-                    // 1. 深度樣式注入 (Revision 15.35): 從快照重建樣式並套用至 Viewport Context
+                    // 1. 深度樣式注入：從快照重建樣式並套用到 Viewport Context
                     let is_dark = *viewer_shared.theme.read().unwrap() == "dark";
                     let style_snap = viewer_shared.style.read().unwrap();
                     
@@ -133,19 +138,19 @@ impl AppState {
                     style.visuals = visuals;
                     ctx.set_style(style);
 
-                    // 監聽關閉事件 (Revision 15.12: Deferred Save)
+                    // 監聽關閉事件
                     if ctx.input(|i| i.viewport().close_requested()) {
                         is_memory_viewer_open.store(false, std::sync::atomic::Ordering::SeqCst);
                         viewer_shared
                             .close_requested
                             .store(true, std::sync::atomic::Ordering::SeqCst);
 
-                        // 當視窗關閉時觸發一次設定檔存盤 (Revision 15.12)
+                        // 當視窗關閉時觸發一次設定檔存盤
                         viewer_shared.update_tx
                             .send(crate::state::viewer_state::ViewerUpdate::SaveConfig).ok();
                     }
 
-                    // 2. 視窗同步 (ses_342b): 回報當前位置與大小
+                    // 2. 視窗同步：回報當前位置與大小
                     let inner_size = ctx.screen_rect().size();
                     if let Some(outer_rect) = ctx.input(|i| i.viewport().outer_rect) {
                         let pos = outer_rect.min;
@@ -154,7 +159,7 @@ impl AppState {
                         // (顯現指令已移至主執行緒 create_viewport_deferred 以防死鎖)
 
                         if (pos.x > 1.1 || pos.y > 1.1) && current_count > 20 {
-                            // 幾何同步保護：加入 Delta Check，並限制合理的同步上限 (Revision 15.15)
+                            // 幾何同步保護：加入差值檢查，並限制合理的同步上限
                             let clamped_width = inner_size.x.clamp(400.0, 1920.0);
                             let clamped_height = inner_size.y.clamp(300.0, 1080.0);
                             let clamped_size = egui::vec2(clamped_width, clamped_height);
