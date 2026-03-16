@@ -18,8 +18,8 @@
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant UI as UI (AppState)
-    participant F as File Pipeline
+    participant UI as "UI (AppState)"
+    participant F as "File Pipeline"
     participant T as Translation
     participant O as Output
 

@@ -31,18 +31,18 @@ stateDiagram-v2
 
 ```mermaid
 graph LR
-    subgraph UI_Thread [UI 主執行緒 (egui)]
+    subgraph UI_Thread ["UI 主執行緒 (egui)"]
         A[Render Loop] --> B{讀取狀態}
-        B -- Atomic --> C[讀取 進度/狀態]
-        B -- Mutex --> D[讀取 紀錄日誌]
-        E[使用者點擊] --> F[更新 Atomic狀態取消/暫停]
+        B -- Atomic --> C["讀取 進度/狀態"]
+        B -- Mutex --> D["讀取 紀錄日誌"]
+        E[使用者點擊] --> F["更新 Atomic狀態取消/暫停"]
     end
 
-    subgraph Background_Thread [背景任務執行緒 (Tokio)]
+    subgraph Background_Thread ["背景任務執行緒 (Tokio)"]
         G[翻譯 Task] --> H{更新狀態}
         H -- Atomic --> C
         H -- Mutex --> D
-        G --> I[監聽 Cancel/Pause]
+        G --> I["監聽 Cancel/Pause"]
         I -.-> F
     end
 

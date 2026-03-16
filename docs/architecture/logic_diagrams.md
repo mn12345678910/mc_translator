@@ -41,19 +41,19 @@ graph TD
     
     CheckFull -- 成功 --> End([完成])
     
-    CheckFull -- 失敗 --> FallbackHalf[1. 降級為「半批次」<br/>降低字元上限]
+    CheckFull -- 失敗 --> FallbackHalf["1. 降級為「半批次」<br/>降低字元上限"]
     FallbackHalf --> TryHalf[嘗試半批次翻譯]
     TryHalf --> CheckHalf{成功?}
     
     CheckHalf -- 成功 --> End
     
-    CheckHalf -- 失敗 --> FallbackSingle[2. 降級為「單筆翻譯」]
+    CheckHalf -- 失敗 --> FallbackSingle["2. 降級為「單筆翻譯」"]
     FallbackSingle --> TrySingle[嘗試單筆翻譯]
     TrySingle --> CheckSingle{成功?}
     
     CheckSingle -- 成功 --> End
     
-    CheckSingle -- 失敗 --> LogError[3. 記錄日誌 / 標記失敗] --> End
+    CheckSingle -- 失敗 --> LogError["3. 記錄日誌 / 標記失敗"] --> End
 ```
 
 ---
@@ -67,8 +67,8 @@ graph TD
     Start([準備批次數據]) --> Loop1[發送端：遍歷批次內條目]
     Loop1 --> ExistCheck{原文在此批次中已出現?}
     
-    ExistCheck -- 是 --> Merged[僅標記為重複<br/>不另配相對標籤]
-    ExistCheck -- 否 --> NewTag[分配批次內相對標籤<br/>e.g. i0, i1]
+    ExistCheck -- 是 --> Merged["僅標記為重複<br/>不另配相對標籤"]
+    ExistCheck -- 否 --> NewTag["分配批次內相對標籤<br/>e.g. i0, i1"]
     
     Merged --> Loop1
     NewTag --> Loop1
@@ -94,8 +94,8 @@ graph TD
 graph TD
     Start([獲取掃描到的檔案]) --> CheckJar{檔案類型是否為 .jar?}
     
-    CheckJar -- 是 (JAR 檔案) --> GroupJar[以「檔案本身」為分組鍵]
-    CheckJar -- 否 (JSON / JS) --> GroupFolder[以「父資料夾」為分組鍵]
+    CheckJar -- "是 (JAR 檔案)" --> GroupJar["以「檔案本身」為分組鍵"]
+    CheckJar -- "否 (JSON / JS)" --> GroupFolder["以「父資料夾」為分組鍵"]
     
     GroupJar --> Reorder[依 File Task 順序重新排序 global_items]
     GroupFolder --> Reorder
