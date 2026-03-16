@@ -2,7 +2,8 @@
 
 ## 資料來源
 
-- 官方詞庫：由 Minecraft 官方語言檔 (`dicts/en_us.json` 與 `dicts/zh_tw.json`) 對照產生
+- 官方詞庫：由 Minecraft 官方語言檔（從 GitHub 動態下載，取消靜態固定）對照產生。
+  - **條件式對照載入**：推論詞庫常規不會產出，**僅在 `source_lang == "en_us"` 且 `target_lang == "zh_tw"` 時**，才會進行 `exact` 對照和生成。
 - 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導並存到 `dicts/official.json`
 - 使用者詞庫：`dicts/user.json`
 
@@ -25,7 +26,7 @@
 
 ## 監控與刷新
 
-- `dicts/` 目錄中的 `en_us.json` / `zh_cn.json` / `zh_tw.json` 變動會觸發重新推論
+- `dicts/` 或 `langs/` 資料夾中任何 `.json` 變動會觸發重新分析並載入官方/推論。
 - 推論結果會覆寫 `dicts/official.json`
 
 ## 術語載入與優先級覆蓋權
