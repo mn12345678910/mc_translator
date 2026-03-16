@@ -118,7 +118,7 @@ impl AppState {
                         if is_dark { egui::Color32::from_rgb(self.dark_list_bg[0], self.dark_list_bg[1], self.dark_list_bg[2]) }
                         else { egui::Color32::from_rgb(self.light_list_bg[0], self.light_list_bg[1], self.light_list_bg[2]) }
                     }
-                    else { if is_dark { egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]) } else { egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]) } }
+                    else if is_dark { egui::Color32::from_rgb(self.dark_bg[0], self.dark_bg[1], self.dark_bg[2]) } else { egui::Color32::from_rgb(self.light_bg[0], self.light_bg[1], self.light_bg[2]) }
                 });
                 let final_text = text.unwrap_or_else(|| {
                     if id.contains("btn") || id.contains("nav") { if is_dark { egui::Color32::from_rgb(self.dark_btn_text[0], self.dark_btn_text[1], self.dark_btn_text[2]) } else { egui::Color32::from_rgb(self.light_btn_text[0], self.light_btn_text[1], self.light_btn_text[2]) } }
@@ -126,10 +126,8 @@ impl AppState {
                         if is_dark { egui::Color32::from_rgb(self.dark_label[0], self.dark_label[1], self.dark_label[2]) } 
                         else { egui::Color32::from_rgb(self.light_label[0], self.light_label[1], self.light_label[2]) } 
                     }
-                    else { 
-                        if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } 
-                        else { egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]) } 
-                    }
+                    else if is_dark { egui::Color32::from_rgb(self.dark_text[0], self.dark_text[1], self.dark_text[2]) } 
+                    else { egui::Color32::from_rgb(self.light_text[0], self.light_text[1], self.light_text[2]) }
                 });
                 return (final_bg, final_text, rounding);
             }
