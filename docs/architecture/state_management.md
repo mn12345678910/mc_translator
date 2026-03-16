@@ -59,8 +59,9 @@ graph LR
 
 ## 持久化策略
 
-- `config.cfg` 儲存主要設定。
-- `.env` 儲存 `API_KEY`，並以 DPAPI 加密。
+- `settings/config.cfg` 儲存主要設定。
+- `settings/.env` 儲存 `API_KEY`，並以 DPAPI 加密。
+- `settings/style.cfg` 儲存外觀樣式設定。
 - 主視窗與字典管理器視窗會在幾何變動時即時同步並儲存。
 - `on_exit` 會觸發保存，避免異常關閉時遺失設定。
 
