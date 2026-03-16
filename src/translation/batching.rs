@@ -3,6 +3,7 @@ use crate::translation::job::JobConfig;
 use crate::utils::text_processing::{
     postprocess_text, preprocess_text, validate_and_cleanup,
 };
+use std::collections::HashMap; // [新增]
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
@@ -51,6 +52,7 @@ pub async fn translate_global_batches(
     log: Arc<Mutex<Vec<String>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
+    translation_memory: Arc<Mutex<HashMap<String, String>>>, // [新增] 快取暫存
     i18n: &crate::ui::i18n::I18nLabels,
     file_name: &str,
     global_items_offset: usize, // 新增：全域 offset
@@ -68,6 +70,7 @@ pub async fn translate_global_batches(
         paused,
         pause_notifier,
         glossary_automaton,
+        translation_memory, // [新增]
         i18n,
         file_name: file_name.to_string(),
         global_items_offset, // 傳遞 offset
@@ -88,6 +91,7 @@ pub struct RunBatchContext<'a> {
     pub paused: Arc<AtomicBool>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
+    pub translation_memory: Arc<Mutex<HashMap<String, String>>>, // [新增]
     pub i18n: &'a crate::ui::i18n::I18nLabels,
     pub file_name: String,
     pub global_items_offset: usize, // 新增
@@ -118,6 +122,18 @@ pub async fn run_translation_batch(
     }
     let mut success_count = 0;
     let mut failed_indices = Vec::new();
+
+    // [新增] 檢查暫存快取 (Exact Match)
+    {
+        let mem = ctx.translation_memory.lock().unwrap();
+        for item in items.iter_mut() {
+            if item.translated.is_none() {
+                if let Some(cached) = mem.get(&item.original) {
+                    item.translated = Some(cached.to_string());
+                }
+            }
+        }
+    }
 
     // 1. 初次嘗試：僅處理尚未翻譯的項目
     let pending_indices: Vec<usize> = (0..items.len())
@@ -168,11 +184,15 @@ pub async fn run_translation_batch(
         match batch_result {
             Ok(_) => {
                 let mut batch_success = 0;
+                let mut mem = ctx.translation_memory.lock().unwrap(); // [新增]
                 for &idx in batch_item_indices {
                     if items[idx].translated.is_none() {
                         failed_indices.push(idx);
                     } else {
                         batch_success += 1;
+                        if let Some(ref t) = items[idx].translated { // [新增]
+                            mem.insert(items[idx].original.clone(), t.clone());
+                        }
                     }
                 }
                 success_count += batch_success;
@@ -286,7 +306,12 @@ pub async fn run_translation_batch(
                     Ok(translated) => {
                         let restored = postprocess_text(&translated, &item.markers);
                         let cleaned = validate_and_cleanup(&restored);
-                        item.translated = Some(hanconv::s2tw(&cleaned));
+                        let final_trans = hanconv::s2tw(&cleaned);
+                        item.translated = Some(final_trans.clone());
+                        
+                        // [新增] 更新暫存快取
+                        ctx.translation_memory.lock().unwrap().insert(item.original.clone(), final_trans);
+
                         success_count += 1;
                         let already_done = total_items - pending_indices.len();
                         progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
@@ -369,18 +394,25 @@ async fn process_one_global_batch(
         cfg.selected_model
     );
 
-    // 1. 準備批次文本
+    // 1. 準備批次文本 (優化：使用批次內相對索引)
     let mut texts_to_translate = Vec::new();
     let mut current_file_id = usize::MAX;
+    let mut file_relative_id = 0;
+    let mut file_map = std::collections::HashMap::new();
 
     let mut tagged_texts = Vec::new();
-    for &idx in ctx.batch_indices {
+    for (p_idx, &idx) in ctx.batch_indices.iter().enumerate() {
         let item = &ctx.all_items[idx];
         if item.file_id != current_file_id {
             current_file_id = item.file_id;
-            tagged_texts.push(format!("[f{}]", current_file_id));
+            let rel_f_id = *file_map.entry(current_file_id).or_insert_with(|| {
+                let id = file_relative_id;
+                file_relative_id += 1;
+                id
+            });
+            tagged_texts.push(format!("[f{}]", rel_f_id));
         }
-        tagged_texts.push(format!("[i{}]{}", idx, item.preprocessed));
+        tagged_texts.push(format!("[i{}]{}", p_idx, item.preprocessed));
         texts_to_translate.push(item.preprocessed.clone());
     }
 
@@ -400,10 +432,10 @@ async fn process_one_global_batch(
             for (orig_tagged, trans_tagged) in &results_map {
                 // 有些 LLM 會在原始標籤周圍加空格或轉換格式，我們嘗試遍歷所有結果
                 if let Some(caps) = tag_re.captures(orig_tagged) {
-                    if let Ok(tagged_idx) = caps[1].parse::<usize>() {
-                        // 檢查此 ID 是否在當前批次中
-                        if ctx.batch_indices.contains(&tagged_idx) {
-                            let item = &mut ctx.all_items[tagged_idx];
+                    if let Ok(relative_idx) = caps[1].parse::<usize>() {
+                        if relative_idx < ctx.batch_indices.len() {
+                            let abs_idx = ctx.batch_indices[relative_idx];
+                            let item = &mut ctx.all_items[abs_idx];
                             // 移除翻譯結果中的標籤殘留 (容錯處理)
                             let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
                             let restored = postprocess_text(&clean_translated, &item.markers);
@@ -422,5 +454,64 @@ async fn process_one_global_batch(
             }
         }
         Err(e) => Err(e),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::translation::job::JobConfig;
+    use crate::ui::i18n::I18nLabels;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+    use std::sync::atomic::{AtomicBool, AtomicU32};
+
+    #[tokio::test]
+    async fn test_translation_memory_exact_match_skip_all() {
+        let mut items = vec![
+            GlobalBatchItem::new("Diamond Sword", 1, "item.minecraft.diamond_sword"),
+            GlobalBatchItem::new("Golden Apple", 1, "item.minecraft.golden_apple"),
+        ];
+
+        let mut memory = HashMap::new();
+        memory.insert("Diamond Sword".to_string(), "鑽石劍".to_string());
+        memory.insert("Golden Apple".to_string(), "黃金蘋果".to_string());
+        let translation_memory = Arc::new(Mutex::new(memory));
+
+        let config = Arc::new(Mutex::new(JobConfig::new(
+            "mock_key".to_string(), "OpenAI".to_string(), "gpt-3.5".to_string(),
+            "".to_string(), "".to_string(), "".to_string(),
+            30, 10, 1000, "output".to_string(), 0, "official".to_string(),
+            false, false, false, false, false,
+            "en_us".to_string(), "zh_tw".to_string(),
+        )));
+        
+        let status = Arc::new(Mutex::new("".to_string()));
+        let progress = Arc::new(AtomicU32::new(0));
+        let current_batch = Arc::new(AtomicU32::new(0));
+        let total_batches = Arc::new(AtomicU32::new(0));
+        let counter = Arc::new(Mutex::new(0));
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let paused = Arc::new(AtomicBool::new(false));
+        let pause_notifier = Arc::new(tokio::sync::Notify::new());
+        let glossary_automaton = crate::translation::glossary::GlossaryAutomaton::new(&HashMap::new(), &HashMap::new(), &HashMap::new(), "official");
+        let i18n = I18nLabels::default_zh_tw();
+
+        let ctx = RunBatchContext {
+            items: &mut items, config, status, progress, current_batch, total_batches,
+            counter, log, cancelled, paused, pause_notifier,
+            glossary_automaton: &glossary_automaton,
+            translation_memory: translation_memory.clone(),
+            i18n: &i18n,
+            file_name: "test.json".to_string(),
+            global_items_offset: 0,
+        };
+
+        let result = run_translation_batch(ctx).await;
+
+        assert!(result.is_ok());
+        assert_eq!(items[0].translated, Some("鑽石劍".to_string()));
+        assert_eq!(items[1].translated, Some("黃金蘋果".to_string()));
     }
 }

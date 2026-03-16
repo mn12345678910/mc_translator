@@ -252,6 +252,7 @@ pub async fn process_all_files(
             log.clone(),
             state.pause_notifier.clone(),
             &glossary_automaton,
+            state.translation_memory.clone(), // [新增] 快取暫存
             &state.i18n,
             &display_name,
             global_items_offset, // 新增：傳入全域偏移
@@ -283,6 +284,9 @@ pub async fn process_all_files(
     if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
         output_resource_pack(&std::path::PathBuf::new(), HashMap::new(), config_locked, log.clone()).await?;
+        
+        // [新增] 儲存暫存快取至硬碟
+        crate::config::save_translation_memory(&state.translation_memory.lock().unwrap());
     }
 
     Ok(())
