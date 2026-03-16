@@ -69,11 +69,10 @@ impl AppState {
                                 }
                             });
                         
-                        if slots_len > 1 {
-                            if ui.button("🗑").on_hover_text(self.i18n.hover_remove_slot.clone()).clicked() { 
+                        if slots_len > 1
+                            && ui.button("🗑").on_hover_text(self.i18n.hover_remove_slot.clone()).clicked() { 
                                 remove_idx = Some(idx); 
                             }
-                        }
                     });
                 }
                 if let Some(idx) = remove_idx { self.palette_edit_slots.remove(idx); }
@@ -185,11 +184,10 @@ impl AppState {
                     ui.separator();
                     ui.horizontal(|ui| {
                         ui.checkbox(&mut self.btn_rounding_enabled, self.i18n.label_force_global_rounding.clone());
-                        if self.btn_rounding_enabled {
-                            if ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text(self.i18n.label_rounding_value.clone())).changed() {
+                        if self.btn_rounding_enabled
+                            && ui.add(egui::Slider::new(&mut self.btn_rounding_value, 0.0..=20.0).text(self.i18n.label_rounding_value.clone())).changed() {
                                 self.trigger_save();
                             }
-                        }
                     });
                 }
 
@@ -226,10 +224,10 @@ impl AppState {
                 // 類別更新 (V6 擴展)
                 if t == self.i18n.cat_all_buttons {
                     if is_bg { if is_dark { self.dark_btn_bg = color; } else { self.light_btn_bg = color; } } 
-                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                    else if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; }
                 } else if t == self.i18n.cat_all_labels {
                     if is_bg { if is_dark { self.dark_bg = color; } else { self.light_bg = color; } }
-                    else { if is_dark { self.dark_label = color; } else { self.light_label = color; } }
+                    else if is_dark { self.dark_label = color; } else { self.light_label = color; }
                 } else if t == self.i18n.cat_all_inputs {
                     let ids = [
                         "input_dict_search", "dict_new_key", "dict_new_value", 
@@ -257,7 +255,7 @@ impl AppState {
                     }
                 } else if t == self.i18n.cat_all_tabs {
                     if is_bg { if is_dark { self.dark_tab_active = color; } else { self.light_tab_active = color; } } 
-                    else { if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; } }
+                    else if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; }
                 } else if t == self.i18n.cat_all_progress {
                     if is_bg { 
                         // 修正：進度條背景不再動全域 dark_bg/light_bg，改用實體覆寫
