@@ -176,9 +176,9 @@ impl AppState {
                     }
                 });
 
-                // 4. 組件專用屬性 (圓角/動畫)
-                let has_button = active_targets.iter().any(|t| t.contains("按鈕") || t.contains("🎨") || t.contains("⚙") || t.contains("🌓") || t.contains("🔧") || t.contains("📖"));
-                let has_progress = active_targets.iter().any(|t| t.contains("進度條"));
+                let active_ids: Vec<String> = active_targets.iter().map(|t| self.get_id_from_target_name(t)).collect();
+                let has_button = active_ids.iter().any(|id| id.contains("button") || id.starts_with("btn_") || id == "cat_nav_bar");
+                let has_progress = active_ids.iter().any(|id| id.contains("progress"));
 
                 if has_button {
                     ui.separator();
@@ -220,9 +220,10 @@ impl AppState {
             .collect();
 
         for t in targets {
-            if t.contains("全部") || !t.contains("[特定]") {
+            let id = self.get_id_from_target_name(&t);
+            if id.starts_with("cat_") {
                 // 類別更新 (V6 擴展)
-                if t == self.i18n.cat_all_buttons {
+                if id == "cat_all_buttons" {
                     if is_bg { if is_dark { self.dark_btn_bg = color; } else { self.light_btn_bg = color; } } 
                     else if is_dark { self.dark_btn_text = color; } else { self.light_btn_text = color; }
                 } else if t == self.i18n.cat_all_labels {
@@ -305,9 +306,10 @@ impl AppState {
             .collect();
 
         for t in targets {
-            if t.contains("全部") || !t.contains("[特定]") {
+            let id = self.get_id_from_target_name(&t);
+            if id.starts_with("cat_") {
                 // 類別更新
-                if t == self.i18n.cat_all_buttons || t == self.i18n.cat_all_progress || t == self.i18n.cat_nav_bar {
+                if id == "cat_all_buttons" || id == "cat_all_progress" || id == "cat_nav_bar" {
                     self.btn_rounding_value = val;
                 }
             } else {

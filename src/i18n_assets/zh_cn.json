@@ -182,5 +182,8 @@
   "status_translating": "翻译",
   "status_translating_batch_simple": "{}中 (批次 {}/{})",
   "status_translating_batch": "{}中 ({}/{})",
-  "log_batch_invalid": "批次翻译结果无效，无法解析任何条目"
+  "log_batch_invalid": "批次翻译结果无效，无法解析任何条目",
+  "status_processing_label": "正在处理: ",
+  "log_selected_files": "已选择 {} 个文件",
+  "log_output_dir_set": "输出文件夹已设定: {}"
 }

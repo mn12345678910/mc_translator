@@ -182,5 +182,8 @@
   "status_translating": "翻訳",
   "status_translating_batch_simple": "翻訳中 (バッチ {}/{})",
   "status_translating_batch": "翻訳中 ({}/{})",
-  "log_batch_invalid": "バッチ結果が無効です。パースできません。"
+  "log_batch_invalid": "バッチ結果が無効です。パースできません。",
+  "status_processing_label": "処理中: ",
+  "log_selected_files": "{} 個のファイルを選択しました",
+  "log_output_dir_set": "出力フォルダが設定されました: {}"
 }

@@ -182,5 +182,8 @@
   "status_translating": "Translate",
   "status_translating_batch_simple": "Translating (Batch {}/{})",
   "status_translating_batch": "Translating ({}/{})",
-  "log_batch_invalid": "Invalid batch result, cannot parse entries"
+  "log_batch_invalid": "Invalid batch result, cannot parse entries",
+  "status_processing_label": "Processing: ",
+  "log_selected_files": "Selected {} files",
+  "log_output_dir_set": "Output directory set to: {}"
 }

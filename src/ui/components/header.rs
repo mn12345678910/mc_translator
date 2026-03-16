@@ -30,7 +30,7 @@ impl AppState {
                                 (p, rel.replace('\\', "/"))
                             })
                             .collect();
-                        self.add_log(&format!("已選擇 {} 個檔案", self.input_paths.len()));
+                        self.add_log(&self.i18n.log_selected_files.replace("{}", &self.input_paths.len().to_string()));
                         self.global_total.store((self.input_paths.len() as f32).to_bits(), Ordering::SeqCst);
                         self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
                     }
@@ -42,7 +42,7 @@ impl AppState {
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         let files = crate::file::scanner::scan_files_recursive(&path, &path);
-                        self.add_log(&format!("已選擇 {} 個檔案", files.len()));
+                        self.add_log(&self.i18n.log_selected_files.replace("{}", &files.len().to_string()));
                         self.input_paths = files;
                         self.global_total.store((self.input_paths.len() as f32).to_bits(), Ordering::SeqCst);
                         self.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
@@ -59,7 +59,7 @@ impl AppState {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.output_dir = path.to_string_lossy().to_string();
                         self.trigger_save();
-                        self.add_log(&format!("輸出資料夾已設定: {}", self.output_dir));
+                        self.add_log(&self.i18n.log_output_dir_set.replace("{}", &self.output_dir));
                     }
                 }
 

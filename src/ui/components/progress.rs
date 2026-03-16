@@ -45,7 +45,7 @@ impl AppState {
             let t_batch = self.total_batches.load(Ordering::SeqCst);
             if !path.is_empty() {
                 ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("正在處理: ").color(label_color));
+                    ui.label(egui::RichText::new(self.i18n.status_processing_label.clone()).color(label_color));
                     ui.label(egui::RichText::new(format!("{}({}/{})", path, c_batch, t_batch)).color(label_color).strong());
                 });
             }

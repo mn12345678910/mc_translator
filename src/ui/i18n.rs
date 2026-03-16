@@ -211,6 +211,9 @@ pub struct I18nLabels {
     pub status_translating_batch_simple: String,
     pub status_translating_batch: String,
     pub log_batch_invalid: String,
+    pub status_processing_label: String,
+    pub log_selected_files: String,
+    pub log_output_dir_set: String,
 }
 
 impl I18nLabels {
@@ -503,6 +506,9 @@ impl I18nLabels {
             status_translating_batch_simple: "{}中 (批次 {}/{})".to_string(),
             status_translating_batch: "{}中 ({}/{})".to_string(),
             log_batch_invalid: "批次翻譯結果無效，無法解析任何條目".to_string(),
+            status_processing_label: "正在處理: ".to_string(),
+            log_selected_files: "已選擇 {} 個檔案".to_string(),
+            log_output_dir_set: "輸出資料夾已設定: {}".to_string(),
         }
     }
 }
