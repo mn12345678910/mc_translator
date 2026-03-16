@@ -273,6 +273,16 @@ pub async fn process_all_files(
             write_to_temp_or_output(&config_locked, translated_results)
         }).await??;
 
+        // [新增] 補齊檔案處理完成日誌
+        let cfg = job_config.lock().unwrap().clone();
+        crate::utils::add_log(
+            &log,
+            &format!("檔案組 [{}] 處理完成並寫入目標。", display_name),
+            &cfg.source_lang,
+            &cfg.target_lang,
+            &display_name,
+        );
+
         let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
         state.global_progress.store((current_g + 1.0).to_bits(), Ordering::SeqCst);
 
