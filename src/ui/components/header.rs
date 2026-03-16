@@ -173,7 +173,8 @@ impl AppState {
                 .selected_text(&self.ui_lang)
                 .show_ui(ui, |ui| {
                     for l in ui_langs {
-                        if ui.selectable_value(&mut self.ui_lang, l.clone(), l.clone()).clicked() {
+                        let label = if l == "zh_tw" { format!("{} (Default)", l) } else { l.clone() };
+                        if ui.selectable_value(&mut self.ui_lang, l.clone(), label).clicked() {
                             self.i18n = crate::ui::i18n::I18nLabels::load_or_default(&self.ui_lang);
                             self.trigger_save();
                         }

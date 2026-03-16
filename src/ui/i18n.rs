@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::Path;
+
  
 pub const DEFAULT_LANG: &str = "zh_tw";
 
@@ -214,11 +214,26 @@ pub struct I18nLabels {
 }
 
 impl I18nLabels {
+    fn get_langs_dir() -> std::path::PathBuf {
+        let cwd_langs = std::path::PathBuf::from("langs");
+        if cwd_langs.exists() {
+            return cwd_langs;
+        }
+        if let Ok(mut exe_path) = std::env::current_exe() {
+            exe_path.pop();
+            let exe_langs = exe_path.join("langs");
+            if exe_langs.exists() {
+                return exe_langs;
+            }
+        }
+        cwd_langs
+    }
+
     /// 確保 langs/ 目錄與預設 JSON 檔案存在
     pub fn ensure_langs_exists() -> Result<(), Box<dyn std::error::Error>> {
-        let langs_dir = Path::new("langs");
+        let langs_dir = Self::get_langs_dir();
         if !langs_dir.exists() {
-            fs::create_dir_all(langs_dir).map_err(std::io::Error::other)?;
+            fs::create_dir_all(&langs_dir).map_err(std::io::Error::other)?;
         }
 
         let zh_tw_path = langs_dir.join("zh_tw.json");
@@ -233,7 +248,7 @@ impl I18nLabels {
 
     /// 從檔案載入 i18n
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let path = Path::new("langs").join(format!("{}.json", lang));
+        let path = Self::get_langs_dir().join(format!("{}.json", lang));
         if let Ok(content) = fs::read_to_string(path) {
             if let Ok(labels) = serde_json::from_str::<Self>(&content) {
                 return Some(labels);
@@ -259,7 +274,8 @@ impl I18nLabels {
 
     pub fn get_available_ui_langs() -> Vec<String> {
         let mut langs = Vec::new();
-        if let Ok(entries) = std::fs::read_dir("langs") {
+        let langs_dir = Self::get_langs_dir();
+        if let Ok(entries) = std::fs::read_dir(&langs_dir) {
             for entry in entries.flatten() {
                 if let Some(ext) = entry.path().extension() {
                     if ext == "json" {

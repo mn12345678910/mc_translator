@@ -255,9 +255,10 @@ impl AppState {
                                             langs_locked.clone()
                                         };
                                         for l in &langs {
-                                            if ui.selectable_value(&mut self.source_lang, l.clone(), l).clicked() {
+                                            let label = if l == "en_us" { format!("{} (Default)", l) } else { l.clone() };
+                                            if ui.selectable_value(&mut self.source_lang, l.clone(), label).clicked() {
                                                 self.trigger_save();
-                                                self.refresh_all_dictionaries(); // 切換語言時重新讀取/載入術語系統
+                                                self.refresh_all_dictionaries();
                                             }
                                         }
                                     });
@@ -276,9 +277,10 @@ impl AppState {
                                             langs_locked.clone()
                                         };
                                         for l in &langs {
-                                            if ui.selectable_value(&mut self.target_lang, l.clone(), l).clicked() {
+                                            let label = if l == "zh_tw" { format!("{} (Default)", l) } else { l.clone() };
+                                            if ui.selectable_value(&mut self.target_lang, l.clone(), label).clicked() {
                                                 self.trigger_save();
-                                                self.refresh_all_dictionaries(); // 切換語言時重新讀取/載入術語系統
+                                                self.refresh_all_dictionaries();
                                             }
                                         }
                                     });
