@@ -172,70 +172,31 @@ impl AppState {
 
                         // --- 參數設定 (混合：效能參數鎖定，字體大小不鎖定) ---
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new(self.i18n.label_batch_size.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
-                                let mut bs = self.batch_size as i32;
-                                if ui
-                                    .add(
-                                        egui::DragValue::new(&mut bs)
-                                            .clamp_range(1..=300)
-                                            .speed(1.0),
-                                    )
-                                    .changed()
-                                {
-                                    self.batch_size = bs as u32;
+                                if ui_drag_value_item(ui, &self.i18n.label_batch_size, &mut self.batch_size, 1..=300, 1.0, label_color, "") {
                                     self.save_config();
                                 }
                             });
                             ui.label(egui::RichText::new("(1-300)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new(self.i18n.label_max_chars.clone()).color(label_color).strong()); // 縮短名稱避免擁擠
                             ui.add_enabled_ui(ui_enabled, |ui| {
-                                if ui
-                                    .add(
-                                        egui::DragValue::new(&mut self.batch_max_chars)
-                                            .clamp_range(1..=10000)
-                                            .speed(10.0),
-                                    )
-                                    .changed()
-                                {
+                                if ui_drag_value_item(ui, &self.i18n.label_max_chars, &mut self.batch_max_chars, 1..=10000, 10.0, label_color, "") {
                                     self.save_config();
                                 }
                             });
                             ui.label(egui::RichText::new("(1-10k)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(
-                                egui::RichText::new(self.i18n.label_timeout.clone())
-                                    .color(label_color)
-                                    .strong(),
-                            );
                             ui.add_enabled_ui(ui_enabled, |ui| {
-                                if ui
-                                    .add(
-                                        egui::DragValue::new(&mut self.timeout)
-                                            .clamp_range(1..=600)
-                                            .speed(1.0),
-                                    )
-                                    .changed()
-                                {
+                                if ui_drag_value_item(ui, &self.i18n.label_timeout, &mut self.timeout, 1..=600, 1.0, label_color, "") {
                                     self.save_config();
                                 }
                             });
                             ui.label(egui::RichText::new("(1-600s)").color(label_color).small());
 
                             ui.add_space(8.0);
-                            ui.label(egui::RichText::new(self.i18n.label_font_size.clone()).color(label_color).strong());
-                            if ui
-                                .add(
-                                    egui::DragValue::new(&mut self.font_size)
-                                        .clamp_range(12.0..=30.0)
-                                        .suffix("pt")
-                                        .speed(0.5),
-                                )
-                                .changed()
-                            {
+                            if ui_drag_value_item(ui, &self.i18n.label_font_size, &mut self.font_size, 12.0..=30.0, 0.5, label_color, "pt") {
                                 self.save_config();
                             }
                             ui.label(egui::RichText::new("(12-30)").color(label_color).small());
@@ -453,4 +414,22 @@ impl AppState {
                 });
             });
     }
+}
+
+/// 封裝 DragValue + Label 小元件
+fn ui_drag_value_item<T: egui::emath::Numeric>(
+    ui: &mut egui::Ui,
+    label: &str,
+    value: &mut T,
+    range: std::ops::RangeInclusive<T>,
+    speed: f64,
+    color: egui::Color32,
+    suffix: &str,
+) -> bool {
+    ui.label(egui::RichText::new(label).color(color).strong());
+    let mut drag = egui::DragValue::new(value).clamp_range(range).speed(speed);
+    if !suffix.is_empty() {
+        drag = drag.suffix(suffix);
+    }
+    ui.add(drag).changed()
 }
