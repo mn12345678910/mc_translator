@@ -243,6 +243,19 @@ impl I18nLabels {
             fs::write(zh_tw_path, json).map_err(std::io::Error::other)?;
         }
 
+        let default_files = [
+            ("zh_cn.json", include_str!("../../langs/zh_cn.json")),
+            ("en_us.json", include_str!("../../langs/en_us.json")),
+            ("ja_jp.json", include_str!("../../langs/ja_jp.json")),
+        ];
+
+        for (name, content) in default_files {
+            let p = langs_dir.join(name);
+            if !p.exists() {
+                fs::write(p, content).map_err(std::io::Error::other)?;
+            }
+        }
+
         Ok(())
     }
 
