@@ -118,14 +118,7 @@ pub async fn translate_json_recursive(
 
                     if let Some((ref fs_path, ref content)) = realtime_save_info {
                         let translations_map = ctx.translations.lock().unwrap().clone();
-                        let final_zh_tw_content = sync_formatting(content, &translations_map);
-
-                        let fs_path_clone = fs_path.clone();
-                        let _ =
-                            tokio::task::spawn_blocking(move || -> Result<(), std::io::Error> {
-                                std::fs::write(&fs_path_clone, &final_zh_tw_content)
-                            })
-                            .await;
+                        realtime_save_file_helper(fs_path.clone(), content.clone(), translations_map).await;
                     }
 
                     let current = {
@@ -192,22 +185,13 @@ pub async fn translate_json_recursive(
         .await
         {
             Ok(translated) => {
-                let restored = postprocess_text(&translated, &markers);
-                let cleaned = validate_and_cleanup(&restored);
-
-                // [新增] 循環產出防護
-                if detect_loop(&cleaned) {
+                if let Some(final_str) = finalize_single_translation(&translated, &markers, &current_single_config.target_lang) {
+                    finalized_str = Some(final_str);
+                } else {
                     ctx.current_log.lock().unwrap().push(
                         ctx.i18n.log_loop_detected.replace("{}", &ctx.filename)
                     );
                     finalized_str = None;
-                } else {
-                    let translated = if current_single_config.target_lang == "zh_tw" {
-                        hanconv::s2tw(&cleaned)
-                    } else {
-                        cleaned
-                    };
-                    finalized_str = Some(translated);
                 }
             }
             Err(e) => {
@@ -237,14 +221,7 @@ pub async fn translate_json_recursive(
 
             if let Some((ref fs_path, ref content)) = realtime_save_info {
                 let translations_map = ctx.translations.lock().unwrap().clone();
-                let final_zh_tw_content = sync_formatting(content, &translations_map);
-
-                let fs_path_clone = fs_path.clone();
-                let _ = tokio::task::spawn_blocking(move || -> Result<(), std::io::Error> {
-                    std::fs::write(&fs_path_clone, &final_zh_tw_content)
-                        .map_err(std::io::Error::other)
-                })
-                .await;
+                realtime_save_file_helper(fs_path.clone(), content.clone(), translations_map).await;
             }
         }
 
@@ -385,4 +362,37 @@ pub fn count_strings(
         }
         _ => 0,
     }
+}
+
+/// 項目翻譯結果清理與驗證
+fn finalize_single_translation(
+    translated: &str,
+    markers: &[String],
+    target_lang: &str,
+) -> Option<String> {
+    let restored = postprocess_text(translated, markers);
+    let cleaned = validate_and_cleanup(&restored);
+
+    if detect_loop(&cleaned) {
+        None
+    } else {
+        Some(if target_lang == "zh_tw" {
+            hanconv::s2tw(&cleaned)
+        } else {
+            cleaned
+        })
+    }
+}
+
+/// 即時儲存翻譯檔案
+async fn realtime_save_file_helper(
+    fs_path: std::path::PathBuf,
+    content: String,
+    translations_map: std::collections::HashMap<String, Vec<String>>,
+) {
+    let final_content = sync_formatting(&content, &translations_map);
+    let _ = tokio::task::spawn_blocking(move || {
+        std::fs::write(fs_path, final_content)
+    })
+    .await;
 }
