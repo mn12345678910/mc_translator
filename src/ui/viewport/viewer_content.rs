@@ -189,7 +189,7 @@ impl AppState {
                                 if current_tab == 0 {
                                     let mut memory = translation_memory.lock().unwrap();
                                     memory.extend(imported);
-                                    crate::config::save_translation_memory(&*memory);
+                                    crate::config::save_translation_memory(&memory);
                                 } else if current_tab == 1 {
                                     let mut inferred = inferred_match_map.lock().unwrap();
                                     inferred.extend(imported);
@@ -298,12 +298,12 @@ impl AppState {
                                     if current_tab == 0 {
                                         let mut mem = translation_memory.lock().unwrap();
                                         mem.insert(key, val);
-                                        crate::config::save_translation_memory(&*mem);
+                                        crate::config::save_translation_memory(&mem);
                                     } else {
                                         // 官方分頁編輯也存入使用者字典並從官方移除 (Migration)
                                         let mut mem = translation_memory.lock().unwrap();
                                         mem.insert(key.clone(), val);
-                                        crate::config::save_translation_memory(&*mem);
+                                        crate::config::save_translation_memory(&mem);
                                         
                                         let mut inferred = inferred_match_map.lock().unwrap();
                                         if inferred.remove(&key).is_some() {
@@ -411,7 +411,7 @@ impl AppState {
                                     }
 
                                     if count > 0 {
-                                        crate::config::save_translation_memory(&*mem);
+                                        crate::config::save_translation_memory(&mem);
                                         // 確保 UI 立即反應 (針對搜尋快取等可能的延遲)
                                         ctx.request_repaint();
                                     }
@@ -439,7 +439,7 @@ impl AppState {
                                 if current_tab == 0 {
                                     translation_memory.lock().unwrap().clear();
                                     crate::config::save_translation_memory(
-                                        &*translation_memory.lock().unwrap(),
+                                        &translation_memory.lock().unwrap(),
                                     );
                                 } else if current_tab == 1 {
                                     inferred_match_map.lock().unwrap().clear();
@@ -675,7 +675,7 @@ impl AppState {
                                                 let edit_val =
                                                     dict_edit_value.lock().unwrap().clone();
                                                 mem.insert(k.clone(), edit_val);
-                                                crate::config::save_translation_memory(&*mem);
+                                                crate::config::save_translation_memory(&mem);
                                                 if current_tab == 1 {
                                                     let mut inferred =
                                                         inferred_match_map.lock().unwrap();
@@ -723,7 +723,7 @@ impl AppState {
                                                             translation_memory.lock().unwrap();
                                                         mem.remove(k);
                                                         crate::config::save_translation_memory(
-                                                            &*mem,
+                                                            &mem,
                                                         );
                                                     } else {
                                                         let mut inferred =
@@ -789,12 +789,10 @@ fn get_instance_style_from_snap_full(
                     }
                 } else if id.contains("list") || id.contains("area") {
                     if is_dark { egui::Color32::from_rgb(snap.dark_list_bg[0], snap.dark_list_bg[1], snap.dark_list_bg[2]) } else { egui::Color32::from_rgb(snap.light_list_bg[0], snap.light_list_bg[1], snap.light_list_bg[2]) }
+                } else if is_dark {
+                    egui::Color32::from_rgb(snap.dark_bg[0], snap.dark_bg[1], snap.dark_bg[2])
                 } else {
-                    if is_dark {
-                        egui::Color32::from_rgb(snap.dark_bg[0], snap.dark_bg[1], snap.dark_bg[2])
-                    } else {
-                        egui::Color32::from_rgb(snap.light_bg[0], snap.light_bg[1], snap.light_bg[2])
-                    }
+                    egui::Color32::from_rgb(snap.light_bg[0], snap.light_bg[1], snap.light_bg[2])
                 }
             });
             let final_text = text.unwrap_or_else(|| {
@@ -804,12 +802,10 @@ fn get_instance_style_from_snap_full(
                     } else {
                         egui::Color32::from_rgb(snap.light_btn_text[0], snap.light_btn_text[1], snap.light_btn_text[2])
                     }
+                } else if is_dark {
+                    egui::Color32::from_rgb(snap.dark_text[0], snap.dark_text[1], snap.dark_text[2])
                 } else {
-                    if is_dark {
-                        egui::Color32::from_rgb(snap.dark_text[0], snap.dark_text[1], snap.dark_text[2])
-                    } else {
-                        egui::Color32::from_rgb(snap.light_text[0], snap.light_text[1], snap.light_text[2])
-                    }
+                    egui::Color32::from_rgb(snap.light_text[0], snap.light_text[1], snap.light_text[2])
                 }
             });
             return (final_bg, final_text, rounding);
