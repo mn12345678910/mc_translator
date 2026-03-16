@@ -127,10 +127,10 @@ impl AppState {
                             ui.checkbox(&mut self.palette_prop_sync_bg, self.i18n.label_bg_color.clone());
                         });
                         
-                        // 獲取當前色彩
-                        let (current_bg, _, _) = self.get_instance_style_full(&first_target_id);
+                        // 獲取預設色彩 (忽略覆寫)
+                        let (def_bg, _, _) = self.get_theme_default_style(&first_target_id);
 
-                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(current_bg));
+                        let mut hsva = self.palette_hsva_bg.unwrap_or_else(|| egui::ecolor::Hsva::from(def_bg));
                         
                         if ui.color_edit_button_hsva(&mut hsva).changed() {
                             let new_rgb = egui::Color32::from(hsva);
@@ -148,10 +148,10 @@ impl AppState {
                             ui.checkbox(&mut self.palette_prop_sync_text, self.i18n.label_text_color.clone());
                         });
                         
-                        // 獲取當前色彩
-                        let (_, current_text, _) = self.get_instance_style_full(&first_target_id);
+                        // 獲取預設色彩 (忽略覆寫)
+                        let (_, def_text, _) = self.get_theme_default_style(&first_target_id);
 
-                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(current_text));
+                        let mut hsva = self.palette_hsva_text.unwrap_or_else(|| egui::ecolor::Hsva::from(def_text));
 
                         if ui.color_edit_button_hsva(&mut hsva).changed() {
                             let new_rgb = egui::Color32::from(hsva);

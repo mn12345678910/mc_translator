@@ -134,6 +134,14 @@ impl AppState {
         }
 
         // 2. 類別樣式解析
+        self.get_theme_default_style(id)
+    }
+
+    /// 獲取該主題下特定元件的原始預設樣式 (忽略實例覆寫)
+    pub fn get_theme_default_style(&self, id: &str) -> (egui::Color32, egui::Color32, f32) {
+        let is_dark = self.theme == "dark";
+        let default_rounding = self.btn_rounding_value;
+
         let (rgb_bg, rgb_text) = if id == "cat_nav_bar" {
             (if is_dark { self.dark_tab_inactive } else { self.light_tab_inactive }, 
              if is_dark { self.dark_btn_text } else { self.light_label })
@@ -150,7 +158,6 @@ impl AppState {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
              if is_dark { self.dark_btn_text } else { self.light_label }) 
         } else if id == "cat_all_progress" {
-            // 背景連動 dark_bg, 文字如預覽顯示琥珀色(dark_label)
             (if is_dark { self.dark_bg } else { self.light_bg }, 
              if is_dark { self.dark_label } else { self.light_label })
         } else if id == "cat_all_labels" || id == "cat_all_bg" {
@@ -178,5 +185,6 @@ impl AppState {
         (egui::Color32::from_rgb(rgb_bg[0], rgb_bg[1], rgb_bg[2]),
          egui::Color32::from_rgb(rgb_text[0], rgb_text[1], rgb_text[2]),
          default_rounding)
+
     }
 }
