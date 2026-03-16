@@ -244,9 +244,9 @@ impl I18nLabels {
         }
 
         let default_files = [
-            ("zh_cn.json", include_str!("../../langs/zh_cn.json")),
-            ("en_us.json", include_str!("../../langs/en_us.json")),
-            ("ja_jp.json", include_str!("../../langs/ja_jp.json")),
+            ("zh_cn.json", include_str!("../i18n_assets/zh_cn.json")),
+            ("en_us.json", include_str!("../i18n_assets/en_us.json")),
+            ("ja_jp.json", include_str!("../i18n_assets/ja_jp.json")),
         ];
 
         for (name, content) in default_files {
