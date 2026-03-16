@@ -58,6 +58,66 @@ pub fn build_system_prompt(
     prompt
 }
 
+/// 統一各翻譯 Provider 的逾時處理
+pub async fn with_timeout<F, T>(
+    timeout_secs: u64,
+    future: F,
+) -> Result<T, Box<dyn std::error::Error + Send + Sync>>
+where
+    F: std::future::Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+{
+    match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), future).await {
+        Ok(Ok(v)) => Ok(v),
+        Ok(Err(e)) => Err(e),
+        Err(_) => Err(format!("OLLAMA_TIMEOUT:{}", timeout_secs).into()),
+    }
+}
+
+/// 組裝批次翻譯指令
+pub fn build_batch_instruction(texts: &[String]) -> String {
+    let numbered: Vec<String> = texts
+        .iter()
+        .enumerate()
+        .map(|(i, t)| format!("[{}] {}", i + 1, t))
+        .collect();
+    format!(
+        "以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
+        numbered.join("\n")
+    )
+}
+
+/// 從文本提取並解析 JSON 物件
+pub fn parse_json_from_text(text: &str) -> Option<serde_json::Value> {
+    extract_json_from_text(text).and_then(|s| serde_json::from_str(&s).ok())
+}
+
+/// 統一翻譯輸出清理與日誌記錄
+pub fn finalize_translation(
+    translated: &str,
+    config: &JobConfig,
+    sys_prompt: &str,
+    text: &str,
+    file_name: &str,
+) -> String {
+    let cleaned = translated
+        .trim_matches('"')
+        .trim_matches('\'')
+        .trim_matches('`')
+        .trim()
+        .to_string();
+
+    if config.enable_llm_log {
+        log_llm_communication(
+            &format!("(System): {}\n(User): {}", sys_prompt, text),
+            &cleaned,
+            config,
+            text.len(),
+            file_name,
+        );
+    }
+    cleaned
+}
+
 /// 全域共用的 HTTP 用戶端
 pub(crate) static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     reqwest::Client::builder()
@@ -143,15 +203,7 @@ pub async fn translate_batch(
         return Ok(HashMap::new());
     }
 
-    let numbered: Vec<String> = texts
-        .iter()
-        .enumerate()
-        .map(|(i, t)| format!("[{}] {}", i + 1, t))
-        .collect();
-    let batch_instruction = format!(
-        "以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
-        numbered.join("\n")
-    );
+    let batch_instruction = build_batch_instruction(texts);
 
     let result = match config.api_provider.as_str() {
         "Gemini" => translate_with_gemini(&batch_instruction, config, file_name, glossary).await?,
@@ -159,11 +211,7 @@ pub async fn translate_batch(
             translate_with_openai_compatible(&batch_instruction, config, file_name, glossary).await?
         }
         "Ollama" => {
-            let ollama_user_prompt = format!(
-                "以下是需要翻譯的多行字串，請按照相同的編號格式輸出翻譯結果，每行一個：\n{}",
-                numbered.join("\n")
-            );
-            call_ollama_raw(&ollama_user_prompt, config, file_name, glossary).await?
+            call_ollama_raw(&batch_instruction, config, file_name, glossary).await?
         }
         "DeepL" => {
             translate_with_deepl(&batch_instruction, config).await?
@@ -175,30 +223,22 @@ pub async fn translate_batch(
     let mut map = HashMap::new();
 
     if config.api_provider == "Ollama" || result.trim().starts_with('{') || result.contains("```") {
-        let json_str_opt = if serde_json::from_str::<serde_json::Value>(result.trim()).is_ok() {
-            Some(result.trim().to_string())
-        } else {
-            extract_json_from_text(&result)
-        };
-
-        if let Some(json_str) = json_str_opt {
-            if let Ok(value) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                if let Some(obj) = value.as_object() {
-                    for (idx_str, trans_val) in obj {
-                        if let (Ok(idx), Some(trans_s)) =
-                            (idx_str.parse::<usize>(), trans_val.as_str())
-                        {
-                            if idx >= 1 && idx <= texts.len() {
-                                let cleaned = crate::utils::text_processing::validate_and_cleanup(trans_s);
-                                if !cleaned.is_empty() && cleaned != "{}" && cleaned != "{ }" {
-                                    map.insert(texts[idx - 1].clone(), cleaned);
-                                }
+        if let Some(value) = parse_json_from_text(&result) {
+            if let Some(obj) = value.as_object() {
+                for (idx_str, trans_val) in obj {
+                    if let (Ok(idx), Some(trans_s)) =
+                        (idx_str.parse::<usize>(), trans_val.as_str())
+                    {
+                        if idx >= 1 && idx <= texts.len() {
+                            let cleaned = crate::utils::text_processing::validate_and_cleanup(trans_s);
+                            if !cleaned.is_empty() && cleaned != "{}" && cleaned != "{ }" {
+                                map.insert(texts[idx - 1].clone(), cleaned);
                             }
                         }
                     }
-                    if !map.is_empty() {
-                        return Ok(map);
-                    }
+                }
+                if !map.is_empty() {
+                    return Ok(map);
                 }
             }
         }
@@ -317,33 +357,12 @@ async fn translate_with_gemini(
         Ok(resp.json::<serde_json::Value>().await?)
     };
 
-    let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.timeout),
-        full_future,
-    )
-    .await
-    {
-        Ok(Ok(v)) => v,
-        Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
-    };
-
+    let json = with_timeout(config.timeout, full_future).await?;
     let translated = json["candidates"][0]["content"]["parts"][0]["text"]
         .as_str()
-        .ok_or_else(|| format!("解析 Gemini 回傳失敗: {:?}", json))?
-        .trim();
+        .ok_or_else(|| format!("解析 Gemini 回傳失敗: {:?}", json))?;
 
-    if config.enable_llm_log {
-        log_llm_communication(
-            &format!("(System): {}\n(User): {}", sys_prompt, text),
-            translated,
-            config,
-            text.len(),
-            file_name,
-        );
-    }
-
-    Ok(translated.trim_matches('"').to_string())
+    Ok(finalize_translation(translated, config, &sys_prompt, text, file_name))
 }
 
 /// Ollama 本地 API 翻譯
@@ -482,31 +501,12 @@ async fn call_ollama_raw(
         Ok(resp.json::<serde_json::Value>().await?)
     };
 
-    let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.timeout),
-        full_future,
-    )
-    .await
-    {
-        Ok(Ok(v)) => v,
-        Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
-    };
-
+    let json = with_timeout(config.timeout, full_future).await?;
     let response = json["response"]
         .as_str()
-        .ok_or("Ollama 回傳回應為空")?
-        .to_string();
-    if config.enable_llm_log {
-        log_llm_communication(
-            &format!("(System): {}\n(User): {}", sys_prompt, text),
-            &response,
-            config,
-            text.len(),
-            file_name,
-        );
-    }
-    Ok(response)
+        .ok_or("Ollama 回傳回應為空")?;
+
+    Ok(finalize_translation(response, config, &sys_prompt, text, file_name))
 }
 
 async fn translate_with_openai_compatible(
@@ -553,30 +553,12 @@ async fn translate_with_openai_compatible(
         Ok(resp.json::<serde_json::Value>().await?)
     };
 
-    let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.timeout),
-        full_future,
-    )
-    .await
-    {
-        Ok(Ok(v)) => v,
-        Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
-    };
-
+    let json = with_timeout(config.timeout, full_future).await?;
     let translated = json["choices"][0]["message"]["content"]
         .as_str()
         .ok_or("解析回傳失敗")?;
-    if config.enable_llm_log {
-        log_llm_communication(
-            &format!("(System): {}\n(User): {}", system_content, text),
-            translated,
-            config,
-            text.len(),
-            file_name,
-        );
-    }
-    Ok(translated.trim_matches('"').to_string())
+
+    Ok(finalize_translation(translated, config, &system_content, text, file_name))
 }
 
 async fn translate_with_deepl(
@@ -612,16 +594,7 @@ async fn translate_with_deepl(
         Ok(resp.json::<serde_json::Value>().await?)
     };
 
-    let json: serde_json::Value = match tokio::time::timeout(
-        std::time::Duration::from_secs(config.timeout),
-        full_future,
-    )
-    .await
-    {
-        Ok(Ok(v)) => v,
-        Ok(Err(e)) => return Err(e),
-        Err(_) => return Err(format!("OLLAMA_TIMEOUT:{}", config.timeout).into()),
-    };
+    let json = with_timeout(config.timeout, full_future).await?;
 
     let translated = json["translations"][0]["text"]
         .as_str()
