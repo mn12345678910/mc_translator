@@ -285,7 +285,7 @@ pub async fn process_all_files(
         let cfg = job_config.lock().unwrap().clone();
         crate::utils::add_log(
             &log,
-            &format!("檔案組 [{}] 處理完成並寫入目標。", display_name),
+            "處理完成並寫入目標。",
             &cfg.source_lang,
             &cfg.target_lang,
             &display_name,
