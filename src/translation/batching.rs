@@ -248,7 +248,7 @@ pub async fn run_translation_batch(
                     }
                     success_count += batch_success;
                     let already_done = total_items - pending_indices.len();
-                    progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
+                    progress.store(((ctx.global_items_offset + already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                 }
                 Err(_) => {
                     second_failed_indices.extend(batch.clone());
@@ -289,7 +289,7 @@ pub async fn run_translation_batch(
                         item.translated = Some(hanconv::s2tw(&cleaned));
                         success_count += 1;
                         let already_done = total_items - pending_indices.len();
-                        progress.store(((already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
+                        progress.store(((ctx.global_items_offset + already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
                     }
                     Err(e) => {
                         crate::utils::add_log(
