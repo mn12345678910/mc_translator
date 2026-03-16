@@ -207,6 +207,14 @@ pub async fn output_resource_pack(
 
             let _ = fs::remove_dir_all(&temp_dir);
 
+            crate::utils::add_log(
+                &log,
+                "資源包 (LLMTranslator.zip) 生成完成。",
+                &config.source_lang,
+                &config.target_lang,
+                "",
+            );
+
             Ok(())
         },
     )
