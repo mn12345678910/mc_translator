@@ -263,7 +263,7 @@ pub async fn process_all_files(
             let task_items: Vec<GlobalBatchItem> = items_in_source.iter().filter(|it| it.file_id == task.file_id).cloned().collect();
             let content = get_translated_content_for_task(task, &task_items);
             
-            let is_jar = source_path.extension().map_or(false, |ext| ext.to_string_lossy().to_lowercase() == "jar");
+            let is_jar = source_path.extension().is_some_and(|ext| ext.to_string_lossy().to_lowercase() == "jar");
             let key = if is_jar { format!("[BUNDLE]{}", task.rel_path) } else { task.rel_path.clone() };
             translated_results.insert(key, content);
         }
