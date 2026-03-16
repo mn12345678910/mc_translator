@@ -97,7 +97,7 @@ impl AppState {
         ui.horizontal(|ui| {
             let (_, label_color) = self.get_instance_style("label_output_path");
             let display_path = if self.output_dir.is_empty() {
-                self.i18n.label_default_path.clone().into()
+                self.i18n.label_default_path.clone()
             } else {
                 self.output_dir.clone()
             };
