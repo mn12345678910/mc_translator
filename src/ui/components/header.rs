@@ -175,7 +175,25 @@ impl AppState {
                     for l in ui_langs {
                         let label = if l == "zh_tw" { format!("{} (Default)", l) } else { l.clone() };
                         if ui.selectable_value(&mut self.ui_lang, l.clone(), label).clicked() {
+                            let old_i18n = self.i18n.clone();
                             self.i18n = crate::ui::i18n::I18nLabels::load_or_default(&self.ui_lang);
+                            
+                            // 連動更新當前靜態狀態文字
+                            let mut status = self.status.lock().unwrap();
+                            if *status == old_i18n.status_idle {
+                                *status = self.i18n.status_idle.clone();
+                            } else if *status == old_i18n.status_ready {
+                                *status = self.i18n.status_ready.clone();
+                            } else if *status == old_i18n.status_finished {
+                                *status = self.i18n.status_finished.clone();
+                            } else if *status == old_i18n.status_cancelled {
+                                *status = self.i18n.status_cancelled.clone();
+                            } else if *status == old_i18n.status_scanning_files {
+                                *status = self.i18n.status_scanning_files.clone();
+                            } else if *status == old_i18n.status_analyzing_files {
+                                *status = self.i18n.status_analyzing_files.clone();
+                            }
+                            
                             self.trigger_save();
                         }
                     }
