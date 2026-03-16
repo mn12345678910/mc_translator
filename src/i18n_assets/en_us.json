@@ -61,6 +61,7 @@
   "label_provider_none": "None",
   "label_ollama_url": "Ollama URL",
   "label_presets": "Presets",
+  "log_log_cleared": ">>> Logs cleared by user.",
   "label_fps": "FPS:",
   "label_fps_preset_vsync": "(Default:vsync)",
   "btn_restore_defaults": "⟲ Restore Defaults",

@@ -61,6 +61,7 @@
   "label_provider_none": "なし",
   "label_ollama_url": "Ollama URL",
   "label_presets": "プリセット",
+  "log_log_cleared": ">>> ログがユーザーによってクリアされました。",
   "label_fps": "FPS:",
   "label_fps_preset_vsync": "(デフォルト:vsync)",
   "btn_restore_defaults": "⟲ デフォルトに戻す",

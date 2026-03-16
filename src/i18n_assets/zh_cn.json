@@ -61,6 +61,7 @@
   "label_provider_none": "无",
   "label_ollama_url": "Ollama URL",
   "label_presets": "常用版本",
+  "log_log_cleared": ">>> 用户已清除执行日志。",
   "label_fps": "FPS:",
   "label_fps_preset_vsync": "(默认:vsync)",
   "btn_restore_defaults": "⟲ 恢复默认",
