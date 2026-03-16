@@ -185,5 +185,11 @@
   "log_batch_invalid": "批次翻译结果无效，无法解析任何条目",
   "status_processing_label": "正在处理: ",
   "log_selected_files": "已选择 {} 个文件",
-  "log_output_dir_set": "输出文件夹已设定: {}"
+  "log_output_dir_set": "输出文件夹已设定: {}",
+  "status_idle": "待机中",
+  "status_scanning_files": "正在扫描文件...",
+  "log_processing_finished": "处理完成并写入目标。",
+  "log_generating_pack": "正在生成资源包 (LLMTranslator.zip)...",
+  "log_pack_item_exists_warn": "警告：已存在相同的资源包文件 {}，将会被直接覆盖。",
+  "log_pack_gen_finished": "资源包 (LLMTranslator.zip) 生成完成。"
 }

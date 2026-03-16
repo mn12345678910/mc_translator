@@ -185,5 +185,11 @@
   "log_batch_invalid": "バッチ結果が無効です。パースできません。",
   "status_processing_label": "処理中: ",
   "log_selected_files": "{} 個のファイルを選択しました",
-  "log_output_dir_set": "出力フォルダが設定されました: {}"
+  "log_output_dir_set": "出力フォルダが設定されました: {}",
+  "status_idle": "待機中",
+  "status_scanning_files": "ファイルをスキャン中...",
+  "log_processing_finished": "処理が完了し、ターゲットに書き込まれました。",
+  "log_generating_pack": "リソースパック (LLMTranslator.zip) を生成中...",
+  "log_pack_item_exists_warn": "警告：同じリソースパックファイル {} が既に存在します。上書きされます。",
+  "log_pack_gen_finished": "リソースパック (LLMTranslator.zip) の生成が完了しました。"
 }

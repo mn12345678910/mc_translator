@@ -89,7 +89,7 @@ pub async fn process_all_files(
     // --- 階段一：掃描與條目收集 ---
     {
         let mut s = status_arc.lock().unwrap();
-        *s = "正在掃描檔案...".to_string();
+        *s = state.i18n.status_scanning_files.clone();
     }
 
     let mut file_tasks = Vec::new();
@@ -285,7 +285,7 @@ pub async fn process_all_files(
         let cfg = job_config.lock().unwrap().clone();
         crate::utils::add_log(
             &log,
-            "處理完成並寫入目標。",
+            &state.i18n.log_processing_finished,
             &cfg.source_lang,
             &cfg.target_lang,
             &display_name,
@@ -300,7 +300,7 @@ pub async fn process_all_files(
 
     if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
-        output_resource_pack(&std::path::PathBuf::new(), HashMap::new(), config_locked, log.clone()).await?;
+        output_resource_pack(&std::path::PathBuf::new(), HashMap::new(), config_locked, log.clone(), state.i18n.clone()).await?;
     }
 
     Ok(())

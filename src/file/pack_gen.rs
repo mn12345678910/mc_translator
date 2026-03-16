@@ -129,6 +129,7 @@ pub async fn output_resource_pack(
     _translated_files: HashMap<String, String>,
     config: JobConfig,
     log: Arc<Mutex<Vec<String>>>,
+    i18n: crate::ui::i18n::I18nLabels,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::task::spawn_blocking(
         move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -161,7 +162,7 @@ pub async fn output_resource_pack(
                 return Ok(());
             }
 
-            crate::utils::add_log(&log, "正在生成資源包 (LLMTranslator.zip)...", &config.source_lang, &config.target_lang, "");
+            crate::utils::add_log(&log, &i18n.log_generating_pack, &config.source_lang, &config.target_lang, "");
 
             let pack_mcmeta = serde_json::json!({
                 "pack": {
@@ -178,10 +179,7 @@ pub async fn output_resource_pack(
             let zip_path = output_path.join(zip_filename);
 
             if zip_path.exists() {
-                log.lock().unwrap().push(format!(
-                    "警告：已存在相同的資源包檔案 {}，將會被直接覆蓋。",
-                    zip_filename
-                ));
+                log.lock().unwrap().push(i18n.log_pack_item_exists_warn.replace("{}", zip_filename));
             }
 
             let zip_file = fs::File::create(&zip_path)?;
@@ -209,7 +207,7 @@ pub async fn output_resource_pack(
 
             crate::utils::add_log(
                 &log,
-                "資源包 (LLMTranslator.zip) 生成完成。",
+                &i18n.log_pack_gen_finished,
                 &config.source_lang,
                 &config.target_lang,
                 "",

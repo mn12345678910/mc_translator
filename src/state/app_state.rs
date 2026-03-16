@@ -232,7 +232,7 @@ impl AppState {
             is_processing: Arc::new(AtomicBool::new(false)),
             is_cancelled: Arc::new(AtomicBool::new(false)),
             is_paused: Arc::new(AtomicBool::new(false)),
-            status: Arc::new(Mutex::new("待機中".to_string())),
+            status: Arc::new(Mutex::new(i18n.status_idle.clone())),
             progress: Arc::new(AtomicU32::new(0.0f32.to_bits())),
             progress_total: Arc::new(AtomicU32::new(0.0f32.to_bits())),
             global_progress: Arc::new(AtomicU32::new(0.0f32.to_bits())),
@@ -353,7 +353,7 @@ impl AppState {
                 tx
             },
             palette_edit_slots: vec![
-                PaletteEditSlot { target_id: "全部按鈕".to_string(), is_checked: true },
+                PaletteEditSlot { target_id: i18n.cat_all_buttons.clone(), is_checked: true },
             ],
             palette_all_selected: false,
             palette_prop_sync_bg: true,

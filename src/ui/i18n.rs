@@ -214,6 +214,12 @@ pub struct I18nLabels {
     pub status_processing_label: String,
     pub log_selected_files: String,
     pub log_output_dir_set: String,
+    pub status_idle: String,
+    pub status_scanning_files: String,
+    pub log_processing_finished: String,
+    pub log_generating_pack: String,
+    pub log_pack_item_exists_warn: String,
+    pub log_pack_gen_finished: String,
 }
 
 impl I18nLabels {
@@ -509,6 +515,12 @@ impl I18nLabels {
             status_processing_label: "正在處理: ".to_string(),
             log_selected_files: "已選擇 {} 個檔案".to_string(),
             log_output_dir_set: "輸出資料夾已設定: {}".to_string(),
+            status_idle: "待機中".to_string(),
+            status_scanning_files: "正在掃描檔案...".to_string(),
+            log_processing_finished: "處理完成並寫入目標。".to_string(),
+            log_generating_pack: "正在生成資源包 (LLMTranslator.zip)...".to_string(),
+            log_pack_item_exists_warn: "警告：已存在相同的資源包檔案 {}，將會被直接覆蓋。".to_string(),
+            log_pack_gen_finished: "資源包 (LLMTranslator.zip) 生成完成。".to_string(),
         }
     }
 }
