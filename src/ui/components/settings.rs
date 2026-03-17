@@ -29,7 +29,13 @@ impl AppState {
                             ui.label(egui::RichText::new(self.i18n.label_provider.clone()).color(label_color).strong());
                             ui.add_enabled_ui(ui_enabled, |ui| {
                                 egui::ComboBox::from_id_source("provider_combo")
-                                    .selected_text(&self.api_provider)
+                                    .selected_text(
+                                        if self.api_provider == "無" || self.api_provider == "None" {
+                                            &self.i18n.label_provider_none
+                                        } else {
+                                            &self.api_provider
+                                        }
+                                    )
                                     .width(140.0)
                                     .show_ui(ui, |ui| {
                                         let mut providers = vec![

@@ -23,6 +23,7 @@ impl AppState {
             self.available_langs.clone(),
             self.source_lang.clone(),
             self.target_lang.clone(),
+            self.ui_lang.clone(),
         );
     }
 
@@ -41,6 +42,7 @@ impl AppState {
         available_langs_arc: Arc<Mutex<Vec<String>>>,
         source_lang: String,
         target_lang: String,
+        ui_lang: String,
     ) {
         *status_arc.lock().unwrap() = i18n.status_analyzing_dict.clone();
 
@@ -65,7 +67,7 @@ impl AppState {
                     let mut term_map = term_arc.lock().unwrap();
                     *term_map = unfiltered;
                 }
-                crate::config::save_dict(crate::config::OFFICIAL_DICT, &inferred);
+                crate::config::save_dict(&crate::config::get_official_dict_path(&ui_lang), &inferred);
 
                 if let Ok(mut mc) = mc_lang_arc.lock() {
                     *mc = Some(files.clone());
@@ -317,9 +319,10 @@ impl AppState {
         }
         watcher.watch(dict_path, RecursiveMode::NonRecursive)?;
 
-                let available_langs_arc = self.available_langs.clone();
+        let available_langs_arc = self.available_langs.clone();
         let source_lang_clone = self.source_lang.clone();
         let target_lang_clone = self.target_lang.clone();
+        let ui_lang_clone = self.ui_lang.clone();
 
         let h_inner = runtime_handle.clone();
         runtime_handle.spawn(async move {
@@ -341,6 +344,7 @@ impl AppState {
                     available_langs_arc.clone(),
                     source_lang_clone.clone(),
                     target_lang_clone.clone(),
+                    ui_lang_clone.clone(),
                 );
             }
         });

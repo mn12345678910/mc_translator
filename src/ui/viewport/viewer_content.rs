@@ -185,12 +185,12 @@ impl AppState {
                                 if current_tab == 0 {
                                     let mut memory = translation_memory.lock().unwrap();
                                     memory.extend(imported);
-                                    crate::config::save_translation_memory(&memory);
+                                    crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &memory);
                                 } else if current_tab == 1 {
                                     let mut inferred = inferred_match_map.lock().unwrap();
                                     inferred.extend(imported);
                                     crate::config::save_dict(
-                                        crate::config::OFFICIAL_DICT,
+                                        &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                         &*inferred,
                                     );
                                 }
@@ -201,9 +201,9 @@ impl AppState {
                 }
                 if ui.button(i18n.btn_export.clone()).clicked() {
                     let default_name = if current_tab == 0 {
-                        crate::config::USER_DICT
+                        format!("user_{}.json", viewer_shared.ui_lang.read().unwrap())
                     } else {
-                        crate::config::OFFICIAL_DICT
+                        format!("official_{}.json", viewer_shared.ui_lang.read().unwrap())
                     };
                     let dialog = rfd::FileDialog::new()
                         .add_filter("JSON", &["json"])
@@ -225,12 +225,11 @@ impl AppState {
                     .on_hover_text(i18n.spec_btn_nav_dict.clone()) // 使用既有提示文字
                     .clicked()
                 {
-                    let filename = if current_tab == 0 {
-                        crate::config::USER_DICT
+                    let path = if current_tab == 0 {
+                        crate::config::get_user_dict_path(&viewer_shared.ui_lang.read().unwrap())
                     } else {
-                        crate::config::OFFICIAL_DICT
+                        crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap())
                     };
-                    let path = std::path::Path::new(crate::config::DICT_DIR).join(filename);
                     if let Ok(abs_path) = std::fs::canonicalize(&path) {
                         // 1. 以檔案總管開啟並選中
                         #[cfg(target_os = "windows")]
@@ -293,17 +292,17 @@ impl AppState {
                                     if current_tab == 0 {
                                         let mut mem = translation_memory.lock().unwrap();
                                         mem.insert(key, val);
-                                        crate::config::save_translation_memory(&mem);
+                                        crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &mem);
                                     } else {
                                         // 官方分頁編輯也存入使用者字典並從官方移除（遷移）
                                         let mut mem = translation_memory.lock().unwrap();
                                         mem.insert(key.clone(), val);
-                                        crate::config::save_translation_memory(&mem);
+                                        crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &mem);
                                         
                                         let mut inferred = inferred_match_map.lock().unwrap();
                                         if inferred.remove(&key).is_some() {
                                             crate::config::save_dict(
-                                                crate::config::OFFICIAL_DICT,
+                                                &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                                 &*inferred,
                                             );
                                         }
@@ -399,14 +398,14 @@ impl AppState {
                                         }
                                         if count > 0 {
                                             crate::config::save_dict(
-                                                crate::config::OFFICIAL_DICT,
+                                                &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                                 &*inferred,
                                             );
                                         }
                                     }
 
                                     if count > 0 {
-                                        crate::config::save_translation_memory(&mem);
+                                        crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &mem);
                                         // 確保 UI 立即反應，避免搜尋快取等延遲
                                         ctx.request_repaint();
                                     }
@@ -433,13 +432,11 @@ impl AppState {
                             if ui.button(i18n.btn_confirm_clear.clone()).clicked() {
                                 if current_tab == 0 {
                                     translation_memory.lock().unwrap().clear();
-                                    crate::config::save_translation_memory(
-                                        &translation_memory.lock().unwrap(),
-                                    );
+                                    crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &translation_memory.lock().unwrap());
                                 } else if current_tab == 1 {
                                     inferred_match_map.lock().unwrap().clear();
                                     crate::config::save_dict(
-                                        crate::config::OFFICIAL_DICT,
+                                        &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                         &*inferred_match_map.lock().unwrap(),
                                     );
                                 }
@@ -670,13 +667,13 @@ impl AppState {
                                                 let edit_val =
                                                     dict_edit_value.lock().unwrap().clone();
                                                 mem.insert(k.clone(), edit_val);
-                                                crate::config::save_translation_memory(&mem);
+                                                crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &mem);
                                                 if current_tab == 1 {
                                                     let mut inferred =
                                                         inferred_match_map.lock().unwrap();
                                                     inferred.remove(k);
                                                     crate::config::save_dict(
-                                                        crate::config::OFFICIAL_DICT,
+                                                        &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                                         &*inferred,
                                                     );
                                                 }
@@ -717,15 +714,13 @@ impl AppState {
                                                         let mut mem =
                                                             translation_memory.lock().unwrap();
                                                         mem.remove(k);
-                                                        crate::config::save_translation_memory(
-                                                            &mem,
-                                                        );
+                                                        crate::config::save_translation_memory(&viewer_shared.ui_lang.read().unwrap(), &mem);
                                                     } else {
                                                         let mut inferred =
                                                             inferred_match_map.lock().unwrap();
                                                         inferred.remove(k);
                                                         crate::config::save_dict(
-                                                            crate::config::OFFICIAL_DICT,
+                                                            &crate::config::get_official_dict_path(&viewer_shared.ui_lang.read().unwrap()),
                                                             &*inferred,
                                                         );
                                                     }

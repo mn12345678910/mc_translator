@@ -93,7 +93,7 @@ impl AppState {
 
         ui.add_space(2.0);
 
-        // 路徑標籤單獨一行，並具備截斷保護
+        // 路徑標籤單獨一行，並具備截斷保護，右側為介面語言切換
         ui.horizontal(|ui| {
             let (_, label_color) = self.get_instance_style("label_output_path");
             let display_path = if self.output_dir.is_empty() {
@@ -110,6 +110,58 @@ impl AppState {
                 .truncate(true),
             )
             .on_hover_text(display_path.clone());
+
+            // 靠右放置介面語言切換下拉選單
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let ui_langs = crate::ui::i18n::I18nLabels::get_available_ui_langs();
+                egui::ComboBox::from_id_source("ui_lang_combo")
+                    .selected_text(&self.ui_lang)
+                    .show_ui(ui, |ui| {
+                        for l in ui_langs {
+                            let label = if l == "zh_tw" { format!("{} (Default)", l) } else { l.clone() };
+                            if ui.selectable_value(&mut self.ui_lang, l.clone(), label).clicked() {
+                                let old_i18n = self.i18n.clone();
+                                self.i18n = crate::ui::i18n::I18nLabels::load_or_default(&self.ui_lang);
+                                
+                                // 1. 連動更新當前靜態狀態文字
+                                let mut status = self.status.lock().unwrap();
+                                if *status == old_i18n.status_idle {
+                                    *status = self.i18n.status_idle.clone();
+                                } else if *status == old_i18n.status_ready {
+                                    *status = self.i18n.status_ready.clone();
+                                } else if *status == old_i18n.status_finished {
+                                    *status = self.i18n.status_finished.clone();
+                                } else if *status == old_i18n.status_cancelled {
+                                    *status = self.i18n.status_cancelled.clone();
+                                } else if *status == old_i18n.status_scanning_files {
+                                    *status = self.i18n.status_scanning_files.clone();
+                                }
+
+                                // 2. 連動更新 Prompt (僅在仍為系統預設值時才自動切換)
+                                if self.user_prompt == old_i18n.default_user_prompt {
+                                    self.user_prompt = self.i18n.default_user_prompt.clone();
+                                }
+                                if self.system_prompt == old_i18n.default_system_prompt {
+                                    self.system_prompt = self.i18n.default_system_prompt.clone();
+                                }
+
+                                // 3. 連動與通知子視窗 (Update Viewport)
+                                *self.viewer_shared.ui_lang.write().unwrap() = self.ui_lang.clone();
+                                ui.ctx().request_repaint_of(egui::ViewportId::from_hash_of("memory_viewer"));
+
+                                // 4. 重新載入對應語系的建議詞典
+                                {
+                                    let mut tm = self.translation_memory.lock().unwrap();
+                                    *tm = crate::config::load_translation_memory(&self.ui_lang);
+                                    let mut imm = self.inferred_match_map.lock().unwrap();
+                                    *imm = crate::config::load_dict(&crate::config::get_official_dict_path(&self.ui_lang));
+                                }
+
+                                self.trigger_save();
+                            }
+                        }
+                    });
+            });
         });
     }
 
@@ -167,37 +219,7 @@ impl AppState {
             }
             ui.add_space(8.0);
 
-            // UI 介面語言切換下拉選單 (放置在左側)
-            let ui_langs = crate::ui::i18n::I18nLabels::get_available_ui_langs();
-            egui::ComboBox::from_id_source("ui_lang_combo")
-                .selected_text(&self.ui_lang)
-                .show_ui(ui, |ui| {
-                    for l in ui_langs {
-                        let label = if l == "zh_tw" { format!("{} (Default)", l) } else { l.clone() };
-                        if ui.selectable_value(&mut self.ui_lang, l.clone(), label).clicked() {
-                            let old_i18n = self.i18n.clone();
-                            self.i18n = crate::ui::i18n::I18nLabels::load_or_default(&self.ui_lang);
-                            
-                            // 連動更新當前靜態狀態文字
-                            let mut status = self.status.lock().unwrap();
-                            if *status == old_i18n.status_idle {
-                                *status = self.i18n.status_idle.clone();
-                            } else if *status == old_i18n.status_ready {
-                                *status = self.i18n.status_ready.clone();
-                            } else if *status == old_i18n.status_finished {
-                                *status = self.i18n.status_finished.clone();
-                            } else if *status == old_i18n.status_cancelled {
-                                *status = self.i18n.status_cancelled.clone();
-                            } else if *status == old_i18n.status_scanning_files {
-                                *status = self.i18n.status_scanning_files.clone();
-                            } else if *status == old_i18n.status_analyzing_files {
-                                *status = self.i18n.status_analyzing_files.clone();
-                            }
-                            
-                            self.trigger_save();
-                        }
-                    }
-                });
+            ui.add_space(8.0);
         });
     }
 }

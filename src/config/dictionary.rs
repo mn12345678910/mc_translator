@@ -5,8 +5,14 @@ use std::collections::HashMap;
 use std::fs;
 
 pub const DICT_DIR: &str = "dicts";
-pub const USER_DICT: &str = "user.json";
-pub const OFFICIAL_DICT: &str = "official.json";
+
+pub fn get_user_dict_path(lang: &str) -> std::path::PathBuf {
+    std::path::Path::new(DICT_DIR).join("user").join(format!("{}.json", lang))
+}
+
+pub fn get_official_dict_path(lang: &str) -> std::path::PathBuf {
+    std::path::Path::new(DICT_DIR).join("official").join(format!("{}.json", lang))
+}
 
 /// 確保辭典目錄存在
 pub fn ensure_dicts_dir() {
@@ -14,9 +20,7 @@ pub fn ensure_dicts_dir() {
 }
 
 /// 泛型載入辭典檔案
-pub fn load_dict<T: serde::de::DeserializeOwned + Default>(filename: &str) -> T {
-    ensure_dicts_dir();
-    let path = std::path::Path::new(DICT_DIR).join(filename);
+pub fn load_dict<T: serde::de::DeserializeOwned + Default>(path: &std::path::Path) -> T {
     if let Ok(content) = fs::read_to_string(path) {
         serde_json::from_str(&content).unwrap_or_default()
     } else {
@@ -25,22 +29,23 @@ pub fn load_dict<T: serde::de::DeserializeOwned + Default>(filename: &str) -> T 
 }
 
 /// 泛型儲存辭典檔案
-pub fn save_dict<T: serde::Serialize>(filename: &str, data: &T) {
-    ensure_dicts_dir();
-    let path = std::path::Path::new(DICT_DIR).join(filename);
+pub fn save_dict<T: serde::Serialize>(path: &std::path::Path, data: &T) {
+    if let Some(parent) = path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
     if let Ok(json) = serde_json::to_string_pretty(data) {
         let _ = fs::write(path, json);
     }
 }
 
 /// 載入使用者建議詞
-pub fn load_translation_memory() -> HashMap<String, String> {
-    load_dict(USER_DICT)
+pub fn load_translation_memory(lang: &str) -> HashMap<String, String> {
+    load_dict(&get_user_dict_path(lang))
 }
 
 /// 儲存翻譯記憶體檔案 (使用者建議詞)
-pub fn save_translation_memory(memory: &HashMap<String, String>) {
-    save_dict(USER_DICT, memory);
+pub fn save_translation_memory(lang: &str, memory: &HashMap<String, String>) {
+    save_dict(&get_user_dict_path(lang), memory);
 }
 
 #[cfg(test)]
@@ -52,13 +57,14 @@ mod tests {
     #[test]
     fn test_save_load_dict_standard() {
         const TEST_DICT: &str = "test_temp_dictionary_standard.json";
-        ensure_dicts_dir();
+        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
         let mut data = HashMap::new();
         data.insert("Apple".to_string(), "蘋果".to_string());
         
-        save_dict(TEST_DICT, &data);
+        save_dict(&path, &data);
         
-        let loaded: HashMap<String, String> = load_dict(TEST_DICT);
+        let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("Apple").unwrap(), "蘋果");
 
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
@@ -69,13 +75,14 @@ mod tests {
     #[test]
     fn test_save_load_dict_utf8_edge() {
         const TEST_DICT: &str = "test_temp_dictionary_utf8.json";
-        ensure_dicts_dir();
+        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
         let mut data = HashMap::new();
         data.insert("❄️ Ice".to_string(), "冰塊".to_string());
         
-        save_dict(TEST_DICT, &data);
+        save_dict(&path, &data);
         
-        let loaded: HashMap<String, String> = load_dict(TEST_DICT);
+        let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("❄️ Ice").unwrap(), "冰塊");
 
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
@@ -86,11 +93,11 @@ mod tests {
     #[test]
     fn test_load_corrupt_dict_fallback() {
         const TEST_DICT: &str = "test_temp_dictionary_corrupt.json";
-        ensure_dicts_dir();
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
         let _ = std::fs::write(&path, "{ invalid_json: ");
         
-        let loaded: HashMap<String, String> = load_dict(TEST_DICT);
+        let loaded: HashMap<String, String> = load_dict(&path);
         assert!(loaded.is_empty());
 
         let _ = std::fs::remove_file(path);

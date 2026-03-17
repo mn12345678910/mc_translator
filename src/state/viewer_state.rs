@@ -38,6 +38,7 @@ pub struct ViewerSharedState {
     pub theme: Arc<RwLock<String>>,
     pub font_size: Arc<RwLock<f32>>,
     pub style: Arc<RwLock<StyleSnapshot>>,
+    pub ui_lang: Arc<RwLock<String>>,
     pub close_requested: Arc<std::sync::atomic::AtomicBool>,
     pub update_tx: UnboundedSender<ViewerUpdate>,
     pub opened_last_frame: Arc<Mutex<bool>>,
