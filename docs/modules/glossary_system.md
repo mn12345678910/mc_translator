@@ -4,8 +4,8 @@
 
 - 官方詞庫：由 Minecraft 官方語言檔（從 GitHub 動態下載，取消靜態固定）對照產生。
   - **條件式對照載入**：推論詞庫常規不會產出，**僅在 `source_lang == "en_us"` 且 `target_lang == "zh_tw"` 時**，才會進行 `exact` 對照和生成。
-- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導並存到 `dicts/official.json`
-- 使用者詞庫：`dicts/user.json`
+- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導並存到 `dicts/official/{ui_lang}.json`
+- 使用者詞庫：`dicts/user/{ui_lang}.json`
 
 ## 優先級
 
@@ -27,7 +27,7 @@
 ## 監控與刷新
 
 - `dicts/` 或 `langs/` 資料夾中任何 `.json` 變動會觸發重新分析並載入官方/推論。
-- 推論結果會覆寫 `dicts/official.json`
+- 推論結果會覆寫 `dicts/official/{ui_lang}.json`
 
 ## 術語載入與優先級覆蓋權
 
@@ -36,7 +36,7 @@
 ```mermaid
 graph TD
     Start([啟動 / 字典變動]) --> CheckMonitor{"監聽 dicts/ 變動?"}
-    CheckMonitor -- 是 --> ReInference[背景觸發自動推論] --> SaveOfficial[覆寫 official.json]
+    CheckMonitor -- 是 --> ReInference[背景觸發自動推論] --> SaveOfficial[覆寫對應語系的 official.json]
     
     Start --> Load[載入字典]
     Load --> CheckPriority{"優先級設定 (glossary_priority)"}

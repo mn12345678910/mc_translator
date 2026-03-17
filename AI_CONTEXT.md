@@ -11,21 +11,21 @@
 - 進度包含全域 offset，避免跨檔案窗口時進度倒退。
 
 **增量與跳過**
-- `zh_tw` 既有翻譯且與原文不同時視為已翻譯，直接預填。
+- 目標語言既有翻譯且與原文不同時視為已翻譯，直接預填。
 - `should_skip_key` / `should_skip_value` 會跳過 ID、布林值、純數字、snake_case、命名空間 ID 等。
 
 **輸出規則**
 - 輸出根目錄固定為 `LLMTranslator/`。
 - 只要是 JAR 來源或原本在 `assets/`/`patchouli_books/` 內的 JSON 會進入資源包暫存，再由 `LLMTranslator.zip` 輸出。
 - 非資源結構 JSON 與 JS 會以原相對路徑輸出為實體檔案。
-- `en_us.json` 會轉成 `zh_tw.json`；Patchouli 會將 `/en_us/` 轉為 `/zh_tw/`。
+- `en_us.json` 會轉成目標語言檔名；Patchouli 會將 `/en_us/` 轉由目標語言路徑。
 
 ## 術語與字典
 
 **資料來源**
 - 官方詞庫：由 `dicts/en_us.json` 與 `dicts/zh_tw.json` 的對照生成精確匹配。
-- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導，存到 `dicts/official.json`。
-- 使用者詞庫：`dicts/user.json`，由字典管理器維護。
+- 推論詞庫：由 `analyze_dictionary` 從官方詞庫推導，依 UI 語系存入 `dicts/official/{ui_lang}.json`。
+- 使用者詞庫：`dicts/user/{ui_lang}.json`，依 UI 語系獨立維護。
 
 **使用方式**
 - Glossary 只作提示，不做替換。
@@ -45,8 +45,8 @@
 
 ## 字典監控
 
-- 監控 `dicts/` 目錄中的 `en_us.json`/`zh_cn.json`/`zh_tw.json`。
-- 變動會觸發 `refresh_dictionaries_core` 重新推論並更新 `official.json`。
+- 監控 `dicts/` 目錄中的 `.json` 檔案。
+- 變動會觸發 `refresh_dictionaries_core` 重新推論並更新 `dicts/official/{ui_lang}.json`。
 
 ## LLM 記錄
 

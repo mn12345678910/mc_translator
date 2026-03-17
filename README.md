@@ -33,7 +33,7 @@
 
 **2) 智慧跳過與增量保留**
 - 自動跳過純數字、布林值、命名空間 ID、snake_case 等不可翻譯內容
-- 已存在且不同於原文的 `zh_tw` 項目會被保留並視為已翻譯
+- 已存在且不同於原文的目標語言項目會被保留並視為已翻譯
 
 **3) 穩定批次翻譯與降級重試**
 - 批次翻譯支援「批次大小 + 字元上限」雙限制
@@ -57,12 +57,12 @@
 **資源包輸出**
 - 只有 JAR 來源或原本已在資源結構內的 JSON 會進入資源包
 - 產出 `LLMTranslator.zip`
-- 內含 `pack.mcmeta` 與標準 `assets/<modid>/lang/zh_tw.json`
-- Patchouli 手冊會將 `/en_us/` 轉成 `/zh_tw/`
+- 內含 `pack.mcmeta` 與標準 `assets/<modid>/lang/<目標語言>.json`
+- Patchouli 手冊會將 `/en_us/` 轉成 `/<目標語言>/`
 
 **鏡像輸出**
 - 非資源結構的 JSON 與 JS 會以原相對路徑輸出成實體檔案
-- `en_us.json` 會轉為 `zh_tw.json`
+- `en_us.json` 會依目標轉為對應語系檔名 (如 `zh_tw.json`)
 
 ## 需求環境
 
