@@ -220,6 +220,8 @@ pub struct I18nLabels {
     pub log_generating_pack: String,
     pub log_pack_item_exists_warn: String,
     pub log_pack_gen_finished: String,
+    pub default_user_prompt: String,
+    pub default_system_prompt: String,
 }
 
 impl I18nLabels {
@@ -521,6 +523,8 @@ impl I18nLabels {
             log_generating_pack: "正在生成資源包 (LLMTranslator.zip)...".to_string(),
             log_pack_item_exists_warn: "警告：已存在相同的資源包檔案 {}，將會被直接覆蓋。".to_string(),
             log_pack_gen_finished: "資源包 (LLMTranslator.zip) 生成完成。".to_string(),
+            default_user_prompt: "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。".to_string(),
+            default_system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
         }
     }
 }

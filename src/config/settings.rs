@@ -17,100 +17,100 @@ pub struct AppConfig {
     pub api_key: String,
 
     // --- [核心 API 設定] ---
-    #[serde(rename = "服務提供商", alias = "api_provider")]
+    #[serde(alias = "服務提供商")]
     pub api_provider: String,
-    #[serde(rename = "模型名稱", alias = "model")]
+    #[serde(alias = "模型名稱")]
     pub model: String,
-    #[serde(rename = "Ollama位址", alias = "ollama_url")]
+    #[serde(alias = "Ollama位址")]
     pub ollama_url: String,
 
     // --- [Prompt 集] ---
-    #[serde(rename = "使用者翻譯提示", alias = "user_prompt")]
+    #[serde(alias = "使用者翻譯提示")]
     pub user_prompt: String,
-    #[serde(rename = "系統技術指令", alias = "system_prompt")]
+    #[serde(alias = "系統技術指令")]
     pub system_prompt: String,
 
     // --- [翻譯參數] ---
-    #[serde(rename = "批次量", alias = "batch_size")]
+    #[serde(alias = "批次量")]
     pub batch_size: u32,
-    #[serde(rename = "批次字數上限", alias = "batch_max_chars")]
+    #[serde(alias = "批次字數上限")]
     pub batch_max_chars: u32,
-    #[serde(rename = "API逾時秒數", alias = "timeout")]
+    #[serde(alias = "API逾時秒數")]
     pub timeout: u32,
-    #[serde(rename = "術語優先級", alias = "glossary_priority")]
+    #[serde(alias = "術語優先級")]
     pub glossary_priority: String,
 
     // --- [語言設定] ---
-    #[serde(rename = "來源語言", alias = "source_lang")]
+    #[serde(alias = "來源語言")]
     pub source_lang: String,
-    #[serde(rename = "目標語言", alias = "target_lang")]
+    #[serde(alias = "目標語言")]
     pub target_lang: String,
-    #[serde(rename = "介面語言", alias = "ui_lang", default = "default_ui_lang")]
+    #[serde(alias = "介面語言", default = "default_ui_lang")]
     pub ui_lang: String,
 
     // --- [輸出與路徑] ---
-    #[serde(rename = "輸出路徑", alias = "output_dir")]
+    #[serde(alias = "輸出路徑")]
     pub output_dir: String,
-    #[serde(rename = "資源包版本", alias = "pack_format")]
+    #[serde(alias = "資源包版本")]
     pub pack_format: u32,
 
     // --- [效能與面板狀態] ---
-    #[serde(rename = "自定義FPS開關", alias = "enable_custom_fps")]
+    #[serde(alias = "自定義FPS開關")]
     pub enable_custom_fps: bool,
-    #[serde(rename = "自定義FPS數值", alias = "custom_fps")]
+    #[serde(alias = "自定義FPS數值")]
     pub custom_fps: u32,
-    #[serde(rename = "顯示API設定", alias = "show_api_settings")]
+    #[serde(alias = "顯示API設定")]
     pub show_api_settings: bool,
-    #[serde(rename = "顯示開發者模式", alias = "show_developer_mode")]
+    #[serde(alias = "顯示開發者模式")]
     pub show_developer_mode: bool,
 
     // --- [檔案篩選] ---
-    #[serde(rename = "跳過JSON", alias = "skip_json")]
+    #[serde(alias = "跳過JSON")]
     pub skip_json: bool,
-    #[serde(rename = "跳過JS", alias = "skip_js")]
+    #[serde(alias = "跳過JS")]
     pub skip_js: bool,
-    #[serde(rename = "跳過JAR", alias = "skip_jar")]
+    #[serde(alias = "跳過JAR")]
     pub skip_jar: bool,
-    #[serde(rename = "跳過手冊", alias = "skip_book")]
+    #[serde(alias = "跳過手冊")]
     pub skip_book: bool,
-    #[serde(rename = "記錄LLM通訊", alias = "enable_llm_log")]
+    #[serde(alias = "記錄LLM通訊")]
     pub enable_llm_log: bool,
 
     // --- [視窗幾何資訊] ---
-    #[serde(rename = "主視窗X", alias = "main_x")]
+    #[serde(alias = "主視窗X")]
     pub main_x: f32,
-    #[serde(rename = "主視窗Y", alias = "main_y")]
+    #[serde(alias = "主視窗Y")]
     pub main_y: f32,
-    #[serde(rename = "主視窗寬度", alias = "main_width")]
+    #[serde(alias = "主視窗寬度")]
     pub main_width: f32,
-    #[serde(rename = "主視窗高度", alias = "main_height")]
+    #[serde(alias = "主視窗高度")]
     pub main_height: f32,
-    #[serde(rename = "建議詞視窗X", alias = "viewer_x")]
+    #[serde(alias = "建議詞視窗X")]
     pub viewer_x: f32,
-    #[serde(rename = "建議詞視窗Y", alias = "viewer_y")]
+    #[serde(alias = "建議詞視窗Y")]
     pub viewer_y: f32,
-    #[serde(rename = "建議詞視窗寬度", alias = "viewer_width")]
+    #[serde(alias = "建議詞視窗寬度")]
     pub viewer_width: f32,
-    #[serde(rename = "建議詞視窗高度", alias = "viewer_height")]
+    #[serde(alias = "建議詞視窗高度")]
     pub viewer_height: f32,
 }
 
 /// 外觀與視覺設定檔 (style.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct StyleConfig {
-    #[serde(rename = "主題顏色", alias = "theme")]
+    #[serde(alias = "主題顏色")]
     pub theme: String,
-    #[serde(rename = "字體大小", alias = "font_size")]
+    #[serde(alias = "字體大小")]
     pub font_size: f32,
 
     // --- [自定義調色盤] ---
-    #[serde(default = "default_dark_bg", rename = "深色背景", alias = "dark_bg")]
+    #[serde(default = "default_dark_bg", alias = "深色背景")]
     pub dark_bg: [u8; 3],
-    #[serde(default = "default_dark_text", rename = "深色文字", alias = "dark_text")]
+    #[serde(default = "default_dark_text", alias = "深色文字")]
     pub dark_text: [u8; 3],
-    #[serde(default = "default_light_bg", rename = "淺色背景", alias = "light_bg")]
+    #[serde(default = "default_light_bg", alias = "淺色背景")]
     pub light_bg: [u8; 3],
-    #[serde(default = "default_light_text", rename = "淺色文字", alias = "light_text")]
+    #[serde(default = "default_light_text", alias = "淺色文字")]
     pub light_text: [u8; 3],
 
     // --- [細部色彩自定義] ---

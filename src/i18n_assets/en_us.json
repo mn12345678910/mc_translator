@@ -191,5 +191,7 @@
   "log_processing_finished": "Processing finished and written to target.",
   "log_generating_pack": "Generating resource pack (LLMTranslator.zip)...",
   "log_pack_item_exists_warn": "Warning: An identical resource pack {} already exists and will be overwritten.",
-  "log_pack_gen_finished": "Resource pack (LLMTranslator.zip) generation finished."
+  "log_pack_gen_finished": "Resource pack (LLMTranslator.zip) generation finished.",
+  "default_user_prompt": "You are a professional Minecraft mod translator. Please translate the following strings to English (en_us).\nMaintain a professional game terminology style (e.g., blocks, entities, enchantments).",
+  "default_system_prompt": "\n\n[Internal Technical Instruction - Must Obey]\n1. Perform 'keep as is' operation only for technical placeholders such as %%VAR_n%%, %%MC_n%%, %%HEX_n%% (no modifications, translations, or removal of tags).\n2. All other text content except the above placeholders 'must' be translated as required; do not output the full text as is."
 }

@@ -190,6 +190,17 @@ impl AppState {
         // [i18n] 確保目錄並載入語系
         let _ = I18nLabels::ensure_langs_exists();
         let i18n = I18nLabels::load_or_default(&config.ui_lang);
+        
+        // [i18n] 連動初始化預設 Prompt 提示詞
+        let mut user_prompt_val = config.user_prompt.clone();
+        if user_prompt_val == crate::config::settings::DEFAULT_PROMPT {
+            user_prompt_val = i18n.default_user_prompt.clone();
+        }
+
+        let mut system_prompt_val = config.system_prompt.clone();
+        if system_prompt_val.contains("[內部技術指令") {
+            system_prompt_val = i18n.default_system_prompt.clone();
+        }
 
         let (update_tx, update_rx) = tokio::sync::mpsc::unbounded_channel();
         let close_requested = Arc::new(AtomicBool::new(false));
@@ -253,8 +264,8 @@ impl AppState {
             batch_size: config.batch_size,
             batch_max_chars: config.batch_max_chars,
             timeout: config.timeout,
-            user_prompt: config.user_prompt.clone(),
-            system_prompt: config.system_prompt.clone(),
+            user_prompt: user_prompt_val,
+            system_prompt: system_prompt_val,
             theme: style_cfg.theme.clone(),
             pack_format: config.pack_format,
             font_size: style_cfg.font_size,
