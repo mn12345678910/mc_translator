@@ -32,6 +32,12 @@
 - Priority 由 `glossary_priority` 控制，同 key 時「先載入的優先」。
 - Prompt 注入僅挑選最多 30 筆術語。
 
+## 進入點分流
+
+- **GUI 模式 (`mc_translator_gui`)**：主要進入點 (`src/main.rs`)，運用 `egui` 呈現完整的視覺化設定與操作流程。
+- **CLI 模式 (`mc_translator_cli`)**：分支進入點 (`src/cli/main.rs`)，支援 headless 參數型（`-i <input>`）或透過 `dialoguer` 提供與 `AppConfig` 預設值連動的互動對話。
+- **共通管線驅動**：雙進入點皆調用 `src/translation/pipeline.rs` 中的 `start_translation_workflow` 執行統一的字典分析備用與檔案流水線 (`process_all_files`)，確保運行邏輯完全一致。
+
 ## 併發與 I/O 規範
 
 - 長耗時 I/O 必須放入 `tokio::task::spawn_blocking`。

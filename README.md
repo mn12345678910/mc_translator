@@ -9,7 +9,7 @@
 > 翻譯品質須知:
 > 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請"不要"將輸出內容直接提交給模組作者。
 
-`mc_translator_rs` 是一款為 Minecraft 整合包與模組本地化設計的 GUI 工具，以 Rust + egui 實作。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
+`mc_translator_rs` 是一款為 Minecraft 整合包與模組本地化設計的工具，支援 **Windows GUI** 與 **純命令列 CLI** 兩種操作模式。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
 
 **支援的翻譯服務**
 - Gemini
@@ -72,13 +72,30 @@
 | 網路 | 需可連線至 API (Ollama 為本機) |
 | 硬體 | 依模型與服務商需求而定 |
 
-## 快速操作
+## 雙進入點分流
+
+本工具依據執行情境提供獨立的二進位進入點：
+
+- **GUI 模式 (`mc_translator_gui`)**：完整視覺化操作，支援調色盤、字典管理器與即時進度條。
+- **CLI 模式 (`mc_translator_cli`)**：支援 Headless 多參數靜態執行，或 dialoguer Step-by-Step 互動引導流程。
+
+---
+
+## 快速操作 (GUI)
 
 1. 啟動程式後點選 `⚙` 開啟設定
 2. 選擇服務商與模型並填入 API Key (Ollama 免填)
 3. 選擇檔案或資料夾
 4. 設定輸出資料夾與參數
 5. 點擊開始翻譯
+
+### 快速操作 (CLI)
+
+- **互動導覽**：終端機執行 `./mc_translator_cli.exe`（或 `cargo run --bin mc_translator_cli`）依提示操作。
+- **純參數靜態執行**：
+  ```powershell
+  ./mc_translator_cli.exe -i <輸入檔案/目錄> -p <API提供商> -o <輸出目錄>
+  ```
 
 ## 文檔索引
 
