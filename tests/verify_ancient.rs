@@ -11,7 +11,7 @@ fn test_intra_batch_deduplication_ancient_json() {
     let target_text = "This profile is read only and cannot be modified! If you want to make a new profile based on this then you can make a copy to a new name";
     
     // 1. 模擬 5 筆重複條目
-    let mut items = vec![
+    let mut items = [
         GlobalBatchItem::new(target_text, 1, "cities.__readonly__"),
         GlobalBatchItem::new(target_text, 1, "client.__readonly__"),
         GlobalBatchItem::new(target_text, 1, "explosions.__readonly__"),
@@ -68,7 +68,7 @@ fn test_intra_batch_deduplication_ancient_json() {
     println!("\n--- 模擬 LLM 回傳成功 ---");
     let mut results_map = std::collections::HashMap::new();
     let orig_tag = format!("[i0]{}", target_text);
-    let trans_tag = format!("[i0]此設定檔是唯讀的，無法修改！如果您想基於此建立一個新設定檔，可以複製為新名稱");
+    let trans_tag = "[i0]此設定檔是唯讀的，無法修改！如果您想基於此建立一個新設定檔，可以複製為新名稱".to_string();
     results_map.insert(orig_tag, trans_tag);
 
     let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
