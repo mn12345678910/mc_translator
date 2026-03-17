@@ -68,6 +68,17 @@ pub async fn start_translation_workflow(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let logger_arc = Arc::new(logger);
     let progress_arc = Arc::new(progress_updater);
+
+    // --- 自動資料夾展開 ---
+    let mut expanded_paths = Vec::new();
+    for (path, rel_path) in input_paths {
+        if path.is_dir() {
+            expanded_paths.extend(crate::file::scanner::scan_files_recursive(&path, &path));
+        } else {
+            expanded_paths.push((path, rel_path));
+        }
+    }
+    let input_paths = expanded_paths;
     
     // 1. 初始化空狀態容器 (Pipeline 需要)
     let mc_lang = Arc::new(Mutex::new(None));

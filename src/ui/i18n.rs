@@ -222,6 +222,17 @@ pub struct I18nLabels {
     pub log_pack_gen_finished: String,
     pub default_user_prompt: String,
     pub default_system_prompt: String,
+    
+    // --- CLI 獨佔提示 ---
+    pub prompt_select_provider_cli: String,
+    pub prompt_advanced_settings_cli: String,
+    pub prompt_confirm_start_cli: String,
+    pub prompt_task_finished_cli: String,
+    pub prompt_new_task_cli: String,
+    pub label_back_to_prev_cli: String,
+    pub label_custom_input_cli: String,
+    pub label_yes_confirm_cli: String,
+    pub label_no_cancel_cli: String,
 }
 
 impl I18nLabels {
@@ -525,6 +536,16 @@ impl I18nLabels {
             log_pack_gen_finished: "資源包 (LLMTranslator.zip) 生成完成。".to_string(),
             default_user_prompt: "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。".to_string(),
             default_system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
+            
+            prompt_select_provider_cli: "請選擇 API 提供商".to_string(),
+            prompt_advanced_settings_cli: "是否需要調整進階設定？".to_string(),
+            prompt_confirm_start_cli: "確定要開始執行翻譯嗎？".to_string(),
+            prompt_task_finished_cli: "任務已結束，請問接下來？".to_string(),
+            prompt_new_task_cli: "開啟新翻譯任務".to_string(),
+            label_back_to_prev_cli: "<- 回到上一步".to_string(),
+            label_custom_input_cli: "自訂輸入...".to_string(),
+            label_yes_confirm_cli: "[是] 我確定".to_string(),
+            label_no_cancel_cli: "[否] 取消離開".to_string(),
         }
     }
 }

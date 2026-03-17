@@ -193,5 +193,14 @@
   "log_pack_item_exists_warn": "警告：同じリソースパックファイル {} が既に存在します。上書きされます。",
   "log_pack_gen_finished": "リソースパック (LLMTranslator.zip) の生成が完了しました。",
   "default_user_prompt": "あなたはプロの Minecraft mod 翻訳者です。以下の文字列を「日本語 (ja_jp)」に翻訳してください。\nプロのゲーム用語スタイル（ブロック、エンティティ、エンチャントなど）を維持してください。",
-  "default_system_prompt": "\n\n[内部技術指示 - 必ず遵守すること]\n1. %%VAR_n%%, %%MC_n%%, %%HEX_n%% などの技術的プレースホルダーに対してのみ「そのまま維持」操作を実行（変更、翻訳、タグの削除は不可）。\n2. 上記のプレースホルダー以外のすべてのテキスト内容は、必要に応じて「必ず」翻訳してください。そのまま出力しないでください。"
+  "default_system_prompt": "\n\n[内部技術指示 - 必ず遵守すること]\n1. %%VAR_n%%, %%MC_n%%, %%HEX_n%% などの技術的プレースホルダーに対してのみ「そのまま維持」操作を実行（変更、翻訳、タグの削除は不可）。\n2. 上記のプレースホルダー以外のすべてのテキスト内容は、必要に応じて「必ず」翻訳してください。そのまま出力しないでください。",
+  "prompt_select_provider_cli": "APIプロバイダーを選択してください",
+  "prompt_advanced_settings_cli": "詳細設定を調整しますか？",
+  "prompt_confirm_start_cli": "翻訳を開始しますか？",
+  "prompt_task_finished_cli": "タスクが終了しました。次はどうしますか？",
+  "prompt_new_task_cli": "新しい翻訳タスクを開始",
+  "label_back_to_prev_cli": "<- 前のステップに戻る",
+  "label_custom_input_cli": "カスタム入力...",
+  "label_yes_confirm_cli": "[はい] 確定する",
+  "label_no_cancel_cli": "[いいえ] キャンセルして離脱"
 }

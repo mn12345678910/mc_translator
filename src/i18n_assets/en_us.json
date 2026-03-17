@@ -193,5 +193,14 @@
   "log_pack_item_exists_warn": "Warning: An identical resource pack {} already exists and will be overwritten.",
   "log_pack_gen_finished": "Resource pack (LLMTranslator.zip) generation finished.",
   "default_user_prompt": "You are a professional Minecraft mod translator. Please translate the following strings to English (en_us).\nMaintain a professional game terminology style (e.g., blocks, entities, enchantments).",
-  "default_system_prompt": "\n\n[Internal Technical Instruction - Must Obey]\n1. Perform 'keep as is' operation only for technical placeholders such as %%VAR_n%%, %%MC_n%%, %%HEX_n%% (no modifications, translations, or removal of tags).\n2. All other text content except the above placeholders 'must' be translated as required; do not output the full text as is."
+  "default_system_prompt": "\n\n[Internal Technical Instruction - Must Obey]\n1. Perform 'keep as is' operation only for technical placeholders such as %%VAR_n%%, %%MC_n%%, %%HEX_n%% (no modifications, translations, or removal of tags).\n2. All other text content except the above placeholders 'must' be translated as required; do not output the full text as is.",
+  "prompt_select_provider_cli": "Please select API Provider",
+  "prompt_advanced_settings_cli": "Do you need to adjust advanced settings?",
+  "prompt_confirm_start_cli": "Are you sure you want to start the translation?",
+  "prompt_task_finished_cli": "Task finished, what's next?",
+  "prompt_new_task_cli": "Start new translation task",
+  "label_back_to_prev_cli": "<- Back to previous step",
+  "label_custom_input_cli": "Custom input...",
+  "label_yes_confirm_cli": "[Yes] I am sure",
+  "label_no_cancel_cli": "[No] Cancel and exit"
 }

@@ -6,7 +6,9 @@
 
 |#|日期時間|Commit編號|類型|位置(模組路徑)|說明 （使用-或<br>清單化）|
 |:---|:---|:---|:---|:---|:---|
-|0|2026-03-17 21:30|`多筆`|功能/優化|cli, api/models|- **CLI 補全動態模型與「回到上一步」**：<br/>- 實作 `dialoguer::Select` 串接 `fetch_dynamic_models` 背景載入模型清單。<br/>- 引入 `status_history` 堆疊狀態機管理流程，實踐互動介面隨時能回溯上一道問題，相容條件跳層。<br/>- **新增暫停防秒退機制** (0.4.3 版本號遞進)。|
+|0|2026-03-17 21:55|`多筆`|功能/修復|cli, pipeline, i18n|- **CLI 參數對齊與全區域 i18n 多語言化**：<br/>- 在門戶增加 `--batch-size` 等設定值參數覆蓋：對話框提示詞使用 `I18nLabels`。<br/>- 互動式新增 Step 1「介面語言」，支持即時切換後綴翻譯與即刻重載渲染。<br/>- **修正 CLI 目錄掃描缺陷** (自動展開目錄為檔案清單) (0.4.5 版本)。|
+|0|2026-03-17 21:45|`多筆`|功能/優化|cli|- **CLI 補全連鎖任務循環**：<br/>- 封裝 `loop { ... }` 互動狀態機，在翻譯結束後不立即退出，而是提供 `[1] 繼續下一個任務` 視覺項目續期驅動流程 (0.4.4 版本)。|
+|1|2026-03-17 21:30|`多筆`|功能/優化|cli, api/models|- **CLI 補全動態模型與「回到上一步」**：<br/>- 實作 `dialoguer::Select` 串接 `fetch_dynamic_models` 背景載入模型清單。<br/>- 引入 `status_history` 堆疊狀態機管理流程，實踐互動介面隨時能回溯上一道問題，相容條件跳層。<br/>- **新增暫停防秒退機制** (0.4.3 版本號遞進)。|
 |1|2026-03-17 20:30|`多筆`|架構/功能|cli, pipeline, Cargo.toml|- **實作 CLI 支持與管線解耦**：<br/>- 拆分二進位進入點，定錨 `mc_translator_gui` 與新增 `mc_translator_cli`。<br/>- 新增 `src/translation/pipeline.rs` 聚合字典載入與檔案翻譯流程，支援高度解耦的 Closure 狀態監聽。<br/>- 實作 CLI 的純參數 Headless 模式與 Dialoguer 互動導覽選單。|
 |1|2026-03-17 16:15|`多筆`|修復/優化|utils/skip_rules|- **補強過濾器與精簡代碼**：<br/>- 實作 UUID、16進位色碼、全大寫常數、Base64 以及日期格式排除，精確阻絕噪音。<br/>- 重構合併 `!contains_space` 的分支層級，提升審查可讀性與維護性。|
 |1|2026-03-17 10:40|`多筆`|功能/優化|dictionary, actions, header, gitignore|- **多語言詞典分流與結構優化**：<br/>- 實作 `dicts/user/{lang}.json` 與 `dicts/official/{lang}.json` 獨立檔案分流存儲。<br/>- 調整佈局，補齊介面語言切換時 Prompt / 視窗 Repaint 等動態連動。<br/>- 修正 `btn_clear_all` 翻譯誤植，並更新 `.gitignore` 完整隔離所有運行期自動生成的資料夾 (`dicts/`, `settings/`, `langs/`, `LLMTranslator/`)。|
