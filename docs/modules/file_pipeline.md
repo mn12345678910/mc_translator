@@ -3,7 +3,7 @@
 ## 掃描與收集
 
 - `scanner::scan_files_recursive` 遞迴掃描 `.jar`、`.json`、`.js`。
-- `collect_json_task` 解析 JSON 並建立翻譯項目。
+- `collect_json_task` 解析 JSON 並建立翻譯項目（詳見 [語言檔案比對機制](translation_comparison.md)）。
 - `collect_js_task` 依規則擷取可翻譯字串。
 - `collect_jar_tasks` 讀取 JAR 內 `en_us.json` 與 Patchouli 手冊。
 
