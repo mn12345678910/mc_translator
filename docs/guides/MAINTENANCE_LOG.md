@@ -6,7 +6,8 @@
 
 |#|日期時間|Commit編號|類型|位置(模組路徑)|說明 （使用-或<br>清單化）|
 |:---|:---|:---|:---|:---|:---|
-|0|2026-03-16 21:05|`多筆`|功能/優化|mc_lang, app_state, i18n, header|- **動態字典下載與多語言介面**：<br> - 實作 Minecraft 字典動態下載快取，限定 `en_us->zh_tw` 觸發術語比對。<br> - 新增介面多語系檔案支援 (`zh_cn`, `en_us`, `ja_jp`)。<br> - 導覽列追加 UI 語言下拉切換 ComboBox。|
+|0|2026-03-17 10:40|`多筆`|功能/優化|dictionary, actions, header, gitignore|- **多語言詞典分流與結構優化**：<br/>- 實作 `dicts/user/{lang}.json` 與 `dicts/official/{lang}.json` 獨立檔案分流存儲。<br/>- 調整佈局，補齊介面語言切換時 Prompt / 視窗 Repaint 等動態連動。<br/>- 修正 `btn_clear_all` 翻譯誤植，並更新 `.gitignore` 完整隔離所有運行期自動生成的資料夾 (`dicts/`, `settings/`, `langs/`, `LLMTranslator/`)。|
+|1|2026-03-16 21:05|`多筆`|功能/優化|mc_lang, app_state, i18n, header|- **動態字典下載與多語言介面**：<br> - 實作 Minecraft 字典動態下載快取，限定 `en_us->zh_tw` 觸發術語比對。<br> - 新增介面多語系檔案支援 (`zh_cn`, `en_us`, `ja_jp`)。<br> - 導覽列追加 UI 語言下拉切換 ComboBox。|
 |1|2026-03-16 18:35|`a633a2c`|修復/優化|pipeline|- **簡化檔案組處理完成日誌**：<br> - 移除贅餘的 `檔案組 [{}]` 格式化，由 `add_log` 自動帶入的前綴負責顯示名稱。|
 |2|2026-03-16 16:45|`b62cdde`, `a702149`|修復/優化|pipeline, batching|- **進度計算與顯示深度修正**：<br> - **條目進度修正**：修正 `batching.rs` 在失敗重試與單筆回退時漏加全域偏移量 (`global_items_offset`)，防止進度大跳水。<br> - **全域檔案進度步幅優化**：修正 `pipeline.rs` 按群組固定 `+1.0` 的問題，改為依據群組內真實獨立檔案數累加，確保最後能達標 100%。|
 |2|2026-03-16 16:30|`d3e3b78`|修復/優化|palette, theme, pipeline, pack_gen, actions|- **補齊日誌與修正面板預設值**：<br> - **調色盤預設值**：修正 HSVA 初始化來源為主題預設，而非覆寫值。<br> - **補齊日誌**：新增單一檔案組處理完成、資源包產出等日誌，且統一格式化。|
