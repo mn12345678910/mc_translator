@@ -92,9 +92,12 @@ pub fn should_skip_value(val: &str) -> bool {
         return true;
     }
 
-    // SHA-256 雜湊碼過濾 (64 位元，無空格，全由小寫及數字組成)
-    if s.len() == 64 && !contains_space && bytes.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit()) {
-        return true;
+    // 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16 且無空格)
+    let is_hex = !contains_space && bytes.iter().all(|&c| c.is_ascii_hexdigit());
+    if is_hex {
+        if s.len() == 6 || s.len() == 8 || s.len() >= 16 {
+            return true;
+        }
     }
 
     // snake_case ID (無空格，包含底線，組成字符均為小寫、數字、底線、斜槓、點或連字號)
