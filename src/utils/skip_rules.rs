@@ -75,59 +75,52 @@ pub fn should_skip_value(val: &str) -> bool {
 
     // 檔名、副檔名或路徑 (無空格，以特定後綴結尾)
     let contains_space = s.contains(' ');
-    if !contains_space && (
-        s.ends_with(".jar") || s.ends_with(".zip") || s.ends_with(".json") ||
-        s.ends_with(".js") || s.ends_with(".png") || s.ends_with(".jpg")
-    ) {
-        return true;
-    }
+    // 無空格之特殊格式過濾 (聚合在一組以簡化邏輯)
+    if !contains_space {
+        // 1. 檔名、副檔名或路徑
+        if s.ends_with(".jar") || s.ends_with(".zip") || s.ends_with(".json") ||
+           s.ends_with(".js") || s.ends_with(".png") || s.ends_with(".jpg") {
+            return true;
+        }
 
-    // 命名空間 ID，例如 "tconstruct:broad_axe"
-    if !contains_space && s.contains(':') {
-        return true;
-    }
+        // 2. 命名空間 ID，例如 "tconstruct:broad_axe"
+        if s.contains(':') {
+            return true;
+        }
 
-    // 以 # 或 @ 開頭的標記
-    if !bytes.is_empty() && (bytes[0] == b'#' || bytes[0] == b'@') {
-        return true;
-    }
+        // 3. 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16)
+        if bytes.iter().all(|&c| c.is_ascii_hexdigit()) {
+            if s.len() == 6 || s.len() == 8 || s.len() >= 16 {
+                return true;
+            }
+        }
 
-    // 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16 且無空格)
-    let is_hex = !contains_space && bytes.iter().all(|&c| c.is_ascii_hexdigit());
-    if is_hex {
-        if s.len() == 6 || s.len() == 8 || s.len() >= 16 {
+        // 4. UUID 排除規則 (長度 36 且包含 4 個連字號)
+        if s.len() == 36 && s.chars().filter(|&c| c == '-').count() == 4 {
+            return true;
+        }
+
+        // 5. 變數與常數排除 (包含底線 _)
+        if s.contains('_') {
+            // 全大寫常數 (ALL_CAPS)
+            if s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
+                return true;
+            }
+            // snake_case ID
+            if bytes.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-') {
+                return true;
+            }
+        }
+
+        // 6. Base64 結尾排除規則
+        if s.len() >= 8 && s.ends_with('=') {
             return true;
         }
     }
 
-    // UUID 排除規則 (長度 36，無空格，且連字號 '-' 剛好為 4)
-    if s.len() == 36 && !contains_space && s.chars().filter(|&c| c == '-').count() == 4 {
-        return true;
-    }
-
-    // 全大寫常數 (ALL_CAPS) 排除規則 (無空格，包含底線，組成字元全為大寫、數字或底線)
-    if !contains_space && s.contains('_') && s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
-        return true;
-    }
-
-    // Base64 結尾排除規則 (長度 >= 8，無空格，以 '=' 結尾)
-    if s.len() >= 8 && !contains_space && s.ends_with('=') {
-        return true;
-    }
-
-    // 日期格式排除規則 (包含 '.' 與 ':'，且除去符號與空格後全為數字)
+    // 7. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
     let no_symbols = s.replace('.', "").replace(':', "").replace(' ', "");
     if s.contains('.') && s.contains(':') && !no_symbols.is_empty() && no_symbols.chars().all(|c| c.is_ascii_digit()) {
-        return true;
-    }
-
-    // snake_case ID (無空格，包含底線，組成字符均為小寫、數字、底線、斜槓、點或連字號)
-    if !contains_space
-        && s.contains('_')
-        && bytes.iter().all(|&c| {
-            c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-'
-        })
-    {
         return true;
     }
 
