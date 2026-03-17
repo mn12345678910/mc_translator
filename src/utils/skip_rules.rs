@@ -89,10 +89,8 @@ pub fn should_skip_value(val: &str) -> bool {
         }
 
         // 3. 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16)
-        if bytes.iter().all(|&c| c.is_ascii_hexdigit()) {
-            if s.len() == 6 || s.len() == 8 || s.len() >= 16 {
-                return true;
-            }
+        if bytes.iter().all(|&c| c.is_ascii_hexdigit()) && (s.len() == 6 || s.len() == 8 || s.len() >= 16) {
+            return true;
         }
 
         // 4. UUID 排除規則 (長度 36 且包含 4 個連字號)
@@ -119,7 +117,7 @@ pub fn should_skip_value(val: &str) -> bool {
     }
 
     // 7. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
-    let no_symbols = s.replace('.', "").replace(':', "").replace(' ', "");
+    let no_symbols = s.replace(['.', ':', ' '], "");
     if s.contains('.') && s.contains(':') && !no_symbols.is_empty() && no_symbols.chars().all(|c| c.is_ascii_digit()) {
         return true;
     }
