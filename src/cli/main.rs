@@ -156,7 +156,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     2 => {
                         // --- Step 2: API 提供商 ---
-                        let providers = vec!["Gemini", "OpenAI", "DeepSeek", "Mistral", "Ollama", "DeepL", "Google Free"];
+                        let providers = ["Gemini", "OpenAI", "DeepSeek", "Mistral", "Ollama", "DeepL", "Google Free"];
                         let default_idx = providers.iter().position(|&p| p == config.api_provider).unwrap_or(0);
                         let mut items: Vec<String> = providers.iter().map(|s| s.to_string()).collect();
                         items.push(format!("<- {}", i18n.label_back_to_prev_cli));
@@ -357,7 +357,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let choice = Select::new()
                 .with_prompt(&i18n.prompt_task_finished_cli)
-                .items(&vec![i18n.prompt_new_task_cli.clone(), i18n.label_no_cancel_cli.clone()])
+                .items(&[i18n.prompt_new_task_cli.clone(), i18n.label_no_cancel_cli.clone()])
                 .default(0)
                 .interact()?;
             
