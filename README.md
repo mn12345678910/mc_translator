@@ -94,8 +94,28 @@
 - **互動導覽**：終端機執行 `./mc_translator_cli.exe`（或 `cargo run --bin mc_translator_cli`）依提示操作。
 - **純參數靜態執行**：
   ```powershell
-  ./mc_translator_cli.exe -i <輸入檔案/目錄> -p <API提供商> -o <輸出目錄>
+  ./mc_translator_cli.exe -i <輸入路徑> -p <提供商> -m <模型> -o <輸出目錄>
   ```
+
+| 參數 | 說明 (Options) |
+| :--- | :--- |
+| `-i, --input <INPUT>` | **必填**。輸入檔案或資料夾路徑 (例如: `./mods/test.jar`) |
+| `-o, --output <OUTPUT>` | 輸出資料夾路徑 [預設: `./LLMTranslator`] |
+| `-p, --provider <PROVIDER>`| API 提供商 (`Gemini`, `OpenAI`, `DeepSeek`, `Mistral`, `Ollama`, `DeepL`, `Google Free`) |
+| `-m, --model <MODEL>` | 模型名稱 |
+| `--api-key <API_KEY>` | 覆蓋 API Key (`.env` 已存檔金鑰將優先使用，傳入將覆蓋) |
+| `--log-llm` | 啟用 LLM 通訊日誌 |
+| `--batch-size <BATCH_SIZE>` | 批次量 (預設: `150`) |
+| `--batch-max-chars <CHARS>`| 批次字數上限 (預設: `3500`) |
+| `--timeout <TIMEOUT>` | API 逾時秒數 (預設: `60`) |
+| `--glossary-priority <PRI>` | 術語優先級 (`official` 或 `user`) |
+| `--source-lang <SOURCE>` | 來源語言 (預設: `en_us`) |
+| `--target-lang <TARGET>` | 目標語言 (預設: `zh_tw`) |
+| `--skip-json` | 跳過 `.json` |
+| `--skip-js` | 跳過 `.js` |
+| `--skip-jar` | 跳過 `.jar` |
+| `--skip-book` | 跳過 Patchouli 手冊 |
+| `-h, --help` | 列出幫助說明 |
 
 ## 文檔索引
 
