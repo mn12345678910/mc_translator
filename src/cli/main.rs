@@ -269,6 +269,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("\n-> 正在啟動翻譯管線...\n");
         config.save();
         run_translation(config, input_path).await?;
+
+        println!("\n按 Enter 鍵結束程式...");
+        let _ = Input::<String>::new()
+            .with_prompt("")
+            .allow_empty(true)
+            .interact()?;
     }
 
     Ok(())
