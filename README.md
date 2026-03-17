@@ -1,7 +1,7 @@
 # Minecraft Mod Auto-Translator (mc_translator_rs)
 
 > [!CAUTION]
-> 免責聲明:
+> 警告:
 > 本工具雖使用微軟DPAPI對API KEY進行加密，但由於本工具100%使用AI開發，
 > 如有疑慮者請"不要"使用需要填入API KEY的服務商。
 
