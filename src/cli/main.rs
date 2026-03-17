@@ -1,6 +1,6 @@
 use clap::Parser;
 use dialoguer::{Select, Input, Password};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::io::Write;
 
 use mc_translator_rs::config::AppConfig;
@@ -189,7 +189,7 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         let filled = (pct * bar_len as f32).max(0.0) as usize;
         let filled = filled.min(bar_len);
         let bar = format!("{}{}", "█".repeat(filled), "░".repeat(bar_len - filled));
-        print!("\r\x1B[K[{}] {:.0}% | {}", bar, (pct * 100.0).max(0.0).min(100.0), status);
+        print!("\r\x1B[K[{}] {:.0}% | {}", bar, (pct * 100.0).clamp(0.0, 100.0), status);
         let _ = std::io::stdout().flush();
     };
 
