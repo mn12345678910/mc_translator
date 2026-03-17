@@ -31,13 +31,17 @@ jobs:
     - name: Copy Binary to Workspace
       if: startsWith(github.ref, 'refs/tags/v')
       shell: pwsh
-      run: Copy-Item -Path ../cargo-target/release/mc_translator_rs.exe -Destination ./mc_translator_rs.exe
+      run: |
+        Copy-Item -Path ../cargo-target/release/mc_translator_gui.exe -Destination ./mc_translator_gui.exe
+        Copy-Item -Path ../cargo-target/release/mc_translator_cli.exe -Destination ./mc_translator_cli.exe
     - name: Upload Artifact
       if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-artifact@v7
       with:
         name: mc_translator_rs-windows
-        path: mc_translator_rs.exe
+        path: |
+          mc_translator_gui.exe
+          mc_translator_cli.exe
 
   release:
     name: Create Release
@@ -54,7 +58,9 @@ jobs:
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        files: mc_translator_rs.exe
+        files: |
+          mc_translator_gui.exe
+          mc_translator_cli.exe
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
