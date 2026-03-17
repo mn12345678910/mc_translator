@@ -100,6 +100,11 @@ pub fn should_skip_value(val: &str) -> bool {
         }
     }
 
+    // UUID 排除規則 (長度 36，無空格，且連字號 '-' 剛好為 4)
+    if s.len() == 36 && !contains_space && s.chars().filter(|&c| c == '-').count() == 4 {
+        return true;
+    }
+
     // snake_case ID (無空格，包含底線，組成字符均為小寫、數字、底線、斜槓、點或連字號)
     if !contains_space
         && s.contains('_')
