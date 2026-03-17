@@ -6,7 +6,8 @@
 
 |#|日期時間|Commit編號|類型|位置(模組路徑)|說明 （使用-或<br>清單化）|
 |:---|:---|:---|:---|:---|:---|
-|0|2026-03-17 20:30|`多筆`|架構/功能|cli, pipeline, Cargo.toml|- **實作 CLI 支持與管線解耦**：<br/>- 拆分二進位進入點，定錨 `mc_translator_gui` 與新增 `mc_translator_cli`。<br/>- 新增 `src/translation/pipeline.rs` 聚合字典載入與檔案翻譯流程，支援高度解耦的 Closure 狀態監聽。<br/>- 實作 CLI 的純參數 Headless 模式與 Dialoguer 互動導覽選單。|
+|0|2026-03-17 21:30|`多筆`|功能/優化|cli, api/models|- **CLI 補全動態模型與「回到上一步」**：<br/>- 實作 `dialoguer::Select` 串接 `fetch_dynamic_models` 背景載入模型清單。<br/>- 引入 `status_history` 堆疊狀態機管理流程，實踐互動介面隨時能回溯上一道問題，相容條件跳層。|
+|1|2026-03-17 20:30|`多筆`|架構/功能|cli, pipeline, Cargo.toml|- **實作 CLI 支持與管線解耦**：<br/>- 拆分二進位進入點，定錨 `mc_translator_gui` 與新增 `mc_translator_cli`。<br/>- 新增 `src/translation/pipeline.rs` 聚合字典載入與檔案翻譯流程，支援高度解耦的 Closure 狀態監聽。<br/>- 實作 CLI 的純參數 Headless 模式與 Dialoguer 互動導覽選單。|
 |1|2026-03-17 16:15|`多筆`|修復/優化|utils/skip_rules|- **補強過濾器與精簡代碼**：<br/>- 實作 UUID、16進位色碼、全大寫常數、Base64 以及日期格式排除，精確阻絕噪音。<br/>- 重構合併 `!contains_space` 的分支層級，提升審查可讀性與維護性。|
 |1|2026-03-17 10:40|`多筆`|功能/優化|dictionary, actions, header, gitignore|- **多語言詞典分流與結構優化**：<br/>- 實作 `dicts/user/{lang}.json` 與 `dicts/official/{lang}.json` 獨立檔案分流存儲。<br/>- 調整佈局，補齊介面語言切換時 Prompt / 視窗 Repaint 等動態連動。<br/>- 修正 `btn_clear_all` 翻譯誤植，並更新 `.gitignore` 完整隔離所有運行期自動生成的資料夾 (`dicts/`, `settings/`, `langs/`, `LLMTranslator/`)。|
 |1|2026-03-16 21:05|`多筆`|功能/優化|mc_lang, app_state, i18n, header|- **動態字典下載與多語言介面**：<br> - 實作 Minecraft 字典動態下載快取，限定 `en_us->zh_tw` 觸發術語比對。<br> - 新增介面多語系檔案支援 (`zh_cn`, `en_us`, `ja_jp`)。<br> - 導覽列追加 UI 語言下拉切換 ComboBox。|
