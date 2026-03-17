@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 impl AppState {
+    #[allow(clippy::too_many_arguments)]
     pub fn render_memory_viewer_content(
         ctx: &egui::Context,
         i18n: &crate::ui::i18n::I18nLabels,

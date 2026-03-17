@@ -157,11 +157,8 @@ impl AppState {
         } else if id == "cat_all_tabs" {
             (if is_dark { self.dark_tab_active } else { self.light_tab_active },
              if is_dark { self.dark_btn_text } else { self.light_label }) 
-        } else if id == "cat_all_progress" {
+        } else if id == "cat_all_progress" || id == "cat_all_labels" || id == "cat_all_bg" {
             (if is_dark { self.dark_bg } else { self.light_bg }, 
-             if is_dark { self.dark_label } else { self.light_label })
-        } else if id == "cat_all_labels" || id == "cat_all_bg" {
-            (if is_dark { self.dark_bg } else { self.light_bg },
              if is_dark { self.dark_label } else { self.light_label })
         } else if id.contains("btn") || id.contains("nav") {
             (if is_dark { self.dark_btn_bg } else { self.light_btn_bg }, 
