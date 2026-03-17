@@ -2,13 +2,14 @@
 
 ## 專案定位
 
-`mc_translator_rs` 是一個 Windows GUI 工具，用於 Minecraft 模組與整合包的在地化翻譯。核心流程是：掃描檔案 -> 擷取可翻譯字串 -> 呼叫翻譯服務 -> 輸出資源包或鏡像檔案。
+`mc_translator_rs` 是一個用於 Minecraft 模組與整合包在地化翻譯的工具，同時支援 **Windows GUI** 與 **純命令列 CLI** 操作。核心流程是：掃描檔案 -> 擷取可翻譯字串 -> 呼叫翻譯服務 -> 輸出資源包或鏡像檔案。
 
 ## 核心模組
 
 - `src/ui/`：GUI 與互動行為 (egui)
+- `src/cli/`：CLI 介面與互動選單設計 (dialoguer, clap)
 - `src/state/`：應用狀態、任務控制、持久化
-- `src/translation/`：LLM 介接、批次與降級策略、術語提示
+- `src/translation/`：LLM 介接、術語提示，以及共通管線控制 (`pipeline.rs`)
 - `src/file/`：檔案掃描、JAR/JSON/JS 處理、輸出封裝
 - `src/config/`：設定檔與字典存取
 - `src/utils/`：文字處理、跳過規則、日誌輔助
