@@ -105,6 +105,22 @@ pub fn should_skip_value(val: &str) -> bool {
         return true;
     }
 
+    // 全大寫常數 (ALL_CAPS) 排除規則 (無空格，包含底線，組成字元全為大寫、數字或底線)
+    if !contains_space && s.contains('_') && s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
+        return true;
+    }
+
+    // Base64 結尾排除規則 (長度 >= 8，無空格，以 '=' 結尾)
+    if s.len() >= 8 && !contains_space && s.ends_with('=') {
+        return true;
+    }
+
+    // 日期格式排除規則 (包含 '.' 與 ':'，且除去符號與空格後全為數字)
+    let no_symbols = s.replace('.', "").replace(':', "").replace(' ', "");
+    if s.contains('.') && s.contains(':') && !no_symbols.is_empty() && no_symbols.chars().all(|c| c.is_ascii_digit()) {
+        return true;
+    }
+
     // snake_case ID (無空格，包含底線，組成字符均為小寫、數字、底線、斜槓、點或連字號)
     if !contains_space
         && s.contains('_')
