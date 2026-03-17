@@ -78,6 +78,10 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    
+    // 確保 langs 目錄與語言檔案存在
+    let _ = I18nLabels::ensure_langs_exists();
+
     let mut config = AppConfig::load();
 
     println!("=========================================");
