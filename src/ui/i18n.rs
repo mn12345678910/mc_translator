@@ -233,6 +233,23 @@ pub struct I18nLabels {
     pub label_custom_input_cli: String,
     pub label_yes_confirm_cli: String,
     pub label_no_cancel_cli: String,
+
+    pub cli_banner_title: String,
+    pub cli_mode_headless: String,
+    pub cli_mode_interactive: String,
+    pub cli_select_ui_lang: String,
+    pub cli_fetching_models: String,
+    pub cli_model_fetch_failed: String,
+    pub cli_custom_model_prompt: String,
+    pub cli_input_path_prompt: String,
+    pub cli_error_path_not_exist: String,
+    pub cli_output_path_prompt: String,
+    pub cli_op_cancelled: String,
+    pub cli_adv_settings_synced: String,
+    pub cli_starting_pipeline: String,
+    pub cli_pipeline_ended: String,
+    pub cli_pipeline_success: String,
+    pub cli_pipeline_failed: String,
 }
 
 impl I18nLabels {
@@ -546,6 +563,23 @@ impl I18nLabels {
             label_custom_input_cli: "自訂輸入...".to_string(),
             label_yes_confirm_cli: "[是] 我確定".to_string(),
             label_no_cancel_cli: "[否] 取消離開".to_string(),
+
+            cli_banner_title: "=== Minecraft 模組翻譯工具 - CLI 模式 ===".to_string(),
+            cli_mode_headless: "-> 偵測到指令參數，進入靜態 Headless 模式...".to_string(),
+            cli_mode_interactive: "-> 未偵測到輸入檔案參數，進入互動選項模式...\n".to_string(),
+            cli_select_ui_lang: "請選擇介面語言 / Select UI Language".to_string(),
+            cli_fetching_models: "-> 正在獲取 {} 模型列表...".to_string(),
+            cli_model_fetch_failed: " (⚠️ 無法動態獲取清單，請確認連線/APIKey)".to_string(),
+            cli_custom_model_prompt: "請輸入自訂模型名稱 (鍵入 '<' 為返回選單)".to_string(),
+            cli_input_path_prompt: "請選取要翻譯的檔案/資料夾路徑 (鍵入 '<' 回上一步)".to_string(),
+            cli_error_path_not_exist: "❌ 錯誤: 輸入路徑不存在！".to_string(),
+            cli_output_path_prompt: "{} [預設: {}] (鍵入 '<' 回上一步)".to_string(),
+            cli_op_cancelled: "🔒 操作已取消。".to_string(),
+            cli_adv_settings_synced: "💡 參數對齊：目前各項進階數值已由啟動參數/存檔加載！".to_string(),
+            cli_starting_pipeline: "\n-> 正在啟動翻譯管線...\n".to_string(),
+            cli_pipeline_ended: "\n\n-> 管線運作結束。".to_string(),
+            cli_pipeline_success: "✅ 恭喜！所有翻譯任務已成功完成。".to_string(),
+            cli_pipeline_failed: "❌ 失敗退出: {}".to_string(),
         }
     }
 }

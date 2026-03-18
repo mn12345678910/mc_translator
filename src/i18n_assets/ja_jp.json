@@ -202,5 +202,21 @@
   "label_back_to_prev_cli": "<- 前のステップに戻る",
   "label_custom_input_cli": "カスタム入力...",
   "label_yes_confirm_cli": "[はい] 確定する",
-  "label_no_cancel_cli": "[いいえ] キャンセルして離脱"
+  "label_no_cancel_cli": "[いいえ] キャンセルして離脱",
+  "cli_banner_title": "=== Minecraft Mod 翻訳ツール - CLI モード ===",
+  "cli_mode_headless": "-> 引数を検出。スタティック Headless モードに入ります...",
+  "cli_mode_interactive": "-> 有効な引数がありません。対話オプションモードに入ります...\n",
+  "cli_select_ui_lang": "言語を選択してください / Select UI Language",
+  "cli_fetching_models": "-> {} のモデル一覧を取得中...",
+  "cli_model_fetch_failed": " (⚠️ 一覧を動的に取得できません。接続/APIKey を確認してください)",
+  "cli_custom_model_prompt": "カスタムモデル名を入力してください ('<' でメニューに戻る)",
+  "cli_input_path_prompt": "翻訳するパス（ファイル/フォルダ）を選択してください ('<' で戻る)",
+  "cli_error_path_not_exist": "❌ エラー: 指定されたパスが存在しません！",
+  "cli_output_path_prompt": "{} [デフォルト: {}] ('<' で戻る)",
+  "cli_op_cancelled": "🔒 操作がキャンセルされました。",
+  "cli_adv_settings_synced": "💡 設定同期：詳細設定は起動パラメータまたは保存ファイルからロードされました！",
+  "cli_starting_pipeline": "\n-> 翻訳パイプラインを起動しています...\n",
+  "cli_pipeline_ended": "\n\n-> パイプラインが終了しました。",
+  "cli_pipeline_success": "✅ おめでとうございます！すべての翻訳タスクが正常に完了しました。",
+  "cli_pipeline_failed": "❌ エラーで終了: {}"
 }

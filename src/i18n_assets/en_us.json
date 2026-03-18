@@ -202,5 +202,21 @@
   "label_back_to_prev_cli": "<- Back to previous step",
   "label_custom_input_cli": "Custom input...",
   "label_yes_confirm_cli": "[Yes] I am sure",
-  "label_no_cancel_cli": "[No] Cancel and exit"
+  "label_no_cancel_cli": "[No] Cancel and exit",
+  "cli_banner_title": "=== Minecraft Mod Translator - CLI Mode ===",
+  "cli_mode_headless": "-> Command line arguments detected, entering static Headless mode...",
+  "cli_mode_interactive": "-> No input file arguments detected, entering interactive options mode...\n",
+  "cli_select_ui_lang": "Please select interface language / Select UI Language",
+  "cli_fetching_models": "-> Fetching {} model list...",
+  "cli_model_fetch_failed": " (⚠️ Unable to fetch list dynamically, please check connection/APIKey)",
+  "cli_custom_model_prompt": "Please enter custom model name (type '<' to return to menu)",
+  "cli_input_path_prompt": "Please select the file/folder path to translate (type '<' to go back)",
+  "cli_error_path_not_exist": "❌ Error: Input path does not exist!",
+  "cli_output_path_prompt": "{} [Default: {}] (type '<' to go back)",
+  "cli_op_cancelled": "🔒 Operation cancelled.",
+  "cli_adv_settings_synced": "💡 Parameter Sync: Advanced settings loaded from arguments/saved config!",
+  "cli_starting_pipeline": "\n-> Starting translation pipeline...\n",
+  "cli_pipeline_ended": "\n\n-> Pipeline operation ended.",
+  "cli_pipeline_success": "✅ Congratulations! All translation tasks completed successfully.",
+  "cli_pipeline_failed": "❌ Failed with error: {}"
 }

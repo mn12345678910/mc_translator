@@ -202,5 +202,21 @@
   "label_back_to_prev_cli": "<- 回到上一步",
   "label_custom_input_cli": "自订输入...",
   "label_yes_confirm_cli": "[是] 我确定",
-  "label_no_cancel_cli": "[否] 取消离开"
+  "label_no_cancel_cli": "[否] 取消离开",
+  "cli_banner_title": "=== Minecraft 模组翻译工具 - CLI 模式 ===",
+  "cli_mode_headless": "-> 侦测到指令参数，进入静态 Headless 模式...",
+  "cli_mode_interactive": "-> 未侦测到输入档案参数，进入互动选项模式...\n",
+  "cli_select_ui_lang": "请选择介面语言 / Select UI Language",
+  "cli_fetching_models": "-> 正在获取 {} 模型列表...",
+  "cli_model_fetch_failed": " (⚠️ 无法动态获取清单，请确认连线/APIKey)",
+  "cli_custom_model_prompt": "请输入自订模型名称 (键入 '<' 为返回选单)",
+  "cli_input_path_prompt": "请选取要翻译的档案/资料夹路径 (键入 '<' 回上一步)",
+  "cli_error_path_not_exist": "❌ 错误: 输入路径不存在！",
+  "cli_output_path_prompt": "{} [预设: {}] (键入 '<' 回上一步)",
+  "cli_op_cancelled": "🔒 操作已取消。",
+  "cli_adv_settings_synced": "💡 参数对齐：目前各项进階数值已由启动参数/存档加载！",
+  "cli_starting_pipeline": "\n-> 正在启动翻译管線...\n",
+  "cli_pipeline_ended": "\n\n-> 管線运作结束。",
+  "cli_pipeline_success": "✅ 恭喜！所有翻译任务已成功完成。",
+  "cli_pipeline_failed": "❌ 失败退出: {}"
 }

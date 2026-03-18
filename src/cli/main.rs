@@ -83,10 +83,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = I18nLabels::ensure_langs_exists();
 
     let mut config = AppConfig::load();
+    let mut i18n = I18nLabels::load_or_default(&config.ui_lang);
 
-    println!("=========================================");
-    println!("=== Minecraft 模組翻譯工具 - CLI 模式 ===");
-    println!("=========================================\n");
+    println!("{}", i18n.cli_banner_title);
 
     // --- 參數覆蓋設定檔 (Parity Mapping) ---
     if let Some(o) = args.output.clone() { config.output_dir = o; }
@@ -128,8 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         run_translation(config, input_path).await?;
     } else {
-        let mut i18n = I18nLabels::load_or_default(&config.ui_lang);
-        println!("-> 未偵測到輸入檔案參數，進入互動選項模式...\n");
+        println!("{}", i18n.cli_mode_interactive);
 
         let mut next_step = 1;
         let mut initial_history: Vec<usize> = Vec::new();
@@ -147,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let default_idx = langs.iter().position(|l| l == &config.ui_lang).unwrap_or(0);
                         
                         let idx = Select::new()
-                            .with_prompt("請選擇介面語言 / Select UI Language")
+                            .with_prompt(&i18n.cli_select_ui_lang)
                             .items(&langs)
                             .default(default_idx)
                             .interact()?;
@@ -218,7 +216,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             continue;
                         }
 
-                        println!("-> 正在獲取 {} 模型列表...", config.api_provider);
+                        println!("{}", i18n.cli_fetching_models.replace("{}", &config.api_provider));
                         let mut items = mc_translator_rs::translation::api::models::fetch_dynamic_models(
                             &config.api_provider,
                             &config.api_key,
@@ -228,7 +226,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let is_dynamic = !items.is_empty();
                         let mut prompt_text = i18n.label_model.clone();
                         if !is_dynamic && config.api_provider != "DeepL" && config.api_provider != "Ollama" {
-                            prompt_text = format!("{} (⚠️ 無法動態獲取清單，請確認連線/APIKey)", i18n.label_model);
+                            prompt_text = format!("{}{}", i18n.label_model, i18n.cli_model_fetch_failed);
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
@@ -253,7 +251,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         if items[idx] == i18n.label_custom_input_cli {
                             let model: String = Input::new()
-                                .with_prompt("請輸入自訂模型名稱 (鍵入 '<' 為返回選單)")
+                                .with_prompt(&i18n.cli_custom_model_prompt)
                                 .allow_empty(true)
                                 .interact()?;
                             if model == "<" {
@@ -270,7 +268,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     5 => {
                         // --- Step 5: 輸入路徑 ---
-                        let input_prompt = "請選取要翻譯的檔案/資料夾路徑 (鍵入 '<' 回上一步)";
+                        let input_prompt = &i18n.cli_input_path_prompt;
                         let input_path_str: String = Input::new()
                             .with_prompt(input_prompt)
                             .interact()?;
@@ -282,7 +280,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         let path = PathBuf::from(input_path_str.trim());
                         if !path.exists() {
-                            println!("❌ 錯誤: 輸入路徑不存在！");
+                            println!("{}", i18n.cli_error_path_not_exist);
                             continue;
                         }
 
@@ -293,7 +291,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     6 => {
                         // --- Step 6: 輸出資料夾 ---
                         let default_output = if config.output_dir.is_empty() { "LLMTranslator" } else { &config.output_dir };
-                        let output_prompt = format!("{} [預設: {}] (鍵入 '<' 回上一步)", i18n.label_output_path, default_output);
+                        let output_prompt = i18n.cli_output_path_prompt.replace("{}", &i18n.label_output_path).replace("{}", default_output);
                         let output_dir: String = Input::new()
                             .with_prompt(&output_prompt)
                             .allow_empty(true)
@@ -329,12 +327,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             step = status_history.pop().unwrap_or(1);
                             continue;
                         } else if start == 2 { // 取消離開
-                            println!("🔒 操作已取消。");
+                            println!("{}", i18n.cli_op_cancelled);
                             return Ok(());
                         } else if start == 1 { // 進階參數
                             // 簡易進階切換，此處可以彈出單次輸入或不彈，若使用者只要跟GUI對等，
                             // 這邊可加入簡單 skips 或批次量 Input，為了保持結構先讓它一律過!
-                            println!("💡 參數對齊：目前各項進階數值已由啟動參數/存檔加載！");
+                            println!("{}", i18n.cli_adv_settings_synced);
                         }
 
                         break; // 離開 while 循環發起 Pipeline
@@ -343,7 +341,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            println!("\n-> 正在啟動翻譯管線...\n");
+            println!("{}", i18n.cli_starting_pipeline);
             config.save();
             let _ = run_translation(config.clone(), input_path).await; // 忽略單次錯誤
 
@@ -370,6 +368,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let i18n = I18nLabels::load_or_default(&config.ui_lang);
+    
     // 包裹成管線需要的 Tuple 格式 (Path Buf, Rel Path)
     let rel_path = input_path.file_name().unwrap_or_default().to_string_lossy().to_string();
     let paths = vec![(input_path, rel_path)];
@@ -400,11 +400,11 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         progress_updater,
     ).await;
 
-    println!("\n\n-> 管線運作結束。");
+    println!("{}", i18n.cli_pipeline_ended);
 
     match res {
-        Ok(_) => println!("✅ 恭喜！所有翻譯任務已成功完成。"),
-        Err(e) => println!("❌ 失敗退出: {}", e),
+        Ok(_) => println!("{}", i18n.cli_pipeline_success),
+        Err(e) => println!("{}", i18n.cli_pipeline_failed.replace("{}", &e.to_string())),
     }
 
     Ok(())
