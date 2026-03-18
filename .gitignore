@@ -9,3 +9,6 @@ settings/
 langs/
 LLMTranslator/
 LLMTranslator.zip
+
+# 本地維護日誌 (Local Maintenance Log)
+docs/guides/MAINTENANCE_LOG.md
