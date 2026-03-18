@@ -253,7 +253,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .interact()?;
 
                         if idx == items.len() - 1 {
-                            step = status_history.pop().unwrap_or(1);
+                            if config.api_provider == "Ollama" || config.api_provider == "Google Free" {
+                                step = 2; // 跳過不適用的 APIKey 步驟
+                            } else {
+                                step = status_history.pop().unwrap_or(1);
+                            }
                             continue;
                         }
 
@@ -283,7 +287,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .interact()?;
                         
                         if input_path_str == "<" {
-                            step = status_history.pop().unwrap_or(1);
+                            if config.api_provider == "Google Free" {
+                                step = 2; // Google Free 同時跳過 3 與 4
+                            } else {
+                                step = status_history.pop().unwrap_or(1);
+                            }
                             continue;
                         }
 
