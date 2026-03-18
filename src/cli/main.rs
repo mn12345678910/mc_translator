@@ -131,9 +131,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut i18n = I18nLabels::load_or_default(&config.ui_lang);
         println!("-> 未偵測到輸入檔案參數，進入互動選項模式...\n");
 
+        let mut next_step = 1;
+        let mut initial_history: Vec<usize> = Vec::new();
+
         loop {
-            let mut status_history: Vec<usize> = Vec::new();
-            let mut step = 1;
+            let mut status_history = initial_history.clone();
+            let mut step = next_step;
             let mut input_path = PathBuf::new();
 
             while step <= 7 {
@@ -177,10 +180,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         step = 3;
                     }
                     3 => {
-                        // --- Step 3: 模型名稱 ---
-                        if config.api_provider == "Google Free" {
+                        // --- Step 3: API Key ---
+                        if config.api_provider == "Ollama" || config.api_provider == "Google Free" {
                             status_history.push(3);
                             step = 4;
+                            continue;
+                        }
+
+                        let has_saved_key = !config.api_key.is_empty();
+                        let key_prompt = if has_saved_key {
+                            format!("{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)", i18n.label_api_key)
+                        } else {
+                            format!("{} (鍵入 '<' 回到上一步)", i18n.label_api_key)
+                        };
+
+                        let key: String = Password::new()
+                            .with_prompt(&key_prompt)
+                            .allow_empty_password(true)
+                            .interact()?;
+                        
+                        if key == "<" {
+                            step = status_history.pop().unwrap_or(1);
+                            continue;
+                        }
+
+                        if !key.trim().is_empty() {
+                            config.api_key = key.trim().to_string();
+                        }
+                        status_history.push(3);
+                        step = 4;
+                    }
+                    4 => {
+                        // --- Step 4: 模型名稱 ---
+                        if config.api_provider == "Google Free" {
+                            status_history.push(4);
+                            step = 5;
                             continue;
                         }
 
@@ -192,24 +226,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ).await.unwrap_or_else(|_| Vec::new());
 
                         let is_dynamic = !items.is_empty();
-                        if items.is_empty() {
-                            items = match config.api_provider.as_str() {
-                                "Gemini" => vec!["gemini-2.5-flash".to_string(), "gemini-1.5-pro".to_string()],
-                                "OpenAI" => vec!["gpt-4o-mini".to_string(), "gpt-4o".to_string()],
-                                "DeepSeek" => vec!["deepseek-chat".to_string(), "deepseek-reasoner".to_string()],
-                                "Mistral" => vec!["mistral-small-latest".to_string(), "mistral-large-latest".to_string()],
-                                "Ollama" => vec!["llama3".to_string(), "mistral".to_string()],
-                                _ => Vec::new(),
-                            };
+                        let mut prompt_text = i18n.label_model.clone();
+                        if !is_dynamic && config.api_provider != "DeepL" && config.api_provider != "Ollama" {
+                            prompt_text = format!("{} (⚠️ 無法動態獲取清單，請確認連線/APIKey)", i18n.label_model);
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
                         items.push(format!("<- {}", i18n.label_back_to_prev_cli));
-
-                        let mut prompt_text = i18n.label_model.clone();
-                        if !is_dynamic && config.api_provider != "DeepL" && config.api_provider != "Ollama" {
-                            prompt_text = format!("{} (未取得動態清單，採用靜態預設)", i18n.label_model);
-                        }
 
                         let default_idx = if !config.model.is_empty() {
                             items.iter().position(|m| m == &config.model).unwrap_or(0)
@@ -241,37 +264,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         } else {
                             config.model = items[idx].to_string();
-                        }
-                        status_history.push(3);
-                        step = 4;
-                    }
-                    4 => {
-                        // --- Step 4: API Key ---
-                        if config.api_provider == "Ollama" || config.api_provider == "Google Free" {
-                            status_history.push(4);
-                            step = 5;
-                            continue;
-                        }
-
-                        let has_saved_key = !config.api_key.is_empty();
-                        let key_prompt = if has_saved_key {
-                            format!("{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)", i18n.label_api_key)
-                        } else {
-                            format!("{} (鍵入 '<' 回到上一步)", i18n.label_api_key)
-                        };
-
-                        let key: String = Password::new()
-                            .with_prompt(&key_prompt)
-                            .allow_empty_password(true)
-                            .interact()?;
-                        
-                        if key == "<" {
-                            step = status_history.pop().unwrap_or(1);
-                            continue;
-                        }
-
-                        if !key.trim().is_empty() {
-                            config.api_key = key.trim().to_string();
                         }
                         status_history.push(4);
                         step = 5;
@@ -368,6 +360,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("\n=========================================");
             println!("===          {}           ===", i18n.prompt_new_task_cli);
             println!("=========================================\n");
+
+            next_step = 5;
+            initial_history = vec![1, 2, 3, 4]; // 確保 Step 5 按上一步確實回到模型 (4)
         }
     }
 

@@ -126,6 +126,7 @@
 - 檔案流水線：`docs/modules/file_pipeline.md`
 - 術語系統：`docs/modules/glossary_system.md`
 - 翻譯記憶體：`docs/modules/translation_memory.md`
+- CLI 運作流程：`docs/modules/cli_user_flow.md`
 - UI 規格：`docs/ui/specs.md`
 - UI 交互：`docs/ui/interactions.md`
 - 測試策略：`docs/guides/testing_strategy.md`
