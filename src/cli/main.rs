@@ -152,6 +152,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         
                         config.ui_lang = langs[idx].clone();
                         i18n = I18nLabels::load_or_default(&config.ui_lang);
+                        config.save(); // 即時存入
+
+                        print!("\x1B[2J\x1B[1;1H"); // 清空畫面
+                        println!("{}", i18n.cli_banner_title);
+                        println!("{}", i18n.cli_mode_interactive);
+
                         status_history.push(1);
                         step = 2;
                     }
@@ -160,7 +166,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let providers = ["Gemini", "OpenAI", "DeepSeek", "Mistral", "Ollama", "DeepL", "Google Free"];
                         let default_idx = providers.iter().position(|&p| p == config.api_provider).unwrap_or(0);
                         let mut items: Vec<String> = providers.iter().map(|s| s.to_string()).collect();
-                        items.push(format!("<- {}", i18n.label_back_to_prev_cli));
+                        items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
 
                         let idx = Select::new()
                             .with_prompt(&i18n.prompt_select_provider_cli)
@@ -174,6 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         
                         config.api_provider = providers[idx].to_string();
+                        config.save(); // 即時存入
                         status_history.push(2);
                         step = 3;
                     }
@@ -204,6 +211,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         if !key.trim().is_empty() {
                             config.api_key = key.trim().to_string();
+                            config.save(); // 即時存入
                         }
                         status_history.push(3);
                         step = 4;
@@ -230,7 +238,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
-                        items.push(format!("<- {}", i18n.label_back_to_prev_cli));
+                        items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
 
                         let default_idx = if !config.model.is_empty() {
                             items.iter().position(|m| m == &config.model).unwrap_or(0)
@@ -263,6 +271,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         } else {
                             config.model = items[idx].to_string();
                         }
+                        config.save(); // 即時存入
                         status_history.push(4);
                         step = 5;
                     }
@@ -305,6 +314,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         if !output_dir.trim().is_empty() {
                             config.output_dir = output_dir.trim().to_string();
                         }
+                        config.save(); // 即時存入
                         status_history.push(6);
                         step = 7;
                     }
@@ -314,7 +324,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             i18n.label_yes_confirm_cli.clone(),
                             i18n.prompt_advanced_settings_cli.clone(),
                             i18n.label_no_cancel_cli.clone(),
-                            format!("<- {}", i18n.label_back_to_prev_cli)
+                            i18n.label_back_to_prev_cli.to_string() // 修正重覆 <-
                         ];
 
                         let start = Select::new()
