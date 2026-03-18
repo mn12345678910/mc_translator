@@ -104,14 +104,19 @@ pub fn should_skip_value(val: &str) -> bool {
             if s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
                 return true;
             }
-            // 系統識別碼 (snake_case, 路徑, 原文 ID 等)
-            if bytes.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-') {
+            // 系統識別碼 (snake_case, 路徑, 原文 ID, 類別路徑等)
+            if bytes.iter().all(|&c| c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.' || c == b'-') {
                 return true;
             }
         }
 
         // 6. Base64 結尾排除規則
         if s.len() >= 8 && s.ends_with('=') {
+            return true;
+        }
+
+        // 7. 錨點 / 標籤錨點排除 (例如 #recipe, #tier#), 沒有空白且以 # 起手
+        if s.starts_with('#') {
             return true;
         }
 
@@ -128,4 +133,65 @@ pub fn should_skip_value(val: &str) -> bool {
     }
 
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_should_skip_key() {
+        assert!(should_skip_key("icon"));
+        assert!(should_skip_key("id"));
+        assert!(should_skip_key("entity_id"));
+        assert!(should_skip_key("id_name"));
+        assert!(!should_skip_key("name"));
+        assert!(!should_skip_key("description"));
+    }
+
+    #[test]
+    fn test_should_skip_value_booleans_regex_numeric() {
+        assert!(should_skip_value("true"));
+        assert!(should_skip_value("false"));
+        assert!(should_skip_value("/^regex$/"));
+        assert!(should_skip_value("123"));
+        assert!(should_skip_value("-123.45"));
+        assert!(!should_skip_value("123 Apples")); // 有空格
+    }
+
+    #[test]
+    fn test_should_skip_value_formats() {
+        // 副檔名
+        assert!(should_skip_value("icon.png"));
+        assert!(should_skip_value("mod.jar"));
+        // 命名空間
+        assert!(should_skip_value("minecraft:apple"));
+        // UUID / Hex
+        assert!(should_skip_value("12345678-1234-1234-1234-1234567890ab"));
+        assert!(should_skip_value("ff00ff")); // 長度 6 HEX
+        assert!(should_skip_value("ffffffff")); // 長度 8 HEX
+    }
+
+    #[test]
+    fn test_should_skip_value_technical_ids() {
+        // snake_case 與底線
+        assert!(should_skip_value("tconstruct_broad_axe"));
+        // 含有點且大小寫混合 (CamelCase/Java Class)
+        assert!(should_skip_value("com.hollingsworth.arsnouveau.client.patchouli.component.RotatingItemListComponent"));
+        assert!(should_skip_value("item.minecraft.apple"));
+        assert!(should_skip_value("Folder/SubFolder/Class"));
+    }
+
+    #[test]
+    fn test_should_skip_value_tags_codes() {
+        // 錨點
+        assert!(should_skip_value("#recipe"));
+        assert!(should_skip_value("#level"));
+        assert!(should_skip_value("#tier#"));
+        // 短編碼
+        assert!(should_skip_value("BB"));
+        assert!(should_skip_value("B0PB"));
+        assert!(should_skip_value("A1"));
+        assert!(!should_skip_value("Hello")); // 含有小寫
+    }
 }
