@@ -98,13 +98,13 @@ pub fn should_skip_value(val: &str) -> bool {
             return true;
         }
 
-        // 5. 變數與常數排除 (包含底線 _)
-        if s.contains('_') {
+        // 5. 變數與常數排除 (包含底線 _ 或在內部含有 .)
+        if s.contains('_') || (s.contains('.') && !s.ends_with('.')) || s.contains('/') {
             // 全大寫常數 (ALL_CAPS)
             if s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
                 return true;
             }
-            // snake_case ID
+            // 系統識別碼 (snake_case, 路徑, 原文 ID 等)
             if bytes.iter().all(|&c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_' || c == b'/' || c == b'.' || c == b'-') {
                 return true;
             }
@@ -114,9 +114,14 @@ pub fn should_skip_value(val: &str) -> bool {
         if s.len() >= 8 && s.ends_with('=') {
             return true;
         }
+
+        // 7. 短編碼排除 (例如 BB, BPPB, B0PB)：全大寫與數字，長度 1~6 之間，且無空白
+        if s.len() <= 6 && s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
+            return true;
+        }
     }
 
-    // 7. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
+    // 8. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
     let no_symbols = s.replace(['.', ':', ' '], "");
     if s.contains('.') && s.contains(':') && !no_symbols.is_empty() && no_symbols.chars().all(|c| c.is_ascii_digit()) {
         return true;

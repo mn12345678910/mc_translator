@@ -361,13 +361,7 @@ async fn process_one_global_batch(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
     
-    let cfg = ctx.config.lock().unwrap().clone();
-    *ctx.status_arc.lock().unwrap() = format!(
-        "{} [{}: {}]...", 
-        mode_str, 
-        cfg.api_provider, 
-        cfg.selected_model
-    );
+    *ctx.status_arc.lock().unwrap() = format!("{}...", mode_str);
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
     let (tagged_texts, texts_to_translate) = build_tagged_batch_texts(ctx.all_items, ctx.batch_indices);
@@ -401,10 +395,6 @@ fn build_tagged_batch_texts(
     batch_indices: &[usize],
 ) -> (Vec<String>, Vec<String>) {
     let mut texts_to_translate = Vec::new();
-    let mut current_file_id = usize::MAX;
-    let mut file_relative_id = 0;
-    let mut file_map = std::collections::HashMap::new();
-
     let mut tagged_texts = Vec::new();
     let mut seen_texts = std::collections::HashSet::new();
 
@@ -415,15 +405,6 @@ fn build_tagged_batch_texts(
         }
         seen_texts.insert(item.preprocessed.clone());
 
-        if item.file_id != current_file_id {
-            current_file_id = item.file_id;
-            let rel_f_id = *file_map.entry(current_file_id).or_insert_with(|| {
-                let id = file_relative_id;
-                file_relative_id += 1;
-                id
-            });
-            tagged_texts.push(format!("[f{}]", rel_f_id));
-        }
         tagged_texts.push(format!("[i{}]{}", p_idx, item.preprocessed));
         texts_to_translate.push(item.preprocessed.clone());
     }
