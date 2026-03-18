@@ -378,7 +378,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("=========================================\n");
 
             next_step = 5;
-            initial_history = vec![1, 2, 3, 4]; // 確保 Step 5 按上一步確實回到模型 (4)
+            if config.api_provider == "Google Free" {
+                initial_history = vec![1, 2];
+            } else if config.api_provider == "Ollama" {
+                initial_history = vec![1, 2, 4];
+            } else {
+                initial_history = vec![1, 2, 3, 4]; // 確保 Step 5 按上一步確實回到模型 (4)
+            }
         }
     }
 
