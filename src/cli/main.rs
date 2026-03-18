@@ -395,7 +395,7 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
     let i18n = I18nLabels::load_or_default(&config.ui_lang);
     
     // 包裹成管線需要的 Tuple 格式 (Path Buf, Rel Path)
-    let rel_path = input_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let rel_path = input_path.to_string_lossy().to_string();
     let paths = vec![(input_path, rel_path)];
 
     let logger = |msg: &str| {
