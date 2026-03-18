@@ -21,10 +21,24 @@ fn main() -> Result<(), eframe::Error> {
     }));
 
     let config = config::AppConfig::load();
+    let mut x = config.main_x;
+    let mut y = config.main_y;
+
+    if x == 50.0 && y == 50.0 {
+        #[cfg(windows)]
+        {
+            use winapi::um::winuser::{GetSystemMetrics, SM_CXSCREEN, SM_CYSCREEN};
+            let screen_w = unsafe { GetSystemMetrics(SM_CXSCREEN) } as f32;
+            let screen_h = unsafe { GetSystemMetrics(SM_CYSCREEN) } as f32;
+            x = (screen_w - config.main_width) / 2.0;
+            y = (screen_h - config.main_height) / 2.0;
+        }
+    }
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([config.main_width, config.main_height])
-            .with_position([config.main_x, config.main_y])
+            .with_position([x, y])
             .with_min_inner_size([800.0, 600.0]),
         follow_system_theme: true,
         vsync: true,

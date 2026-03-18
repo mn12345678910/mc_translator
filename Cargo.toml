@@ -1,6 +1,6 @@
 [package]
 name = "mc_translator_rs"
-version = "0.4.9"
+version = "0.4.10"
 edition = "2021"
 default-run = "mc_translator_gui"
 
@@ -22,7 +22,7 @@ hanconv = "0.4"
 dotenvy = "0.15"
 chrono = "0.4"
 base64 = "0.21"
-winapi = { version = "0.3", features = ["wincrypt", "winbase", "basetsd", "dpapi"] }
+winapi = { version = "0.3", features = ["wincrypt", "winbase", "basetsd", "dpapi", "winuser"] }
 walkdir = "2.5.0"
 aho-corasick = "1.1"
 bytes = "1.5"

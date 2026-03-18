@@ -248,6 +248,12 @@ pub async fn process_all_files(
             *p = display_name.clone();
         }
 
+        let log_file_name = group_tasks
+            .iter()
+            .map(|t| t.rel_path.clone())
+            .collect::<Vec<String>>()
+            .join(", ");
+
         translate_global_batches(
             items_in_source,
             job_config.clone(),
@@ -261,7 +267,7 @@ pub async fn process_all_files(
             state.pause_notifier.clone(),
             &glossary_automaton,
             &state.i18n,
-            &display_name,
+            &log_file_name,
             global_items_offset, // 新增：傳入全域偏移
         )
         .await?;
