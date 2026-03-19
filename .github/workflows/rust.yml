@@ -28,9 +28,18 @@ jobs:
     - name: Build Release
       if: startsWith(github.ref, 'refs/tags/v')
       run: cargo build --release --verbose
+    - name: Setup Node.js
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'latest'
+        cache: 'npm'
+    - name: Install Node Dependencies
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: npm ci
     - name: Build Tauri GUI
       if: startsWith(github.ref, 'refs/tags/v')
-      run: npx -y @tauri-apps/cli build
+      run: npx tauri build
     - name: Copy Binaries to Workspace
       if: startsWith(github.ref, 'refs/tags/v')
       shell: pwsh

@@ -151,7 +151,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "app"
-version = "0.5.7"
+version = "0.5.9"
 dependencies = [
  "log",
  "mc_translator_rs",
@@ -2676,7 +2676,7 @@ checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "mc_translator_rs"
-version = "0.5.7"
+version = "0.5.9"
 dependencies = [
  "aho-corasick",
  "base64 0.21.7",
