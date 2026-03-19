@@ -28,8 +28,12 @@ pub fn load_dict<T: serde::de::DeserializeOwned + Default>(path: &std::path::Pat
     }
 }
 
+static DICT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// 泛型儲存辭典檔案
 pub fn save_dict<T: serde::Serialize>(path: &std::path::Path, data: &T) {
+    let _guard = DICT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }

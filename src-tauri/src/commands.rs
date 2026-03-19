@@ -1,4 +1,6 @@
 use mc_translator_rs::config::{AppConfig, settings::StyleConfig};
+use mc_translator_rs::config::dictionary::{get_user_dict_path, get_official_dict_path, load_dict, save_dict};
+use std::collections::HashMap;
 use tauri::Emitter;
 
 #[tauri::command]
@@ -16,8 +18,8 @@ pub fn save_config(config: AppConfig) -> Result<(), String> {
 pub async fn start_translation(
     handle: tauri::AppHandle,
     input_paths: Vec<String>,
+    config: AppConfig,
 ) -> Result<(), String> {
-    let config = AppConfig::load();
 
     // 轉換路徑為 Pipeline 所需格式 (PathBuf, 顯示檔名)
     let paths: Vec<(std::path::PathBuf, String)> = input_paths
@@ -64,5 +66,62 @@ pub fn get_style_config() -> StyleConfig {
 #[tauri::command]
 pub fn save_style_config(config: StyleConfig) -> Result<(), String> {
     config.save();
+    Ok(())
+}
+
+#[tauri::command]
+pub fn query_dictionary(
+    dict_type: String,
+    page: usize,
+    page_size: usize,
+    search_key: String,
+) -> Result<(Vec<(String, String)>, usize), String> {
+    let config = AppConfig::load();
+    let lang = config.ui_lang.as_str();
+
+    let path = if dict_type == "user" {
+        get_user_dict_path(lang)
+    } else {
+        get_official_dict_path(lang)
+    };
+
+    let full_dict: HashMap<String, String> = load_dict(&path);
+    let mut items: Vec<(String, String)> = full_dict.into_iter().collect();
+
+    // 1. 字典序排列穩定化
+    items.sort_by(|a, b| a.0.cmp(&b.0));
+
+    // 2. 關鍵字過濾
+    if !search_key.is_empty() {
+        items.retain(|(k, v)| k.contains(&search_key) || v.contains(&search_key));
+    }
+
+    // 3. 分頁切片
+    let total_count = items.len();
+    let total_pages = (total_count + page_size - 1) / page_size;
+    
+    let start = page * page_size;
+    if start >= total_count {
+        return Ok((vec![], total_pages));
+    }
+    let end = (start + page_size).min(total_count);
+    
+    Ok((items[start..end].to_vec(), total_pages))
+}
+
+#[tauri::command]
+pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<(), String> {
+    let config = AppConfig::load();
+    let path = get_user_dict_path(&config.ui_lang);
+
+    let mut dict: HashMap<String, String> = load_dict(&path);
+
+    if delete {
+        dict.remove(&key);
+    } else {
+        dict.insert(key, value);
+    }
+
+    save_dict(&path, &dict);
     Ok(())
 }
