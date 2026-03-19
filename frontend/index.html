@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft 模組翻譯工具</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+    <h1>Minecraft 模組翻譯工具 - Tauri 畫面</h1>
+
+    <div class="control-panel">
+        <div class="form-group">
+            <label for="input-path">待翻譯路徑 (檔案或資料夾):</label>
+            <input type="text" id="input-path" placeholder="輸入或拖放路徑至此...">
+        </div>
+        <button id="btn-translate">立即翻譯</button>
+    </div>
+
+    <div class="status-section">
+        <label id="status-text">未開始</label>
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="log-output"></div>
+    </div>
+</body>
+</html>

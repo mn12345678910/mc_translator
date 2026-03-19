@@ -1,0 +1,100 @@
+:root {
+    --bg-color: #1e1e23;
+    --text-color: #e0e0e0;
+    --accent-color: #d4af37; /* 金色風格類似原本面板 */
+    --input-bg: #2d2d32;
+    --border-radius: 6px;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+h1 {
+    color: var(--accent-color);
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.control-panel {
+    background-color: var(--input-bg);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #c8a064;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    background-color: #18181c;
+    border: 1px solid #444;
+    border-radius: var(--border-radius);
+    color: #fff;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #111;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #f7d358;
+}
+
+.status-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#progress-container {
+    background-color: #333;
+    border-radius: var(--border-radius);
+    height: 10px;
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+#progress-bar {
+    background-color: var(--accent-color);
+    width: 0%;
+    height: 100%;
+    transition: width 0.2s;
+}
+
+#log-output {
+    flex: 1;
+    background-color: #18181c;
+    border: 1px solid #333;
+    border-radius: var(--border-radius);
+    padding: 10px;
+    overflow-y: auto;
+    font-family: monospace;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+}
