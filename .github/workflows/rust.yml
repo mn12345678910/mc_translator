@@ -32,7 +32,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/v')
       shell: pwsh
       run: |
-        Copy-Item -Path ../cargo-target/release/mc_translator_gui.exe -Destination ./mc_translator_gui.exe
         Copy-Item -Path ../cargo-target/release/mc_translator_cli.exe -Destination ./mc_translator_cli.exe
     - name: Upload Artifact
       if: startsWith(github.ref, 'refs/tags/v')
@@ -40,7 +39,6 @@ jobs:
       with:
         name: mc_translator_rs-windows
         path: |
-          mc_translator_gui.exe
           mc_translator_cli.exe
 
   release:
@@ -59,7 +57,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          mc_translator_gui.exe
           mc_translator_cli.exe
         generate_release_notes: true
       env:
