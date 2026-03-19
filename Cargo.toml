@@ -2,12 +2,9 @@
 name = "mc_translator_rs"
 version = "0.4.12"
 edition = "2021"
-default-run = "mc_translator_gui"
+default-run = "mc_translator_cli"
 
 [dependencies]
-eframe = "0.27"
-egui = "0.27"
-egui-chinese-font = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
 keyring = "3"
@@ -31,9 +28,6 @@ notify = "6.1"
 dialoguer = "0.11"
 clap = { version = "4.4", features = ["derive"] }
 
-[[bin]]
-name = "mc_translator_gui"
-path = "src/main.rs"
 
 [[bin]]
 name = "mc_translator_cli"
