@@ -12,10 +12,20 @@ pub fn run() {
         )?;
       }
 
-      // 主畫面置中功能
+      // 主畫面置中功能 (手動計算，支援多螢幕)
       use tauri::Manager;
       if let Some(window) = app.get_webview_window("main") {
-          let _ = window.center();
+          if let Ok(Some(monitor)) = window.current_monitor() {
+              let monitor_size = monitor.size();
+              let monitor_pos = monitor.position();
+              
+              if let Ok(window_size) = window.outer_size() {
+                  let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
+                  let y = monitor_pos.y + (monitor_size.height as i32 - window_size.height as i32) / 2;
+                  
+                  let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+              }
+          }
       }
 
       Ok(())
