@@ -25,11 +25,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Ok(vec!["llama3:latest".to_string(), "mistral:latest".to_string()])
+            Err("無法連線至 Ollama，請檢查服務是否啟動。".to_string())
         }
         "Gemini" => {
             if api_key.is_empty() {
-                return Ok(vec!["gemini-2.5-flash".to_string(), "gemini-2.5-pro".to_string(), "gemini-2.0-flash".to_string()]);
+                return Err("API Key 為空，請先填入 API Key。".to_string());
             }
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models?key={}", api_key);
             if let Ok(resp) = client.get(&url).send().await {
@@ -47,11 +47,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Ok(vec!["gemini-2.5-flash".to_string(), "gemini-2.5-pro".to_string()])
+            Err("無法取得 Gemini 模型列表，請檢查 API Key 或網路連線。".to_string())
         }
         "OpenAI" => {
             if api_key.is_empty() {
-                return Ok(vec!["gpt-4o".to_string(), "gpt-4o-mini".to_string()]);
+                return Err("API Key 為空，請先填入 API Key。".to_string());
             }
             if let Ok(resp) = client.get("https://api.openai.com/v1/models")
                 .header("Authorization", format!("Bearer {}", api_key))
@@ -71,11 +71,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Ok(vec!["gpt-4o".to_string(), "gpt-4o-mini".to_string()])
+            Err("無法取得 OpenAI 模型列表，請檢查 API Key 或網路連線。".to_string())
         }
         "DeepSeek" => {
             if api_key.is_empty() {
-                return Ok(vec!["deepseek-chat".to_string(), "deepseek-reasoner".to_string()]);
+                return Err("API Key 為空，請先填入 API Key。".to_string());
             }
             if let Ok(resp) = client.get("https://api.deepseek.com/models")
                 .header("Authorization", format!("Bearer {}", api_key))
@@ -92,9 +92,9 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Ok(vec!["deepseek-chat".to_string(), "deepseek-reasoner".to_string()])
+            Err("無法取得 DeepSeek 模型列表，請檢查 API Key 或網路連線。".to_string())
         }
-        _ => Ok(vec![]),
+        _ => Err("未支援的提供商".to_string()),
     }
 }
 
