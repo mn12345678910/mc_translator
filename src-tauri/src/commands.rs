@@ -1,4 +1,4 @@
-use mc_translator_rs::config::AppConfig;
+use mc_translator_rs::config::{AppConfig, settings::StyleConfig};
 use tauri::Emitter;
 
 #[tauri::command]
@@ -54,4 +54,15 @@ pub async fn start_translation(
     )
     .await
     .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_style_config() -> StyleConfig {
+    StyleConfig::load()
+}
+
+#[tauri::command]
+pub fn save_style_config(config: StyleConfig) -> Result<(), String> {
+    config.save();
+    Ok(())
 }
