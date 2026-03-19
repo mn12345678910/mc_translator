@@ -27,28 +27,30 @@ stateDiagram-v2
 
 ## 執行緒同步與資料流模型
 
-以下說明「UI 主執行緒」與「背景任務執行緒」如何透過 `Arc<Mutex>` 與 `Atomic` 變數安全地共享與同步狀態。
+以下說明「Tauri 前端 (HTML/JS)」與「後端背景任務執行緒」如何透過 **IPC (Invoke)** 與 **事件 (Events)** 安全地同步狀態。
 
 ```mermaid
-graph LR
-    subgraph UI_Thread ["UI 主執行緒 (Tauri 前端)"]
-        A[Render Loop] --> B{讀取狀態}
-        B -- Atomic --> C["讀取 進度/狀態"]
-        B -- Mutex --> D["讀取 紀錄日誌"]
-        E[使用者點擊] --> F["更新 Atomic狀態取消/暫停"]
+graph TD
+    subgraph UI_Frontend ["Tauri 前端 (HTML/JS)"]
+        A[JS Render Loop] --> B{觸發 Invoke}
+        B --> C["發送 start_translation, save_config"]
+        D[監聽 Emitter] <-- "接收 translation-log / progress" --- E[Event Listener]
     end
 
-    subgraph Background_Thread ["背景任務執行緒 (Tokio)"]
-        G[翻譯 Task] --> H{更新狀態}
-        H -- Atomic --> C
-        H -- Mutex --> D
-        G --> I["監聽 Cancel/Pause"]
-        I -.-> F
+    subgraph Backend_Thread ["背景任務執行緒 (Tauri/Tokio)"]
+        F[Tauri Command] --> G[Pipeline 執行範疇]
+        G --> H["使用 Arc<Mutex> / Atomic 控制共用狀態 (JobSharedState)"]
+        H --> I["發送 app.emit() 即時更新給前端"]
+        G --> J["監聽 取消/暫停 信號"]
     end
 
-    style UI_Thread fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style Background_Thread fill:#fff2e6,stroke:#333,stroke-width:1px
+    C -- "tauri::invoke" --> F
+    I -.-> D
+
+    style UI_Frontend fill:#e6f3ff,stroke:#333,stroke-width:1px
+    style Backend_Thread fill:#fff2e6,stroke:#333,stroke-width:1px
 ```
+
 
 ## 同步與併發
 

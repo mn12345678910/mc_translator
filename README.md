@@ -116,7 +116,24 @@
 | `--skip-book` | 跳過 Patchouli 手冊 |
 | `-h, --help` | 列出幫助說明 |
 
+## 打包發布 (從原始碼)
+
+**1) GUI 安裝檔打包 (Tauri)**
+在專案根目錄下運行：
+```powershell
+npx @tauri-apps/cli build
+```
+產出的 `.exe` 安裝文件通常位於 `src-tauri/target/release/bundle/nsis/`。
+
+**2) CLI 單檔編譯**
+```powershell
+cargo build --release --bin mc_translator_cli
+```
+
+---
+
 ## 文檔索引
+
 
 - 架構總覽：`docs/architecture/overview.md`
 - 狀態管理：`docs/architecture/state_management.md`

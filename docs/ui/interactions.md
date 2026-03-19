@@ -11,8 +11,9 @@
 ## 主要按鈕行為
 
 - `⚙`：切換 API 設定面板
-- `📖`：切換字典管理器 Viewport
+- `📖`：切換字典管理器 (`<dialog>` 彈窗)
 - `🎨`：切換調色盤面板
+
 - `🌓`：切換主題
 - `🔧`：切換開發者模式
 
@@ -32,8 +33,9 @@ graph TD
     ToggleSettings --> SettingsPanel["API 設定面板 (控制區域展開)"]
     
     Main --> ToggleDict["點擊 📖"]
-    ToggleDict --> DictManager["字典管理器 Viewport"]
+    ToggleDict --> DictManager["字典管理器 <dialog> 彈窗"]
     subgraph DictManager_In ["字典管理器分頁"]
+
         UserTab["分頁 1：使用者詞庫"]
         OfficialTab["分頁 2：官方推論詞庫"]
     end

@@ -34,7 +34,8 @@
 
 ## 進入點分流
 
-- **GUI 模式 (`Tauri`)**：主要架構轉換為 `src-tauri` 模組驅動，結合前端網頁版面 (HTML/CSS/JS) 呈現高動態的調色盤與日誌資訊讀取。
+- **GUI 模式 (`Tauri`)**：主要架構轉換為 `src-tauri` 模組驅動，結合前端網頁版面 (HTML/CSS/JS) 呈現高動態的調色盤與日誌資訊讀取。包含 `get_models_from_provider` 動態探測 Ollama/Gemini/OpenAI 及 `get_i18n_labels` 動態語系載入，並在關閉時自動記錄視窗坐標尺寸。
+
 - **CLI 模式 (`mc_translator_cli`)**：分支進入點 (`src/cli/main.rs`)，支援 headless 參數型（`-i <input>`）或透過 `dialoguer` 提供與 `AppConfig` 預設值連動的互動對話。
 - **共通管線驅動**：雙進入點皆調用 `src/translation/pipeline.rs` 中的 `start_translation_workflow` 執行統一的字典分析備用與檔案流水線 (`process_all_files`)，確保運行邏輯完全一致。
 

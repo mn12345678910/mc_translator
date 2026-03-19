@@ -24,10 +24,11 @@
 - 官方分頁的編輯內容會轉存到使用者詞庫
 - 字典管理器支援匯入、匯出、搜尋、批次取代
 
-## 監控與刷新
+## 載入與刷新
 
-- `dicts/` 或 `langs/` 資料夾中任何 `.json` 變動會觸發重新分析並載入官方/推論。
-- 推論結果會覆寫 `dicts/official/{ui_lang}.json`
+- 於啟動或設定切換時，一次性讀取與推論公式併入快取，不再使用背景目錄監控以減少 IO 防護鎖互斥。
+- 推論結果依然會快取覆寫至 `dicts/official/{ui_lang}.json`。
+
 
 ## 術語載入與優先級覆蓋權
 
@@ -35,14 +36,12 @@
 
 ```mermaid
 graph TD
-    Start([啟動 / 字典變動]) --> CheckMonitor{"監聽 dicts/ 變動?"}
-    CheckMonitor -- 是 --> ReInference[背景觸發自動推論] --> SaveOfficial[覆寫對應語系的 official.json]
-    
-    Start --> Load[載入字典]
+    Start([啟動 / 設定切換]) --> Load[載入字典]
     Load --> CheckPriority{"優先級設定 (glossary_priority)"}
     
     CheckPriority -- 1. 官方優先 --> OfficialFirst["1. 優先載入 官方/推論 詞庫"] --> FillUser["2. 常規填入 使用者詞庫<br/>不覆蓋已存在 Key"]
     CheckPriority -- 2. 使用者優先 --> UserFirst["1. 優先載入 使用者 詞庫"] --> FillOfficial["2. 常規填入 官方/推論 詞庫<br/>不覆蓋已存在 Key"]
+
     
     FillUser --> BuildAho[建立 Aho-Corasick 自動機]
     FillOfficial --> BuildAho
