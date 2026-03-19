@@ -2759,7 +2759,6 @@ dependencies = [
  "tokio",
  "urlencoding",
  "walkdir",
- "winapi",
  "zip",
 ]
 

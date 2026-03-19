@@ -11,6 +11,13 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // 主畫面置中功能
+      use tauri::Manager;
+      if let Some(window) = app.get_webview_window("main") {
+          let _ = window.center();
+      }
+
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
