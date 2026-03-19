@@ -33,6 +33,14 @@ pub async fn collect_jar_tasks(
             let src_suffix = format!("{}.json", source_lang);
             let src_dir = format!("/{}/", source_lang);
 
+            // 預先收集所有檔案名稱，用於降級判定
+            let mut name_list = std::collections::HashSet::new();
+            for i in 0..archive.len() {
+                if let Ok(f) = archive.by_index(i) {
+                    name_list.insert(f.name().to_string());
+                }
+            }
+
             for i in 0..archive.len() {
                 let (is_target, name, content) = {
                     let mut f = match archive.by_index(i) {
@@ -44,10 +52,25 @@ pub async fn collect_jar_tasks(
                         }
                     };
                     let name = f.name().to_string();
-                    let is_book = name.contains("patchouli_books") && name.contains(&format!("/{}", source_lang));
-                    let is_source = (name.ends_with(&src_suffix)
-                        || (name.contains(&src_dir) && name.ends_with(".json")))
-                        && name.ends_with(".json");
+                    let is_book = name.contains("patchouli_books") && (name.contains(&format!("/{}", source_lang)) || name.contains("/en_us/"));
+                    
+                    let is_actual_source = (name.ends_with(&src_suffix) || name.contains(&src_dir)) && name.ends_with(".json");
+                    let is_fallback = (name.ends_with("en_us.json") || name.contains("/en_us/")) && name.ends_with(".json") && source_lang != "en_us";
+
+                    let mut is_source = false;
+                    if is_actual_source {
+                        is_source = true;
+                    } else if is_fallback {
+                        let source_name = if name.contains("patchouli_books/") {
+                            name.replace("/en_us/", &format!("/{}/", source_lang))
+                        } else {
+                            name.replace("en_us.json", &src_suffix)
+                        };
+                        if !name_list.contains(&source_name) {
+                            is_source = true;
+                        }
+                    }
+
                     let is_target = is_source && !(is_book && skip_book);
                     let mut content = String::new();
                     if is_target {
@@ -62,9 +85,11 @@ pub async fn collect_jar_tasks(
                 if is_target {
                     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) {
                         let target_name = if name.contains("patchouli_books/") {
-                            name.replace(&format!("/{}/", source_lang), &format!("/{}/", target_lang))
+                            let src_book = if name.contains("/en_us/") { "/en_us/".to_string() } else { format!("/{}/", source_lang) };
+                            name.replace(&src_book, &format!("/{}/", target_lang))
                         } else {
-                            name.replace(&src_suffix, &format!("{}.json", target_lang))
+                            let src_file = if name.ends_with("en_us.json") { "en_us.json".to_string() } else { src_suffix.clone() };
+                            name.replace(&src_file, &format!("{}.json", target_lang))
                         };
                         let mut target_base = serde_json::Value::Null;
                         if let Ok(mut zh_f) = archive.by_name(&target_name) {
