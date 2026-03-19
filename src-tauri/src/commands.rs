@@ -204,6 +204,18 @@ pub fn get_default_style_config() -> StyleConfig {
     StyleConfig::default()
 }
 
+use std::sync::{Mutex, OnceLock};
+
+struct DictCache {
+    path: String,
+    items: Vec<(String, String)>,
+}
+
+fn dict_cache() -> &'static Mutex<Option<DictCache>> {
+    static CACHE: OnceLock<Mutex<Option<DictCache>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(None))
+}
+
 #[tauri::command]
 pub fn query_dictionary(
     dict_type: String,
@@ -220,19 +232,36 @@ pub fn query_dictionary(
         get_official_dict_path(lang)
     };
 
-    let full_dict: HashMap<String, String> = load_dict(&path);
-    let mut items: Vec<(String, String)> = full_dict.into_iter().collect();
+    let path_str = path.to_string_lossy().to_string();
 
-    // 1. 字典序排列穩定化
-    items.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut cache = dict_cache().lock().unwrap();
+    let items = if let Some(c) = cache.as_ref() {
+        if c.path == path_str {
+            c.items.clone()
+        } else {
+            let full_dict: HashMap<String, String> = load_dict(&path);
+            let mut it: Vec<_> = full_dict.into_iter().collect();
+            it.sort_by(|a, b| a.0.cmp(&b.0));
+            *cache = Some(DictCache { path: path_str.clone(), items: it.clone() });
+            it
+        }
+    } else {
+        let full_dict: HashMap<String, String> = load_dict(&path);
+        let mut it: Vec<_> = full_dict.into_iter().collect();
+        it.sort_by(|a, b| a.0.cmp(&b.0));
+        *cache = Some(DictCache { path: path_str.clone(), items: it.clone() });
+        it
+    };
+
+    let mut filtered_items = items;
 
     // 2. 關鍵字過濾
     if !search_key.is_empty() {
-        items.retain(|(k, v)| k.contains(&search_key) || v.contains(&search_key));
+        filtered_items.retain(|(k, v)| k.contains(&search_key) || v.contains(&search_key));
     }
 
     // 3. 分頁切片
-    let total_count = items.len();
+    let total_count = filtered_items.len();
     let total_pages = total_count.div_ceil(page_size);
     
     let start = page * page_size;
@@ -241,7 +270,7 @@ pub fn query_dictionary(
     }
     let end = (start + page_size).min(total_count);
     
-    Ok((items[start..end].to_vec(), total_pages))
+    Ok((filtered_items[start..end].to_vec(), total_pages))
 }
 
 #[tauri::command]
@@ -258,6 +287,12 @@ pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<
     }
 
     save_dict(&path, &dict);
+
+    // 🔧 清除快取，迫使下次查詢重新載入
+    if let Ok(mut cache) = dict_cache().lock() {
+        *cache = None;
+    }
+
     Ok(())
 }
 
