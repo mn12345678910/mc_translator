@@ -1,6 +1,7 @@
 # UI 規格
 
-本頁紀錄「目前 UI 元件的預設值」，以 `AppConfig::default` 與 `StyleConfig::default` 為準。
+> [!WARNING]
+> **架構重塑中**：目前 GUI 正從 `egui` 遷移至 `Tauri`。本篇紀錄之預設值與調色盤 RGBA 陣列為 `egui` 歷史規格，在 Tauri HTML 選色及數值綁定中尚待完全對齊，僅提供參考。
 
 ## 主要區塊
 
