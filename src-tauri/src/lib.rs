@@ -41,7 +41,8 @@ pub fn run() {
       commands::pause_translation,
       commands::resume_translation,
       commands::stop_translation,
-      commands::open_path_dialog
+      commands::open_path_dialog,
+      commands::get_available_langs
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

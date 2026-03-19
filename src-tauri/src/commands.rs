@@ -172,3 +172,25 @@ pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
 
     Ok(path.map(|p| p.to_string_lossy().to_string()))
 }
+
+#[tauri::command]
+pub fn get_available_langs() -> Result<Vec<String>, String> {
+    let dir = std::path::Path::new("langs");
+    if !dir.exists() {
+        return Ok(vec!["zh_tw".to_string(), "en_us".to_string()]);
+    }
+
+    let mut langs = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
+                if let Some(stem) = path.file_stem() {
+                    langs.push(stem.to_string_lossy().to_string());
+                }
+            }
+        }
+    }
+    langs.sort();
+    Ok(langs)
+}

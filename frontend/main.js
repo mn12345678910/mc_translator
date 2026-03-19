@@ -3,18 +3,18 @@ const { listen } = window.__TAURI__.event;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 🛠️ 基礎控制元件
-    const logOutput = document.getElementById('log-output');
-    const progressBar = document.getElementById('progress-bar');
-    const statusText = document.getElementById('status-text');
+    const inputPath = document.getElementById('input-path');
+    const outputDir = document.getElementById('output-dir'); // [NEW]
+    const btnBrowseFile = document.getElementById('btn-browse-file');
+    const btnBrowseDir = document.getElementById('btn-browse-dir');
+    const btnBrowseOutput = document.getElementById('btn-browse-output'); // [NEW]
     const btnTranslate = document.getElementById('btn-translate');
     const btnPause = document.getElementById('btn-pause');
     const btnResume = document.getElementById('btn-resume');
     const btnStop = document.getElementById('btn-stop');
-    const inputPath = document.getElementById('input-path');
-    const btnBrowseFile = document.getElementById('btn-browse-file');
-    const btnBrowseDir = document.getElementById('btn-browse-dir');
+    const btnOpenDict = document.getElementById('btn-open-dict');
 
-    // ⚙️ API 與常規參數面板
+    // ⚙️ API 參數元件
     const apiProvider = document.getElementById('api-provider');
     const apiKey = document.getElementById('api-key');
     const selectedModel = document.getElementById('selected-model');
@@ -23,118 +23,90 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchSize = document.getElementById('batch-size');
     const batchMaxChars = document.getElementById('batch-max-chars');
     const timeoutSec = document.getElementById('timeout-sec');
-    const packFormat = document.getElementById('pack-format');
+    const packFormat = document.getElementById('pack-format'); // [NEW] <select>
+    const uiLang = document.getElementById('ui-lang'); // [NEW]
     const btnSaveConfig = document.getElementById('btn-save-config');
 
-    // 🎨 調色盤管理元件
-    const colorBg = document.getElementById('color-bg');
-    const colorText = document.getElementById('color-text');
-    const colorBtnBg = document.getElementById('color-btn-bg');
-    const colorBtnText = document.getElementById('color-btn-text');
-    const btnSaveStyle = document.getElementById('btn-save-style');
+    // 📝 Prompts 元件 [NEW]
+    const systemPrompt = document.getElementById('system-prompt');
+    const userPrompt = document.getElementById('user-prompt');
 
-    // 🔧 開發者模式 Checkboxes
+    // 🔧 開發人員過濾器
     const chkSkipJson = document.getElementById('chk-skip-json');
     const chkSkipJs = document.getElementById('chk-skip-js');
     const chkSkipJar = document.getElementById('chk-skip-jar');
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
 
-    // 📖 字典管理器彈窗
-    const btnOpenDict = document.getElementById('btn-open-dict');
-    const dictDialog = document.getElementById('dict-dialog');
-    const dictSearch = document.getElementById('dict-search');
-    const tabUser = document.getElementById('tab-user');
-    const tabOfficial = document.getElementById('tab-official');
-    const dictTableContainer = document.getElementById('dict-table-container');
-    const pagePrev = document.getElementById('page-prev');
-    const pageNext = document.getElementById('page-next');
-    const pageInfo = document.getElementById('page-info');
+    // 🎨 調色盤與佈局元組
+    const colorBg = document.getElementById('color-bg');
+    const colorText = document.getElementById('color-text');
+    const colorBtnBg = document.getElementById('color-btn-bg');
+    const colorBtnText = document.getElementById('color-btn-text');
+    const fontSize = document.getElementById('font-size'); // [NEW]
+    const btnSaveStyle = document.getElementById('btn-save-style');
 
-    // --- 全域狀態 ---
+    // 📊 日誌與狀態元組
+    const statusText = document.getElementById('status-text');
+    const progressBar = document.getElementById('progress-bar');
+    const logOutput = document.getElementById('log-output');
+
     let currentConfig = {};
     let currentStyle = {};
-    let dictType = 'user'; // 'user' | 'official'
-    let dictPage = 0;
-    const dictPageSize = 25;
-    let debounceTimer = null;
 
-    const rgbToHex = ([r, g, b]) => "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-    const hexToRgb = (hex) => [
-        parseInt(hex.slice(1, 3), 16),
-        parseInt(hex.slice(3, 5), 16),
-        parseInt(hex.slice(5, 7), 16)
-    ];
+    // --- 🌍 1. 載入介面語言列表 ---
+    async function loadUiLangs() {
+        try {
+            const langs = await invoke('get_available_langs');
+            uiLang.innerHTML = '';
+            langs.forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l;
+                opt.textContent = l === 'zh_tw' ? '繁體中文 (zh_tw)' : l === 'en_us' ? 'English (en_us)' : l;
+                uiLang.appendChild(opt);
+            });
+        } catch (e) {
+            console.error('無法載入語言清單', e);
+        }
+    }
+    await loadUiLangs();
 
-    // 1. 載入並套用 Config 們
-    try {
-        currentStyle = await invoke('get_style_config');
-        currentConfig = await invoke('get_config');
+    // --- ⚙️ 2. 參數雙向綁定與保存 ---
+    async function loadConfig() {
+        try {
+            const config = await invoke('get_config');
+            currentConfig = config;
 
-        // (A) 套用調色盤
-        if (colorBg) colorBg.value = rgbToHex(currentStyle.dark_bg);
-        if (colorText) colorText.value = rgbToHex(currentStyle.dark_text);
-        if (colorBtnBg) colorBtnBg.value = rgbToHex(currentStyle.dark_btn_bg);
-        if (colorBtnText) colorBtnText.value = rgbToHex(currentStyle.dark_btn_text);
+            apiProvider.value = config.api_provider || 'Gemini';
+            apiKey.value = config.api_key || '';
+            ollamaUrl.value = config.ollama_url || 'http://localhost:11434';
+            batchSize.value = config.batch_size || 150;
+            batchMaxChars.value = config.batch_max_chars || 3500;
+            timeoutSec.value = config.timeout || 60;
+            packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
+            uiLang.value = config.ui_lang || 'zh_tw';
 
-        document.documentElement.style.setProperty('--bg-color', rgbToHex(currentStyle.dark_bg));
-        document.documentElement.style.setProperty('--text-color', rgbToHex(currentStyle.dark_text));
-        document.documentElement.style.setProperty('--btn-bg', rgbToHex(currentStyle.dark_btn_bg));
-        document.documentElement.style.setProperty('--btn-text', rgbToHex(currentStyle.dark_btn_text));
+            systemPrompt.value = config.system_prompt || '';
+            userPrompt.value = config.user_prompt || '';
 
-        // (B) 套用 API 參數面板值
-        if (apiProvider) apiProvider.value = currentConfig.api_provider;
-        if (apiKey) apiKey.value = currentConfig.api_key;
-        if (ollamaUrl) ollamaUrl.value = currentConfig.ollama_url;
-        if (batchSize) batchSize.value = currentConfig.batch_size;
-        if (batchMaxChars) batchMaxChars.value = currentConfig.batch_max_chars;
-        if (timeoutSec) timeoutSec.value = currentConfig.timeout;
-        if (packFormat) packFormat.value = currentConfig.pack_format;
+            chkSkipJson.checked = config.skip_json || false;
+            chkSkipJs.checked = config.skip_js || false;
+            chkSkipJar.checked = config.skip_jar || false;
+            chkSkipBook.checked = config.skip_book || false;
+            chkLlmLog.checked = config.enable_llm_log || false;
 
-        // 連動模型下拉或手動追加
-        updateModelOptions(currentConfig.api_provider, currentConfig.model);
-        toggleOllamaGroup(currentConfig.api_provider);
-
-        // (C) 套用開發人員勾選
-        if (chkSkipJson) chkSkipJson.checked = currentConfig.skip_json;
-        if (chkSkipJs) chkSkipJs.checked = currentConfig.skip_js;
-        if (chkSkipJar) chkSkipJar.checked = currentConfig.skip_jar;
-        if (chkSkipBook) chkSkipBook.checked = currentConfig.skip_book;
-        if (chkLlmLog) chkLlmLog.checked = currentConfig.enable_llm_log;
-
-    } catch (err) { console.error("載入設定失敗:", err); }
-
-    // --- 輔助函式組 ---
-    function toggleOllamaGroup(provider) {
-        if (ollamaUrlGroup) ollamaUrlGroup.style.display = (provider === 'Ollama') ? 'block' : 'none';
+            toggleOllamaGroup();
+            await loadModels();
+            if (config.model) {
+                selectedModel.value = config.model;
+            }
+        } catch (e) {
+            appendLog(`❌ 載入配置失敗: ${e}`);
+        }
     }
 
-    function updateModelOptions(provider, selected) {
-        if (!selectedModel) return;
-        selectedModel.innerHTML = ''; // 清空
-        const models = provider === 'Gemini' 
-            ? ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash']
-            : ['llama3', 'mistral', 'qwen']; // 預設 Ollama 集份碼
-        
-        models.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m; opt.textContent = m;
-            if (m === selected) opt.selected = true;
-            selectedModel.appendChild(opt);
-        });
-    }
-
-    // 2. 監聽 Provider 切換
-    if (apiProvider) {
-        apiProvider.addEventListener('change', (e) => {
-            toggleOllamaGroup(e.target.value);
-            updateModelOptions(e.target.value, '');
-        });
-    }
-
-    // 3. 💾 儲存核心 API 參數
-    if (btnSaveConfig) {
-        btnSaveConfig.addEventListener('click', async () => {
+    async function saveConfig() {
+        try {
             currentConfig.api_provider = apiProvider.value;
             currentConfig.api_key = apiKey.value;
             currentConfig.model = selectedModel.value;
@@ -143,187 +115,189 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentConfig.batch_max_chars = parseInt(batchMaxChars.value);
             currentConfig.timeout = parseInt(timeoutSec.value);
             currentConfig.pack_format = parseInt(packFormat.value);
+            currentConfig.ui_lang = uiLang.value;
 
-            try {
-                await invoke('save_config', { config: currentConfig });
-                alert("核心設定已同步至 config.cfg！");
-            } catch (err) { alert(`儲存設定失敗: ${err}`); }
-        });
-    }
+            currentConfig.system_prompt = systemPrompt.value;
+            currentConfig.user_prompt = userPrompt.value;
 
-    // 4. 📂 Native Dialog 選檔串接
-    const attachDialog = (btn, type) => {
-        if (btn) {
-            btn.addEventListener('click', async () => {
-                try {
-                    const path = await invoke('open_path_dialog', { diagType: type });
-                    if (path) inputPath.value = path;
-                } catch (err) { alert(`開啟選取框失敗: ${err}`); }
-            });
+            currentConfig.skip_json = chkSkipJson.checked;
+            currentConfig.skip_js = chkSkipJs.checked;
+            currentConfig.skip_jar = chkSkipJar.checked;
+            currentConfig.skip_book = chkSkipBook.checked;
+            currentConfig.enable_llm_log = chkLlmLog.checked;
+
+            await invoke('save_config', { config: currentConfig });
+            appendLog('✅ 核心參數儲存成功！');
+        } catch (e) {
+            appendLog(`❌ 儲存配置失敗: ${e}`);
         }
-    };
-    attachDialog(btnBrowseFile, 'file');
-    attachDialog(btnBrowseDir, 'dir');
-
-    // 5. 監聽選色即時畫布預覽
-    const attachLivePreview = (input, cssVar) => {
-        if (input) input.addEventListener('input', e => document.documentElement.style.setProperty(cssVar, e.target.value));
-    };
-    attachLivePreview(colorBg, '--bg-color');
-    attachLivePreview(colorText, '--text-color');
-    attachLivePreview(colorBtnBg, '--btn-bg');
-    attachLivePreview(colorBtnText, '--btn-text');
-
-    // 6. 💾 儲存佈景設定
-    if (btnSaveStyle) {
-        btnSaveStyle.addEventListener('click', async () => {
-            currentStyle.dark_bg = hexToRgb(colorBg.value);
-            currentStyle.dark_text = hexToRgb(colorText.value);
-            currentStyle.dark_btn_bg = hexToRgb(colorBtnBg.value);
-            currentStyle.dark_btn_text = hexToRgb(colorBtnText.value);
-            try {
-                await invoke('save_style_config', { config: currentStyle });
-                alert("佈景配置已同步！");
-            } catch (err) { alert(`儲存佈景出錯: ${err}`); }
-        });
     }
 
-    // 7. 防抖式自動儲存 Config (開發人員過濾組)
-    const triggerSaveConfigDebounced = () => {
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-            try {
-                await invoke('save_config', { config: currentConfig });
-                console.log("Config 自動保存落盤成功");
-            } catch (err) { console.error("Config 自動保存出錯:", err); }
-        }, 800);
-    };
-
-    const attachCheckboxSync = (el, field) => {
-        if (el) el.addEventListener('change', (e) => {
-            currentConfig[field] = e.target.checked;
-            triggerSaveConfigDebounced();
-        });
-    };
-    attachCheckboxSync(chkSkipJson, 'skip_json');
-    attachCheckboxSync(chkSkipJs, 'skip_js');
-    attachCheckboxSync(chkSkipJar, 'skip_jar');
-    attachCheckboxSync(chkSkipBook, 'skip_book');
-    attachCheckboxSync(chkLlmLog, 'enable_llm_log');
-
-    // 8. 📖 字典管理器彈窗分頁運算 (完整保留)
-    const renderDictionaryTable = (items) => {
-        let html = `<table><thead><tr><th>原文 (Key)</th><th>譯文 (Value)</th><th style="width: 80px;">操作</th></tr></thead><tbody>`;
-        items.forEach(([k, v]) => {
-            html += `<tr>
-                <td><strong>${k}</strong></td>
-                <td><input type="text" class="dict-edit-input" data-key="${k}" value="${v}"></td>
-                <td>
-                    <button class="save-item-btn" data-key="${k}">💾</button>
-                    ${dictType === 'user' ? `<button class="del-item-btn" data-key="${k}" style="background-color: #aa1111;">🗑️</button>` : ''}
-                </td>
-            </tr>`;
-        });
-        html += `</tbody></table>`;
-        dictTableContainer.innerHTML = html;
-
-        document.querySelectorAll('.save-item-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const key = e.target.getAttribute('data-key');
-                const input = document.querySelector(`.dict-edit-input[data-key="${key}"`);
-                if (input) {
-                    try {
-                        await invoke('edit_dictionary_item', { key, value: input.value, delete: false });
-                        alert(`「${key}」儲存成功！${dictType === 'official' ? '已自動轉存為使用者詞庫。' : ''}`);
-                    } catch (err) { alert(`儲存失敗: ${err}`); }
-                }
-            });
-        });
-
-        document.querySelectorAll('.del-item-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const key = e.target.getAttribute('data-key');
-                if (confirm(`確定要刪除「${key}」嗎？`)) {
-                    try {
-                        await invoke('edit_dictionary_item', { key, value: '', delete: true });
-                        loadDictionaryPage();
-                    } catch (err) { alert(`刪除失敗: ${err}`); }
-                }
-            });
-        });
-    };
-
-    const loadDictionaryPage = async () => {
-        const searchKey = dictSearch ? dictSearch.value.trim() : "";
+    // --- 🎨 3. 調色盤與字體縮放 ---
+    async function loadStyle() {
         try {
-            const [items, totalPages] = await invoke('query_dictionary', {
-                dictType, page: dictPage, pageSize: dictPageSize, searchKey
-            });
-            renderDictionaryTable(items);
-            if (pageInfo) pageInfo.textContent = `第 ${dictPage + 1} / ${totalPages || 1} 頁`;
-            if (pagePrev) pagePrev.disabled = (dictPage === 0);
-            if (pageNext) pageNext.disabled = (dictPage + 1 >= (totalPages || 1));
-        } catch (err) { console.error("加載字典失敗:", err); }
-    };
+            const style = await invoke('get_style_config');
+            currentStyle = style;
 
-    if (btnOpenDict) btnOpenDict.addEventListener('click', () => { if (dictDialog) { dictDialog.showModal(); loadDictionaryPage(); if (dictSearch) dictSearch.focus(); } });
-    if (dictSearch) dictSearch.addEventListener('input', () => { dictPage = 0; loadDictionaryPage(); });
-
-    const switchTab = (type, activeBtn, inactiveBtn) => {
-        dictType = type; dictPage = 0;
-        activeBtn.classList.add('active'); inactiveBtn.classList.remove('active');
-        loadDictionaryPage();
-    };
-    if (tabUser) tabUser.addEventListener('click', () => switchTab('user', tabUser, tabOfficial));
-    if (tabOfficial) tabOfficial.addEventListener('click', () => switchTab('official', tabOfficial, tabUser));
-
-    if (pagePrev) pagePrev.addEventListener('click', () => { if (dictPage > 0) { dictPage--; loadDictionaryPage(); } });
-    if (pageNext) pageNext.addEventListener('click', () => { dictPage++; loadDictionaryPage(); });
-
-    // 9. 監聽日誌與進度事件
-    listen('log_event', (e) => {
-        const line = document.createElement('div');
-        line.style.padding = "2px 0"; line.textContent = e.payload;
-        logOutput.appendChild(line); logOutput.scrollTop = logOutput.scrollHeight;
-    });
-
-    listen('progress_event', (e) => {
-        const [ratio, status] = e.payload;
-        if (progressBar) progressBar.style.width = `${ratio * 100}%`;
-        if (statusText) statusText.textContent = `進度: ${(ratio * 100).toFixed(1)}% - ${status}`;
-    });
-
-    // 10. 🎮 暫停 / 繼續 / 停止 按鈕連鎖發射器
-    function setRunningState(isRunning, isPaused = false) {
-        if (btnTranslate) btnTranslate.style.display = isRunning ? 'none' : 'inline-block';
-        if (btnPause) btnPause.style.display = (isRunning && !isPaused) ? 'inline-block' : 'none';
-        if (btnResume) btnResume.style.display = (isRunning && isPaused) ? 'inline-block' : 'none';
-        if (btnStop) btnStop.style.display = isRunning ? 'inline-block' : 'none';
-    }
-
-    if (btnPause) btnPause.addEventListener('click', async () => { try { await invoke('pause_translation'); setRunningState(true, true); } catch (e) { console.error(e); } });
-    if (btnResume) btnResume.addEventListener('click', async () => { try { await invoke('resume_translation'); setRunningState(true, false); } catch (e) { console.error(e); } });
-    if (btnStop) btnStop.addEventListener('click', async () => { try { await invoke('stop_translation'); setRunningState(false); } catch (e) { console.error(e); } });
-
-    // 11. 🚀 點擊翻譯 (參數流連鎖)
-    if (btnTranslate) {
-        btnTranslate.addEventListener('click', async () => {
-            const path = inputPath ? inputPath.value.trim() : "";
-            if (!path) { alert("請填寫待翻譯的輸入路徑！"); return; }
-            if (logOutput) logOutput.innerHTML = '';
-            if (statusText) statusText.textContent = "準備開始翻譯...";
-            if (progressBar) progressBar.style.width = '0%';
-
-            setRunningState(true);
-
-            try {
-                await invoke('start_translation', { inputPaths: [path], config: currentConfig });
-                alert("翻譯任務執行結束！");
-            } catch (err) { 
-                alert(`翻譯出錯或已被中斷: ${err}`); 
-            } finally {
-                setRunningState(false);
+            colorBg.value = rgbToHex(style.bg_color);
+            colorText.value = rgbToHex(style.text_color);
+            colorBtnBg.value = rgbToHex(style.btn_bg_color);
+            colorBtnText.value = rgbToHex(style.btn_text_color);
+            if (style.font_size) {
+                fontSize.value = style.font_size;
+                document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
             }
-        });
+
+            applyColors(style);
+        } catch (e) {
+            console.error(e);
+        }
     }
+
+    async function saveStyle() {
+        try {
+            currentStyle.bg_color = hexToRgb(colorBg.value);
+            currentStyle.text_color = hexToRgb(colorText.value);
+            currentStyle.btn_bg_color = hexToRgb(colorBtnBg.value);
+            currentStyle.btn_text_color = hexToRgb(colorBtnText.value);
+            currentStyle.font_size = parseFloat(fontSize.value);
+
+            await invoke('save_style_config', { style: currentStyle });
+            appendLog('🎨 調色盤與佈局保存成功！');
+            applyColors(currentStyle);
+            document.documentElement.style.setProperty('--font-size', fontSize.value + 'px');
+        } catch (e) {
+            appendLog(`❌ 保存樣式失敗: ${e}`);
+        }
+    }
+
+    // --- 🎮 4. 面板熔斷鎖狀態機 ---
+    function setRunningState(isRunning) {
+        btnTranslate.disabled = isRunning;
+        
+        // 🔒 鎖定所有輸入框與面板以防誤觸 (100% 復刻熔斷閥)
+        const inputs = document.querySelectorAll('.control-panel input:not(#input-path), .control-panel select, .control-panel textarea');
+        inputs.forEach(el => el.disabled = isRunning);
+        
+        if (isRunning) {
+            btnPause.style.display = 'inline-block';
+            btnStop.style.display = 'inline-block';
+            btnPause.textContent = '⏸️ 暫停';
+        } else {
+            btnPause.style.display = 'none';
+            btnResume.style.display = 'none';
+            btnStop.style.display = 'none';
+        }
+    }
+
+    // --- 📂 5. Native 瀏覽對話框連鎖 ---
+    async function browsePath(type, targetEl) {
+        try {
+            const path = await invoke('open_path_dialog', { dialogType: type });
+            if (path) targetEl.value = path;
+        } catch (e) {
+            appendLog(`❌ 瀏覽路徑失敗: ${e}`);
+        }
+    }
+
+    btnBrowseFile.addEventListener('click', () => browsePath('file', inputPath));
+    btnBrowseDir.addEventListener('click', () => browsePath('dir', inputPath));
+    btnBrowseOutput.addEventListener('click', () => browsePath('dir', outputDir)); // [NEW]
+
+    // --- 其他邏輯 ---
+    async function loadModels() {
+        const provider = apiProvider.value;
+        selectedModel.innerHTML = '<option value="">載入中...</option>';
+        try {
+            const models = await invoke('get_models_from_provider', { provider });
+            selectedModel.innerHTML = '';
+            models.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.textContent = m;
+                selectedModel.appendChild(opt);
+            });
+        } catch (e) {
+            selectedModel.innerHTML = '<option value="">(無可用模型)</option>';
+        }
+    }
+
+    function toggleOllamaGroup() {
+        ollamaUrlGroup.style.display = apiProvider.value === 'Ollama' ? 'block' : 'none';
+    }
+
+    apiProvider.addEventListener('change', async () => { toggleOllamaGroup(); await loadModels(); });
+    btnSaveConfig.addEventListener('click', saveConfig);
+    btnSaveStyle.addEventListener('click', saveStyle);
+
+    // --- 🚀 翻譯執行與監聽 ---
+    btnTranslate.addEventListener('click', async () => {
+        const path = inputPath.value.trim();
+        if (!path) { appendLog('⚠️ 請輸入或選取待翻譯路徑！'); return; }
+        setRunningState(true);
+        logOutput.innerHTML = '';
+        appendLog('🚀 翻譯任務開始發射...');
+
+        try {
+            await invoke('start_translation', {
+                path,
+                provider: apiProvider.value,
+                model: selectedModel.value,
+                apiKey: apiKey.value,
+                ollamaUrl: ollamaUrl.value,
+                batchSize: parseInt(batchSize.value),
+                batchMaxChars: parseInt(batchMaxChars.value),
+                timeout: parseInt(timeoutSec.value),
+                userPrompt: userPrompt.value,
+                systemPrompt: systemPrompt.value,
+                packFormat: parseInt(packFormat.value)
+            });
+            appendLog('✅ 任務執行指令送達後端。');
+        } catch (e) {
+            appendLog(`❌ 執行出錯: ${e}`);
+            setRunningState(false);
+        }
+    });
+
+    btnPause.addEventListener('click', async () => {
+        if (btnPause.textContent === '⏸️ 暫停') {
+            await invoke('pause_translation'); btnPause.textContent = '▶️ 繼續運行'; appendLog('⏸️ 任務已暫停。面板解鎖，可改動設定。');
+            const inputs = document.querySelectorAll('.control-panel input:not(#input-path), .control-panel select, .control-panel textarea');
+            inputs.forEach(el => el.disabled = false); // 暫停時解除鎖定
+        } else {
+            await invoke('resume_translation'); btnPause.textContent = '⏸️ 暫停'; appendLog('▶️ 任務已繼續。');
+            const inputs = document.querySelectorAll('.control-panel input:not(#input-path), .control-panel select, .control-panel textarea');
+            inputs.forEach(el => el.disabled = true);
+        }
+    });
+
+    btnStop.addEventListener('click', async () => { await invoke('stop_translation'); appendLog('⏹️ 正在送出終止信號...'); });
+
+    // 📻 監聽後端 Event
+    listen('translation-progress', (event) => {
+        const { current, total, status } = event.payload;
+        statusText.textContent = `${status} (${current} / ${total})`;
+        progressBar.style.width = total > 0 ? `${(current / total) * 100}%` : '0%';
+    });
+
+    listen('translation-log', (event) => { appendLog(event.payload); });
+    listen('translation-status', (event) => { statusText.textContent = event.payload; setRunningState(false); });
+
+    function appendLog(text) {
+        const p = document.createElement('p'); p.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+        logOutput.appendChild(p); logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    function rgbToHex(arr) { if (!arr || arr.length < 3) return '#333333'; return '#' + arr.map(x => x.toString(16).padStart(2, '0')).join(''); }
+    function hexToRgb(hex) { const bigint = parseInt(hex.slice(1), 16); return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255]; }
+    function applyColors(style) {
+        const rgb = style.bg_color;
+        document.documentElement.style.setProperty('--bg-color', `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`);
+        document.documentElement.style.setProperty('--text-color', hexToColor(style.text_color));
+        document.documentElement.style.setProperty('--btn-bg', hexToColor(style.btn_bg_color));
+        document.documentElement.style.setProperty('--btn-text', hexToColor(style.btn_text_color));
+    }
+    function hexToColor(arr) { if (!arr || arr.length < 3) return '#fff'; return `rgb(${arr[0]},${arr[1]},${arr[2]})`; }
+
+    await loadConfig();
+    await loadStyle();
 });
