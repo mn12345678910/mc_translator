@@ -34,7 +34,7 @@
 
 ## 進入點分流
 
-- **GUI 模式 (`mc_translator_gui`)**：主要進入點 (`src/main.rs`)，運用 `egui` 呈現完整的視覺化設定與操作流程。
+- **GUI 模式 (`Tauri`)**：主要架構轉換為 `src-tauri` 模組驅動，結合前端網頁版面 (HTML/CSS/JS) 呈現高動態的調色盤與日誌資訊讀取。
 - **CLI 模式 (`mc_translator_cli`)**：分支進入點 (`src/cli/main.rs`)，支援 headless 參數型（`-i <input>`）或透過 `dialoguer` 提供與 `AppConfig` 預設值連動的互動對話。
 - **共通管線驅動**：雙進入點皆調用 `src/translation/pipeline.rs` 中的 `start_translation_workflow` 執行統一的字典分析備用與檔案流水線 (`process_all_files`)，確保運行邏輯完全一致。
 

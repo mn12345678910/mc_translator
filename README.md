@@ -1,9 +1,8 @@
 # Minecraft Mod Auto-Translator (mc_translator_rs)
 
-> [!CAUTION]
-> 警告:
-> 本工具雖使用微軟DPAPI對API KEY進行加密，但由於本工具100%使用AI開發，
-> 如有疑慮者請"不要"使用需要填入API KEY的服務商。
+> [!NOTE]
+> 安全須知:
+> 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。
 
 > [!IMPORTANT]
 > 翻譯品質須知:
@@ -68,7 +67,7 @@
 
 | 項目 | 需求 |
 | --- | --- |
-| 作業系統 | Windows 10/11 (DPAPI) |
+| 作業系統 | 跨平台 (Windows / Linux / macOS) |
 | 網路 | 需可連線至 API (Ollama 為本機) |
 | 硬體 | 依模型與服務商需求而定 |
 
@@ -76,7 +75,7 @@
 
 本工具依據執行情境提供獨立的二進位進入點：
 
-- **GUI 模式 (`mc_translator_gui`)**：完整視覺化操作，支援調色盤、字典管理器與即時進度條。
+- **GUI 模式 (`Tauri`)**：基於 Tauri 框架與網頁前端，提供視覺化操作、調色盤即時預覽與日誌監控。
 - **CLI 模式 (`mc_translator_cli`)**：支援 Headless 多參數靜態執行，或 dialoguer Step-by-Step 互動引導流程。
 
 ---
