@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft 模組翻譯工具 - v0.5.2</title>
+    <title>Minecraft 模組翻譯工具 - v0.5.4</title>
     <link rel="stylesheet" href="style.css">
     <script src="main.js" defer></script>
 </head>
 <body>
-    <h1>Minecraft 模組翻譯工具 - 100% 復刻版</h1>
+    <h1>Minecraft 模組翻譯工具</h1>
 
     <!-- 🎮 翻譯控制面板 -->
     <div class="control-panel">
@@ -55,7 +55,13 @@
                 <label for="api-provider">服務提供商</label>
                 <select id="api-provider">
                     <option value="Gemini">Gemini (Google)</option>
+                    <option value="OpenAI">OpenAI</option>
+                    <option value="DeepSeek">DeepSeek</option>
+                    <option value="Mistral">Mistral</option>
+                    <option value="DeepL">DeepL</option>
                     <option value="Ollama">Ollama (本地端)</option>
+                    <option value="Google Free">Google Free</option>
+                    <option value="無">無 (None)</option>
                 </select>
             </div>
             <div class="form-group">
@@ -112,19 +118,37 @@
             </div>
         </div>
 
-        <button id="btn-save-config" style="margin-top: 15px; background-color: var(--accent-color); color: #111;">💾 儲存核心參數</button>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="btn-save-config" style="background-color: var(--accent-color); color: #111; flex: 1;">💾 儲存核心參數</button>
+            <button id="btn-restore-config" class="secondary-btn" style="background-color: #444; flex: 1; color: #fff; border: 1px solid #555;">🔄 恢復預設參數</button>
+        </div>
     </div>
 
     <!-- 🔧 開發人員選項 -->
     <div class="control-panel developer-settings">
         <h2>🔧 開發人員檔案過濾</h2>
         <div class="checkbox-grid">
-            <label><input type="checkbox" id="chk-skip-json"> 跳過 .json 檔案</label>
-            <label><input type="checkbox" id="chk-skip-js"> 跳過 .js 檔案</label>
-            <label><input type="checkbox" id="chk-skip-jar"> 跳過 .jar 檔案</label>
-            <label><input type="checkbox" id="chk-skip-book"> 跳過 Patchouli 手冊</label>
+            <div class="switch-group">
+                <span>跳過 .json 檔案</span>
+                <label class="switch"><input type="checkbox" id="chk-skip-json"><span class="slider round"></span></label>
+            </div>
+            <div class="switch-group">
+                <span>跳過 .js 檔案</span>
+                <label class="switch"><input type="checkbox" id="chk-skip-js"><span class="slider round"></span></label>
+            </div>
+            <div class="switch-group">
+                <span>跳過 .jar 檔案</span>
+                <label class="switch"><input type="checkbox" id="chk-skip-jar"><span class="slider round"></span></label>
+            </div>
+            <div class="switch-group">
+                <span>跳過 Patchouli 手冊</span>
+                <label class="switch"><input type="checkbox" id="chk-skip-book"><span class="slider round"></span></label>
+            </div>
             <hr style="grid-column: 1 / -1; width: 100%; border-color: #444;">
-            <label><input type="checkbox" id="chk-llm-log"> 記錄 LLM 通訊日誌</label>
+            <div class="switch-group" style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;">
+                <span>記錄 LLM 通訊日誌</span>
+                <label class="switch"><input type="checkbox" id="chk-llm-log"><span class="slider round"></span></label>
+            </div>
         </div>
     </div>
 
@@ -142,7 +166,10 @@
             <label for="font-size">字體大小 (Font Size):</label>
             <input type="number" id="font-size" value="15" min="12" max="30" step="0.5">
         </div>
-        <button id="btn-save-style" style="margin-top: 15px;">💾 儲存佈景配置</button>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button id="btn-save-style" style="flex: 1;">💾 儲存佈景配置</button>
+            <button id="btn-restore-style" class="secondary-btn" style="background-color: #444; flex: 1; color: #fff; border: 1px solid #555;">🔄 恢復預設樣式</button>
+        </div>
     </div>
 
     <!-- 進度與日誌面板 -->

@@ -349,3 +349,75 @@ input[type="number"] {
     color: #fff;
     box-sizing: border-box;
 }
+
+/* 🎚️ 滑動開關 (Switch) 樣式 - 復刻 eGUI Toggle */
+.switch-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #1a1a1f;
+    padding: 10px 14px;
+    border-radius: var(--border-radius);
+    border: 1px solid #333;
+    transition: background-color 0.2s;
+}
+
+.switch-group:hover {
+    background-color: #212128;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+}
+
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #2a2a30;
+    transition: .3s;
+    border: 1px solid #444;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #e0e0e0;
+    transition: .3s;
+}
+
+input:checked + .slider {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+    background-color: #111;
+}
+
+.slider.round {
+    border-radius: 20px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.secondary-btn:hover {
+    background-color: #4a4a55 !important;
+}
+

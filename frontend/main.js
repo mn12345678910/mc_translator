@@ -78,7 +78,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentConfig = config;
 
             apiProvider.value = config.api_provider || 'Gemini';
-            apiKey.value = config.api_key || '';
+            
+            // 修正: 從獨立指令載入 API Key 防止被 skip 覆蓋
+            const savedKey = await invoke('get_api_key_cmd');
+            apiKey.value = savedKey || '';
             ollamaUrl.value = config.ollama_url || 'http://localhost:11434';
             batchSize.value = config.batch_size || 150;
             batchMaxChars.value = config.batch_max_chars || 3500;
@@ -108,7 +111,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function saveConfig() {
         try {
             currentConfig.api_provider = apiProvider.value;
-            currentConfig.api_key = apiKey.value;
+            // 修正: 儲存至獨立 Keyring 指令
+            await invoke('save_api_key_cmd', { key: apiKey.value });
             currentConfig.model = selectedModel.value;
             currentConfig.ollama_url = ollamaUrl.value;
             currentConfig.batch_size = parseInt(batchSize.value);
@@ -238,18 +242,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         appendLog('🚀 翻譯任務開始發射...');
 
         try {
+        // 同步 UI 狀態至 currentConfig
+        currentConfig.api_provider = apiProvider.value;
+        currentConfig.model = selectedModel.value;
+        currentConfig.ollama_url = ollamaUrl.value;
+        currentConfig.batch_size = parseInt(batchSize.value);
+        currentConfig.batch_max_chars = parseInt(batchMaxChars.value);
+        currentConfig.timeout = parseInt(timeoutSec.value);
+        currentConfig.pack_format = parseInt(packFormat.value);
+        currentConfig.user_prompt = userPrompt.value;
+        currentConfig.system_prompt = systemPrompt.value;
+        currentConfig.skip_json = chkSkipJson.checked;
+        currentConfig.skip_js = chkSkipJs.checked;
+        currentConfig.skip_jar = chkSkipJar.checked;
+        currentConfig.skip_book = chkSkipBook.checked;
+        currentConfig.enable_llm_log = chkLlmLog.checked;
+
+        // 修正: 參數對齊後端
             await invoke('start_translation', {
-                path,
-                provider: apiProvider.value,
-                model: selectedModel.value,
-                apiKey: apiKey.value,
-                ollamaUrl: ollamaUrl.value,
-                batchSize: parseInt(batchSize.value),
-                batchMaxChars: parseInt(batchMaxChars.value),
-                timeout: parseInt(timeoutSec.value),
-                userPrompt: userPrompt.value,
-                systemPrompt: systemPrompt.value,
-                packFormat: parseInt(packFormat.value)
+                inputPaths: [path],
+                config: currentConfig
             });
             appendLog('✅ 任務執行指令送達後端。');
         } catch (e) {
@@ -297,6 +309,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.documentElement.style.setProperty('--btn-text', hexToColor(style.btn_text_color));
     }
     function hexToColor(arr) { if (!arr || arr.length < 3) return '#fff'; return `rgb(${arr[0]},${arr[1]},${arr[2]})`; }
+
+    // --- 🌍 6. 恢復預設參數與樣式 ---
+    const btnRestoreConfig = document.getElementById('btn-restore-config');
+    const btnRestoreStyle = document.getElementById('btn-restore-style');
+
+    if (btnRestoreConfig) {
+        btnRestoreConfig.addEventListener('click', async () => {
+            if (!confirm('確定要將參數恢復為預設值嗎？')) return;
+            try {
+                const defaultConfig = await invoke('get_default_config');
+                const currentPaths = {
+                    api_key: apiKey.value, 
+                    output_dir: document.getElementById('output-dir').value
+                };
+                currentConfig = { ...defaultConfig, ...currentPaths };
+                await invoke('save_config', { config: currentConfig });
+                appendLog('✅ 參數已恢復預設！');
+                await loadConfig();
+            } catch (e) { appendLog(`❌ 恢復參數失敗: ${e}`); }
+        });
+    }
+
+    if (btnRestoreStyle) {
+        btnRestoreStyle.addEventListener('click', async () => {
+            if (!confirm('確定要將外觀佈景恢復為預設嗎？')) return;
+            try {
+                const defaultStyle = await invoke('get_default_style_config');
+                currentStyle = defaultStyle;
+                await invoke('save_style_config', { style: currentStyle });
+                appendLog('🎨 外觀已恢復預設！');
+                await loadStyle();
+            } catch (e) { appendLog(`❌ 恢復樣式失敗: ${e}`); }
+        });
+    }
 
     await loadConfig();
     await loadStyle();

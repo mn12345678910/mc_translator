@@ -33,9 +33,13 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       commands::get_config,
       commands::save_config,
+      commands::get_default_config,
+      commands::get_api_key_cmd,
+      commands::save_api_key_cmd,
       commands::start_translation,
       commands::get_style_config,
       commands::save_style_config,
+      commands::get_default_style_config,
       commands::query_dictionary,
       commands::edit_dictionary_item,
       commands::pause_translation,

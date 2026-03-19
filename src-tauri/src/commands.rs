@@ -15,6 +15,21 @@ pub fn save_config(config: AppConfig) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn get_default_config() -> AppConfig {
+    AppConfig::default()
+}
+
+#[tauri::command]
+pub fn get_api_key_cmd() -> String {
+    mc_translator_rs::config::encryption::get_api_key().unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn save_api_key_cmd(key: String) -> Result<(), String> {
+    mc_translator_rs::config::encryption::save_api_key(&key).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn start_translation(
     handle: tauri::AppHandle,
     input_paths: Vec<String>,
@@ -67,6 +82,11 @@ pub fn get_style_config() -> StyleConfig {
 pub fn save_style_config(config: StyleConfig) -> Result<(), String> {
     config.save();
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_default_style_config() -> StyleConfig {
+    StyleConfig::default()
 }
 
 #[tauri::command]
