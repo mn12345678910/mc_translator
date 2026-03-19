@@ -148,6 +148,11 @@ pub async fn start_translation_workflow(
         config: job_config.clone(),
         i18n: i18n.clone(),
     };
+    
+    // 保存至全域，方便暫停/中止連鎖控制
+    if let Ok(mut active) = super::ACTIVE_JOB.lock() {
+        *active = Some(job_state.clone());
+    }
 
     // 5. 宣告一個背景連動監控 Logger/Progress 的任務
     let log_monitor = log_arc.clone();
@@ -207,6 +212,11 @@ pub async fn start_translation_workflow(
     // 單純推上最後一筆狀態
     let status_str = status_monitor.lock().unwrap().clone();
     logger_arc(&status_str);
+
+    // 翻譯結束或出錯，釋放全域指針
+    if let Ok(mut active) = super::ACTIVE_JOB.lock() {
+        *active = None;
+    }
 
     res.map_err(|e| format!("Pipeline 執行失敗: {}", e).into())
 }

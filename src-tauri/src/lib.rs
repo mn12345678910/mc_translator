@@ -37,7 +37,11 @@ pub fn run() {
       commands::get_style_config,
       commands::save_style_config,
       commands::query_dictionary,
-      commands::edit_dictionary_item
+      commands::edit_dictionary_item,
+      commands::pause_translation,
+      commands::resume_translation,
+      commands::stop_translation,
+      commands::open_path_dialog
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

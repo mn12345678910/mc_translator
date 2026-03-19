@@ -3,23 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft 模組翻譯工具</title>
+    <title>Minecraft 模組翻譯工具 - v0.5.1</title>
     <link rel="stylesheet" href="style.css">
     <script src="main.js" defer></script>
 </head>
 <body>
-    <h1>Minecraft 模組翻譯工具 - Tauri 畫面</h1>
+    <h1>Minecraft 模組翻譯工具 - 100% 復刻版</h1>
 
-    <!-- 翻譯控制面板 -->
+    <!-- 🎮 翻譯控制面板 -->
     <div class="control-panel">
         <div class="form-group">
             <label for="input-path">待翻譯路徑 (檔案或資料夾):</label>
-            <input type="text" id="input-path" placeholder="輸入或拖放路徑至此...">
+            <div class="input-row">
+                <input type="text" id="input-path" placeholder="輸入或拖放路徑至此...">
+                <button id="btn-browse-file" class="action-btn">📂 檔案</button>
+                <button id="btn-browse-dir" class="action-btn">📁 資料夾</button>
+            </div>
         </div>
         <div class="button-row">
             <button id="btn-translate">🚀 立即翻譯</button>
+            <button id="btn-pause" style="display: none;">⏸️ 暫停</button>
+            <button id="btn-resume" style="display: none;">▶️ 繼續</button>
+            <button id="btn-stop" style="display: none; background-color: #aa1111;">⏹️ 停止</button>
             <button id="btn-open-dict" class="secondary-btn">📖 字典管理</button>
         </div>
+    </div>
+
+    <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
+    <div class="control-panel api-settings">
+        <h2>⚙️ API 與常規參數設定</h2>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="api-provider">服務提供商</label>
+                <select id="api-provider">
+                    <option value="Gemini">Gemini (Google)</option>
+                    <option value="Ollama">Ollama (本地端)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="api-key">API 金鑰 (Gemini 適用)</label>
+                <input type="password" id="api-key" placeholder="輸入 API Key...">
+            </div>
+            <div class="form-group">
+                <label for="selected-model">模型名稱</label>
+                <select id="selected-model">
+                    <!-- 將由 JS 動態載入或靜態填入 -->
+                    <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                </select>
+            </div>
+            <div class="form-group" id="ollama-url-group" style="display: none;">
+                <label for="ollama-url">Ollama URL</label>
+                <input type="text" id="ollama-url" value="http://localhost:11434/api/generate">
+            </div>
+            <div class="form-group">
+                <label for="batch-size">單批次條目數 (Batch Size)</label>
+                <input type="number" id="batch-size" value="15" min="1" max="100">
+            </div>
+            <div class="form-group">
+                <label for="batch-max-chars">批次最大字數</label>
+                <input type="number" id="batch-max-chars" value="2000" step="100">
+            </div>
+            <div class="form-group">
+                <label for="timeout-sec">API 超時秒數</label>
+                <input type="number" id="timeout-sec" value="60" min="5">
+            </div>
+            <div class="form-group">
+                <label for="pack-format">資源包格式 (Pack Format)</label>
+                <input type="number" id="pack-format" value="15" min="1">
+            </div>
+        </div>
+        <button id="btn-save-config" style="margin-top: 15px; background-color: var(--accent-color); color: #111;">💾 儲存核心參數</button>
     </div>
 
     <!-- 🔧 開發人員選項 -->
@@ -37,24 +93,12 @@
 
     <!-- 🎨 調色盤管理面板 -->
     <div class="control-panel theme-settings">
-        <h2>🎨 調色盤管理 (深色模式)</h2>
+        <h2>🎨 調色盤管理</h2>
         <div class="palette-grid">
-            <div class="color-item">
-                <label for="color-bg">背景顏色</label>
-                <input type="color" id="color-bg" value="#1e1e23">
-            </div>
-            <div class="color-item">
-                <label for="color-text">文字顏色</label>
-                <input type="color" id="color-text" value="#e0e0e0">
-            </div>
-            <div class="color-item">
-                <label for="color-btn-bg">按鈕背景</label>
-                <input type="color" id="color-btn-bg" value="#2d2d32">
-            </div>
-            <div class="color-item">
-                <label for="color-btn-text">按鈕文字</label>
-                <input type="color" id="color-btn-text" value="#ffffff">
-            </div>
+            <div class="color-item"><label>背景顏色</label><input type="color" id="color-bg" value="#1e1e23"></div>
+            <div class="color-item"><label>文字顏色</label><input type="color" id="color-text" value="#e0e0e0"></div>
+            <div class="color-item"><label>按鈕背景</label><input type="color" id="color-btn-bg" value="#2d2d32"></div>
+            <div class="color-item"><label>按鈕文字</label><input type="color" id="color-btn-text" value="#ffffff"></div>
         </div>
         <button id="btn-save-style" style="margin-top: 15px;">💾 儲存佈景配置</button>
     </div>
@@ -62,9 +106,7 @@
     <!-- 進度與日誌面板 -->
     <div class="status-section">
         <label id="status-text">未開始</label>
-        <div id="progress-container">
-            <div id="progress-bar"></div>
-        </div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
         <div id="log-output"></div>
     </div>
 
@@ -72,9 +114,7 @@
     <dialog id="dict-dialog" class="styled-dialog">
         <div class="dialog-header">
             <h3>📖 字典管理器</h3>
-            <div class="search-bar">
-                <input type="text" id="dict-search" placeholder="🔍 搜尋術語...">
-            </div>
+            <div class="search-bar"><input type="text" id="dict-search" placeholder="🔍 搜尋術語..."></div>
             <button class="close-icon" onclick="document.getElementById('dict-dialog').close()">×</button>
         </div>
         <div class="dialog-body">
@@ -82,9 +122,7 @@
                 <button class="tab-btn active" id="tab-user">使用者詞庫</button>
                 <button class="tab-btn" id="tab-official">官方推論</button>
             </div>
-            <div class="table-container" id="dict-table-container">
-                 <!-- <table> 將由 JS 自主渲染 -->
-            </div>
+            <div class="table-container" id="dict-table-container"></div>
         </div>
         <div class="dialog-footer">
             <div class="pagination">

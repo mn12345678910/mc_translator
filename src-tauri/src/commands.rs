@@ -125,3 +125,50 @@ pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<
     save_dict(&path, &dict);
     Ok(())
 }
+
+#[tauri::command]
+pub fn pause_translation() -> Result<(), String> {
+    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+        if let Some(job) = active.as_ref() {
+            job.paused.store(true, std::sync::atomic::Ordering::SeqCst);
+            return Ok(());
+        }
+    }
+    Err("無正在執行的翻譯任務".to_string())
+}
+
+#[tauri::command]
+pub fn resume_translation() -> Result<(), String> {
+    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+        if let Some(job) = active.as_ref() {
+            job.paused.store(false, std::sync::atomic::Ordering::SeqCst);
+            job.pause_notifier.notify_one();
+            return Ok(());
+        }
+    }
+    Err("無正在執行的翻譯任務".to_string())
+}
+
+#[tauri::command]
+pub fn stop_translation() -> Result<(), String> {
+    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+        if let Some(job) = active.as_ref() {
+            job.cancelled.store(true, std::sync::atomic::Ordering::SeqCst);
+            job.pause_notifier.notify_one();
+            return Ok(());
+        }
+    }
+    Err("無正在執行的翻譯任務".to_string())
+}
+
+#[tauri::command]
+pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
+    let mut builder = rfd::FileDialog::new();
+    let path = if diag_type == "dir" {
+        builder.pick_folder()
+    } else {
+        builder.pick_file()
+    };
+
+    Ok(path.map(|p| p.to_string_lossy().to_string()))
+}

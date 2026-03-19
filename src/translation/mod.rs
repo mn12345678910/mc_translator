@@ -12,3 +12,12 @@ pub mod pipeline;
 // 向後相容：重新匯出 engine 與 api 中的所有公開 API
 pub use engine::*;
 pub use api::*;
+
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+use crate::translation::job::JobSharedState;
+
+lazy_static! {
+    /// 當前正在執行的翻譯任務狀態，用於跨指令（如暫停、終止）進行連鎖控制
+    pub static ref ACTIVE_JOB: Mutex<Option<JobSharedState>> = Mutex::new(None);
+}

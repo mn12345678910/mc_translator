@@ -307,3 +307,43 @@ tr:hover { background-color: rgba(255,255,255,0.03); }
 .secondary-btn {
     background-color: #3a3a42; color: #e0e0e0;
 }
+
+/* ⚙️ API 參數面板 Grid */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+}
+
+.input-row {
+    display: flex; gap: 8px;
+}
+
+.input-row input {
+    flex: 1;
+}
+
+.action-btn {
+    padding: 8px 12px; font-size: 0.85rem; white-space: nowrap;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--input-bg);
+    border: 1px solid #3c3c42;
+    border-radius: var(--border-radius);
+    color: #fff;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--input-bg);
+    border: 1px solid #3c3c42;
+    border-radius: var(--border-radius);
+    color: #fff;
+    box-sizing: border-box;
+}
