@@ -26,7 +26,7 @@ struct Args {
     #[arg(short = 'm', long)]
     model: Option<String>,
 
-    /// 覆蓋 API Key (.env 已存檔金鑰將優先使用，傳入將覆蓋)
+    /// 覆蓋 API Key (現有 Keyring 憑證將優先使用，傳入將覆蓋)
     #[arg(long)]
     api_key: Option<String>,
 
