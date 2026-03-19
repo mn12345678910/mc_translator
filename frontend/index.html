@@ -10,14 +10,40 @@
 <body>
     <h1>Minecraft 模組翻譯工具 - Tauri 畫面</h1>
 
+    <!-- 翻譯控制面板 -->
     <div class="control-panel">
         <div class="form-group">
             <label for="input-path">待翻譯路徑 (檔案或資料夾):</label>
             <input type="text" id="input-path" placeholder="輸入或拖放路徑至此...">
         </div>
-        <button id="btn-translate">立即翻譯</button>
+        <button id="btn-translate">🚀 立即翻譯</button>
     </div>
 
+    <!-- 🎨 調色盤管理面板 -->
+    <div class="control-panel theme-settings">
+        <h2>🎨 調色盤管理 (深色模式)</h2>
+        <div class="palette-grid">
+            <div class="color-item">
+                <label for="color-bg">背景顏色</label>
+                <input type="color" id="color-bg" value="#1e1e23">
+            </div>
+            <div class="color-item">
+                <label for="color-text">文字顏色</label>
+                <input type="color" id="color-text" value="#e0e0e0">
+            </div>
+            <div class="color-item">
+                <label for="color-btn-bg">按鈕背景</label>
+                <input type="color" id="color-btn-bg" value="#2d2d32">
+            </div>
+            <div class="color-item">
+                <label for="color-btn-text">按鈕文字</label>
+                <input type="color" id="color-btn-text" value="#ffffff">
+            </div>
+        </div>
+        <button id="btn-save-style" style="margin-top: 15px;">💾 儲存佈景配置</button>
+    </div>
+
+    <!-- 進度與日誌面板 -->
     <div class="status-section">
         <label id="status-text">未開始</label>
         <div id="progress-container">
