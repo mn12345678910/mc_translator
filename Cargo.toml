@@ -10,6 +10,7 @@ egui = "0.27"
 egui-chinese-font = "0.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"] }
+keyring = "3"
 tokio = { version = "1", features = ["full"] }
 lazy_static = "1.4.0"
 once_cell = "1"

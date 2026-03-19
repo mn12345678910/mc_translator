@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 
-use super::encryption::{decrypt_string, encrypt_string};
+use super::encryption::{get_api_key, save_api_key};
 
 pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。";
 
@@ -300,14 +300,10 @@ impl AppConfig {
 
         let mut config = Self::load_from_config_cfg();
 
-        // 覆蓋 API_KEY
-        let raw_key = std::env::var("API_KEY").unwrap_or_default();
-        let decrypted_key = if let Some(stripped) = raw_key.strip_prefix("DPAPI:") {
-            decrypt_string(stripped).unwrap_or(raw_key)
-        } else {
-            raw_key
-        };
-        config.api_key = decrypted_key;
+        // 從 Keyring 讀取 API 金鑰
+        if let Ok(key) = get_api_key() {
+            config.api_key = key;
+        }
 
         config
     }
@@ -323,16 +319,8 @@ impl AppConfig {
 
     pub fn save(&self) {
         let _ = fs::create_dir_all("settings");
-        // 1. 儲存 API_KEY 於 .env
-        let encrypted_key = if !self.api_key.is_empty() {
-            match encrypt_string(&self.api_key) {
-                Ok(enc) => format!("DPAPI:{}", enc),
-                Err(_) => self.api_key.clone(),
-            }
-        } else {
-            String::new()
-        };
-        let _ = fs::write("settings/.env", format!("API_KEY={}", encrypted_key));
+        // 1. 儲存 API_KEY 於 Keyring
+        let _ = save_api_key(&self.api_key);
 
         // 2. 儲存其餘設定於 config.cfg
         if let Ok(json) = serde_json::to_string_pretty(self) {
