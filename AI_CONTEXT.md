@@ -18,7 +18,7 @@
 - 輸出根目錄固定為 `LLMTranslator/`。
 - 只要是 JAR 來源或原本在 `assets/`/`patchouli_books/` 內的 JSON 會進入資源包暫存，再由 `LLMTranslator.zip` 輸出。
 - 非資源結構 JSON 與 JS 會以原相對路徑輸出為實體檔案。
-- `en_us.json` 會轉成目標語言檔名；Patchouli 會將 `/en_us/` 轉由目標語言路徑。
+- 來源語言 JSON 檔案（如 `en_us.json`）會依需求覆寫為目標檔名；Patchouli 會將 `/<來源語言>/` 轉為目標語言路徑。
 
 ## 術語與字典
 

@@ -21,7 +21,7 @@
 - Google Free
 
 **支援的檔案類型**
-- `.jar` (僅處理內部 `en_us.json` 與 Patchouli 手冊路徑)
+- `.jar` (支援內部來源語言 JSON 與 Patchouli 手冊路徑)
 - `.json`
 - `.js`
 
@@ -58,11 +58,11 @@
 - 只有 JAR 來源或原本已在資源結構內的 JSON 會進入資源包
 - 產出 `LLMTranslator.zip`
 - 內含 `pack.mcmeta` 與標準 `assets/<modid>/lang/<目標語言>.json`
-- Patchouli 手冊會將 `/en_us/` 轉成 `/<目標語言>/`
+- Patchouli 手冊會將 `/<來源語言>/` 轉成 `/<目標語言>/`
 
 **鏡像輸出**
 - 非資源結構的 JSON 與 JS 會以原相對路徑輸出成實體檔案
-- `en_us.json` 會依目標轉為對應語系檔名 (如 `zh_tw.json`)
+- 來源語言 JSON 會依目標轉為對應語系檔名 (如 `zh_tw.json`)
 
 ## 需求環境
 

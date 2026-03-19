@@ -9,15 +9,15 @@ use std::sync::atomic::Ordering;
 
 /// 根據介面提供規則過濾是否需要翻譯
 pub async fn translate_json_recursive(
-    en_us: &mut serde_json::Value,
-    zh_tw_base: &serde_json::Value,
+    source_value: &mut serde_json::Value,
+    target_base: &serde_json::Value,
     key_name: Option<&str>,
     _current_path: Vec<String>,
     ctx: &mut TranslationContext<'_>,
     realtime_save_info: Option<(std::path::PathBuf, String)>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut pending_items = Vec::new();
-    collect_translatable_strings(en_us, zh_tw_base, key_name, &mut pending_items, ctx);
+    collect_translatable_strings(source_value, target_base, key_name, &mut pending_items, ctx);
 
     if pending_items.is_empty() {
         ctx.total_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
@@ -252,7 +252,7 @@ pub async fn translate_json_recursive(
 
 pub fn collect_translatable_strings(
     value: &serde_json::Value,
-    zh_tw_base: &serde_json::Value,
+    target_base: &serde_json::Value,
     key_name: Option<&str>,
     pending: &mut Vec<(String, String)>,
     ctx: &TranslationContext<'_>,
@@ -277,7 +277,7 @@ pub fn collect_translatable_strings(
                 return;
             }
 
-            if let Some(existing) = zh_tw_base.as_str() {
+            if let Some(existing) = target_base.as_str() {
                 if !existing.is_empty() && existing != s {
                     let has_diff = false;
 
@@ -307,13 +307,13 @@ pub fn collect_translatable_strings(
         }
         serde_json::Value::Object(map) => {
             for (k, v) in map {
-                let next_base = zh_tw_base.get(k).unwrap_or(&serde_json::Value::Null);
+                let next_base = target_base.get(k).unwrap_or(&serde_json::Value::Null);
                 collect_translatable_strings(v, next_base, Some(k), pending, ctx);
             }
         }
         serde_json::Value::Array(arr) => {
             for (i, v) in arr.iter().enumerate() {
-                let next_base = zh_tw_base.get(i).unwrap_or(&serde_json::Value::Null);
+                let next_base = target_base.get(i).unwrap_or(&serde_json::Value::Null);
                 collect_translatable_strings(v, next_base, None, pending, ctx);
             }
         }
@@ -326,7 +326,7 @@ pub fn collect_translatable_strings(
 pub fn count_strings(
     value: &serde_json::Value,
     key_name: Option<&str>,
-    zh_tw_base: &serde_json::Value,
+    target_base: &serde_json::Value,
 ) -> usize {
     match value {
         serde_json::Value::String(_) => {
@@ -334,7 +334,7 @@ pub fn count_strings(
                 if should_skip_key(k) {
                     return 0;
                 }
-                if let Some(existing_str) = zh_tw_base.as_str() {
+                if let Some(existing_str) = target_base.as_str() {
                     if let Some(s_val) = value.as_str() {
                         if !existing_str.is_empty() && existing_str != s_val {
                             return 0;
@@ -347,7 +347,7 @@ pub fn count_strings(
         serde_json::Value::Object(map) => {
             let mut sum = 0;
             for (k, v) in map {
-                let next_base = zh_tw_base.get(k).unwrap_or(&serde_json::Value::Null);
+                let next_base = target_base.get(k).unwrap_or(&serde_json::Value::Null);
                 sum += count_strings(v, Some(k), next_base);
             }
             sum
@@ -355,7 +355,7 @@ pub fn count_strings(
         serde_json::Value::Array(arr) => {
             let mut sum = 0;
             for (i, v) in arr.iter().enumerate() {
-                let next_base = zh_tw_base.get(i).unwrap_or(&serde_json::Value::Null);
+                let next_base = target_base.get(i).unwrap_or(&serde_json::Value::Null);
                 sum += count_strings(v, None, next_base);
             }
             sum

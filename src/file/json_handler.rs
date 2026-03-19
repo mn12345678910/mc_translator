@@ -18,7 +18,8 @@ pub async fn collect_json_task(
     Box<dyn std::error::Error + Send + Sync>,
 > {
     let path_clone = path.to_path_buf();
-    let (content, en_us_value, zh_tw_value) = tokio::task::spawn_blocking(move || -> Result<(String, serde_json::Value, serde_json::Value), Box<dyn std::error::Error + Send + Sync>> {
+    let target_lang = state.config.lock().unwrap().target_lang.clone();
+    let (content, source_value, target_base) = tokio::task::spawn_blocking(move || -> Result<(String, serde_json::Value, serde_json::Value), Box<dyn std::error::Error + Send + Sync>> {
         let content = match fs::read_to_string(&path_clone) {
             Ok(c) => c,
             Err(e) => {
@@ -27,7 +28,7 @@ pub async fn collect_json_task(
                 return Err(e.into());
             }
         };
-        let en_us_value: serde_json::Value = match serde_json::from_str(&content) {
+        let source_value: serde_json::Value = match serde_json::from_str(&content) {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m", 
@@ -36,14 +37,14 @@ pub async fn collect_json_task(
             }
         };
 
-        let zh_tw_path = path_clone.with_file_name("zh_tw.json");
-        let mut zh_tw_value = serde_json::Value::Null;
-        if zh_tw_path.exists() {
-            if let Ok(existing) = fs::read_to_string(&zh_tw_path) {
-                zh_tw_value = serde_json::from_str(&existing).unwrap_or(serde_json::Value::Null);
+        let target_path = path_clone.with_file_name(format!("{}.json", target_lang));
+        let mut target_base = serde_json::Value::Null;
+        if target_path.exists() {
+            if let Ok(existing) = fs::read_to_string(&target_path) {
+                target_base = serde_json::from_str(&existing).unwrap_or(serde_json::Value::Null);
             }
         }
-        Ok((content, en_us_value, zh_tw_value))
+        Ok((content, source_value, target_base))
     }).await??;
 
     let mut pending = Vec::new();
@@ -69,7 +70,7 @@ pub async fn collect_json_task(
         i18n: &state.i18n,
     });
 
-    engine::collect_translatable_strings(&en_us_value, &zh_tw_value, None, &mut pending, &ctx);
+    engine::collect_translatable_strings(&source_value, &target_base, None, &mut pending, &ctx);
 
     let prefilled_count = ctx.prefilled.lock().unwrap().len();
     if pending.is_empty() && prefilled_count == 0 {
@@ -89,7 +90,7 @@ pub async fn collect_json_task(
     }
 
     Ok(Some((
-        FileTask::new_json(file_id, path, rel_path, content, en_us_value, zh_tw_value),
+        FileTask::new_json(file_id, path, rel_path, content, source_value, target_base),
         global_items,
     )))
 }
@@ -116,22 +117,25 @@ pub async fn apply_json_task(
         return Ok(FileStatus::Skipped(task.rel_path.clone()));
     }
 
-    let final_zh_tw_content =
+    let final_content =
         crate::utils::text_processing::sync_formatting(&task.original_content, &translations_map);
 
-    let actual_output_dir = {
+    let (source_lang, target_lang, actual_output_dir) = {
         let cfg = config.lock().unwrap();
-        if cfg.output_dir.is_empty() {
+        let dir = if cfg.output_dir.is_empty() {
             "./LLMTranslator".to_string()
         } else {
             let p = std::path::Path::new(&cfg.output_dir).join("LLMTranslator");
             let _ = std::fs::create_dir_all(&p);
             p.to_string_lossy().to_string()
-        }
+        };
+        (cfg.source_lang.clone(), cfg.target_lang.clone(), dir)
     };
 
-    let final_rel_path = if task.rel_path.ends_with("en_us.json") {
-        task.rel_path.replace("en_us.json", "zh_tw.json")
+    let src_suffix = format!("{}.json", source_lang);
+    let tgt_suffix = format!("{}.json", target_lang);
+    let final_rel_path = if task.rel_path.ends_with(&src_suffix) {
+        task.rel_path.replace(&src_suffix, &tgt_suffix)
     } else {
         task.rel_path.clone()
     };
@@ -141,6 +145,6 @@ pub async fn apply_json_task(
         let _ = std::fs::create_dir_all(parent);
     }
 
-    tokio::fs::write(&fs_path, &final_zh_tw_content).await?;
+    tokio::fs::write(&fs_path, &final_content).await?;
     Ok(FileStatus::Completed(final_rel_path))
 }

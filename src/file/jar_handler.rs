@@ -18,7 +18,10 @@ pub async fn collect_jar_tasks(
     Box<dyn std::error::Error + Send + Sync>,
 > {
     let path_clone = path.to_path_buf();
-    let skip_book = state.config.lock().unwrap().skip_book;
+    let (source_lang, target_lang, skip_book) = {
+        let cfg = state.config.lock().unwrap();
+        (cfg.source_lang.clone(), cfg.target_lang.clone(), cfg.skip_book)
+    };
 
     type JarTaskData = (String, serde_json::Value, String, serde_json::Value);
     let tasks_data = tokio::task::spawn_blocking(
@@ -26,6 +29,10 @@ pub async fn collect_jar_tasks(
             let file = fs::File::open(&path_clone)?;
             let mut archive = zip::ZipArchive::new(file)?;
             let mut entries = Vec::new();
+            
+            let src_suffix = format!("{}.json", source_lang);
+            let src_dir = format!("/{}/", source_lang);
+
             for i in 0..archive.len() {
                 let (is_target, name, content) = {
                     let mut f = match archive.by_index(i) {
@@ -37,11 +44,11 @@ pub async fn collect_jar_tasks(
                         }
                     };
                     let name = f.name().to_string();
-                    let is_book = name.contains("patchouli_books") && name.contains("en_us");
-                    let is_en_us = (name.ends_with("en_us.json")
-                        || (name.contains("/en_us/") && name.ends_with(".json")))
+                    let is_book = name.contains("patchouli_books") && name.contains(&format!("/{}", source_lang));
+                    let is_source = (name.ends_with(&src_suffix)
+                        || (name.contains(&src_dir) && name.ends_with(".json")))
                         && name.ends_with(".json");
-                    let is_target = is_en_us && !(is_book && skip_book);
+                    let is_target = is_source && !(is_book && skip_book);
                     let mut content = String::new();
                     if is_target {
                         if let Err(e) = f.read_to_string(&mut content) {
@@ -54,20 +61,20 @@ pub async fn collect_jar_tasks(
 
                 if is_target {
                     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) {
-                        let zh_tw_name = if name.contains("patchouli_books/") {
-                            name.replace("/en_us/", "/zh_tw/")
+                        let target_name = if name.contains("patchouli_books/") {
+                            name.replace(&format!("/{}/", source_lang), &format!("/{}/", target_lang))
                         } else {
-                            name.replace("en_us.json", "zh_tw.json")
+                            name.replace(&src_suffix, &format!("{}.json", target_lang))
                         };
-                        let mut zh_tw_value = serde_json::Value::Null;
-                        if let Ok(mut zh_f) = archive.by_name(&zh_tw_name) {
+                        let mut target_base = serde_json::Value::Null;
+                        if let Ok(mut zh_f) = archive.by_name(&target_name) {
                             let mut zh_c = String::new();
                             if zh_f.read_to_string(&mut zh_c).is_ok() {
-                                zh_tw_value =
+                                target_base =
                                     serde_json::from_str(&zh_c).unwrap_or(serde_json::Value::Null);
                             }
                         }
-                        entries.push((name, value, content, zh_tw_value));
+                        entries.push((name, value, content, target_base));
 
                         // 移除此處的多餘遞增，由 pipeline 統一計算
                     }
@@ -85,7 +92,7 @@ pub async fn collect_jar_tasks(
         &HashMap::new(),
     ));
 
-    for (idx, (name, en_us, content, zh_tw)) in tasks_data.into_iter().enumerate() {
+    for (idx, (name, source_value, content, target_base)) in tasks_data.into_iter().enumerate() {
         let file_id = start_file_id + idx;
         let mut pending = Vec::new();
         let empty_map = HashMap::new();
@@ -108,7 +115,7 @@ pub async fn collect_jar_tasks(
             filename: name.clone(),
         });
 
-        engine::collect_translatable_strings(&en_us, &zh_tw, None, &mut pending, &ctx);
+        engine::collect_translatable_strings(&source_value, &target_base, None, &mut pending, &ctx);
         let prefilled_count = ctx.prefilled.lock().unwrap().len();
         if !pending.is_empty() || prefilled_count > 0 {
             for (orig, key) in pending {
@@ -125,8 +132,8 @@ pub async fn collect_jar_tasks(
                 path,
                 name.clone(),
                 content,
-                en_us,
-                zh_tw,
+                source_value,
+                target_base,
             ));
         }
     }
@@ -149,7 +156,7 @@ pub fn repack_jar(
     source_path: &Path,
     target_path: &Path,
     translated_files: &HashMap<String, String>, // 現在直接接收記憶體中的翻譯內容
-    _config: &crate::translation::job::JobConfig,
+    config: &crate::translation::job::JobConfig,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if translated_files.is_empty() {
         return Ok(());
@@ -169,13 +176,18 @@ pub fn repack_jar(
         let zip_in_file = fs::File::open(source_path)?;
         let mut zip_in = zip::ZipArchive::new(zip_in_file)?;
 
+        let src_book_match = format!("/{}", config.source_lang);
+        let tgt_book_replace = format!("/{}", config.target_lang);
+        let src_suffix = format!("{}.json", config.source_lang);
+        let tgt_suffix = format!("{}.json", config.target_lang);
+
         // 1. 建立目標檔案名稱集 (支援標準與 Patchouli 手冊路徑)
         let mut target_names = std::collections::HashSet::new();
         for name in translated_files.keys() {
             let actual_name = if name.contains("patchouli_books/") {
-                name.replace("/en_us/", "/zh_tw/")
-            } else if name.ends_with("en_us.json") {
-                name.replace("en_us.json", "zh_tw.json")
+                name.replace(&src_book_match, &tgt_book_replace)
+            } else if name.ends_with(&src_suffix) {
+                name.replace(&src_suffix, &tgt_suffix)
             } else {
                 name.clone()
             };
@@ -204,9 +216,9 @@ pub fn repack_jar(
         // 3. 寫入新的翻譯內容
         for (name, content) in translated_files {
             let actual_name = if name.contains("patchouli_books/") {
-                name.replace("/en_us/", "/zh_tw/")
-            } else if name.ends_with("en_us.json") {
-                name.replace("en_us.json", "zh_tw.json")
+                name.replace(&src_book_match, &tgt_book_replace)
+            } else if name.ends_with(&src_suffix) {
+                name.replace(&src_suffix, &tgt_suffix)
             } else {
                 name.clone()
             };

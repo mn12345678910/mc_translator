@@ -27,8 +27,8 @@ pub struct FileTask {
     pub path: std::path::PathBuf,
     pub rel_path: String,
     pub original_content: String,
-    pub en_us_value: Option<serde_json::Value>,
-    pub zh_tw_base: Option<serde_json::Value>,
+    pub source_value: Option<serde_json::Value>,
+    pub target_base: Option<serde_json::Value>,
     pub js_matches: Vec<(usize, usize, String, usize)>,
 }
 
@@ -38,16 +38,16 @@ impl FileTask {
         path: &Path,
         rel_path: String,
         original_content: String,
-        en_us_value: serde_json::Value,
-        zh_tw_base: serde_json::Value,
+        source_value: serde_json::Value,
+        target_base: serde_json::Value,
     ) -> Self {
         Self {
             file_id,
             path: path.to_path_buf(),
             rel_path,
             original_content,
-            en_us_value: Some(en_us_value),
-            zh_tw_base: Some(zh_tw_base),
+            source_value: Some(source_value),
+            target_base: Some(target_base),
             js_matches: Vec::new(),
         }
     }
@@ -64,8 +64,8 @@ impl FileTask {
             path: path.to_path_buf(),
             rel_path,
             original_content,
-            en_us_value: None,
-            zh_tw_base: None,
+            source_value: None,
+            target_base: None,
             js_matches,
         }
     }
@@ -320,7 +320,7 @@ fn get_translated_content_for_task(task: &FileTask, items: &[GlobalBatchItem]) -
         }
     }
 
-    if task.en_us_value.is_some() {
+    if task.source_value.is_some() {
         sync_formatting(&task.original_content, &local_map)
     } else {
         let mut replacements = Vec::new();

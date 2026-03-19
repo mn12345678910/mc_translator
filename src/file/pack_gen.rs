@@ -41,8 +41,11 @@ pub fn write_to_temp_or_output(
         let name_unix = clean_name.replace('\\', "/");
         let is_json = name_unix.ends_with(".json");
 
-        let mut final_path = if is_json && name_unix.ends_with("en_us.json") {
-            name_unix.replace("en_us.json", "zh_tw.json")
+        let src_suffix = format!("{}.json", config.source_lang);
+        let tgt_suffix = format!("{}.json", config.target_lang);
+
+        let mut final_path = if is_json && name_unix.ends_with(&src_suffix) {
+            name_unix.replace(&src_suffix, &tgt_suffix)
         } else {
             name_unix.clone()
         };
@@ -56,22 +59,23 @@ pub fn write_to_temp_or_output(
             let path_obj = Path::new(&clean_name);
             if let (Some(parent), Some(fname)) = (path_obj.parent(), path_obj.file_name()) {
                 let fname_str = fname.to_string_lossy();
-                let target_fname = if fname_str == "en_us.json" {
-                    "zh_tw.json"
+                let target_fname_owned = if fname_str == src_suffix {
+                    tgt_suffix.clone()
                 } else {
-                    &fname_str
+                    fname_str.to_string()
                 };
 
                 if let Some(modid) = parent.file_name() {
                     final_path =
-                        format!("assets/{}/lang/{}", modid.to_string_lossy(), target_fname);
+                        format!("assets/{}/lang/{}", modid.to_string_lossy(), target_fname_owned);
                 } else {
-                    final_path = format!("assets/unknown/lang/{}", target_fname);
+                    final_path = format!("assets/unknown/lang/{}", target_fname_owned);
                 }
             } else {
-                let fname = name_unix.split('/').next_back().unwrap_or("zh_tw.json");
-                let target_fname = if fname == "en_us.json" {
-                    "zh_tw.json"
+                let default_tgt = format!("{}.json", config.target_lang);
+                let fname = name_unix.split('/').next_back().unwrap_or(&default_tgt);
+                let target_fname = if fname == src_suffix {
+                    &tgt_suffix
                 } else {
                     fname
                 };
@@ -81,12 +85,14 @@ pub fn write_to_temp_or_output(
 
         // 2. 語法/手冊路徑調整 (僅針對 JSON)
         if is_json {
+            let src_book_match = format!("/{}", config.source_lang);
+            let tgt_book_replace = format!("/{}", config.target_lang);
             if final_path.contains("patchouli_books/") {
-                final_path = final_path.replace("/en_us/", "/zh_tw/");
+                final_path = final_path.replace(&src_book_match, &tgt_book_replace);
             } else if let Some(pos) = final_path.rfind('/') {
                 let dir = &final_path[..=pos];
                 if dir.ends_with("lang/") {
-                    final_path = format!("{}zh_tw.json", dir);
+                    final_path = format!("{}{}.json", dir, config.target_lang);
                 }
             }
         }
