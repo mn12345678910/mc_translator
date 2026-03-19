@@ -31,7 +31,7 @@ stateDiagram-v2
 
 ```mermaid
 graph LR
-    subgraph UI_Thread ["UI 主執行緒 (egui)"]
+    subgraph UI_Thread ["UI 主執行緒 (Tauri 前端)"]
         A[Render Loop] --> B{讀取狀態}
         B -- Atomic --> C["讀取 進度/狀態"]
         B -- Mutex --> D["讀取 紀錄日誌"]
@@ -60,7 +60,7 @@ graph LR
 ## 持久化策略
 
 - `settings/config.cfg` 儲存主要設定。
-- `settings/.env` 儲存 `API_KEY`，並以 DPAPI 加密。
+- 通過系統憑證鏈 (Keyring) 儲存 `API_KEY`。
 - `settings/style.cfg` 儲存外觀樣式設定。
 - 主視窗與字典管理器視窗會在幾何變動時即時同步並儲存。
 - `on_exit` 會觸發保存，避免異常關閉時遺失設定。

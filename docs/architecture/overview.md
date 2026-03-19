@@ -6,10 +6,9 @@
 
 ## 核心模組
 
-- `src/ui/`：GUI 與互動行為 (egui)
+- `src-tauri/`：Tauri 後端與前端互動
 - `src/cli/`：CLI 介面與互動選單設計 (dialoguer, clap)
-- `src/state/`：應用狀態、任務控制、持久化
-- `src/translation/`：LLM 介接、術語提示，以及共通管線控制 (`pipeline.rs`)
+- `src/translation/`：共享狀態控制 (`job.rs`)、LLM 介接、術語提示，以及共通管線控制 (`pipeline.rs`)
 - `src/file/`：檔案掃描、JAR/JSON/JS 處理、輸出封裝
 - `src/config/`：設定檔與字典存取
 - `src/utils/`：文字處理、跳過規則、日誌輔助
