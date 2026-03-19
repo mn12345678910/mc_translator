@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             timeoutSec.value = config.timeout || 60;
             packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
             uiLang.value = config.ui_lang || 'zh_tw';
+            outputDir.value = config.output_dir || ''; // [SYNC]
 
             systemPrompt.value = config.system_prompt || '';
             userPrompt.value = config.user_prompt || '';
@@ -98,15 +99,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             chkSkipBook.checked = config.skip_book || false;
             chkLlmLog.checked = config.enable_llm_log || false;
 
+            // 🛠️ 控制面板切換 [NEW]
+            document.querySelector('.api-settings').style.display = config.show_api_settings ? 'block' : 'none';
+            document.querySelector('.developer-settings').style.display = config.show_developer_mode ? 'block' : 'none';
+
             toggleOllamaGroup();
             await loadModels();
             if (config.model) {
                 selectedModel.value = config.model;
             }
+            // 🌍 動態更新語言
+            updateUiLanguage();
         } catch (e) {
             appendLog(`❌ 載入配置失敗: ${e}`);
         }
     }
+
 
     async function saveConfig() {
         try {
@@ -120,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentConfig.timeout = parseInt(timeoutSec.value);
             currentConfig.pack_format = parseInt(packFormat.value);
             currentConfig.ui_lang = uiLang.value;
+            currentConfig.output_dir = outputDir.value; // [SYNC]
 
             currentConfig.system_prompt = systemPrompt.value;
             currentConfig.user_prompt = userPrompt.value;
@@ -132,10 +141,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             await invoke('save_config', { config: currentConfig });
             appendLog('✅ 核心參數儲存成功！');
+            updateUiLanguage(); // [NEW] 儲存後也重新整理語言
         } catch (e) {
             appendLog(`❌ 儲存配置失敗: ${e}`);
         }
     }
+
 
     // --- 🎨 3. 調色盤與字體縮放 ---
     async function loadStyle() {
@@ -143,10 +154,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const style = await invoke('get_style_config');
             currentStyle = style;
 
-            colorBg.value = rgbToHex(style.bg_color);
-            colorText.value = rgbToHex(style.text_color);
-            colorBtnBg.value = rgbToHex(style.btn_bg_color);
-            colorBtnText.value = rgbToHex(style.btn_text_color);
+            const isDark = style.theme !== 'light';
+            colorBg.value = rgbToHex(isDark ? style.dark_bg : style.light_bg);
+            colorText.value = rgbToHex(isDark ? style.dark_text : style.light_text);
+            colorBtnBg.value = rgbToHex(isDark ? style.dark_btn_bg : style.light_btn_bg);
+            colorBtnText.value = rgbToHex(isDark ? style.dark_btn_text : style.light_btn_text);
+            
             if (style.font_size) {
                 fontSize.value = style.font_size;
                 document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
@@ -158,12 +171,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+
     async function saveStyle() {
         try {
-            currentStyle.bg_color = hexToRgb(colorBg.value);
-            currentStyle.text_color = hexToRgb(colorText.value);
-            currentStyle.btn_bg_color = hexToRgb(colorBtnBg.value);
-            currentStyle.btn_text_color = hexToRgb(colorBtnText.value);
+            const isDark = currentStyle.theme !== 'light';
+            const rgb = hexToRgb(colorBg.value);
+            if (isDark) currentStyle.dark_bg = rgb; else currentStyle.light_bg = rgb;
+            const txt = hexToRgb(colorText.value);
+            if (isDark) currentStyle.dark_text = txt; else currentStyle.light_text = txt;
+            const bbg = hexToRgb(colorBtnBg.value);
+            if (isDark) currentStyle.dark_btn_bg = bbg; else currentStyle.light_btn_bg = bbg;
+            const btxt = hexToRgb(colorBtnText.value);
+            if (isDark) currentStyle.dark_btn_text = btxt; else currentStyle.light_btn_text = btxt;
+
             currentStyle.font_size = parseFloat(fontSize.value);
 
             await invoke('save_style_config', { style: currentStyle });
@@ -174,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             appendLog(`❌ 保存樣式失敗: ${e}`);
         }
     }
+
 
     // --- 🎮 4. 面板熔斷鎖狀態機 ---
     function setRunningState(isRunning) {
@@ -302,12 +323,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     function rgbToHex(arr) { if (!arr || arr.length < 3) return '#333333'; return '#' + arr.map(x => x.toString(16).padStart(2, '0')).join(''); }
     function hexToRgb(hex) { const bigint = parseInt(hex.slice(1), 16); return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255]; }
     function applyColors(style) {
-        const rgb = style.bg_color;
-        document.documentElement.style.setProperty('--bg-color', `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`);
-        document.documentElement.style.setProperty('--text-color', hexToColor(style.text_color));
-        document.documentElement.style.setProperty('--btn-bg', hexToColor(style.btn_bg_color));
-        document.documentElement.style.setProperty('--btn-text', hexToColor(style.btn_text_color));
+        const isDark = style.theme !== 'light';
+        const bg = isDark ? style.dark_bg : style.light_bg;
+        const txt = isDark ? style.dark_text : style.light_text;
+        const btnBg = isDark ? style.dark_btn_bg : style.light_btn_bg;
+        const btnTxt = isDark ? style.dark_btn_text : style.light_btn_text;
+
+        if (bg) document.documentElement.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
+        if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
+        if (btnBg) document.documentElement.style.setProperty('--btn-bg', `rgb(${btnBg[0]},${btnBg[1]},${btnBg[2]})`);
+        if (btnTxt) document.documentElement.style.setProperty('--btn-text', `rgb(${btnTxt[0]},${btnTxt[1]},${btnTxt[2]})`);
     }
+
     function hexToColor(arr) { if (!arr || arr.length < 3) return '#fff'; return `rgb(${arr[0]},${arr[1]},${arr[2]})`; }
 
     // --- 🌍 6. 恢復預設參數與樣式 ---
@@ -343,6 +370,109 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (e) { appendLog(`❌ 恢復樣式失敗: ${e}`); }
         });
     }
+
+    // --- 📖 7. 字典管理器控制 ---
+    const dictDialog = document.getElementById('dict-dialog');
+    if (dictDialog && btnOpenDict) {
+        const tabUser = document.getElementById('tab-user');
+        const tabOfficial = document.getElementById('tab-official');
+        const dictSearch = document.getElementById('dict-search');
+        const dictTableContainer = document.getElementById('dict-table-container');
+        const pagePrev = document.getElementById('page-prev');
+        const pageNext = document.getElementById('page-next');
+        const pageInfo = document.getElementById('page-info');
+
+        let dictPage = 0;
+        let dictPageSize = 10;
+        let dictType = 'user';
+
+        btnOpenDict.addEventListener('click', () => {
+            dictPage = 0;
+            dictDialog.showModal();
+            loadDictionary();
+        });
+
+        if (tabUser) tabUser.addEventListener('click', () => { dictType = 'user'; tabUser.classList.add('active'); if(tabOfficial) tabOfficial.classList.remove('active'); dictPage = 0; loadDictionary(); });
+        if (tabOfficial) tabOfficial.addEventListener('click', () => { dictType = 'official'; tabOfficial.classList.add('active'); if(tabUser) tabUser.classList.remove('active'); dictPage = 0; loadDictionary(); });
+        if (dictSearch) dictSearch.addEventListener('input', () => { dictPage = 0; loadDictionary(); });
+        if (pagePrev) pagePrev.addEventListener('click', () => { if (dictPage > 0) { dictPage--; loadDictionary(); } });
+        if (pageNext) pageNext.addEventListener('click', () => { dictPage++; loadDictionary(); });
+
+        async function loadDictionary() {
+            try {
+                const [items, totalPages] = await invoke('query_dictionary', {
+                    dictType: dictType, page: dictPage, pageSize: dictPageSize, searchKey: dictSearch ? dictSearch.value.trim() : ''
+                });
+
+                if (pageInfo) pageInfo.textContent = `第 ${dictPage + 1} / ${totalPages || 1} 頁`;
+                if (pagePrev) pagePrev.disabled = dictPage === 0;
+                if (pageNext) pageNext.disabled = totalPages === 0 || dictPage + 1 >= totalPages;
+
+                let html = '<table class="dict-table"><thead><tr><th>原文 (Key)</th><th>翻譯 (Value)</th><th>操作</th></tr></thead><tbody>';
+                if (!items || items.length === 0) { html += '<tr><td colspan="3" style="text-align:center;">無結果</td></tr>'; }
+                else {
+                    items.forEach(([k, v]) => {
+                        const safeK = k.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+                        html += `<tr>
+                            <td>${k}</td>
+                            <td><input type="text" value="${v}" id="dict-val-${safeK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
+                            <td>
+                                <button class="small-btn save-item" data-key="${safeK}" style="padding:4px 8px;">💾</button>
+                                ${dictType === 'user' ? `<button class="small-btn delete-item" data-key="${safeK}" style="background-color:#aa1111; color:#fff; padding:4px 8px;">🗑</button>` : ''}
+                            </td>
+                        </tr>`;
+                    });
+                }
+                html += '</tbody></table>';
+                dictTableContainer.innerHTML = html;
+
+                document.querySelectorAll('.save-item').forEach(b => b.addEventListener('click', async (e) => {
+                    const key = e.currentTarget.getAttribute('data-key');
+                    const val = document.getElementById(`dict-val-${key}`).value;
+                    await invoke('edit_dictionary_item', { key: key, value: val, delete: false });
+                    appendLog(`📖 字典更新：${key}`); loadDictionary();
+                }));
+
+                document.querySelectorAll('.delete-item').forEach(b => b.addEventListener('click', async (e) => {
+                    const key = e.currentTarget.getAttribute('data-key');
+                    if (confirm(`確定刪除條目 ${key} 嗎？`)) {
+                        await invoke('edit_dictionary_item', { key: key, value: '', delete: true });
+                        loadDictionary();
+                    }
+                }));
+            } catch (e) { appendLog(`❌ 載入字典失敗: ${e}`); }
+        }
+    }
+
+    // --- 🌍 8. 前端 i18n 動態更新 ---
+    async function updateUiLanguage() {
+        try {
+            const labels = await invoke('get_i18n_labels');
+            const labelMap = {
+                'btn-translate': labels.btn_run_trans,
+                'btn-pause': labels.btn_pause,
+                'btn-resume': labels.btn_resume,
+                'btn-stop': labels.btn_stop,
+                'btn-open-dict': labels.btn_nav_dict,
+                'btn-save-config': labels.btn_save_config || '💾 儲存核心參數',
+                'btn-restore-config': labels.btn_restore_defaults,
+                'btn-save-style': labels.btn_save_style || '💾 儲存佈景配置',
+                'btn-restore-style': labels.btn_restore_defaults,
+            };
+            for (const [id, text] of Object.entries(labelMap)) {
+                const el = document.getElementById(id);
+                if (el && text) el.textContent = text;
+            }
+        } catch (e) { console.error('更新介面語言失敗', e); }
+    }
+    
+    if (uiLang) {
+        uiLang.addEventListener('change', async () => {
+             await saveConfig();
+             await updateUiLanguage();
+        });
+    }
+
 
     await loadConfig();
     await loadStyle();

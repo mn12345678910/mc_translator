@@ -4,6 +4,107 @@ use std::collections::HashMap;
 use tauri::Emitter;
 
 #[tauri::command]
+pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, String> {
+    let api_key = mc_translator_rs::config::encryption::get_api_key().unwrap_or_default();
+    let client = reqwest::Client::new();
+
+    match provider.as_str() {
+        "Ollama" => {
+            let config = AppConfig::load();
+            let url = format!("{}/api/tags", config.ollama_url.trim_end_matches('/'));
+            if let Ok(resp) = client.get(&url).send().await {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
+                        let mut names = Vec::new();
+                        for m in models {
+                            if let Some(n) = m.get("name").and_then(|n| n.as_str()) {
+                                names.push(n.to_string());
+                            }
+                        }
+                        if !names.is_empty() { return Ok(names); }
+                    }
+                }
+            }
+            Ok(vec!["llama3:latest".to_string(), "mistral:latest".to_string()])
+        }
+        "Gemini" => {
+            if api_key.is_empty() {
+                return Ok(vec!["gemini-2.5-flash".to_string(), "gemini-2.5-pro".to_string(), "gemini-2.0-flash".to_string()]);
+            }
+            let url = format!("https://generativelanguage.googleapis.com/v1beta/models?key={}", api_key);
+            if let Ok(resp) = client.get(&url).send().await {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
+                        let mut names = Vec::new();
+                        for m in models {
+                            if let Some(n) = m.get("name").and_then(|n| n.as_str()) {
+                                if n.contains("gemini") {
+                                    names.push(n.trim_start_matches("models/").to_string());
+                                }
+                            }
+                        }
+                        if !names.is_empty() { return Ok(names); }
+                    }
+                }
+            }
+            Ok(vec!["gemini-2.5-flash".to_string(), "gemini-2.5-pro".to_string()])
+        }
+        "OpenAI" => {
+            if api_key.is_empty() {
+                return Ok(vec!["gpt-4o".to_string(), "gpt-4o-mini".to_string()]);
+            }
+            if let Ok(resp) = client.get("https://api.openai.com/v1/models")
+                .header("Authorization", format!("Bearer {}", api_key))
+                .send().await {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
+                        let mut names = Vec::new();
+                        for m in models {
+                            if let Some(n) = m.get("id").and_then(|n| n.as_str()) {
+                                if n.starts_with("gpt-") {
+                                    names.push(n.to_string());
+                                }
+                            }
+                        }
+                        names.sort();
+                        if !names.is_empty() { return Ok(names); }
+                    }
+                }
+            }
+            Ok(vec!["gpt-4o".to_string(), "gpt-4o-mini".to_string()])
+        }
+        "DeepSeek" => {
+            if api_key.is_empty() {
+                return Ok(vec!["deepseek-chat".to_string(), "deepseek-reasoner".to_string()]);
+            }
+            if let Ok(resp) = client.get("https://api.deepseek.com/models")
+                .header("Authorization", format!("Bearer {}", api_key))
+                .send().await {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
+                        let mut names = Vec::new();
+                        for m in models {
+                            if let Some(n) = m.get("id").and_then(|n| n.as_str()) {
+                                names.push(n.to_string());
+                            }
+                        }
+                        if !names.is_empty() { return Ok(names); }
+                    }
+                }
+            }
+            Ok(vec!["deepseek-chat".to_string(), "deepseek-reasoner".to_string()])
+        }
+        _ => Ok(vec![]),
+    }
+}
+
+#[tauri::command]
+pub fn get_i18n_labels() -> mc_translator_rs::ui::i18n::I18nLabels {
+    let config = AppConfig::load();
+    mc_translator_rs::ui::i18n::I18nLabels::load_or_default(&config.ui_lang)
+}
+
+#[tauri::command]
 pub fn get_config() -> AppConfig {
     AppConfig::load()
 }
@@ -53,25 +154,39 @@ pub async fn start_translation(
     // 定義日誌 Callback
     let handle_log = handle.clone();
     let logger = move |msg: &str| {
-        let _ = handle_log.emit("log_event", msg.to_string());
+        let _ = handle_log.emit("translation-log", msg.to_string());
     };
 
     // 定義進度 Callback
     let handle_progress = handle.clone();
-    let progress_updater = move |ratio: f32, status: &str| {
-        let _ = handle_progress.emit("progress_event", (ratio, status.to_string()));
+    let progress_updater = move |current: f32, total: f32, status: &str| {
+        let payload = serde_json::json!({
+            "current": current as u32,
+            "total": total as u32,
+            "status": status.to_string()
+        });
+        let _ = handle_progress.emit("translation-progress", payload);
     };
 
     // 啟動工作流
-    mc_translator_rs::translation::pipeline::start_translation_workflow(
+    let res = mc_translator_rs::translation::pipeline::start_translation_workflow(
         config,
         paths,
         logger,
         progress_updater,
     )
-    .await
-    .map_err(|e| e.to_string())
+    .await;
+
+    // 發送完成與狀態更新
+    let status_msg = match &res {
+        Ok(_) => "任務完成 (Finished)",
+        Err(e) => return Err(e.to_string()),
+    };
+    let _ = handle.emit("translation-status", status_msg.to_string());
+
+    Ok(())
 }
+
 
 #[tauri::command]
 pub fn get_style_config() -> StyleConfig {

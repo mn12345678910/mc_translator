@@ -64,8 +64,9 @@ pub async fn start_translation_workflow(
     config: AppConfig,
     input_paths: Vec<(PathBuf, String)>,
     logger: impl Fn(&str) + Send + Sync + 'static,
-    progress_updater: impl Fn(f32, &str) + Send + Sync + 'static,
+    progress_updater: impl Fn(f32, f32, &str) + Send + Sync + 'static,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+
     let logger_arc = Arc::new(logger);
     let progress_arc = Arc::new(progress_updater);
 
@@ -188,8 +189,9 @@ pub async fn start_translation_workflow(
             let total_g = f32::from_bits(global_total_monitor_c.load(Ordering::SeqCst));
             if total_g > 0.0 {
                 let status_str = status_monitor_c.lock().unwrap().clone();
-                progress_clone(current_g / total_g, &status_str);
+                progress_clone(current_g, total_g, &status_str);
             }
+
 
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         }

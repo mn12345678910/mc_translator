@@ -408,7 +408,8 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         }
     };
 
-    let progress_updater = |pct: f32, status: &str| {
+    let progress_updater = |current: f32, total: f32, status: &str| {
+        let pct = if total > 0.0 { current / total } else { 0.0 };
         let bar_len = 25;
         let filled = (pct * bar_len as f32).max(0.0) as usize;
         let filled = filled.min(bar_len);
@@ -416,6 +417,7 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         print!("\r\x1B[K[{}] {:.0}% | {}", bar, (pct * 100.0).clamp(0.0, 100.0), status);
         let _ = std::io::stdout().flush();
     };
+
 
     let res = start_translation_workflow(
         config,

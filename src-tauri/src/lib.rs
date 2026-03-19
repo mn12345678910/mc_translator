@@ -12,10 +12,16 @@ pub fn run() {
         )?;
       }
 
-      // 主畫面置中功能 (手動計算，支援多螢幕)
+      // 讀取視窗幾何記錄並應用
       use tauri::Manager;
+      use mc_translator_rs::config::AppConfig;
+
       if let Some(window) = app.get_webview_window("main") {
-          if let Ok(Some(monitor)) = window.current_monitor() {
+          let config = AppConfig::load();
+          if config.main_width > 200.0 && config.main_height > 200.0 {
+              let _ = window.set_size(tauri::PhysicalSize::new(config.main_width as u32, config.main_height as u32));
+              let _ = window.set_position(tauri::PhysicalPosition::new(config.main_x as i32, config.main_y as i32));
+          } else if let Ok(Some(monitor)) = window.current_monitor() {
               let monitor_size = monitor.size();
               let monitor_pos = monitor.position();
               
@@ -26,7 +32,25 @@ pub fn run() {
                   let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
               }
           }
+
+          // 監聽視窗關閉事件並回寫座標與尺寸
+          let window_clone = window.clone();
+          window.on_window_event(move |event| {
+              if let tauri::WindowEvent::CloseRequested { .. } = event {
+                  if let Ok(pos) = window_clone.outer_position() {
+                      if let Ok(size) = window_clone.outer_size() {
+                          let mut config = AppConfig::load();
+                          config.main_x = pos.x as f32;
+                          config.main_y = pos.y as f32;
+                          config.main_width = size.width as f32;
+                          config.main_height = size.height as f32;
+                          config.save();
+                      }
+                  }
+              }
+          });
       }
+
 
       Ok(())
     })
@@ -37,6 +61,8 @@ pub fn run() {
       commands::get_api_key_cmd,
       commands::save_api_key_cmd,
       commands::start_translation,
+      commands::get_models_from_provider,
+      commands::get_i18n_labels,
       commands::get_style_config,
       commands::save_style_config,
       commands::get_default_style_config,
@@ -47,6 +73,7 @@ pub fn run() {
       commands::stop_translation,
       commands::open_path_dialog,
       commands::get_available_langs
+
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
