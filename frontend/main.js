@@ -16,7 +16,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     const colorBtnText = document.getElementById('color-btn-text');
     const btnSaveStyle = document.getElementById('btn-save-style');
 
-    // --- 輔助函式 ---
+    // 🔧 開發者模式 Checkboxes
+    const chkSkipJson = document.getElementById('chk-skip-json');
+    const chkSkipJs = document.getElementById('chk-skip-js');
+    const chkSkipJar = document.getElementById('chk-skip-jar');
+    const chkSkipBook = document.getElementById('chk-skip-book');
+    const chkLlmLog = document.getElementById('chk-llm-log');
+
+    // 📖 字典管理器彈窗
+    const btnOpenDict = document.getElementById('btn-open-dict');
+    const dictDialog = document.getElementById('dict-dialog');
+    const dictSearch = document.getElementById('dict-search');
+    const tabUser = document.getElementById('tab-user');
+    const tabOfficial = document.getElementById('tab-official');
+    const dictTableContainer = document.getElementById('dict-table-container');
+    const pagePrev = document.getElementById('page-prev');
+    const pageNext = document.getElementById('page-next');
+    const pageInfo = document.getElementById('page-info');
+
+    // --- 全域狀態 ---
+    let currentConfig = {};
+    let currentStyle = {};
+    let dictType = 'user'; // 'user' | 'official'
+    let dictPage = 0;
+    const dictPageSize = 25; // 彈窗每頁行數限制
+    let debounceTimer = null;
+
     const rgbToHex = ([r, g, b]) => "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
     const hexToRgb = (hex) => [
         parseInt(hex.slice(1, 3), 16),
@@ -24,36 +49,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         parseInt(hex.slice(5, 7), 16)
     ];
 
-    let currentStyle = {};
-
-    // 1. 載入並套用 StyleConfig
+    // 1. 載入並套用 Config 們
     try {
         currentStyle = await invoke('get_style_config');
-        console.log("載入樣式設定:", currentStyle);
-        
-        // 設定選色器對應預設值 (假設目前調整深色模式)
+        currentConfig = await invoke('get_config');
+
+        // 套用調色盤
         if (colorBg) colorBg.value = rgbToHex(currentStyle.dark_bg);
         if (colorText) colorText.value = rgbToHex(currentStyle.dark_text);
         if (colorBtnBg) colorBtnBg.value = rgbToHex(currentStyle.dark_btn_bg);
         if (colorBtnText) colorBtnText.value = rgbToHex(currentStyle.dark_btn_text);
 
-        // 即時初始套用至全 document
         document.documentElement.style.setProperty('--bg-color', rgbToHex(currentStyle.dark_bg));
         document.documentElement.style.setProperty('--text-color', rgbToHex(currentStyle.dark_text));
         document.documentElement.style.setProperty('--btn-bg', rgbToHex(currentStyle.dark_btn_bg));
         document.documentElement.style.setProperty('--btn-text', rgbToHex(currentStyle.dark_btn_text));
 
-    } catch (err) {
-        console.error("載入樣式失敗:", err);
-    }
+        // 套用開發人員勾選
+        if (chkSkipJson) chkSkipJson.checked = currentConfig.skip_json;
+        if (chkSkipJs) chkSkipJs.checked = currentConfig.skip_js;
+        if (chkSkipJar) chkSkipJar.checked = currentConfig.skip_jar;
+        if (chkSkipBook) chkSkipBook.checked = currentConfig.skip_book;
+        if (chkLlmLog) chkLlmLog.checked = currentConfig.enable_llm_log;
 
-    // 2. 監聽選色器即時變動 (畫布預覽)
+    } catch (err) { console.error("載入設定失敗:", err); }
+
+    // 2. 監聽選色即時畫布預覽
     const attachLivePreview = (input, cssVar) => {
-        if (input) {
-            input.addEventListener('input', (e) => {
-                document.documentElement.style.setProperty(cssVar, e.target.value);
-            });
-        }
+        if (input) input.addEventListener('input', e => document.documentElement.style.setProperty(cssVar, e.target.value));
     };
     attachLivePreview(colorBg, '--bg-color');
     attachLivePreview(colorText, '--text-color');
@@ -67,50 +90,152 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentStyle.dark_text = hexToRgb(colorText.value);
             currentStyle.dark_btn_bg = hexToRgb(colorBtnBg.value);
             currentStyle.dark_btn_text = hexToRgb(colorBtnText.value);
-
             try {
                 await invoke('save_style_config', { config: currentStyle });
-                alert("佈景配置已同步至系統檔案！");
-            } catch (err) {
-                alert(`儲存佈景出錯: ${err}`);
+                alert("佈景配置已同步！");
+            } catch (err) { alert(`儲存佈景出錯: ${err}`); }
+        });
+    }
+
+    // 4. 防抖式自動儲存 Config (開發人員過濾組)
+    const triggerSaveConfigDebounced = () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            try {
+                await invoke('save_config', { config: currentConfig });
+                console.log("Config 自動保存落盤成功");
+            } catch (err) { console.error("Config 自動保存出錯:", err); }
+        }, 800);
+    };
+
+    const attachCheckboxSync = (el, field) => {
+        if (el) el.addEventListener('change', (e) => {
+            currentConfig[field] = e.target.checked;
+            triggerSaveConfigDebounced();
+        });
+    };
+    attachCheckboxSync(chkSkipJson, 'skip_json');
+    attachCheckboxSync(chkSkipJs, 'skip_js');
+    attachCheckboxSync(chkSkipJar, 'skip_jar');
+    attachCheckboxSync(chkSkipBook, 'skip_book');
+    attachCheckboxSync(chkLlmLog, 'enable_llm_log');
+
+    // 5. 📖 字典管理器彈窗分頁運算
+    const renderDictionaryTable = (items) => {
+        let html = `<table><thead><tr><th>原文 (Key)</th><th>譯文 (Value)</th><th style="width: 80px;">操作</th></tr></thead><tbody>`;
+        items.forEach(([k, v]) => {
+            html += `<tr>
+                <td><strong>${k}</strong></td>
+                <td><input type="text" class="dict-edit-input" data-key="${k}" value="${v}"></td>
+                <td>
+                    <button class="save-item-btn" data-key="${k}">💾</button>
+                    ${dictType === 'user' ? `<button class="del-item-btn" data-key="${k}" style="background-color: #aa1111;">🗑️</button>` : ''}
+                </td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        dictTableContainer.innerHTML = html;
+
+        // 綁定行內儲存與刪除事件
+        document.querySelectorAll('.save-item-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const key = e.target.getAttribute('data-key');
+                const input = document.querySelector(`.dict-edit-input[data-key="${key}"`);
+                if (input) {
+                    try {
+                        await invoke('edit_dictionary_item', { key, value: input.value, delete: false });
+                        alert(`「${key}」儲存成功！${dictType === 'official' ? '已自動轉存為使用者詞庫。' : ''}`);
+                    } catch (err) { alert(`儲存失敗: ${err}`); }
+                }
+            });
+        });
+
+        document.querySelectorAll('.del-item-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const key = e.target.getAttribute('data-key');
+                if (confirm(`確定要刪除「${key}」嗎？`)) {
+                    try {
+                        await invoke('edit_dictionary_item', { key, value: '', delete: true });
+                        loadDictionaryPage(); // 重新整理
+                    } catch (err) { alert(`刪除失敗: ${err}`); }
+                }
+            });
+        });
+    };
+
+    const loadDictionaryPage = async () => {
+        const searchKey = dictSearch ? dictSearch.value.trim() : "";
+        try {
+            const [items, totalPages] = await invoke('query_dictionary', {
+                dictType,
+                page: dictPage,
+                pageSize: dictPageSize,
+                searchKey
+            });
+            renderDictionaryTable(items);
+            if (pageInfo) pageInfo.textContent = `第 ${dictPage + 1} / ${totalPages || 1} 頁`;
+            if (pagePrev) pagePrev.disabled = (dictPage === 0);
+            if (pageNext) pageNext.disabled = (dictPage + 1 >= (totalPages || 1));
+        } catch (err) { console.error("加載字典失敗:", err); }
+    };
+
+    if (btnOpenDict) {
+        btnOpenDict.addEventListener('click', () => {
+            if (dictDialog) {
+                dictDialog.showModal();
+                loadDictionaryPage();
+                if (dictSearch) dictSearch.focus();
             }
         });
     }
 
-    // 4. 監聽核心翻譯管線日誌事件
-    listen('log_event', (event) => {
-        const msg = event.payload;
+    if (dictSearch) {
+        dictSearch.addEventListener('input', () => {
+            dictPage = 0; // 重置第 0 頁
+            loadDictionaryPage();
+        });
+    }
+
+    const switchTab = (type, activeBtn, inactiveBtn) => {
+        dictType = type;
+        dictPage = 0;
+        activeBtn.classList.add('active');
+        inactiveBtn.classList.remove('active');
+        loadDictionaryPage();
+    };
+    if (tabUser) tabUser.addEventListener('click', () => switchTab('user', tabUser, tabOfficial));
+    if (tabOfficial) tabOfficial.addEventListener('click', () => switchTab('official', tabOfficial, tabUser));
+
+    if (pagePrev) pagePrev.addEventListener('click', () => { if (dictPage > 0) { dictPage--; loadDictionaryPage(); } });
+    if (pageNext) pageNext.addEventListener('click', () => { dictPage++; loadDictionaryPage(); });
+
+    // 6. 監聽日誌與進度事件
+    listen('log_event', (e) => {
         const line = document.createElement('div');
-        line.style.padding = "2px 0";
-        line.textContent = msg;
-        logOutput.appendChild(line);
-        logOutput.scrollTop = logOutput.scrollHeight;
+        line.style.padding = "2px 0"; line.textContent = e.payload;
+        logOutput.appendChild(line); logOutput.scrollTop = logOutput.scrollHeight;
     });
 
-    listen('progress_event', (event) => {
-        const [ratio, status] = event.payload;
+    listen('progress_event', (e) => {
+        const [ratio, status] = e.payload;
         if (progressBar) progressBar.style.width = `${ratio * 100}%`;
         if (statusText) statusText.textContent = `進度: ${(ratio * 100).toFixed(1)}% - ${status}`;
     });
 
-    // 5. 點擊翻譯
+    // 7. 點擊翻譯 (參數流連鎖)
     if (btnTranslate) {
         btnTranslate.addEventListener('click', async () => {
             const path = inputPath ? inputPath.value.trim() : "";
-            if (!path) {
-                alert("請填寫待翻譯的輸入路徑！");
-                return;
-            }
-            if (logOutput) logOutput.innerHTML = ''; 
+            if (!path) { alert("請填寫待翻譯的輸入路徑！"); return; }
+            if (logOutput) logOutput.innerHTML = '';
             if (statusText) statusText.textContent = "準備開始翻譯...";
             if (progressBar) progressBar.style.width = '0%';
 
             try {
-                await invoke('start_translation', { inputPaths: [path] });
+                // 將 currentConfig 發送，避開 load I/O 時差
+                await invoke('start_translation', { inputPaths: [path], config: currentConfig });
                 alert("翻譯任務執行結束！");
-            } catch (err) {
-                alert(`翻譯出錯: ${err}`);
-            }
+            } catch (err) { alert(`翻譯出錯: ${err}`); }
         });
     }
 });

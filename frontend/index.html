@@ -16,7 +16,23 @@
             <label for="input-path">待翻譯路徑 (檔案或資料夾):</label>
             <input type="text" id="input-path" placeholder="輸入或拖放路徑至此...">
         </div>
-        <button id="btn-translate">🚀 立即翻譯</button>
+        <div class="button-row">
+            <button id="btn-translate">🚀 立即翻譯</button>
+            <button id="btn-open-dict" class="secondary-btn">📖 字典管理</button>
+        </div>
+    </div>
+
+    <!-- 🔧 開發人員選項 -->
+    <div class="control-panel developer-settings">
+        <h2>🔧 開發人員檔案過濾</h2>
+        <div class="checkbox-grid">
+            <label><input type="checkbox" id="chk-skip-json"> 跳過 .json 檔案</label>
+            <label><input type="checkbox" id="chk-skip-js"> 跳過 .js 檔案</label>
+            <label><input type="checkbox" id="chk-skip-jar"> 跳過 .jar 檔案</label>
+            <label><input type="checkbox" id="chk-skip-book"> 跳過 Patchouli 手冊</label>
+            <hr style="grid-column: 1 / -1; width: 100%; border-color: #444;">
+            <label><input type="checkbox" id="chk-llm-log"> 記錄 LLM 通訊日誌</label>
+        </div>
     </div>
 
     <!-- 🎨 調色盤管理面板 -->
@@ -51,5 +67,32 @@
         </div>
         <div id="log-output"></div>
     </div>
+
+    <!-- 📖 字典管理器彈窗 -->
+    <dialog id="dict-dialog" class="styled-dialog">
+        <div class="dialog-header">
+            <h3>📖 字典管理器</h3>
+            <div class="search-bar">
+                <input type="text" id="dict-search" placeholder="🔍 搜尋術語...">
+            </div>
+            <button class="close-icon" onclick="document.getElementById('dict-dialog').close()">×</button>
+        </div>
+        <div class="dialog-body">
+            <div class="tabs">
+                <button class="tab-btn active" id="tab-user">使用者詞庫</button>
+                <button class="tab-btn" id="tab-official">官方推論</button>
+            </div>
+            <div class="table-container" id="dict-table-container">
+                 <!-- <table> 將由 JS 自主渲染 -->
+            </div>
+        </div>
+        <div class="dialog-footer">
+            <div class="pagination">
+                 <button id="page-prev" class="page-btn">上一頁</button>
+                 <span id="page-info">第 1 / 1 頁</span>
+                 <button id="page-next" class="page-btn">下一頁</button>
+            </div>
+        </div>
+    </dialog>
 </body>
 </html>
