@@ -30,7 +30,7 @@ jobs:
       run: cargo build --release --verbose
     - name: Build Tauri GUI
       if: startsWith(github.ref, 'refs/tags/v')
-      run: npx @tauri-apps/cli build
+      run: npx -y @tauri-apps/cli build
     - name: Copy Binaries to Workspace
       if: startsWith(github.ref, 'refs/tags/v')
       shell: pwsh
