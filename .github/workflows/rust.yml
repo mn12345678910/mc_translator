@@ -39,11 +39,10 @@ jobs:
         if (Test-Path "../cargo-target/release/mc_translator_cli.exe") { Copy-Item "../cargo-target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
         if (Test-Path "./target/release/mc_translator_cli.exe") { Copy-Item "./target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
 
-        # 2. 複製 GUI Bundle (MSI 或 NSIS)
+        # 2. 複製 GUI Bundle (僅要 .exe)
         $bundle_paths = @("../cargo-target/release/bundle", "./target/release/bundle", "src-tauri/target/release/bundle")
         foreach ($p in $bundle_paths) {
             if (Test-Path "$p/nsis") { Get-ChildItem "$p/nsis/*.exe" | Copy-Item -Destination "./" -Force }
-            if (Test-Path "$p/msi") { Get-ChildItem "$p/msi/*.msi" | Copy-Item -Destination "./" -Force }
         }
     - name: Upload Artifact
       if: startsWith(github.ref, 'refs/tags/v')
@@ -52,8 +51,8 @@ jobs:
         name: mc_translator_rs-windows
         path: |
           mc_translator_cli.exe
-          *.msi
           *.exe
+
 
 
   release:
@@ -73,8 +72,8 @@ jobs:
       with:
         files: |
           mc_translator_cli.exe
-          *.msi
           *.exe
+
         generate_release_notes: true
 
       env:
