@@ -55,10 +55,6 @@ pub struct AppConfig {
     pub pack_format: u32,
 
     // --- [效能與面板狀態] ---
-    #[serde(alias = "自定義FPS開關")]
-    pub enable_custom_fps: bool,
-    #[serde(alias = "自定義FPS數值")]
-    pub custom_fps: u32,
     #[serde(alias = "顯示API設定")]
     pub show_api_settings: bool,
     #[serde(alias = "顯示開發者模式")]
@@ -271,8 +267,6 @@ impl Default for AppConfig {
             ui_lang: "zh_tw".to_string(),
             output_dir: String::new(),
             pack_format: 15,
-            enable_custom_fps: false,
-            custom_fps: 60,
             show_api_settings: false,
             show_developer_mode: false,
             skip_json: false,
