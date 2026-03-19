@@ -28,11 +28,23 @@ jobs:
     - name: Build Release
       if: startsWith(github.ref, 'refs/tags/v')
       run: cargo build --release --verbose
-    - name: Copy Binary to Workspace
+    - name: Build Tauri GUI
+      if: startsWith(github.ref, 'refs/tags/v')
+      run: npx @tauri-apps/cli build
+    - name: Copy Binaries to Workspace
       if: startsWith(github.ref, 'refs/tags/v')
       shell: pwsh
       run: |
-        Copy-Item -Path ../cargo-target/release/mc_translator_cli.exe -Destination ./mc_translator_cli.exe
+        # 1. 複製 CLI
+        if (Test-Path "../cargo-target/release/mc_translator_cli.exe") { Copy-Item "../cargo-target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
+        if (Test-Path "./target/release/mc_translator_cli.exe") { Copy-Item "./target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
+
+        # 2. 複製 GUI Bundle (MSI 或 NSIS)
+        $bundle_paths = @("../cargo-target/release/bundle", "./target/release/bundle", "src-tauri/target/release/bundle")
+        foreach ($p in $bundle_paths) {
+            if (Test-Path "$p/nsis") { Get-ChildItem "$p/nsis/*.exe" | Copy-Item -Destination "./" -Force }
+            if (Test-Path "$p/msi") { Get-ChildItem "$p/msi/*.msi" | Copy-Item -Destination "./" -Force }
+        }
     - name: Upload Artifact
       if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-artifact@v7
@@ -40,6 +52,9 @@ jobs:
         name: mc_translator_rs-windows
         path: |
           mc_translator_cli.exe
+          *.msi
+          *.exe
+
 
   release:
     name: Create Release
@@ -58,6 +73,9 @@ jobs:
       with:
         files: |
           mc_translator_cli.exe
+          *.msi
+          *.exe
         generate_release_notes: true
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
