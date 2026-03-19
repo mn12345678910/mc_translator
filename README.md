@@ -118,12 +118,13 @@
 
 ## 打包發布 (從原始碼)
 
-**1) GUI 安裝檔打包 (Tauri)**
+**1) GUI 單一執行檔編譯 (Tauri)**
 在專案根目錄下運行：
 ```powershell
 npx @tauri-apps/cli build
 ```
-產出的 `.exe` 安裝文件通常位於 `src-tauri/target/release/bundle/nsis/`。
+產出的「純免安裝 `.exe`」通常位於 `src-tauri/target/release/mc_translator.exe`。
+*(註：Tauri 預設也會在 `bundle/nsis/` 產生安裝包，若只需要獨立執行檔，直接取用 release 目錄下的 `.exe` 即可。)*
 
 **2) CLI 單檔編譯**
 ```powershell
