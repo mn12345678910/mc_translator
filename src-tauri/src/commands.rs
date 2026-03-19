@@ -98,7 +98,7 @@ pub fn query_dictionary(
 
     // 3. 分頁切片
     let total_count = items.len();
-    let total_pages = (total_count + page_size - 1) / page_size;
+    let total_pages = total_count.div_ceil(page_size);
     
     let start = page * page_size;
     if start >= total_count {
@@ -163,7 +163,7 @@ pub fn stop_translation() -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
-    let mut builder = rfd::FileDialog::new();
+    let builder = rfd::FileDialog::new();
     let path = if diag_type == "dir" {
         builder.pick_folder()
     } else {
