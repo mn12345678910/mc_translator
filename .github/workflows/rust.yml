@@ -45,7 +45,7 @@ jobs:
       with:
         workspaces: .
     - name: Build CLI Release
-      run: cargo build --release -p mc_translator_cli
+      run: cargo build --release --bin mc_translator_cli
     - name: Upload CLI Artifact
       uses: actions/upload-artifact@v7
       with:
