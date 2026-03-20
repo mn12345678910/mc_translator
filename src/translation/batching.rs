@@ -51,7 +51,7 @@ pub async fn translate_global_batches(
     log: Arc<Mutex<Vec<String>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
-    i18n: &crate::ui::i18n::I18nLabels,
+    i18n: &crate::i18n::I18nLabels,
     file_name: &str,
     global_items_offset: usize, // 新增：全域 offset
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -88,7 +88,7 @@ pub struct RunBatchContext<'a> {
     pub paused: Arc<AtomicBool>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    pub i18n: &'a crate::ui::i18n::I18nLabels,
+    pub i18n: &'a crate::i18n::I18nLabels,
     pub file_name: String,
     pub global_items_offset: usize, // 新增
 }
@@ -351,7 +351,7 @@ struct BatchContext<'a> {
     _log: &'a Arc<Mutex<Vec<String>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     is_retry: bool,
-    i18n: &'a crate::ui::i18n::I18nLabels,
+    i18n: &'a crate::i18n::I18nLabels,
     file_name: &'a str,
 }
 

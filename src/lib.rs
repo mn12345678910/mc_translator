@@ -1,7 +1,7 @@
 pub mod config;
 pub mod translation;
 pub mod file;
-pub mod ui;
+pub mod i18n;
 pub mod utils;
 
 // 向後相容：保留舊路徑可用

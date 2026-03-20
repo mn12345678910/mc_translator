@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU32};
-use crate::ui::i18n::I18nLabels;
+use crate::i18n::I18nLabels;
 
 /// 翻譯任務的靜態設定參數
 #[derive(Clone)]

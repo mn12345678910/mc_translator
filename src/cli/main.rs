@@ -2,7 +2,7 @@ use clap::Parser;
 use dialoguer::{Select, Input, Password};
 use std::path::PathBuf;
 use std::io::Write;
-use mc_translator_rs::ui::i18n::I18nLabels;
+use mc_translator_rs::i18n::I18nLabels;
 
 use mc_translator_rs::config::AppConfig;
 use mc_translator_rs::translation::pipeline::start_translation_workflow;

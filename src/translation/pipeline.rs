@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use crate::config::AppConfig;
 use crate::translation::job::{JobConfig, JobSharedState};
-use crate::ui::i18n::I18nLabels;
+use crate::i18n::I18nLabels;
 use crate::utils;
 
 /// 載入並準備字典檔 (McLang 與推論字典)

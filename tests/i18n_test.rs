@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use mc_translator_rs::ui::i18n::I18nLabels;
+    use mc_translator_rs::i18n::I18nLabels;
     use std::fs;
     use std::path::Path;
 
@@ -12,6 +12,7 @@ mod tests {
         for file_name in &files {
             let path = dir.join(file_name);
             let content = fs::read_to_string(&path).unwrap();
+            println!("Testing file: {}", file_name);
             let res = serde_json::from_str::<I18nLabels>(&content);
             assert!(res.is_ok(), "Failed on {}: {:?}", file_name, res.err());
         }

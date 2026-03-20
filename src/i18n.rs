@@ -5,7 +5,6 @@ use std::fs;
 pub const DEFAULT_LANG: &str = "zh_tw";
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(default = "I18nLabels::default_zh_tw")]
 pub struct I18nLabels {
     // --- 頂部導覽與標題 ---
     pub app_title: String,
@@ -353,9 +352,9 @@ impl I18nLabels {
         fs::write(zh_tw_path, json).map_err(std::io::Error::other)?;
 
         let default_files = [
-            ("zh_cn.json", include_str!("../i18n_assets/zh_cn.json")),
-            ("en_us.json", include_str!("../i18n_assets/en_us.json")),
-            ("ja_jp.json", include_str!("../i18n_assets/ja_jp.json")),
+            ("zh_cn.json", include_str!("i18n_assets/zh_cn.json")),
+            ("en_us.json", include_str!("i18n_assets/en_us.json")),
+            ("ja_jp.json", include_str!("i18n_assets/ja_jp.json")),
         ];
 
         for (name, content) in default_files {
@@ -370,10 +369,25 @@ impl I18nLabels {
     pub fn load_from_file(lang: &str) -> Option<Self> {
         let path = Self::get_langs_dir().join(format!("{}.json", lang));
         if let Ok(content) = fs::read_to_string(path) {
-            match serde_json::from_str::<Self>(&content) {
+            // 1. 載入當前语言 JSON 到 Value
+            let lang_val: serde_json::Value = serde_json::from_str(&content).ok()?;
+            
+            // 2. 載入預設 zh_tw 靜態資產到 Value 作為 Fallback
+            let default_str = include_str!("i18n_assets/zh_tw.json");
+            let mut default_val: serde_json::Value = serde_json::from_str(default_str).ok()?;
+
+            // 3. 將當前語言覆寫到預設上 (Deep Merge)
+            if let (Some(l_obj), Some(d_obj)) = (lang_val.as_object(), default_val.as_object_mut()) {
+                for (k, v) in l_obj {
+                    d_obj.insert(k.clone(), v.clone());
+                }
+            }
+
+            // 4. 转换成 Struct
+            match serde_json::from_value::<Self>(default_val) {
                 Ok(labels) => return Some(labels),
                 Err(e) => {
-                    println!("-> [Detail Error] {} parse failed: {}", lang, e);
+                    println!("-> [Detail Error] {} merge/parse failed: {}", lang, e);
                 }
             }
         }
@@ -417,7 +431,7 @@ impl I18nLabels {
     }
 
     pub fn default_zh_tw() -> Self {
-        let json_str = include_str!("../i18n_assets/zh_tw.json");
+        let json_str = include_str!("i18n_assets/zh_tw.json");
         serde_json::from_str(json_str).unwrap_or_else(|e| {
             panic!("❌ Failed to parse embedded zh_tw.json: {}", e);
         })

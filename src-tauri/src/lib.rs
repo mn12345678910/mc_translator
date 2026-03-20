@@ -5,7 +5,7 @@ pub fn run() {
   tauri::Builder::default()
     .setup(|app| {
       // 確保語言文件刷新釋放至硬碟
-      let _ = mc_translator_rs::ui::i18n::I18nLabels::ensure_langs_exists();
+      let _ = mc_translator_rs::i18n::I18nLabels::ensure_langs_exists();
 
       if cfg!(debug_assertions) {
         app.handle().plugin(

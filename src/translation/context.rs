@@ -23,7 +23,7 @@ pub struct TranslationContext<'a> {
     pub skip_memory: bool,
     /// 預先填滿的項項目 (original, key, translated)
     pub prefilled: Arc<Mutex<Vec<(String, String, String)>>>,
-    pub i18n: &'a crate::ui::i18n::I18nLabels,
+    pub i18n: &'a crate::i18n::I18nLabels,
 }
 
 pub struct ContextOptions<'a> {
@@ -41,7 +41,7 @@ pub struct ContextOptions<'a> {
     pub translation_memory: Arc<Mutex<HashMap<String, String>>>,
     pub skip_memory: bool,
     pub pause_notifier: Arc<tokio::sync::Notify>,
-    pub i18n: &'a crate::ui::i18n::I18nLabels,
+    pub i18n: &'a crate::i18n::I18nLabels,
 }
 
 impl<'a> TranslationContext<'a> {
