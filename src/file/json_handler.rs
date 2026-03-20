@@ -122,13 +122,12 @@ pub async fn apply_json_task(
 
     let (source_lang, target_lang, actual_output_dir) = {
         let cfg = config.lock().unwrap();
-        let dir = if cfg.output_dir.is_empty() {
-            "./LLMTranslator".to_string()
+        let base = if cfg.output_dir.is_empty() {
+            std::path::Path::new(".")
         } else {
-            let p = std::path::Path::new(&cfg.output_dir).join("LLMTranslator");
-            let _ = std::fs::create_dir_all(&p);
-            p.to_string_lossy().to_string()
+            std::path::Path::new(&cfg.output_dir)
         };
+        let dir = base.join("LLMTranslator").to_string_lossy().to_string();
         (cfg.source_lang.clone(), cfg.target_lang.clone(), dir)
     };
 

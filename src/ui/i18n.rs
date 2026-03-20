@@ -5,6 +5,7 @@ use std::fs;
 pub const DEFAULT_LANG: &str = "zh_tw";
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default = "I18nLabels::default_zh_tw")]
 pub struct I18nLabels {
     // --- 頂部導覽與標題 ---
     pub app_title: String,
@@ -22,6 +23,8 @@ pub struct I18nLabels {
     pub label_output_path: String,
     pub label_default_path: String,
     pub dialog_filter_jar_json_js: String,
+    pub label_input_path: String,
+    pub label_ui_lang: String,
 
     // --- 翻譯操作 ---
     pub btn_run_trans: String,
@@ -48,8 +51,6 @@ pub struct I18nLabels {
     pub label_pack_format: String,
     pub label_source_lang: String,
     pub label_target_lang: String,
-    pub label_fps: String,
-    pub label_fps_preset_vsync: String,
     pub btn_restore_defaults: String,
     pub btn_confirm_restore: String,
     pub btn_cancel: String,
@@ -121,14 +122,6 @@ pub struct I18nLabels {
     // --- 類別名稱 ---
     pub group_batch: String,
     pub group_specific: String,
-    pub cat_all_buttons: String,
-    pub cat_all_labels: String,
-    pub cat_all_inputs: String,
-    pub cat_all_logs: String,
-    pub cat_all_tabs: String,
-    pub cat_all_progress: String,
-    pub cat_all_bg: String,
-    pub cat_nav_bar: String,
 
     // --- 特定元件名稱 ---
     pub spec_btn_select_file: String,
@@ -250,6 +243,83 @@ pub struct I18nLabels {
     pub cli_pipeline_ended: String,
     pub cli_pipeline_success: String,
     pub cli_pipeline_failed: String,
+
+    // --- 提示與回饋日誌 [NEW] ---
+    pub header_dict_mgr: String,
+    pub placeholder_input_path: String,
+    pub placeholder_output_dir: String,
+    pub placeholder_api_key: String,
+    pub placeholder_search_terms: String,
+    pub placeholder_dict_key: String,
+    pub placeholder_dict_value: String,
+    pub label_dict_official: String,
+    pub label_dict_user: String,
+    pub label_page_info: String,
+    pub btn_page_prev: String,
+    pub btn_page_next: String,
+    pub label_loading_models: String,
+    pub label_no_models: String,
+    pub label_none_provider: String,
+
+    pub status_load_config_failed: String,
+    pub status_save_config_success: String,
+    pub status_save_config_failed: String,
+    pub status_save_style_success: String,
+    pub status_save_style_failed: String,
+    pub status_browse_path_failed: String,
+    pub status_open_dir_failed: String,
+    pub status_ui_lang_changed: String,
+    pub status_theme_changed: String,
+    pub status_restore_config_confirm: String,
+    pub status_restore_config_success: String,
+    pub status_restore_config_failed: String,
+    pub status_restore_style_confirm: String,
+    pub status_restore_style_success: String,
+    pub status_restore_style_failed: String,
+    pub status_input_path_empty: String,
+    pub status_trans_starting: String,
+    pub status_trans_command_sent: String,
+    pub status_trans_error: String,
+    pub status_trans_paused: String,
+    pub status_trans_resumed: String,
+    pub status_trans_stopping: String,
+    pub status_dict_item_updated: String,
+    pub status_dict_item_delete_confirm: String,
+    pub status_dict_load_failed: String,
+    pub status_dict_key_empty: String,
+    pub status_dict_add_success: String,
+    pub status_dict_add_failed: String,
+    pub status_dict_replace_empty: String,
+    pub status_dict_replace_confirm: String,
+    pub status_dict_replace_sent: String,
+    pub status_dict_replace_failed: String,
+    pub status_dict_clear_success: String,
+    pub status_dict_import_success: String,
+    pub status_dict_export_success: String,
+    pub status_palette_clear_item: String,
+    pub err_ollama_connect: String,
+    pub err_api_key_empty: String,
+    pub err_gemini_models: String,
+    pub err_openai_models: String,
+    pub err_deepseek_models: String,
+    pub err_unsupported_provider: String,
+    pub err_no_active_job: String,
+    pub lang_zh_tw: String,
+    pub lang_zh_cn: String,
+    pub lang_ja_jp: String,
+    pub lang_en_us: String,
+    pub label_glossary_priority: String,
+    pub label_palette_target_type: String,
+    pub label_palette_target_item: String,
+    pub label_palette_property: String,
+    pub label_palette_color: String,
+    pub label_palette_rounding: String,
+    pub label_global_rounding: String,
+    pub label_pulse_speed: String,
+    pub btn_save_config: String,
+    pub btn_save_style: String,
+    pub label_items: String,
+    pub label_files: String,
 }
 
 impl I18nLabels {
@@ -276,11 +346,9 @@ impl I18nLabels {
         }
 
         let zh_tw_path = langs_dir.join("zh_tw.json");
-        if !zh_tw_path.exists() {
-            let labels = Self::default_zh_tw();
-            let json = serde_json::to_string_pretty(&labels).map_err(std::io::Error::other)?;
-            fs::write(zh_tw_path, json).map_err(std::io::Error::other)?;
-        }
+        let labels = Self::default_zh_tw();
+        let json = serde_json::to_string_pretty(&labels).map_err(std::io::Error::other)?;
+        fs::write(zh_tw_path, json).map_err(std::io::Error::other)?;
 
         let default_files = [
             ("zh_cn.json", include_str!("../i18n_assets/zh_cn.json")),
@@ -290,9 +358,7 @@ impl I18nLabels {
 
         for (name, content) in default_files {
             let p = langs_dir.join(name);
-            if !p.exists() {
-                fs::write(p, content).map_err(std::io::Error::other)?;
-            }
+            fs::write(p, content).map_err(std::io::Error::other)?;
         }
 
         Ok(())
@@ -302,8 +368,11 @@ impl I18nLabels {
     pub fn load_from_file(lang: &str) -> Option<Self> {
         let path = Self::get_langs_dir().join(format!("{}.json", lang));
         if let Ok(content) = fs::read_to_string(path) {
-            if let Ok(labels) = serde_json::from_str::<Self>(&content) {
-                return Some(labels);
+            match serde_json::from_str::<Self>(&content) {
+                Ok(labels) => return Some(labels),
+                Err(e) => {
+                    println!("-> [Detail Error] {} parse failed: {}", lang, e);
+                }
             }
         }
         None
@@ -361,6 +430,8 @@ impl I18nLabels {
             label_output_path: "輸出路徑: ".to_string(),
             label_default_path: "預設: ./LLMTranslator".to_string(),
             dialog_filter_jar_json_js: "JAR, JS & JSON 檔案".to_string(),
+            label_input_path: "待翻譯路徑:".to_string(),
+            label_ui_lang: "介面語言:".to_string(),
 
             btn_run_trans: "🚀 開始翻譯".to_string(),
             btn_pause: "⏸ 暫停".to_string(),
@@ -415,8 +486,6 @@ impl I18nLabels {
             label_presets: "常用版本".to_string(),
             log_log_cleared: ">>> 使用者已清除執行日誌。".to_string(),
 
-            label_fps: "FPS:".to_string(),
-            label_fps_preset_vsync: "(預設:vsync)".to_string(),
             btn_restore_defaults: "⟲ 恢復預設".to_string(),
             btn_confirm_restore: "確定恢復".to_string(),
             btn_cancel: "取消".to_string(),
@@ -455,14 +524,6 @@ impl I18nLabels {
 
             group_batch: "類別批量設定".to_string(),
             group_specific: "特定元件 (精確覆寫)".to_string(),
-            cat_all_buttons: "全部按鈕".to_string(),
-            cat_all_labels: "全部標籤".to_string(),
-            cat_all_inputs: "全部輸入框".to_string(),
-            cat_all_logs: "全部日誌區域".to_string(),
-            cat_all_tabs: "全部建議詞分頁".to_string(),
-            cat_all_progress: "全部進度條".to_string(),
-            cat_all_bg: "全部面板背景".to_string(),
-            cat_nav_bar: "頂部導覽列".to_string(),
 
             spec_btn_select_file: "[特定] 選擇檔案按鈕".to_string(),
             spec_btn_select_folder: "[特定] 選擇資料夾按鈕".to_string(),
@@ -580,6 +641,83 @@ impl I18nLabels {
             cli_pipeline_ended: "\n\n-> 管線運作結束。".to_string(),
             cli_pipeline_success: "✅ 恭喜！所有翻譯任務已成功完成。".to_string(),
             cli_pipeline_failed: "❌ 失敗退出: {}".to_string(),
+
+            // --- 提示與回饋日誌 [NEW] ---
+            header_dict_mgr: "📖 字典管理器".to_string(),
+            placeholder_input_path: "輸入或拖放路徑至此...".to_string(),
+            placeholder_output_dir: "./LLMTranslator (預設)".to_string(),
+            placeholder_api_key: "輸入 API Key...".to_string(),
+            placeholder_search_terms: "🔍 搜尋術語...".to_string(),
+            placeholder_dict_key: "原文 (Key)".to_string(),
+            placeholder_dict_value: "翻譯 (Value)".to_string(),
+            label_dict_official: "官方推論".to_string(),
+            label_dict_user: "使用者詞庫".to_string(),
+            label_page_info: "第 {} / {} 頁".to_string(),
+            btn_page_prev: "上一頁".to_string(),
+            btn_page_next: "下一頁".to_string(),
+            label_loading_models: "載入中...".to_string(),
+            label_no_models: "(無可用模型)".to_string(),
+            label_none_provider: "無".to_string(),
+
+            status_load_config_failed: "❌ 載入配置失敗: {}".to_string(),
+            status_save_config_success: "✅ 核心參數儲存成功！".to_string(),
+            status_save_config_failed: "❌ 儲存配置失敗: {}".to_string(),
+            status_save_style_success: "🎨 調色盤與佈局保存成功！".to_string(),
+            status_save_style_failed: "❌ 保存樣式失敗: {}".to_string(),
+            status_browse_path_failed: "❌ 瀏覽路徑失敗: {}".to_string(),
+            status_open_dir_failed: "❌ 無法打開資料夾: {}".to_string(),
+            status_ui_lang_changed: "🌍 介面語言已變更為：{}".to_string(),
+            status_theme_changed: "🌓 主題已切換為：{}".to_string(),
+            status_restore_config_confirm: "確定要將參數恢復為預設值嗎？".to_string(),
+            status_restore_config_success: "✅ 參數已恢復預設！".to_string(),
+            status_restore_config_failed: "❌ 恢復參數失敗: {}".to_string(),
+            status_restore_style_confirm: "確定要將外觀佈景恢復為預設嗎？".to_string(),
+            status_restore_style_success: "🎨 外觀已恢復預設！".to_string(),
+            status_restore_style_failed: "❌ 恢復樣式失敗: {}".to_string(),
+            status_input_path_empty: "⚠️ 請輸入或選取待翻譯路徑！".to_string(),
+            status_trans_starting: "🚀 翻譯任務開始發射...".to_string(),
+            status_trans_command_sent: "✅ 任務執行指令送達後端。".to_string(),
+            status_trans_error: "❌ 執行出錯: {}".to_string(),
+            status_trans_paused: "任務已暫停。面板解鎖，可改動設定。".to_string(),
+            status_trans_resumed: "▶️ 任務已繼續。".to_string(),
+            status_trans_stopping: "⏹️ 正在送出終止信號...".to_string(),
+            status_dict_item_updated: "📖 字典更新：{}".to_string(),
+            status_dict_item_delete_confirm: "確定刪除條目 {} 嗎？".to_string(),
+            status_dict_load_failed: "❌ 載入字典失敗: {}".to_string(),
+            status_dict_key_empty: "原文 (Key) 不可為空".to_string(),
+            status_dict_add_success: "➕ 已新增使用者建議詞: {} -> {}".to_string(),
+            status_dict_add_failed: "❌ 新增失敗: {}".to_string(),
+            status_dict_replace_empty: "請在 Key 填舊詞，Value 填新詞以進行批量取代。".to_string(),
+            status_dict_replace_confirm: "確定把所有翻譯內容為 \"{}\" 取代為 \"{}\" 嗎？".to_string(),
+            status_dict_replace_sent: "🔄 已送出批量取代或更新請求：{} -> {}".to_string(),
+            status_dict_replace_failed: "❌ 取代失敗: {}".to_string(),
+            status_dict_clear_success: "✅ 字典已清空！".to_string(),
+            status_dict_import_success: "📥 字典匯入成功！".to_string(),
+            status_dict_export_success: "📤 字典已匯出至: {}".to_string(),
+            status_palette_clear_item: "🎨 已清除元件覆寫: {}".to_string(),
+            err_ollama_connect: "無法連線至 Ollama，請檢查服務是否啟動。".to_string(),
+            err_api_key_empty: "API Key 為空，請先填入 API Key。".to_string(),
+            err_gemini_models: "無法取得 Gemini 模型列表，請檢查 API Key 或網路連線。".to_string(),
+            err_openai_models: "無法取得 OpenAI 模型列表，請檢查 API Key 或網路連線。".to_string(),
+            err_deepseek_models: "無法取得 DeepSeek 模型列表，請檢查 API Key 或網路連線。".to_string(),
+            err_unsupported_provider: "未支援的提供商".to_string(),
+            err_no_active_job: "無正在執行的翻譯任務".to_string(),
+            lang_zh_tw: "繁體中文 (zh_tw)".to_string(),
+            lang_zh_cn: "简体中文 (zh_cn)".to_string(),
+            lang_ja_jp: "日本語 (ja_jp)".to_string(),
+            lang_en_us: "English (en_us)".to_string(),
+            label_glossary_priority: "術語優先級".to_string(),
+            label_palette_target_type: "編輯對象".to_string(),
+            label_palette_target_item: "選擇對象".to_string(),
+            label_palette_property: "設定屬性".to_string(),
+            label_palette_color: "調整顏色".to_string(),
+            label_palette_rounding: "圓角數值".to_string(),
+            label_global_rounding: "全局圓角".to_string(),
+            label_pulse_speed: "進度條光暈速度".to_string(),
+            btn_save_config: "💾 儲存核心參數".to_string(),
+            btn_save_style: "💾 儲存佈景配置".to_string(),
+            label_items: "條目".to_string(),
+            label_files: "檔案".to_string(),
         }
     }
 }

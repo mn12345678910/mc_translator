@@ -160,13 +160,12 @@ pub async fn apply_js_task(
 
     let actual_output_dir = {
         let cfg = config.lock().unwrap();
-        if cfg.output_dir.is_empty() {
-            "./LLMTranslator".to_string()
+        let base = if cfg.output_dir.is_empty() {
+            std::path::Path::new(".")
         } else {
-            let p = std::path::Path::new(&cfg.output_dir).join("LLMTranslator");
-            let _ = std::fs::create_dir_all(&p);
-            p.to_string_lossy().to_string()
-        }
+            std::path::Path::new(&cfg.output_dir)
+        };
+        base.join("LLMTranslator").to_string_lossy().to_string()
     };
 
     let fs_path = std::path::Path::new(&actual_output_dir).join(&task.rel_path);

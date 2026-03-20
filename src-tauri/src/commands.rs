@@ -25,11 +25,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Err("無法連線至 Ollama，請檢查服務是否啟動。".to_string())
+            Err("err_ollama_connect".to_string())
         }
         "Gemini" => {
             if api_key.is_empty() {
-                return Err("API Key 為空，請先填入 API Key。".to_string());
+                return Err("err_api_key_empty".to_string());
             }
             let url = format!("https://generativelanguage.googleapis.com/v1beta/models?key={}", api_key);
             if let Ok(resp) = client.get(&url).send().await {
@@ -47,11 +47,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Err("無法取得 Gemini 模型列表，請檢查 API Key 或網路連線。".to_string())
+            Err("err_gemini_models".to_string())
         }
         "OpenAI" => {
             if api_key.is_empty() {
-                return Err("API Key 為空，請先填入 API Key。".to_string());
+                return Err("err_api_key_empty".to_string());
             }
             if let Ok(resp) = client.get("https://api.openai.com/v1/models")
                 .header("Authorization", format!("Bearer {}", api_key))
@@ -71,11 +71,11 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Err("無法取得 OpenAI 模型列表，請檢查 API Key 或網路連線。".to_string())
+            Err("err_openai_models".to_string())
         }
         "DeepSeek" => {
             if api_key.is_empty() {
-                return Err("API Key 為空，請先填入 API Key。".to_string());
+                return Err("err_api_key_empty".to_string());
             }
             if let Ok(resp) = client.get("https://api.deepseek.com/models")
                 .header("Authorization", format!("Bearer {}", api_key))
@@ -92,16 +92,20 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                     }
                 }
             }
-            Err("無法取得 DeepSeek 模型列表，請檢查 API Key 或網路連線。".to_string())
+            Err("err_deepseek_models".to_string())
         }
-        _ => Err("未支援的提供商".to_string()),
+        _ => Err("err_unsupported_provider".to_string()),
     }
 }
 
 #[tauri::command]
-pub fn get_i18n_labels() -> mc_translator_rs::ui::i18n::I18nLabels {
-    let config = AppConfig::load();
-    mc_translator_rs::ui::i18n::I18nLabels::load_or_default(&config.ui_lang)
+pub fn get_i18n_labels(lang: Option<String>) -> mc_translator_rs::ui::i18n::I18nLabels {
+    if let Some(l) = lang {
+        mc_translator_rs::ui::i18n::I18nLabels::load_or_default(&l)
+    } else {
+        let config = AppConfig::load();
+        mc_translator_rs::ui::i18n::I18nLabels::load_or_default(&config.ui_lang)
+    }
 }
 
 #[tauri::command]
@@ -159,10 +163,12 @@ pub async fn start_translation(
 
     // 定義進度 Callback
     let handle_progress = handle.clone();
-    let progress_updater = move |current: f32, total: f32, status: &str| {
+    let progress_updater = move |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
         let payload = serde_json::json!({
             "current": current as u32,
             "total": total as u32,
+            "batch_current": batch_curr as u32,
+            "batch_total": batch_tot as u32,
             "status": status.to_string()
         });
         let _ = handle_progress.emit("translation-progress", payload);
@@ -204,6 +210,7 @@ pub fn get_default_style_config() -> StyleConfig {
     StyleConfig::default()
 }
 
+// Trigger recompile to pick up new include_str! JSON files
 use std::sync::{Mutex, OnceLock};
 
 struct DictCache {
@@ -304,7 +311,7 @@ pub fn pause_translation() -> Result<(), String> {
             return Ok(());
         }
     }
-    Err("無正在執行的翻譯任務".to_string())
+    Err("err_no_active_job".to_string())
 }
 
 #[tauri::command]
@@ -316,7 +323,7 @@ pub fn resume_translation() -> Result<(), String> {
             return Ok(());
         }
     }
-    Err("無正在執行的翻譯任務".to_string())
+    Err("err_no_active_job".to_string())
 }
 
 #[tauri::command]
@@ -328,7 +335,7 @@ pub fn stop_translation() -> Result<(), String> {
             return Ok(());
         }
     }
-    Err("無正在執行的翻譯任務".to_string())
+    Err("err_no_active_job".to_string())
 }
 
 #[tauri::command]
@@ -336,11 +343,35 @@ pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
     let builder = rfd::FileDialog::new();
     let path = if diag_type == "dir" {
         builder.pick_folder()
+    } else if diag_type == "save_file" {
+        builder.save_file()
     } else {
         builder.pick_file()
     };
 
     Ok(path.map(|p| p.to_string_lossy().to_string()))
+}
+
+#[tauri::command]
+pub fn open_folder(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    // 即使路徑不存在也嘗試開啟上一層或直接讓系統報錯
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(p)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let cmd = if cfg!(target_os = "macos") { "open" } else { "xdg-open" };
+        std::process::Command::new(cmd)
+            .arg(p)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -363,4 +394,58 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
     }
     langs.sort();
     Ok(langs)
+}
+
+#[tauri::command]
+pub fn clear_user_dictionary() -> Result<(), String> {
+    use mc_translator_rs::config::settings::AppConfig;
+    use std::collections::HashMap;
+
+    let config = AppConfig::load();
+    let path = get_user_dict_path(&config.ui_lang);
+    save_dict(&path, &HashMap::<String, String>::new());
+    if let Ok(mut cache) = dict_cache().lock() {
+        *cache = None;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
+    use mc_translator_rs::config::settings::AppConfig;
+    use std::collections::HashMap;
+
+    let config = AppConfig::load();
+    let user_path = get_user_dict_path(&config.ui_lang);
+    let mut current_dict: HashMap<String, String> = load_dict(&user_path);
+
+    let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
+    let imported: HashMap<String, String> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+
+    for (k, v) in imported {
+        current_dict.insert(k, v);
+    }
+    save_dict(&user_path, &current_dict);
+    if let Ok(mut cache) = dict_cache().lock() {
+        *cache = None;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
+    use mc_translator_rs::config::settings::AppConfig;
+
+    let config = AppConfig::load();
+    let path = get_user_dict_path(&config.ui_lang);
+    let dict: std::collections::HashMap<String, String> = load_dict(&path);
+
+    let json = serde_json::to_string_pretty(&dict).map_err(|e| e.to_string())?;
+    std::fs::write(file_path, json).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn show_window(window: tauri::Window) {
+    let _ = window.show();
 }

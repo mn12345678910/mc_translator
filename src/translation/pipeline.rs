@@ -64,7 +64,7 @@ pub async fn start_translation_workflow(
     config: AppConfig,
     input_paths: Vec<(PathBuf, String)>,
     logger: impl Fn(&str) + Send + Sync + 'static,
-    progress_updater: impl Fn(f32, f32, &str) + Send + Sync + 'static,
+    progress_updater: impl Fn(f32, f32, f32, f32, &str) + Send + Sync + 'static,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let logger_arc = Arc::new(logger);
@@ -171,6 +171,8 @@ pub async fn start_translation_workflow(
     let status_monitor_c = status_monitor.clone();
     let global_progress_monitor_c = global_progress_monitor.clone();
     let global_total_monitor_c = global_total_monitor.clone();
+    let batch_current_monitor_c = job_state.current_batch.clone();
+    let batch_total_monitor_c = job_state.total_batches.clone();
 
     let monitor_handle = tokio::spawn(async move {
         let mut last_len = 0;
@@ -187,9 +189,11 @@ pub async fn start_translation_workflow(
 
             let current_g = f32::from_bits(global_progress_monitor_c.load(Ordering::SeqCst));
             let total_g = f32::from_bits(global_total_monitor_c.load(Ordering::SeqCst));
+            let current_b = batch_current_monitor_c.load(Ordering::SeqCst) as f32;
+            let total_b = batch_total_monitor_c.load(Ordering::SeqCst) as f32;
             if total_g > 0.0 {
                 let status_str = status_monitor_c.lock().unwrap().clone();
-                progress_clone(current_g, total_g, &status_str);
+                progress_clone(current_g, total_g, current_b, total_b, &status_str);
             }
 
 

@@ -161,8 +161,11 @@ pub struct StyleConfig {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ComponentStyle {
+    #[serde(default)]
     pub bg: Option<[u8; 3]>,
+    #[serde(default)]
     pub text: Option<[u8; 3]>,
+    #[serde(default)]
     pub rounding: Option<f32>,
 }
 

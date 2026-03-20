@@ -495,7 +495,7 @@ async fn call_ollama_raw(
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
             return Err::<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>(
-                format!("Ollama API Error: {}", err_text).into(),
+                format!("API_ERROR:Ollama API Error: {}", err_text).into(),
             );
         }
         Ok(resp.json::<serde_json::Value>().await?)

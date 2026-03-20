@@ -4,6 +4,9 @@ mod commands;
 pub fn run() {
   tauri::Builder::default()
     .setup(|app| {
+      // 確保語言文件刷新釋放至硬碟
+      let _ = mc_translator_rs::ui::i18n::I18nLabels::ensure_langs_exists();
+
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
@@ -20,16 +23,22 @@ pub fn run() {
           let config = AppConfig::load();
           if config.main_width > 200.0 && config.main_height > 200.0 {
               let _ = window.set_size(tauri::PhysicalSize::new(config.main_width as u32, config.main_height as u32));
+          }
+          
+          if config.main_x != 0.0 || config.main_y != 0.0 {
               let _ = window.set_position(tauri::PhysicalPosition::new(config.main_x as i32, config.main_y as i32));
-          } else if let Ok(Some(monitor)) = window.current_monitor() {
-              let monitor_size = monitor.size();
-              let monitor_pos = monitor.position();
-              
-              if let Ok(window_size) = window.outer_size() {
-                  let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
-                  let y = monitor_pos.y + (monitor_size.height as i32 - window_size.height as i32) / 2;
+          } else {
+              // 初次啟動強制置中
+              if let Ok(Some(monitor)) = window.current_monitor() {
+                  let monitor_size = monitor.size();
+                  let monitor_pos = monitor.position();
                   
-                  let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+                  if let Ok(window_size) = window.outer_size() {
+                      let x = monitor_pos.x + (monitor_size.width as i32 - window_size.width as i32) / 2;
+                      let y = monitor_pos.y + (monitor_size.height as i32 - window_size.height as i32) / 2;
+                      
+                      let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+                  }
               }
           }
 
@@ -68,12 +77,16 @@ pub fn run() {
       commands::get_default_style_config,
       commands::query_dictionary,
       commands::edit_dictionary_item,
+      commands::clear_user_dictionary,
+      commands::import_user_dictionary,
+      commands::export_user_dictionary,
       commands::pause_translation,
       commands::resume_translation,
       commands::stop_translation,
       commands::open_path_dialog,
-      commands::get_available_langs
-
+      commands::open_folder,
+      commands::get_available_langs,
+      commands::show_window
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

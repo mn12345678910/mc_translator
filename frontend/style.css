@@ -9,6 +9,11 @@
     --font-size: 15px;
 }
 
+button, input, select, textarea {
+    font-size: var(--font-size) !important;
+    border-radius: var(--border-radius) !important;
+}
+
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -37,7 +42,8 @@ h2 {
 }
 
 .control-panel {
-    background-color: #25252b;
+    background-color: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(128, 128, 128, 0.15);
     padding: 15px;
     border-radius: var(--border-radius);
     margin-bottom: 20px;

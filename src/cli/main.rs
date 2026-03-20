@@ -408,13 +408,20 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         }
     };
 
-    let progress_updater = |current: f32, total: f32, status: &str| {
+    let progress_updater = |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
         let pct = if total > 0.0 { current / total } else { 0.0 };
         let bar_len = 25;
         let filled = (pct * bar_len as f32).max(0.0) as usize;
         let filled = filled.min(bar_len);
         let bar = format!("{}{}", "█".repeat(filled), "░".repeat(bar_len - filled));
-        print!("\r\x1B[K[{}] {:.0}% | {}", bar, (pct * 100.0).clamp(0.0, 100.0), status);
+        
+        let sub_info = if batch_tot > 0.0 {
+            format!(" | 條目: {}/{}", batch_curr as u32, batch_tot as u32)
+        } else {
+            String::new()
+        };
+
+        print!("\r\x1B[K[{}] {:.0}%{} | {}", bar, (pct * 100.0).clamp(0.0, 100.0), sub_info, status);
         let _ = std::io::stdout().flush();
     };
 

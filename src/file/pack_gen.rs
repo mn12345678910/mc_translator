@@ -5,18 +5,12 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 pub fn get_output_dir(config: &JobConfig) -> std::path::PathBuf {
-    let base_output = if config.output_dir.is_empty() {
-        Path::new("LLMTranslator")
+    let base = if config.output_dir.is_empty() {
+        Path::new(".")
     } else {
         Path::new(&config.output_dir)
     };
-    
-    // 統一輸出至 LLMTranslator 子目錄 (需求 1)
-    if config.output_dir.is_empty() {
-        base_output.to_path_buf()
-    } else {
-        base_output.join("LLMTranslator")
-    }
+    base.join("LLMTranslator")
 }
 
 pub fn write_to_temp_or_output(
@@ -139,17 +133,7 @@ pub async fn output_resource_pack(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::task::spawn_blocking(
         move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-            let base_output = if config.output_dir.is_empty() {
-                Path::new("LLMTranslator")
-            } else {
-                Path::new(&config.output_dir)
-            };
-            
-            let output_path = if config.output_dir.is_empty() {
-                base_output.to_path_buf()
-            } else {
-                base_output.join("LLMTranslator")
-            };
+            let output_path = get_output_dir(&config);
 
             let temp_dir = output_path.join("temp_translator");
 
