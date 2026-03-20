@@ -10,83 +10,98 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
 
 jobs:
-  build:
-    name: Build & Check
-    runs-on: windows-latest
+  ci-linux:
+    name: Check & Test (Linux)
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
     - name: Rust Cache
       uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: |
+          .
+          src-tauri
     - name: Check
-      run: cargo check --verbose
+      run: cargo check
     - name: Run Tests
-      run: cargo test --verbose
-    - name: Build Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: cargo build --release --verbose
+      run: cargo test
+
+  build-cli:
+    name: Build CLI (Windows)
+    runs-on: windows-latest
+    needs: ci-linux
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - uses: actions/checkout@v6
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    - name: Rust Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: .
+    - name: Build CLI Release
+      run: cargo build --release -p mc_translator_cli
+    - name: Upload CLI Artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: mc_translator_cli
+        path: target/release/mc_translator_cli.exe
+
+  build-gui:
+    name: Build GUI (Windows)
+    runs-on: windows-latest
+    needs: ci-linux
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - uses: actions/checkout@v6
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
     - name: Setup Node.js
-      if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/setup-node@v4
       with:
         node-version: 'latest'
         cache: 'npm'
     - name: Install Node Dependencies
-      if: startsWith(github.ref, 'refs/tags/v')
       run: npm ci
-    - name: Build Tauri GUI
-      if: startsWith(github.ref, 'refs/tags/v')
-      run: npx tauri build
-    - name: Copy Binaries to Workspace
-      if: startsWith(github.ref, 'refs/tags/v')
+    - name: Build Tauri GUI Action
+      uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Rename GUI Binary
       shell: pwsh
       run: |
-        # 1. 複製 CLI
-        if (Test-Path "../cargo-target/release/mc_translator_cli.exe") { Copy-Item "../cargo-target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
-        if (Test-Path "./target/release/mc_translator_cli.exe") { Copy-Item "./target/release/mc_translator_cli.exe" -Destination "./mc_translator_cli.exe" -Force }
-
-        # 2. 複製 GUI (僅要純 .exe)
-        $gui_paths = @(
-            "../cargo-target/release/app.exe",
-            "../cargo-target/release/mc_translator.exe",
-            "src-tauri/target/release/mc_translator_rs.exe",
-            "src-tauri/target/release/mc_translator.exe",
-            "src-tauri/target/release/app.exe",
-            "target/release/mc_translator.exe",
-            "target/release/app.exe"
-        )
-        foreach ($p in $gui_paths) {
-            if (Test-Path $p) { 
-                Copy-Item $p -Destination "./mc_translator_gui.exe" -Force 
-                break
-            }
-        }
-    - name: Upload Artifact
-      if: startsWith(github.ref, 'refs/tags/v')
+        if (Test-Path "src-tauri/target/release/app.exe") { Copy-Item "src-tauri/target/release/app.exe" -Destination "./mc_translator_gui.exe" -Force }
+        if (Test-Path "src-tauri/target/release/mc_translator.exe") { Copy-Item "src-tauri/target/release/mc_translator.exe" -Destination "./mc_translator_gui.exe" -Force }
+        if (Test-Path "src-tauri/target/release/mc_translator_rs.exe") { Copy-Item "src-tauri/target/release/mc_translator_rs.exe" -Destination "./mc_translator_gui.exe" -Force }
+    - name: Upload GUI Artifact
       uses: actions/upload-artifact@v7
       with:
-        name: mc_translator_rs-windows
-        path: |
-          mc_translator_cli.exe
-          *.exe
+        name: mc_translator_gui
+        path: mc_translator_gui.exe
 
 
 
   release:
     name: Create Release
-    needs: build
+    needs: [build-cli, build-gui]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-    - name: Download Artifact
+    - name: Download CLI Artifact
       uses: actions/download-artifact@v7
       with:
-        name: mc_translator_rs-windows
+        name: mc_translator_cli
+    - name: Download GUI Artifact
+      uses: actions/download-artifact@v7
+      with:
+        name: mc_translator_gui
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
