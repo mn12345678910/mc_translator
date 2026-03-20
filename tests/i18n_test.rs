@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use mc_translator_rs::i18n::I18nLabels;
+    use mc_translator::i18n::I18nLabels;
     use std::fs;
     use std::path::Path;
 

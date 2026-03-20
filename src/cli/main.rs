@@ -2,10 +2,10 @@ use clap::Parser;
 use dialoguer::{Select, Input, Password};
 use std::path::PathBuf;
 use std::io::Write;
-use mc_translator_rs::i18n::I18nLabels;
+use mc_translator::i18n::I18nLabels;
 
-use mc_translator_rs::config::AppConfig;
-use mc_translator_rs::translation::pipeline::start_translation_workflow;
+use mc_translator::config::AppConfig;
+use mc_translator::translation::pipeline::start_translation_workflow;
 
 #[derive(Parser, Debug)]
 #[command(name = "mc_translator_cli", about = "Minecraft 模組翻譯工具 - CLI 模式")]
@@ -225,7 +225,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         println!("{}", i18n.cli_fetching_models.replace("{}", &config.api_provider));
-                        let mut items = mc_translator_rs::translation::api::models::fetch_dynamic_models(
+                        let mut items = mc_translator::translation::api::models::fetch_dynamic_models(
                             &config.api_provider,
                             &config.api_key,
                             &config.ollama_url,

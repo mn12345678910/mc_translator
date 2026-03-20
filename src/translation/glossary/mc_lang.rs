@@ -30,7 +30,7 @@ pub async fn load_mc_dicts(source_lang: &str, target_lang: &str) -> Result<
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
-        .user_agent("mc_translator_rs") // GitHub API 必要 Header
+        .user_agent("mc_translator") // GitHub API 必要 Header
         .build()?;
 
     // 1. 取得目錄下的檔案清單 (優先透過 API 獲取所有官方支援字典)

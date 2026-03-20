@@ -1,7 +1,7 @@
 // tests/verify_ancient.rs
 // 驗證 ancient.json 的批次內重複條目去重與自動套用邏輯
 
-use mc_translator_rs::translation::batching::GlobalBatchItem;
+use mc_translator::translation::batching::GlobalBatchItem;
 use std::collections::HashSet;
 
 #[test]

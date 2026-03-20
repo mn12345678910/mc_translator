@@ -1,11 +1,11 @@
-use mc_translator_rs::config::{AppConfig, settings::StyleConfig};
-use mc_translator_rs::config::dictionary::{get_user_dict_path, get_official_dict_path, load_dict, save_dict};
+use mc_translator::config::{AppConfig, settings::StyleConfig};
+use mc_translator::config::dictionary::{get_user_dict_path, get_official_dict_path, load_dict, save_dict};
 use std::collections::HashMap;
 use tauri::Emitter;
 
 #[tauri::command]
 pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, String> {
-    let api_key = mc_translator_rs::config::encryption::get_api_key().unwrap_or_default();
+    let api_key = mc_translator::config::encryption::get_api_key().unwrap_or_default();
     let client = reqwest::Client::new();
 
     match provider.as_str() {
@@ -99,12 +99,12 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
 }
 
 #[tauri::command]
-pub fn get_i18n_labels(lang: Option<String>) -> mc_translator_rs::i18n::I18nLabels {
+pub fn get_i18n_labels(lang: Option<String>) -> mc_translator::i18n::I18nLabels {
     if let Some(l) = lang {
-        mc_translator_rs::i18n::I18nLabels::load_or_default(&l)
+        mc_translator::i18n::I18nLabels::load_or_default(&l)
     } else {
         let config = AppConfig::load();
-        mc_translator_rs::i18n::I18nLabels::load_or_default(&config.ui_lang)
+        mc_translator::i18n::I18nLabels::load_or_default(&config.ui_lang)
     }
 }
 
@@ -126,12 +126,12 @@ pub fn get_default_config() -> AppConfig {
 
 #[tauri::command]
 pub fn get_api_key_cmd() -> String {
-    mc_translator_rs::config::encryption::get_api_key().unwrap_or_default()
+    mc_translator::config::encryption::get_api_key().unwrap_or_default()
 }
 
 #[tauri::command]
 pub fn save_api_key_cmd(key: String) -> Result<(), String> {
-    mc_translator_rs::config::encryption::save_api_key(&key).map_err(|e| e.to_string())
+    mc_translator::config::encryption::save_api_key(&key).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -175,7 +175,7 @@ pub async fn start_translation(
     };
 
     // 啟動工作流
-    let res = mc_translator_rs::translation::pipeline::start_translation_workflow(
+    let res = mc_translator::translation::pipeline::start_translation_workflow(
         config,
         paths,
         logger,
@@ -305,7 +305,7 @@ pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<
 
 #[tauri::command]
 pub fn pause_translation() -> Result<(), String> {
-    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+    if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.paused.store(true, std::sync::atomic::Ordering::SeqCst);
             return Ok(());
@@ -316,7 +316,7 @@ pub fn pause_translation() -> Result<(), String> {
 
 #[tauri::command]
 pub fn resume_translation() -> Result<(), String> {
-    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+    if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.paused.store(false, std::sync::atomic::Ordering::SeqCst);
             job.pause_notifier.notify_one();
@@ -328,7 +328,7 @@ pub fn resume_translation() -> Result<(), String> {
 
 #[tauri::command]
 pub fn stop_translation() -> Result<(), String> {
-    if let Ok(active) = mc_translator_rs::translation::ACTIVE_JOB.lock() {
+    if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.cancelled.store(true, std::sync::atomic::Ordering::SeqCst);
             job.pause_notifier.notify_one();
@@ -398,7 +398,7 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub fn clear_user_dictionary() -> Result<(), String> {
-    use mc_translator_rs::config::settings::AppConfig;
+    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
@@ -412,7 +412,7 @@ pub fn clear_user_dictionary() -> Result<(), String> {
 
 #[tauri::command]
 pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
-    use mc_translator_rs::config::settings::AppConfig;
+    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
@@ -434,7 +434,7 @@ pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
-    use mc_translator_rs::config::settings::AppConfig;
+    use mc_translator::config::settings::AppConfig;
 
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);

@@ -1,5 +1,5 @@
 [package]
-name = "mc_translator_rs"
+name = "mc_translator"
 version = "0.5.13"
 
 

@@ -5,7 +5,7 @@ pub fn run() {
   tauri::Builder::default()
     .setup(|app| {
       // 確保語言文件刷新釋放至硬碟
-      let _ = mc_translator_rs::i18n::I18nLabels::ensure_langs_exists();
+      let _ = mc_translator::i18n::I18nLabels::ensure_langs_exists();
 
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -17,7 +17,7 @@ pub fn run() {
 
       // 讀取視窗幾何記錄並應用
       use tauri::Manager;
-      use mc_translator_rs::config::AppConfig;
+      use mc_translator::config::AppConfig;
 
       if let Some(window) = app.get_webview_window("main") {
           let config = AppConfig::load();

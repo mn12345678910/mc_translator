@@ -154,7 +154,7 @@ name = "app"
 version = "0.5.12"
 dependencies = [
  "log",
- "mc_translator_rs",
+ "mc_translator",
  "reqwest 0.11.27",
  "rfd",
  "serde",
@@ -2675,7 +2675,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
-name = "mc_translator_rs"
+name = "mc_translator"
 version = "0.5.13"
 dependencies = [
  "aho-corasick",

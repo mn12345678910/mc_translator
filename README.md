@@ -1,4 +1,4 @@
-# Minecraft Mod Auto-Translator (mc_translator_rs)
+# Minecraft Mod Auto-Translator (mc_translator)
 
 > [!NOTE]
 > 安全須知:
@@ -8,7 +8,7 @@
 > 翻譯品質須知:
 > 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請"不要"將輸出內容直接提交給模組作者。
 
-`mc_translator_rs` 是一款為 Minecraft 整合包與模組本地化設計的工具，支援 **Windows GUI** 與 **純命令列 CLI** 兩種操作模式。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
+`mc_translator` 是一款為 Minecraft 整合包與模組本地化設計的工具，支援 **Windows GUI** 與 **純命令列 CLI** 兩種操作模式。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
 
 **支援的翻譯服務**
 - Gemini

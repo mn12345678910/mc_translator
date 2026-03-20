@@ -4,7 +4,7 @@
 
 use keyring::Entry;
 
-const SERVICE_NAME: &str = "mc_translator_rs";
+const SERVICE_NAME: &str = "mc_translator";
 const ACCOUNT_NAME: &str = "api_key";
 
 /// 儲存 API 金鑰至系統憑證管理員
