@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 },
                 'api-provider': {
                     'Ollama': labels.label_ollama_url ? 'Ollama' : 'Ollama', // keep names
-                    '無': labels.label_provider_none || '無'
+                    '無': labels.label_none_provider || '無'
                 },
                 'palette-target-item': {
                     'btn-translate': labels.spec_btn_run_trans,
@@ -583,6 +583,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 else if (id === 'input-path' && labels.placeholder_input_path) el.placeholder = labels.placeholder_input_path;
                 else if (labels[key]) el.placeholder = labels[key];
             });
+
+            // [NEW] 如果 Prompt 還是預設繁中，則自動換成新語言的預設 (避免設定檔鎖死)
+            const twUserDefault = "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。";
+            const twSysDefault = "\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。";
+
+            const normValue = (v) => v ? v.replace(/\r\n/g, '\n').trim() : '';
+
+            if (userPrompt && normValue(userPrompt.value) === normValue(twUserDefault) && labels.default_user_prompt) {
+                userPrompt.value = labels.default_user_prompt;
+            }
+            if (systemPrompt && normValue(systemPrompt.value) === normValue(twSysDefault) && labels.default_system_prompt) {
+                systemPrompt.value = labels.default_system_prompt;
+            }
         } catch (err) {
             console.error('更新介面語言失敗', err);
         }
