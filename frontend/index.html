@@ -43,12 +43,20 @@
             <button id="btn-pause" style="display: none;">⏸️ 暫停</button>
             <button id="btn-resume" style="display: none;">▶️ 繼續</button>
             <button id="btn-stop" style="display: none; background-color: #aa1111;">⏹️ 停止</button>
-            <button id="btn-open-dict" class="secondary-btn">📖 字典管理</button>
+            
+            <!-- [NEW] 導航列 -->
+            <div style="flex: 1; display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="btn-nav-api" class="secondary-btn" title="API 與常數設置">⚙️</button>
+                <button id="btn-nav-dict" class="secondary-btn" title="字典管理器">📖</button>
+                <button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理">🎨</button>
+                <button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題">🌓</button>
+                <button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項">🔧</button>
+            </div>
         </div>
     </div>
 
     <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
-    <div class="control-panel api-settings">
+    <div class="control-panel api-settings" style="display: none;">
         <h2>⚙️ API 與常規參數設定</h2>
         <div class="form-grid">
             <div class="form-group">
@@ -78,7 +86,7 @@
             </div>
             <div class="form-group">
                 <label for="batch-size">單批次條目數 (Batch Size)</label>
-                <input type="number" id="batch-size" min="1" max="100">
+                <input type="number" id="batch-size" min="1" max="300">
             </div>
             <div class="form-group">
                 <label for="batch-max-chars">批次最大字數</label>
@@ -87,6 +95,13 @@
             <div class="form-group">
                 <label for="timeout-sec">API 超時秒數</label>
                 <input type="number" id="timeout-sec" min="5">
+            </div>
+            <div class="form-group">
+                <label for="glossary-priority">術語優先級</label>
+                <select id="glossary-priority">
+                    <option value="official">官方推論優先</option>
+                    <option value="user">使用者詞庫優先</option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="pack-format">資源包格式 (Pack Format)</label>
@@ -125,7 +140,7 @@
     </div>
 
     <!-- 🔧 開發人員選項 -->
-    <div class="control-panel developer-settings">
+    <div class="control-panel developer-settings" style="display: none;">
         <h2>🔧 開發人員檔案過濾</h2>
         <div class="checkbox-grid">
             <div class="switch-group">
@@ -153,7 +168,7 @@
     </div>
 
     <!-- 🎨 調色盤與佈局管理面板 -->
-    <div class="control-panel theme-settings">
+    <div class="control-panel theme-settings" style="display: none;">
         <h2>🎨 調色盤與佈局管理</h2>
         <div class="palette-grid">
             <div class="color-item"><label>背景顏色</label><input type="color" id="color-bg"></div>
@@ -161,11 +176,28 @@
             <div class="color-item"><label>按鈕背景</label><input type="color" id="color-btn-bg"></div>
             <div class="color-item"><label>按鈕文字</label><input type="color" id="color-btn-text"></div>
         </div>
-        <!-- [NEW] 字體大小調整框 (100% 復刻) -->
-        <div class="form-group" style="margin-top: 15px; max-width: 200px;">
-            <label for="font-size">字體大小 (Font Size):</label>
-            <input type="number" id="font-size" value="15" min="12" max="30" step="0.5">
+        <!-- [NEW] 字體大小與圓角/動畫設定 -->
+        <div class="form-grid" style="margin-top: 15px;">
+            <div class="form-group">
+                <label for="font-size">字體大小 (Font Size):</label>
+                <input type="number" id="font-size" value="15" min="12" max="30" step="0.5">
+            </div>
+            <div class="form-group">
+                <label for="btn-rounding-value">全局圓角 (Rounding):</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" id="chk-btn-rounding" checked style="width: 20px;">
+                    <input type="number" id="btn-rounding-value" value="4" min="0" max="20" step="1" style="flex: 1;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="pulse-speed">進度條光暈速度 (Pulse Speed):</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="checkbox" id="chk-pulse" checked style="width: 20px;">
+                    <input type="number" id="pulse-speed" value="1.0" min="0.1" max="5.0" step="0.1" style="flex: 1;">
+                </div>
+            </div>
         </div>
+        
         <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button id="btn-save-style" style="flex: 1;">💾 儲存佈景配置</button>
             <button id="btn-restore-style" class="secondary-btn" style="background-color: #444; flex: 1; color: #fff; border: 1px solid #555;">🔄 恢復預設樣式</button>

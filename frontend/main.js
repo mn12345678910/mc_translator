@@ -12,7 +12,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnPause = document.getElementById('btn-pause');
     const btnResume = document.getElementById('btn-resume');
     const btnStop = document.getElementById('btn-stop');
-    const btnOpenDict = document.getElementById('btn-open-dict');
+    
+    // 🎛️ 導航列按鈕 [NEW]
+    const btnNavApi = document.getElementById('btn-nav-api');
+    const btnNavDict = document.getElementById('btn-nav-dict');
+    const btnNavPalette = document.getElementById('btn-nav-palette');
+    const btnNavTheme = document.getElementById('btn-nav-theme');
+    const btnNavDev = document.getElementById('btn-nav-dev');
+
+    // 面板容器
+    const panelApi = document.querySelector('.api-settings');
+    const panelDev = document.querySelector('.developer-settings');
+    const panelTheme = document.querySelector('.theme-settings');
 
     // ⚙️ API 參數元件
     const apiProvider = document.getElementById('api-provider');
@@ -24,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const batchMaxChars = document.getElementById('batch-max-chars');
     const timeoutSec = document.getElementById('timeout-sec');
     const packFormat = document.getElementById('pack-format'); // [NEW] <select>
+    const glossaryPriority = document.getElementById('glossary-priority'); // [NEW]
     const uiLang = document.getElementById('ui-lang'); // [NEW]
     const btnSaveConfig = document.getElementById('btn-save-config');
 
@@ -44,6 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const colorBtnBg = document.getElementById('color-btn-bg');
     const colorBtnText = document.getElementById('color-btn-text');
     const fontSize = document.getElementById('font-size'); // [NEW]
+    const chkBtnRounding = document.getElementById('chk-btn-rounding');
+    const btnRoundingValue = document.getElementById('btn-rounding-value');
+    const chkPulse = document.getElementById('chk-pulse');
+    const pulseSpeed = document.getElementById('pulse-speed');
     const btnSaveStyle = document.getElementById('btn-save-style');
 
     // 📊 日誌與狀態元組
@@ -87,6 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             batchMaxChars.value = config.batch_max_chars || 3500;
             timeoutSec.value = config.timeout || 60;
             packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
+            glossaryPriority.value = config.glossary_priority || 'official'; // [NEW]
             uiLang.value = config.ui_lang || 'zh_tw';
             outputDir.value = config.output_dir || ''; // [SYNC]
 
@@ -100,8 +117,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             chkLlmLog.checked = config.enable_llm_log || false;
 
             // 🛠️ 控制面板切換 [NEW]
-            document.querySelector('.api-settings').style.display = config.show_api_settings ? 'block' : 'none';
-            document.querySelector('.developer-settings').style.display = config.show_developer_mode ? 'block' : 'none';
+            updatePanelVisibility(config.show_api_settings, config.show_developer_mode, currentStyle.show_palette_settings);
 
             toggleOllamaGroup();
             await loadModels();
@@ -127,6 +143,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentConfig.batch_max_chars = parseInt(batchMaxChars.value);
             currentConfig.timeout = parseInt(timeoutSec.value);
             currentConfig.pack_format = parseInt(packFormat.value);
+            currentConfig.glossary_priority = glossaryPriority.value; // [NEW]
             currentConfig.ui_lang = uiLang.value;
             currentConfig.output_dir = outputDir.value; // [SYNC]
 
@@ -164,6 +181,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 fontSize.value = style.font_size;
                 document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
             }
+            // 圓角與動畫
+            chkBtnRounding.checked = style.btn_rounding_enabled ?? true;
+            btnRoundingValue.value = style.btn_rounding_value ?? 4.0;
+            chkPulse.checked = style.progress_pulse_enabled ?? true;
+            pulseSpeed.value = style.progress_pulse_speed ?? 1.0;
 
             applyColors(style);
         } catch (e) {
@@ -185,11 +207,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (isDark) currentStyle.dark_btn_text = btxt; else currentStyle.light_btn_text = btxt;
 
             currentStyle.font_size = parseFloat(fontSize.value);
+            currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
+            currentStyle.btn_rounding_value = parseFloat(btnRoundingValue.value);
+            currentStyle.progress_pulse_enabled = chkPulse.checked;
+            currentStyle.progress_pulse_speed = parseFloat(pulseSpeed.value);
 
             await invoke('save_style_config', { style: currentStyle });
             appendLog('🎨 調色盤與佈局保存成功！');
             applyColors(currentStyle);
             document.documentElement.style.setProperty('--font-size', fontSize.value + 'px');
+
         } catch (e) {
             appendLog(`❌ 保存樣式失敗: ${e}`);
         }
@@ -218,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- 📂 5. Native 瀏覽對話框連鎖 ---
     async function browsePath(type, targetEl) {
         try {
-            const path = await invoke('open_path_dialog', { dialogType: type });
+            const path = await invoke('open_path_dialog', { diagType: type });
             if (path) targetEl.value = path;
         } catch (e) {
             appendLog(`❌ 瀏覽路徑失敗: ${e}`);
@@ -254,6 +281,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnSaveConfig.addEventListener('click', saveConfig);
     btnSaveStyle.addEventListener('click', saveStyle);
 
+    // 🎛️ 面板 UI 控制與排斥邏輯
+    function updatePanelVisibility(showApi, showDev, showPalette) {
+        panelApi.style.display = showApi ? 'block' : 'none';
+        panelDev.style.display = showDev ? 'block' : 'none';
+        panelTheme.style.display = showPalette ? 'block' : 'none';
+    }
+
+    if (btnNavApi) {
+        btnNavApi.addEventListener('click', async () => {
+            currentConfig.show_api_settings = !currentConfig.show_api_settings;
+            if (currentConfig.show_api_settings) {
+                currentConfig.show_developer_mode = false;
+                currentStyle.show_palette_settings = false;
+            }
+            updatePanelVisibility(currentConfig.show_api_settings, currentConfig.show_developer_mode, currentStyle.show_palette_settings);
+            await invoke('save_config', { config: currentConfig });
+        });
+    }
+
+    if (btnNavDev) {
+        btnNavDev.addEventListener('click', async () => {
+            currentConfig.show_developer_mode = !currentConfig.show_developer_mode;
+            if (currentConfig.show_developer_mode) {
+                currentConfig.show_api_settings = false;
+                currentStyle.show_palette_settings = false;
+            }
+            updatePanelVisibility(currentConfig.show_api_settings, currentConfig.show_developer_mode, currentStyle.show_palette_settings);
+            await invoke('save_config', { config: currentConfig });
+        });
+    }
+
+    if (btnNavPalette) {
+        btnNavPalette.addEventListener('click', async () => {
+             currentStyle.show_palette_settings = !currentStyle.show_palette_settings;
+             if (currentStyle.show_palette_settings) {
+                 currentConfig.show_api_settings = false;
+                 currentConfig.show_developer_mode = false;
+             }
+             updatePanelVisibility(currentConfig.show_api_settings, currentConfig.show_developer_mode, currentStyle.show_palette_settings);
+             await invoke('save_config', { config: currentConfig });
+             // [Optional] 記錄 Palette 面板是否展開，為簡化我們把這狀態借用 config
+        });
+    }
+
+    if (btnNavTheme) {
+        btnNavTheme.addEventListener('click', async () => {
+            currentStyle.theme = currentStyle.theme === 'dark' ? 'light' : 'dark';
+            await invoke('save_style_config', { style: currentStyle });
+            await loadStyle();
+            appendLog(`🌓 主題已切換為：${currentStyle.theme === 'dark' ? '暗色' : '亮色'}，若未完全套用請重新整理。`);
+        });
+    }
+
     // --- 🚀 翻譯執行與監聽 ---
     btnTranslate.addEventListener('click', async () => {
         const path = inputPath.value.trim();
@@ -271,6 +351,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentConfig.batch_max_chars = parseInt(batchMaxChars.value);
         currentConfig.timeout = parseInt(timeoutSec.value);
         currentConfig.pack_format = parseInt(packFormat.value);
+        currentConfig.glossary_priority = glossaryPriority.value;
         currentConfig.user_prompt = userPrompt.value;
         currentConfig.system_prompt = systemPrompt.value;
         currentConfig.skip_json = chkSkipJson.checked;
@@ -333,6 +414,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
         if (btnBg) document.documentElement.style.setProperty('--btn-bg', `rgb(${btnBg[0]},${btnBg[1]},${btnBg[2]})`);
         if (btnTxt) document.documentElement.style.setProperty('--btn-text', `rgb(${btnTxt[0]},${btnTxt[1]},${btnTxt[2]})`);
+
+        // 套用圓角
+        if (style.btn_rounding_enabled !== false) {
+            document.documentElement.style.setProperty('--border-radius', `${style.btn_rounding_value ?? 4.0}px`);
+        } else {
+            document.documentElement.style.setProperty('--border-radius', '0px'); // 關閉圓角
+        }
+
+        // 套用進度條脈衝動畫
+        if (style.progress_pulse_enabled) {
+            const speed = style.progress_pulse_speed ?? 1.0;
+            progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, speed)}s infinite`;
+        } else {
+            progressBar.style.animation = 'none';
+        }
     }
 
     function hexToColor(arr) { if (!arr || arr.length < 3) return '#fff'; return `rgb(${arr[0]},${arr[1]},${arr[2]})`; }
@@ -373,7 +469,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- 📖 7. 字典管理器控制 ---
     const dictDialog = document.getElementById('dict-dialog');
-    if (dictDialog && btnOpenDict) {
+    if (dictDialog && btnNavDict) {
         const tabUser = document.getElementById('tab-user');
         const tabOfficial = document.getElementById('tab-official');
         const dictSearch = document.getElementById('dict-search');
@@ -386,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let dictPageSize = 10;
         let dictType = 'user';
 
-        btnOpenDict.addEventListener('click', () => {
+        btnNavDict.addEventListener('click', () => {
             dictPage = 0;
             dictDialog.showModal();
             loadDictionary();
@@ -453,7 +549,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 'btn-pause': labels.btn_pause,
                 'btn-resume': labels.btn_resume,
                 'btn-stop': labels.btn_stop,
-                'btn-open-dict': labels.btn_nav_dict,
                 'btn-save-config': labels.btn_save_config || '💾 儲存核心參數',
                 'btn-restore-config': labels.btn_restore_defaults,
                 'btn-save-style': labels.btn_save_style || '💾 儲存佈景配置',

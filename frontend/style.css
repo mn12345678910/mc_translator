@@ -136,6 +136,13 @@ button:hover {
     width: 0%;
     height: 100%;
     transition: width 0.2s;
+    /* 動畫由 JS 套用 */
+}
+
+@keyframes pulse {
+    0% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-color); }
+    50% { opacity: 1; box-shadow: 0 0 15px var(--accent-color), inset 0 0 5px rgba(255,255,255,0.5); }
+    100% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-color); }
 }
 
 #log-output {
