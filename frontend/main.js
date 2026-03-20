@@ -488,6 +488,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 else if (forId === 'user-prompt' && labels.label_user_prompt) el.textContent = labels.label_user_prompt;
                 else if (forId === 'system-prompt' && labels.label_system_prompt) el.textContent = labels.label_system_prompt;
                 else if (forId === 'input-path' && labels.label_input_path) el.textContent = labels.label_input_path;
+                else if (forId === 'btn-rounding-value' && labels.label_global_rounding) el.textContent = labels.label_global_rounding;
+                else if (forId === 'chk-llm-log' && (labels.label_enable_log || labels.label_llm_log)) el.textContent = labels.label_enable_log || labels.label_llm_log;
                 else if (labels[key1]) el.textContent = labels[key1];
                 else if (labels[key2]) el.textContent = labels[key2];
             });

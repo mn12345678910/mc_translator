@@ -114,16 +114,16 @@
     "spec_btn_run_trans": "[特定] 翻訳開始ボタン",
     "spec_btn_pause": "[特定] 一時停止ボタン",
     "spec_btn_stop": "[特定] 停止ボタン",
-    "spec_btn_clear_log": "[特定] ログクリアボタン",
+    "spec_btn_clear_log": "[特定] ログをクリアボタン",
     "spec_btn_nav_settings": "[特定] ⚙ 設定ボタン",
     "spec_btn_nav_dict": "[特定] 📖 用語集ボタン",
     "spec_btn_nav_palette": "[特定] 🎨 パレットボタン",
     "spec_btn_nav_theme": "[特定] 🌓 テーマボタン",
     "spec_btn_nav_dev": "[特定] 🔧 開発ボタン",
-    "spec_input_search": "[特定] 検索ボックス",
+    "spec_input_search": "[特定] 検索窓",
     "spec_area_dict": "[特定] 用語集エリア",
     "spec_label_output": "[特定] 出力パスラベル",
-    "spec_progress_current": "[特定] ファイル進捗バー",
+    "spec_progress_current": "[特定] 進捗バー",
     "spec_progress_total": "[特定] 全体進捗バー",
     "glossary_title": "📖 用語集管理",
     "glossary_desc": "ここに保存された文字は、LLMがどのように翻訳すべきかの提案として使用されます（提案のみであり、必ずしも使用されるとは限りません）",
@@ -263,5 +263,6 @@
     "btn_save_style": "💾 パレットを保存",
     "status_ui_lang_changed": "🌍 インターフェース言語が {} に変更されました",
     "label_items": "項目",
-    "label_files": "ファイル"
+    "label_files": "ファイル",
+    "label_llm_log": "LLM通信ログを記録"
 }
