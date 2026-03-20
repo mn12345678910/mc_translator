@@ -50,6 +50,7 @@ jobs:
 
         # 2. 複製 GUI (僅要純 .exe)
         $gui_paths = @(
+            "src-tauri/target/release/mc_translator_rs.exe",
             "src-tauri/target/release/mc_translator.exe",
             "src-tauri/target/release/app.exe",
             "target/release/mc_translator.exe",
