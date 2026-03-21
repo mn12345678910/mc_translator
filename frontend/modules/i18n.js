@@ -42,6 +42,7 @@ export async function updateUiLanguage() {
     try {
         const labels = await invoke('get_i18n_labels', { lang: uiLang ? uiLang.value : undefined });
         if (!labels) return;
+        const oldLabels = { ...state.currentLabels };
         state.currentLabels = { ...labels };
 
         if (uiLang && uiLang.value) {
@@ -204,7 +205,7 @@ export async function updateUiLanguage() {
         const knownUserDefaults = [
             '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
             "You are a professional Minecraft mod translator. Please translate the following strings into 'English (en_us)'.\nMaintain a gaming terminology style (e.g., Block, Entity, Enchantment).",
-            '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语風格（如方块、实体、附魔）。',
+            '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。',
             'あなたはプロのMinecraft Mod翻訳者です。以下のMod文字列を「日本語 (ja_jp)」に翻訳してください。\nゲームの用語スタイル（例：ブロック、エンティティ、エンチャント）を維持してください。',
         ];
         const knownSysDefaults = [
@@ -224,6 +225,19 @@ export async function updateUiLanguage() {
             const currentVal = normValue(systemPrompt.value);
             if (knownSysDefaults.some((v) => normValue(v) === currentVal)) {
                 systemPrompt.value = labels.default_system_prompt;
+            }
+        }
+
+        const selectedModel = document.getElementById('selected-model');
+        if (selectedModel && selectedModel.options.length > 0) {
+            const firstOpt = selectedModel.options[0];
+            if (firstOpt.value === "") {
+                const oldSelect = oldLabels.prompt_select_model || '請選取模型';
+                const oldLoading = oldLabels.label_loading_models || '載入中...';
+                const oldNoModels = oldLabels.label_no_models || '(無可用模型)';
+                if (firstOpt.textContent === oldSelect || firstOpt.textContent === oldLoading || firstOpt.textContent === oldNoModels) {
+                    firstOpt.textContent = labels.prompt_select_model || '請選取模型';
+                }
             }
         }
     } catch (err) {

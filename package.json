@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "test:frontend": "vitest run",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
     "lint": "eslint \"frontend/**/*.js\""
@@ -28,6 +29,8 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
     "eslint": "^9.10.0",
-    "prettier": "^3.3.3"
+    "happy-dom": "^20.8.4",
+    "prettier": "^3.3.3",
+    "vitest": "^4.1.0"
   }
 }
