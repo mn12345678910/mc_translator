@@ -26,10 +26,18 @@ jobs:
         workspaces: |
           .
           src-tauri
-    - name: Check
+    - name: Install Linux Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+    - name: Check CLI
       run: cargo check
-    - name: Run Tests
+    - name: Run Tests CLI
       run: cargo test
+    - name: Check GUI
+      run: cargo check --manifest-path src-tauri/Cargo.toml
+    - name: Run Tests GUI
+      run: cargo test --manifest-path src-tauri/Cargo.toml
 
   build-cli:
     name: Build CLI (Windows)
@@ -95,11 +103,11 @@ jobs:
       contents: write
     steps:
     - name: Download CLI Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: mc_translator_cli
     - name: Download GUI Artifact
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@v8
       with:
         name: mc_translator_gui
     - name: Create GitHub Release
