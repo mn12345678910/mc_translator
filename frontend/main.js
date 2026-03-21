@@ -229,22 +229,46 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!paletteTargetType || paletteTargetType.value !== 'specific' || !paletteTargetItem) return;
             const target = paletteTargetItem.value;
             
-            let overridden = false;
-            if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
-                delete state.currentStyle.instance_overrides[target];
-                overridden = true;
-            }
-            
-            const el = document.getElementById(target);
-            if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
-            updatePaletteValue();
-            applyColors(state.currentStyle);
+            try {
+                const ds = await invoke('get_default_style_config');
+                const isDark = state.currentStyle.theme !== 'light';
+                let bg, text, rounding = ds.btn_rounding_value;
+                const targetStr = String(target);
+                
+                if (targetStr.startsWith('btn-') && targetStr !== 'btn-translate') {
+                    bg = isDark ? ds.dark_btn_bg : ds.light_btn_bg;
+                    text = isDark ? ds.dark_btn_text : ds.light_btn_text;
+                } else if (targetStr === 'btn-translate') {
+                    bg = [212, 175, 55]; 
+                    text = [17, 17, 17];
+                } else if (targetStr.includes('prompt') || targetStr.includes('dir') || targetStr.includes('path')) {
+                    bg = isDark ? ds.dark_input_bg : ds.light_input_bg;
+                    text = isDark ? ds.dark_text : ds.light_text;
+                } else if (targetStr === 'log-output' || targetStr === 'dict-dialog') {
+                    bg = targetStr === 'dict-dialog' ? (isDark ? ds.dark_bg : ds.light_bg) : (isDark ? ds.dark_list_bg : ds.light_list_bg);
+                    text = isDark ? ds.dark_text : ds.light_text;
+                } else if (targetStr === 'progress-bar') {
+                    bg = [212, 175, 55];
+                } else if (targetStr === 'batch-progress-bar') {
+                    bg = [136, 192, 208];
+                }
+                
+                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
+                state.currentStyle.instance_overrides[target] = { rounding };
+                if (bg) state.currentStyle.instance_overrides[target].bg = bg;
+                if (text) state.currentStyle.instance_overrides[target].text = text;
 
-            if (overridden) {
+                const el = document.getElementById(target);
+                if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
+                
+                updatePaletteValue();
+                applyColors(state.currentStyle);
                 await invoke('save_style_config', { config: state.currentStyle });
-                appendLog(state.currentLabels.status_palette_clear_item || '🗑 已清除該元件的所有自訂覆寫。');
-            } else {
-                appendLog(state.currentLabels.status_palette_clear_empty || '✅ 此元件目前無自訂覆寫。');
+                
+                const targetName = paletteTargetItem.options[paletteTargetItem.selectedIndex].text;
+                appendLog((state.currentLabels.status_palette_clear_item || '🗑 已清除元件覆寫: {}').replace('{}', targetName));
+            } catch (e) {
+                console.error(e);
             }
         });
     }

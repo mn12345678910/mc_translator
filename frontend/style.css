@@ -56,7 +56,7 @@ h2 {
 label {
     display: block;
     margin-bottom: 5px;
-    color: var(--text-color);
+    color: var(--label-color, var(--text-color));
 }
 
 input[type="text"] {
@@ -85,8 +85,8 @@ button:hover {
 }
 
 #btn-translate, #btn-save-style {
-    background-color: var(--btn-bg);
-    color: var(--btn-text);
+    background-color: var(--accent-color);
+    color: #111;
 }
 
 #btn-translate:hover, #btn-save-style:hover {

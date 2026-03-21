@@ -83,6 +83,7 @@ export function applyColors(style) {
     const listBg = isDark ? style.dark_list_bg : style.light_list_bg;
     const tabActive = isDark ? style.dark_tab_active : style.light_tab_active;
     const tabInactive = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
+    const labelColor = isDark ? style.dark_label : style.light_label;
 
     if (bg) document.documentElement.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
     if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
@@ -92,6 +93,7 @@ export function applyColors(style) {
     if (listBg) document.documentElement.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
     if (tabActive) document.documentElement.style.setProperty('--tab-active-bg', `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`);
     if (tabInactive) document.documentElement.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
+    if (labelColor) document.documentElement.style.setProperty('--label-color', `rgb(${labelColor[0]},${labelColor[1]},${labelColor[2]})`);
 
     if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
 

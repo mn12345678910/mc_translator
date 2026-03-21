@@ -121,7 +121,8 @@ export async function updateUiLanguage() {
             'api-provider': { 'Ollama': 'Ollama', '無': labels.label_provider_none || '無' },
             'palette-target-item': {
                 'dark_bg': labels.cat_all_bg,
-                'dark_text': labels.cat_all_labels || labels.label_text_color,
+                'dark_label': labels.cat_all_labels,
+                'dark_text': labels.cat_all_text || labels.label_text_color,
                 'dark_btn_bg': labels.cat_all_buttons,
                 'dark_btn_text': labels.cat_all_btn_text,
                 'dark_input_bg': labels.cat_all_inputs,
