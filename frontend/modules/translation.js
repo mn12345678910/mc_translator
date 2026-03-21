@@ -19,7 +19,7 @@ export function setRunningState(isRunning) {
             btnTranslate.style.display = 'none';
             btnPause.style.display = 'inline-block';
             btnStop.style.display = 'inline-block';
-            btnPause.textContent = state.currentLabels.btn_pause || '⏸️ 暫停';
+            btnPause.textContent = state.currentLabels.btn_pause;
         } else {
             btnTranslate.style.display = 'inline-block';
             btnPause.style.display = 'none';
@@ -42,10 +42,10 @@ export function initTranslation() {
             const inputPath = document.getElementById('input-path');
             const outputDir = document.getElementById('output-dir');
             if (inputPath && inputPath.value.trim() === '') {
-                return alert(state.currentLabels.status_input_path_empty || '請先選擇檔案或主目錄！');
+                return alert(state.currentLabels.status_input_path_empty);
             }
             if (outputDir && outputDir.value.trim() === '') {
-                return alert(state.currentLabels.status_output_dir_empty || '請選擇輸出目錄！');
+                return alert(state.currentLabels.status_output_dir_empty);
             }
             try {
                 // 確保從 DOM 取出最新狀態
@@ -55,9 +55,9 @@ export function initTranslation() {
                 await invoke('start_translation', { config: state.currentConfig });
                 setRunningState(true);
                 if (progressBar) { progressBar.style.width = '0%'; progressBar.style.display = 'block'; }
-                if (statusText) statusText.textContent = state.currentLabels.status_starting || '🚀 正在啟動...';
+                if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
             } catch (e) {
-                appendLog((state.currentLabels.status_trans_failed_mask || '❌ 翻譯失敗: {}').replace('{}', e));
+                appendLog(state.currentLabels.status_trans_failed_mask.replace('{}', e));
                 setRunningState(false);
             }
         });
@@ -69,9 +69,9 @@ export function initTranslation() {
             if (btnPause && btnResume) {
                 btnPause.style.display = 'none';
                 btnResume.style.display = 'inline-block';
-                btnResume.textContent = state.currentLabels.btn_resume || '▶️ 繼續';
+                btnResume.textContent = state.currentLabels.btn_resume;
             }
-            if (statusText) statusText.textContent = state.currentLabels.status_paused || '⏸️ 已暫停';
+            if (statusText) statusText.textContent = state.currentLabels.status_trans_paused;
         });
     }
 
@@ -82,14 +82,14 @@ export function initTranslation() {
                 btnPause.style.display = 'inline-block';
                 btnResume.style.display = 'none';
             }
-            if (statusText) statusText.textContent = state.currentLabels.status_resumed || '▶️ 繼續執行中';
+            if (statusText) statusText.textContent = state.currentLabels.status_trans_resumed;
         });
     }
 
     if (btnStop) {
         btnStop.addEventListener('click', async () => {
             await invoke('stop_translation');
-            if (statusText) statusText.textContent = state.currentLabels.status_stopping || '🛑 正在停止中...';
+            if (statusText) statusText.textContent = state.currentLabels.status_trans_stopping;
         });
     }
 
@@ -102,7 +102,7 @@ export function initTranslation() {
                 progressBar.style.width = `${pct}%`;
             }
             if (statusText) {
-                const mask = state.currentLabels.status_progress_mask || '⏳ 執行中 ({} / {}) - {}';
+                const mask = state.currentLabels.status_progress_mask;
                 statusText.textContent = mask.replace('{}', data.current).replace('{}', data.total).replace('{}', data.msg);
             }
             if (data.msg) appendLog(data.msg);
@@ -112,7 +112,7 @@ export function initTranslation() {
             const data = event.payload; // { success: bool, msg: "..." }
             setRunningState(false);
             if (progressBar) progressBar.style.width = '100%';
-            if (statusText) statusText.textContent = data.success ? (state.currentLabels.status_done || '🎉 翻譯完成！') : '❌ 翻譯失敗 / 中止';
+            if (statusText) statusText.textContent = data.success ? state.currentLabels.status_finished : state.currentLabels.status_failed_or_cancelled;
             appendLog(data.msg);
         });
 
@@ -128,7 +128,7 @@ export function initTranslation() {
                 }
             }
             if (batchText) {
-                const mask = state.currentLabels.status_batch_mask || '📦 批次進度 ({} / {})';
+                const mask = state.currentLabels.status_batch_mask;
                 batchText.textContent = mask.replace('{}', data.batch_index).replace('{}', data.total_batches);
             }
         });

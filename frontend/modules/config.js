@@ -54,12 +54,11 @@ export async function loadConfig() {
         if (chkLlmLog) chkLlmLog.checked = config.enable_llm_log || false;
 
         toggleOllamaGroup();
+        await updateUiLanguage();
         await loadModels();
         if (config.model && selectedModel) {
             selectedModel.value = config.model;
         }
-        
-        updateUiLanguage();
         toggleApiKeyVisibility();
         validateCanTranslate();
     } catch (e) {
@@ -126,10 +125,10 @@ export async function loadModels() {
     const selectedModel = document.getElementById('selected-model');
     if (!apiProvider || !selectedModel) return;
     const provider = apiProvider.value;
-    selectedModel.innerHTML = `<option value="">${state.currentLabels.label_loading_models || '載入中...'}</option>`;
+    selectedModel.innerHTML = `<option value="">${state.currentLabels.label_loading_models}</option>`;
     try {
         const models = await invoke('get_models_from_provider', { provider });
-        selectedModel.innerHTML = '';
+        selectedModel.innerHTML = `<option value="">${state.currentLabels.prompt_select_model}</option>`;
         models.forEach(m => {
             const opt = document.createElement('option');
             opt.value = m; opt.textContent = m;

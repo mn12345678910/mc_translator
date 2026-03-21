@@ -295,5 +295,13 @@
     "cat_all_tabs": "すべてのタブ",
     "cat_nav_bar": "ナビゲーションバー",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(デフォルト:vsync)"
+    "label_fps_preset_vsync": "(デフォルト:vsync)",
+    "cat_all_btn_text": "すべてのボタンテキスト",
+    "cat_all_tab_active": "タブ（アクティブ）",
+    "cat_all_tab_inactive": "タブ（非アクティブ）",
+    "status_failed_or_cancelled": "❌ 失敗 / 中止",
+    "status_output_dir_empty": "⚠️ 出力ディレクトリを選択してください！",
+    "status_trans_failed_mask": "❌ 翻訳が失敗しました: {}",
+    "status_progress_mask": "⏳ 実行中 ({} / {}) - {}",
+    "status_batch_mask": "📦 バッチ進捗 ({} / {})"
 }

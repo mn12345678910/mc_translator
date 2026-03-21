@@ -295,5 +295,13 @@
     "cat_all_tabs": "All Tabs",
     "cat_nav_bar": "Nav Bar",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(Default:vsync)"
+    "label_fps_preset_vsync": "(Default:vsync)",
+    "cat_all_btn_text": "All Button Text",
+    "cat_all_tab_active": "Tab Active",
+    "cat_all_tab_inactive": "Tab Inactive",
+    "status_failed_or_cancelled": "❌ Failed or Cancelled",
+    "status_output_dir_empty": "⚠️ Please select output directory!",
+    "status_trans_failed_mask": "❌ Translation failed: {}",
+    "status_progress_mask": "⏳ In progress ({} / {}) - {}",
+    "status_batch_mask": "📦 Batch progress ({} / {})"
 }

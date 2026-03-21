@@ -142,7 +142,7 @@ export function updatePaletteValue() {
         } else {
             if (paletteColorGroup) paletteColorGroup.style.display = 'block';
             if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'none';
-            if (labelPaletteColor) labelPaletteColor.textContent = prop === 'bg' ? (state.currentLabels.label_bg_color || '背景顏色') : (state.currentLabels.label_text_color || '文字顏色');
+            if (labelPaletteColor) labelPaletteColor.textContent = prop === 'bg' ? state.currentLabels.label_bg_color : state.currentLabels.label_text_color;
 
             let color = override ? (prop === 'bg' ? override.bg : override.text) : null;
             if (paletteColor) paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';

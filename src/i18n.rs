@@ -320,6 +320,26 @@ pub struct I18nLabels {
     pub btn_save_style: String,
     pub label_items: String,
     pub label_files: String,
+    
+    // --- Palette Categories & Sub-items [NEW] ---
+    pub cat_all_bg: String,
+    pub cat_all_buttons: String,
+    pub cat_all_inputs: String,
+    pub cat_all_labels: String,
+    pub cat_all_logs: String,
+    pub cat_all_progress: String,
+    pub cat_all_tabs: String,
+    pub cat_nav_bar: String,
+    pub cat_all_btn_text: String,
+    pub cat_all_tab_active: String,
+    pub cat_all_tab_inactive: String,
+    pub label_fps: String,
+    pub label_fps_preset_vsync: String,
+    pub status_failed_or_cancelled: String,
+    pub status_output_dir_empty: String,
+    pub status_trans_failed_mask: String,
+    pub status_progress_mask: String,
+    pub status_batch_mask: String,
 
 }
 

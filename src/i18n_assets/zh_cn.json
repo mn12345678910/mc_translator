@@ -295,5 +295,13 @@
     "cat_all_tabs": "全部建议词分段",
     "cat_nav_bar": "顶部导航栏",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(默认:vsync)"
+    "label_fps_preset_vsync": "(默认:vsync)",
+    "cat_all_btn_text": "全部按钮文字",
+    "cat_all_tab_active": "分页背景 (选中)",
+    "cat_all_tab_inactive": "分页背景 (未选中)",
+    "status_failed_or_cancelled": "❌ 翻译失败 / 中断",
+    "status_output_dir_empty": "⚠️ 请选择输出目录！",
+    "status_trans_failed_mask": "❌ 翻译失败: {}",
+    "status_progress_mask": "⏳ 执行中 ({} / {}) - {}",
+    "status_batch_mask": "📦 批次进度 ({} / {})"
 }
