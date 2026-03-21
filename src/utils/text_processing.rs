@@ -84,7 +84,11 @@ pub fn validate_and_cleanup(text: &str) -> String {
                     s = String::new();
                 }
             } else if let Some(arr) = v.as_array() {
-                if arr.is_empty() {
+                if arr.len() == 1 {
+                    if let Some(val) = arr.first().and_then(|v| v.as_str()) {
+                        s = val.to_string();
+                    }
+                } else if arr.is_empty() {
                     s = String::new();
                 }
             }
