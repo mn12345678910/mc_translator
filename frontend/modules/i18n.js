@@ -14,13 +14,13 @@ export async function loadUiLangs() {
             opt.value = l;
             opt.textContent =
                 l === 'zh_tw'
-                    ? state.currentLabels.lang_zh_tw || '繁體中文 (zh_tw)'
+                    ? state.currentLabels.lang_zh_tw
                     : l === 'en_us'
-                      ? state.currentLabels.lang_en_us || 'English (en_us)'
+                      ? state.currentLabels.lang_en_us
                       : l === 'zh_cn'
-                        ? state.currentLabels.lang_zh_cn || '简体中文 (zh_cn)'
+                        ? state.currentLabels.lang_zh_cn
                         : l === 'ja_jp'
-                          ? state.currentLabels.lang_ja_jp || '日本語 (ja_jp)'
+                          ? state.currentLabels.lang_ja_jp
                           : l;
             uiLang.appendChild(opt);
         });
@@ -74,13 +74,13 @@ export async function updateUiLanguage() {
             'btn-dict-export': labels.btn_export,
             'btn-dict-replace': labels.btn_replace,
             'btn-dict-add': labels.btn_add,
-            'tab-user': labels.glossary_tab_user || '使用者詞庫',
-            'tab-official': labels.glossary_tab_official || '官方推論',
-            'page-prev': labels.btn_page_prev || '上一頁',
-            'page-next': labels.btn_page_next || '下一頁',
+            'tab-user': labels.glossary_tab_user,
+            'tab-official': labels.glossary_tab_official,
+            'page-prev': labels.btn_page_prev,
+            'page-next': labels.btn_page_next,
             'label-items': labels.label_items,
             'label-files': labels.label_files,
-            'btn-palette-clear-item': labels.btn_restore_defaults || '🗑 清除元件覆寫',
+            'btn-palette-clear-item': labels.btn_restore_defaults,
         };
 
         for (const [id, txt] of Object.entries(mapping)) {
@@ -134,7 +134,7 @@ export async function updateUiLanguage() {
         const optionMapping = {
             'glossary-priority': { official: labels.glossary_priority_official, user: labels.glossary_priority_user },
             'palette-target-type': { global: labels.group_batch, specific: labels.group_specific },
-            'api-provider': { Ollama: 'Ollama', 無: labels.label_provider_none || '無' },
+            'api-provider': { Ollama: 'Ollama', 無: labels.label_provider_none },
             'palette-target-item': {
                 dark_bg: labels.cat_all_bg,
                 dark_label: labels.cat_all_labels,
@@ -232,11 +232,11 @@ export async function updateUiLanguage() {
         if (selectedModel && selectedModel.options.length > 0) {
             const firstOpt = selectedModel.options[0];
             if (firstOpt.value === "") {
-                const oldSelect = oldLabels.prompt_select_model || '請選取模型';
-                const oldLoading = oldLabels.label_loading_models || '載入中...';
-                const oldNoModels = oldLabels.label_no_models || '(無可用模型)';
+                const oldSelect = oldLabels.prompt_select_model;
+                const oldLoading = oldLabels.label_loading_models;
+                const oldNoModels = oldLabels.label_no_models;
                 if (firstOpt.textContent === oldSelect || firstOpt.textContent === oldLoading || firstOpt.textContent === oldNoModels) {
-                    firstOpt.textContent = labels.prompt_select_model || '請選取模型';
+                    firstOpt.textContent = labels.prompt_select_model;
                 }
             }
         }
@@ -261,19 +261,19 @@ export function updateToggleStateLabel(id, checked) {
 
     if (id === 'chk-glossary-priority') {
         labelEl.textContent = checked
-            ? (labels.glossary_priority_user || '術語優先級: 使用者優先')
-            : (labels.glossary_priority_official || '術語優先級: 官方優先');
+            ? (labels.glossary_priority_user)
+            : (labels.glossary_priority_official);
     } else if (id === 'chk-llm-log') {
         labelEl.textContent = checked 
-            ? (labels.label_enable_log || '開啟記錄日誌') 
-            : (labels.label_disable_log || '關閉記錄日誌');
+            ? (labels.label_enable_log) 
+            : (labels.label_disable_log);
     } else if (id === 'chk-skip-json') {
-        labelEl.textContent = checked ? (labels.label_skip_json || '跳過 .json') : (labels.label_no_skip_json || '不跳過 .json');
+        labelEl.textContent = checked ? (labels.label_skip_json) : (labels.label_no_skip_json);
     } else if (id === 'chk-skip-js') {
-        labelEl.textContent = checked ? (labels.label_skip_js || '跳過 .js') : (labels.label_no_skip_js || '不跳過 .js');
+        labelEl.textContent = checked ? (labels.label_skip_js) : (labels.label_no_skip_js);
     } else if (id === 'chk-skip-jar') {
-        labelEl.textContent = checked ? (labels.label_skip_jar || '跳過 .jar') : (labels.label_no_skip_jar || '不跳過 .jar');
+        labelEl.textContent = checked ? (labels.label_skip_jar) : (labels.label_no_skip_jar);
     } else if (id === 'chk-skip-book') {
-        labelEl.textContent = checked ? (labels.label_skip_book || '跳過手冊') : (labels.label_no_skip_book || '不跳過手冊');
+        labelEl.textContent = checked ? (labels.label_skip_book) : (labels.label_no_skip_book);
     }
 }

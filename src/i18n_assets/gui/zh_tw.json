@@ -262,7 +262,7 @@
     "glossary_priority_official": "官方優先",
     "glossary_col_actions": "操作",
     "glossary_empty": "(目前的字典分頁是空的)",
-    "header_dict_mgr": "📖 字典管理器",
+    "header_dict_mgr": "📖 建議詞管理器",
     "label_dict_official": "官方推論",
     "label_dict_user": "使用者詞庫",
     "label_page_info": "第 {} / {} 頁",

@@ -30,20 +30,20 @@ export async function loadConfig() {
         const config = await invoke('get_config');
         state.currentConfig = config;
 
-        if (apiProvider) apiProvider.value = config.api_provider || 'Gemini';
+        if (apiProvider) apiProvider.value = config.api_provider;
 
         const savedKey = await invoke('get_api_key_cmd');
         if (apiKey) apiKey.value = savedKey || '';
 
         if (inputPath) inputPath.value = config.path || '';
 
-        if (ollamaUrl) ollamaUrl.value = config.ollama_url || 'http://localhost:11434';
+        if (ollamaUrl) ollamaUrl.value = config.ollama_url;
         if (batchSize) batchSize.value = config.batch_size || 150;
         if (batchMaxChars) batchMaxChars.value = config.batch_max_chars || 3500;
         if (timeoutSec) timeoutSec.value = config.timeout || 60;
         if (packFormat) packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
         if (chkGlossaryPriority) chkGlossaryPriority.checked = config.glossary_priority === 'user';
-        if (uiLang) uiLang.value = config.ui_lang || 'zh_tw';
+        if (uiLang) uiLang.value = config.ui_lang;
         if (outputDir) outputDir.value = config.output_dir || '';
 
         if (systemPrompt) systemPrompt.value = config.system_prompt || '';
@@ -64,7 +64,7 @@ export async function loadConfig() {
         toggleApiKeyVisibility();
         validateCanTranslate();
     } catch (e) {
-        const mask = state.currentLabels.status_load_config_failed || '❌ 載入配置失敗: {}';
+        const mask = state.currentLabels.status_load_config_failed;
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
@@ -114,10 +114,10 @@ export async function saveConfig() {
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
 
         await invoke('save_config', { config: state.currentConfig });
-        appendLog(state.currentLabels.status_save_config_success || '✅ 核心參數儲存成功！');
+        appendLog(state.currentLabels.status_save_config_success);
         updateUiLanguage();
     } catch (e) {
-        const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
+        const mask = state.currentLabels.status_save_config_failed;
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
@@ -139,7 +139,7 @@ export async function loadModels() {
         });
     } catch (e) {
         console.error(e);
-        selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models || '(無可用模型)'}</option>`;
+        selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models}</option>`;
     }
 }
 

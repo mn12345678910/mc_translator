@@ -10,7 +10,7 @@ import {
     validateCanTranslate,
 } from './modules/config.js';
 import { loadStyle, saveStyle, applyColors, updatePaletteValue } from './modules/style.js';
-import { initDictionary } from './modules/dictionary.js';
+import { initDictionary, loadDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUiLangs();
     await loadConfig();
     await loadStyle();
+    await loadDictionary();
 
     if (window.__TAURI__) {
         invoke('show_window');
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const path = await invoke('open_path_dialog', { diagType: type });
             if (path && targetEl) targetEl.value = path;
         } catch (e) {
-            const mask = state.currentLabels.status_browse_path_failed || '❌ 瀏覽路徑失敗: {}';
+            const mask = state.currentLabels.status_browse_path_failed;
             appendLog(mask.replace('{}', state.currentLabels[e] || e));
         }
     }
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnBrowseOutputOpen.addEventListener('click', async () => {
             const target = outputDir ? outputDir.value.trim() : './LLMTranslator';
             try {
-                await invoke('open_folder', { path: target || './LLMTranslator' });
+                await invoke('open_folder', { path: target });
             } catch (e) {
                 console.error(e);
             }
@@ -263,16 +264,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRestoreConfig) {
         btnRestoreConfig.addEventListener('click', async () => {
-            const confirmMsg = state.currentLabels.confirm_restore_text || '確定要將所有設定恢復為系統預設值嗎？';
+            const confirmMsg = state.currentLabels.confirm_restore_text;
             if (confirm(confirmMsg)) {
                 try {
                     const defaultConfig = await invoke('get_default_config');
                     await invoke('save_config', { config: defaultConfig });
                     await loadConfig();
-                    appendLog(state.currentLabels.status_restore_config_success || '✅ 參數已恢復預設！');
+                    appendLog(state.currentLabels.status_restore_config_success);
                 } catch (e) {
                     appendLog(
-                        (state.currentLabels.status_restore_config_failed || '❌ 恢復參數失敗: {}').replace('{}', e)
+                        (state.currentLabels.status_restore_config_failed).replace('{}', e)
                     );
                 }
             }
@@ -281,16 +282,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnRestoreStyle) {
         btnRestoreStyle.addEventListener('click', async () => {
-            const confirmMsg = state.currentLabels.confirm_restore_text || '確定要將外觀佈景恢復為預設嗎？';
+            const confirmMsg = state.currentLabels.confirm_restore_text;
             if (confirm(confirmMsg)) {
                 try {
                     const defaultStyle = await invoke('get_default_style_config');
                     await invoke('save_style_config', { config: defaultStyle });
                     await loadStyle();
-                    appendLog(state.currentLabels.status_restore_style_success || '🎨 外觀已恢復預設！');
+                    appendLog(state.currentLabels.status_restore_style_success);
                 } catch (e) {
                     appendLog(
-                        (state.currentLabels.status_restore_style_failed || '❌ 恢復樣式失敗: {}').replace('{}', e)
+                        (state.currentLabels.status_restore_style_failed).replace('{}', e)
                     );
                 }
             }
@@ -313,7 +314,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 const targetName = paletteTargetItem.options[paletteTargetItem.selectedIndex].text;
                 appendLog(
-                    (state.currentLabels.status_palette_clear_item || '🗑 已清除元件覆寫: {}').replace('{}', targetName)
+                    (state.currentLabels.status_palette_clear_item).replace('{}', targetName)
                 );
             } catch (e) {
                 console.error(e);

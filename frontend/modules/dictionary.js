@@ -24,7 +24,7 @@ export async function loadDictionary() {
         });
 
         if (pageInfo) {
-            const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';
+            const mask = state.currentLabels.label_page_info;
             pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
         }
         if (pagePrev) pagePrev.disabled = dictPage === 0;
@@ -36,8 +36,8 @@ export async function loadDictionary() {
         const colVal = state.currentLabels.glossary_value
             ? state.currentLabels.glossary_value.replace(':', '')
             : '翻譯 (Value)';
-        const colAct = state.currentLabels.glossary_col_actions || '操作';
-        const emptyText = state.currentLabels.glossary_empty || '無結果';
+        const colAct = state.currentLabels.glossary_col_actions;
+        const emptyText = state.currentLabels.glossary_empty;
 
         let html = `<table class="dict-table"><thead><tr><th>${colKey}</th><th>${colVal}</th><th>${colAct}</th></tr></thead><tbody>`;
         if (!items || items.length === 0) {
@@ -63,7 +63,7 @@ export async function loadDictionary() {
                 const key = e.currentTarget.getAttribute('data-key');
                 const val = document.getElementById(`dict-val-${key}`).value;
                 await invoke('edit_dictionary_item', { key: key, value: val, delete: false });
-                const mask = state.currentLabels.status_dict_item_updated || '📖 字典更新：{}';
+                const mask = state.currentLabels.status_dict_item_updated;
                 appendLog(mask.replace('{}', key));
                 loadDictionary();
             })
@@ -72,7 +72,7 @@ export async function loadDictionary() {
         document.querySelectorAll('.delete-item').forEach((b) =>
             b.addEventListener('click', async (e) => {
                 const key = e.currentTarget.getAttribute('data-key');
-                const confirmMask = state.currentLabels.status_dict_item_delete_confirm || '確定刪除條目 {} 嗎？';
+                const confirmMask = state.currentLabels.status_dict_item_delete_confirm;
                 if (confirm(confirmMask.replace('{}', key))) {
                     await invoke('edit_dictionary_item', { key: key, value: '', delete: true });
                     loadDictionary();
@@ -80,7 +80,7 @@ export async function loadDictionary() {
             })
         );
     } catch (e) {
-        const mask = state.currentLabels.status_dict_load_failed || '❌ 載入字典失敗: {}';
+        const mask = state.currentLabels.status_dict_load_failed;
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
@@ -203,7 +203,7 @@ export function initDictionary() {
     if (btnDictClear) {
         btnDictClear.addEventListener('click', async () => {
             if (dictType !== 'user') return;
-            if (confirm(state.currentLabels.glossary_clear_title || '確定清空全部？')) {
+            if (confirm(state.currentLabels.glossary_clear_title)) {
                 try {
                     await invoke('clear_user_dictionary');
                     appendLog(state.currentLabels.status_dict_clear_success);
@@ -254,7 +254,7 @@ export function initDictionary() {
                 // dictType 在模組頂部有宣告
                 await invoke('open_dictionary_location', { dictType: dictType });
             } catch (e) {
-                appendLog((state.currentLabels.status_open_path_failed || '❌ 開啟路徑失敗: {}').replace('{}', e));
+                appendLog((state.currentLabels.status_open_path_failed).replace('{}', e));
             }
         });
     }
