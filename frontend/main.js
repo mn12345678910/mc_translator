@@ -228,14 +228,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnPaletteClearItem.addEventListener('click', async () => {
             if (!paletteTargetType || paletteTargetType.value !== 'specific' || !paletteTargetItem) return;
             const target = paletteTargetItem.value;
+            
+            let overridden = false;
             if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
                 delete state.currentStyle.instance_overrides[target];
-                const el = document.getElementById(target);
-                if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
-                updatePaletteValue();
-                applyColors(state.currentStyle);
+                overridden = true;
+            }
+            
+            const el = document.getElementById(target);
+            if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
+            updatePaletteValue();
+            applyColors(state.currentStyle);
+
+            if (overridden) {
                 await invoke('save_style_config', { config: state.currentStyle });
                 appendLog(state.currentLabels.status_palette_clear_item || '🗑 已清除該元件的所有自訂覆寫。');
+            } else {
+                appendLog(state.currentLabels.status_palette_clear_empty || '✅ 此元件目前無自訂覆寫。');
             }
         });
     }

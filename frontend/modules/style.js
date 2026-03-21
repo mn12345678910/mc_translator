@@ -59,6 +59,20 @@ export async function saveStyle() {
 }
 
 export function applyColors(style) {
+    const overrideableIds = [
+        'btn-translate', 'btn-pause', 'btn-stop', 'btn-browse-file', 'btn-browse-dir',
+        'btn-browse-output', 'btn-browse-output-open', 'user-prompt', 'system-prompt',
+        'input-path', 'output-dir', 'dict-dialog', 'log-output', 'progress-bar', 'batch-progress-bar'
+    ];
+    for (const id of overrideableIds) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.backgroundColor = '';
+            el.style.color = '';
+            el.style.borderRadius = '';
+        }
+    }
+
     const progressBar = document.getElementById('progress-bar');
     const isDark = style.theme !== 'light';
     const bg = isDark ? style.dark_bg : style.light_bg;
