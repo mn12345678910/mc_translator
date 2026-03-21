@@ -98,6 +98,27 @@
 <label for="timeout-sec">API</label>
                     <input type="number" id="timeout-sec" min="5" />
                 </div>
+            </div>
+            
+            <div class="form-grid" style="margin-top: 15px">
+                <div class="form-group">
+                    <label for="source-lang" id="label-source-lang"></label>
+                    <select id="source-lang">
+                        <option value="en_us">English (US)</option>
+                        <option value="zh_tw">繁體中文 (台灣)</option>
+                        <option value="zh_cn">简体中文</option>
+                        <option value="ja_jp">日本語</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="target-lang" id="label-target-lang"></label>
+                    <select id="target-lang">
+                        <option value="zh_tw">繁體中文 (台灣)</option>
+                        <option value="en_us">English (US)</option>
+                        <option value="zh_cn">简体中文</option>
+                        <option value="ja_jp">日本語</option>
+                    </select>
+                </div>
                 <div class="form-group">
 <label for="pack-format"></label>
                     <!-- [NEW] 使用 Select 以復刻常用版本下拉 -->
@@ -178,31 +199,15 @@
                         ><input type="checkbox" id="chk-skip-book" /><span class="slider round"></span
                     ></label>
                 </div>
-                <hr style="grid-column: 1 / -1; width: 100%; border-color: var(--border-color)" />
-                <div
-                    class="switch-group"
-                    style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center"
-                >
-<span id="label-llm-log">LLM</span>
-                    <label class="switch"
-                        ><input type="checkbox" id="chk-llm-log" /><span class="slider round"></span
-                    ></label>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1; margin-top: 10px">
-<label for="system-prompt">:</label>
-                    <textarea
-                        id="system-prompt"
-                        rows="3"
-                        style="
-                            width: 100%;
-                            box-sizing: border-box;
-                            background: var(--input-bg);
-                            color: #fff;
-                            border: 1px solid #333;
-                            border-radius: 4px;
-                            padding: 8px;
-                        "
-                    ></textarea>
+            </div>
+            
+            <div class="checkbox-grid" style="margin-top: 15px">
+                <div class="switch-group">
+                    <span id="label-llm-log">LLM</span>
+                    <label class="switch">
+                        <input type="checkbox" id="chk-llm-log" />
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -402,12 +407,13 @@
 <button class="tab-btn" id="tab-official"></button>
                     </div>
                     <!-- 按鈕群組 -->
-                    <div id="dict-user-buttons" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <div id="dict-user-buttons" style="display: flex; gap: 6px; flex-wrap: wrap; flex: 1;">
 <button id="btn-dict-add" class="action-btn" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕</button>
 <button id="btn-dict-replace" class="action-btn" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
 <button id="btn-dict-import" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
 <button id="btn-dict-export" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤</button>
 <button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾">📂 .json</button>
+
 <button id="btn-dict-clear" class="action-btn" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px; margin-left: auto;">🗑</button>
                     </div>
                 </div>

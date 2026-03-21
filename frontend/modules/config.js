@@ -16,6 +16,8 @@ export async function loadConfig() {
     const packFormat = document.getElementById('pack-format');
     const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
     const uiLang = document.getElementById('ui-lang');
+    const sourceLang = document.getElementById('source-lang');
+    const targetLang = document.getElementById('target-lang');
     const outputDir = document.getElementById('output-dir');
     const systemPrompt = document.getElementById('system-prompt');
     const userPrompt = document.getElementById('user-prompt');
@@ -44,6 +46,8 @@ export async function loadConfig() {
         if (packFormat) packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
         if (chkGlossaryPriority) chkGlossaryPriority.checked = config.glossary_priority === 'user';
         if (uiLang) uiLang.value = config.ui_lang;
+        if (sourceLang) sourceLang.value = config.source_lang || 'en_us';
+        if (targetLang) targetLang.value = config.target_lang || 'zh_tw';
         if (outputDir) outputDir.value = config.output_dir || '';
 
         if (systemPrompt) systemPrompt.value = config.system_prompt || '';
@@ -80,6 +84,8 @@ export async function saveConfig() {
     const packFormat = document.getElementById('pack-format');
     const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
     const uiLang = document.getElementById('ui-lang');
+    const sourceLang = document.getElementById('source-lang');
+    const targetLang = document.getElementById('target-lang');
     const outputDir = document.getElementById('output-dir');
     const inputPath = document.getElementById('input-path');
     const systemPrompt = document.getElementById('system-prompt');
@@ -98,6 +104,9 @@ export async function saveConfig() {
         state.currentConfig.batch_size = batchSize ? parseInt(batchSize.value) : 150;
         state.currentConfig.batch_max_chars = batchMaxChars ? parseInt(batchMaxChars.value) : 3500;
         state.currentConfig.timeout = timeoutSec ? parseInt(timeoutSec.value) : 60;
+        if (uiLang) state.currentConfig.ui_lang = uiLang.value;
+        if (sourceLang) state.currentConfig.source_lang = sourceLang.value;
+        if (targetLang) state.currentConfig.target_lang = targetLang.value;
         state.currentConfig.pack_format = packFormat ? parseInt(packFormat.value) : 15;
         state.currentConfig.glossary_priority = chkGlossaryPriority && chkGlossaryPriority.checked ? 'user' : 'official';
         state.currentConfig.ui_lang = uiLang ? uiLang.value : 'zh_tw';

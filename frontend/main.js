@@ -17,8 +17,8 @@ const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {}
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 初始化資料載入
-    await loadUiLangs();
     await loadConfig();
+    await loadUiLangs();
     await loadStyle();
     await loadDictionary();
 

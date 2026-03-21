@@ -152,11 +152,13 @@ async fn test_e2e_translation_workflow() {
     .unwrap();
 
     // 3. 設定 AppConfig 指向對應位址
-    let mut cfg = mc_translator::config::settings::AppConfig::default();
-    cfg.api_provider = "Ollama".to_string();
-    cfg.ollama_url = mock_url;
-    cfg.model = "mock-model".to_string();
-    cfg.output_dir = temp_dir.join("output").to_string_lossy().to_string();
+    let cfg = mc_translator::config::settings::AppConfig {
+        api_provider: "Ollama".to_string(),
+        ollama_url: mock_url,
+        model: "mock-model".to_string(),
+        output_dir: temp_dir.join("output").to_string_lossy().to_string(),
+        ..Default::default()
+    };
 
     // 4. 觸發 start_translation_workflow
     let paths = vec![(lang_file_path.clone(), "en_us.json".to_string())];

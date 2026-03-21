@@ -278,5 +278,6 @@
     "label_items": "項目",
     "label_files": "ファイル",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(デフォルト:vsync)"
+    "label_fps_preset_vsync": "(デフォルト:vsync)",
+    "btn_dict_open_json": "現在のページファイルとその親フォルダを開く"
 }

@@ -204,7 +204,7 @@ pub async fn start_translation(
 
     // 發送完成與狀態更新
     let status_msg = match &res {
-        Ok(_) => "任務完成 (Finished)",
+        Ok(_) => "status_finished", // 🔴 傳回狀態 Key，前端將根據其顯示對應語系
         Err(e) => return Err(e.to_string()),
     };
     let _ = handle.emit("translation-status", status_msg.to_string());
@@ -434,7 +434,34 @@ pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
     } else {
         get_official_dict_path(&config.ui_lang)
     };
-    open_folder(path.to_string_lossy().to_string())
+
+    // 確保檔案與資料夾存在，使 canonicalize 運作且 explorer 能選取
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        let _ = std::fs::write(&path, "{}");
+    }
+
+    // 轉為絕對路徑且安全處理 Windows UNC 前綴
+    let abs_path = std::fs::canonicalize(&path).unwrap_or(path.clone());
+    let path_str = abs_path
+        .to_string_lossy()
+        .to_string()
+        .replace("\\\\?\\", "");
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path_str))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        open_folder(path_str)
+    }
 }
 
 #[tauri::command]

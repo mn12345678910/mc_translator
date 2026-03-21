@@ -278,5 +278,6 @@
     "label_items": "条目",
     "label_files": "文件",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(默认:vsync)"
+    "label_fps_preset_vsync": "(默认:vsync)",
+    "btn_dict_open_json": "打开所在分页文件及文件所在文件夹"
 }

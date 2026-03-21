@@ -278,5 +278,6 @@
     "label_items": "Items",
     "label_files": "Files",
     "label_fps": "FPS:",
-    "label_fps_preset_vsync": "(Default:vsync)"
+    "label_fps_preset_vsync": "(Default:vsync)",
+    "btn_dict_open_json": "Open tab file and folder"
 }

@@ -24,6 +24,10 @@ export async function loadUiLangs() {
                           : l;
             uiLang.appendChild(opt);
         });
+        
+        if (uiLang && state.currentConfig && state.currentConfig.ui_lang) {
+            uiLang.value = state.currentConfig.ui_lang;
+        }
     } catch (e) {
         console.error('無法載入語言清單', e);
     }
@@ -114,6 +118,7 @@ export async function updateUiLanguage() {
             else if (forId === 'system-prompt' && labels.label_system_prompt)
                 el.textContent = labels.label_system_prompt;
             else if (forId === 'input-path' && labels.label_input_path) el.textContent = labels.label_input_path;
+            else if (forId === 'output-dir' && labels.label_output_path) el.textContent = labels.label_output_path;
             else if (forId === 'btn-rounding-value' && labels.label_global_rounding)
                 el.textContent = labels.label_global_rounding;
             else if (forId === 'chk-llm-log' && (labels.label_enable_log || labels.label_llm_log))
@@ -132,7 +137,6 @@ export async function updateUiLanguage() {
         });
 
         const optionMapping = {
-            'glossary-priority': { official: labels.glossary_priority_official, user: labels.glossary_priority_user },
             'palette-target-type': { global: labels.group_batch, specific: labels.group_specific },
             'api-provider': { Ollama: 'Ollama', 無: labels.label_provider_none },
             'palette-target-item': {
@@ -178,11 +182,32 @@ export async function updateUiLanguage() {
             }
         }
 
-        if (labels.spec_btn_nav_settings && btnNavApi) btnNavApi.title = labels.spec_btn_nav_settings;
-        if (labels.spec_btn_nav_dict && btnNavDict) btnNavDict.title = labels.spec_btn_nav_dict;
-        if (labels.spec_btn_nav_palette && btnNavPalette) btnNavPalette.title = labels.spec_btn_nav_palette;
-        if (labels.spec_btn_nav_theme && btnNavTheme) btnNavTheme.title = labels.spec_btn_nav_theme;
-        if (labels.spec_btn_nav_dev && btnNavDev) btnNavDev.title = labels.spec_btn_nav_dev;
+        const btnNavApi = document.getElementById('btn-nav-api');
+        const btnNavDict = document.getElementById('btn-nav-dict');
+        const btnNavPalette = document.getElementById('btn-nav-palette');
+        const btnNavTheme = document.getElementById('btn-nav-theme');
+        const btnNavDev = document.getElementById('btn-nav-dev');
+
+        if (labels.btn_nav_settings && btnNavApi) btnNavApi.title = labels.btn_nav_settings;
+        if (labels.btn_nav_dict && btnNavDict) btnNavDict.title = labels.btn_nav_dict;
+        if (labels.btn_nav_palette && btnNavPalette) btnNavPalette.title = labels.btn_nav_palette;
+        if (labels.btn_nav_theme && btnNavTheme) btnNavTheme.title = labels.btn_nav_theme;
+        if (labels.btn_nav_dev && btnNavDev) btnNavDev.title = labels.btn_nav_dev;
+
+        // 🟢 彈窗標題 (Header) 翻譯
+        const dictHeader = document.getElementById('header-dict-mgr');
+        if (dictHeader && labels.header_dict_mgr) {
+            dictHeader.textContent = labels.header_dict_mgr;
+        }
+
+        // 🟢 額外懸停提示 (Tooltip) 翻譯
+        const btnOpenJson = document.getElementById('btn-dict-open-json');
+        if (btnOpenJson && labels.btn_dict_open_json) btnOpenJson.title = labels.btn_dict_open_json;
+
+        const chkGlossary = document.getElementById('chk-glossary-priority');
+        if (chkGlossary && chkGlossary.parentElement && labels.glossary_priority_hover) {
+            chkGlossary.parentElement.title = labels.glossary_priority_hover;
+        }
 
         document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((el) => {
             const id = el.id;
@@ -249,7 +274,7 @@ export async function updateUiLanguage() {
         });
 
     } catch (err) {
-        console.error('更新介面語言失敗', err);
+        console.error('Failed to update UI language:', err);
     }
 }
 
