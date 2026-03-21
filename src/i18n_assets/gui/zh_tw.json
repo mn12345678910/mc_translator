@@ -164,7 +164,7 @@
     "label_loading_models": "載入中...",
     "label_no_models": "(無可用模型)",
     "label_batch_size": "批次量:",
-    "label_max_chars": "上限:",
+    "label_max_chars": "字數上限:",
     "label_timeout": "逾時:",
     "label_font_size": "字體:",
     "label_pack_format": "資源包版本:",

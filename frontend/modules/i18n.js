@@ -240,7 +240,40 @@ export async function updateUiLanguage() {
                 }
             }
         }
+
+        // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
+        const allSwitches = ['chk-glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log'];
+        allSwitches.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) updateToggleStateLabel(id, el.checked);
+        });
+
     } catch (err) {
         console.error('更新介面語言失敗', err);
+    }
+}
+
+// 🟢 依照開關撥動狀態，點按時動態且立即更新對應文字 Label
+export function updateToggleStateLabel(id, checked) {
+    const labels = (typeof state !== 'undefined' && state.currentLabels) || {};
+    const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+    if (!labelEl) return;
+
+    if (id === 'chk-glossary-priority') {
+        labelEl.textContent = checked
+            ? (labels.glossary_priority_user || '術語優先級: 使用者優先')
+            : (labels.glossary_priority_official || '術語優先級: 官方優先');
+    } else if (id === 'chk-llm-log') {
+        labelEl.textContent = checked 
+            ? (labels.label_enable_log || '開啟記錄日誌') 
+            : (labels.label_disable_log || '關閉記錄日誌');
+    } else if (id === 'chk-skip-json') {
+        labelEl.textContent = checked ? (labels.label_skip_json || '跳過 .json') : (labels.label_no_skip_json || '不跳過 .json');
+    } else if (id === 'chk-skip-js') {
+        labelEl.textContent = checked ? (labels.label_skip_js || '跳過 .js') : (labels.label_no_skip_js || '不跳過 .js');
+    } else if (id === 'chk-skip-jar') {
+        labelEl.textContent = checked ? (labels.label_skip_jar || '跳過 .jar') : (labels.label_no_skip_jar || '不跳過 .jar');
+    } else if (id === 'chk-skip-book') {
+        labelEl.textContent = checked ? (labels.label_skip_book || '跳過手冊') : (labels.label_no_skip_book || '不跳過手冊');
     }
 }

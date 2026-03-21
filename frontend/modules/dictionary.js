@@ -103,6 +103,7 @@ export function initDictionary() {
     const btnDictClear = document.getElementById('btn-dict-clear');
     const btnDictImport = document.getElementById('btn-dict-import');
     const btnDictExport = document.getElementById('btn-dict-export');
+    const btnDictOpenJson = document.getElementById('btn-dict-open-json');
 
     if (btnNavDict && dictDialog) {
         btnNavDict.addEventListener('click', () => {
@@ -119,7 +120,14 @@ export function initDictionary() {
             if (tabOfficial) tabOfficial.classList.remove('active');
             dictPage = 0;
             loadDictionary();
-            if (dictUserControls) dictUserControls.style.display = 'flex';
+            
+            // 顯示使用者編輯元件
+            if (dictInputKey) dictInputKey.style.display = 'block';
+            if (dictInputValue) dictInputValue.style.display = 'block';
+            
+            // 由於按鈕也分散了，我們直接控制各按紐的可視度來確保正確性
+            const editableBtns = [btnDictAdd, btnDictReplace, btnDictImport, btnDictExport, btnDictClear];
+            editableBtns.forEach(b => { if (b) b.style.display = 'inline-block'; });
         });
     if (tabOfficial)
         tabOfficial.addEventListener('click', () => {
@@ -128,7 +136,13 @@ export function initDictionary() {
             if (tabUser) tabUser.classList.remove('active');
             dictPage = 0;
             loadDictionary();
-            if (dictUserControls) dictUserControls.style.display = 'none';
+
+            // 隱藏使用者編輯元件 (官方不可直接編輯)
+            if (dictInputKey) dictInputKey.style.display = 'none';
+            if (dictInputValue) dictInputValue.style.display = 'none';
+
+            const editableBtns = [btnDictAdd, btnDictReplace, btnDictImport, btnDictExport, btnDictClear];
+            editableBtns.forEach(b => { if (b) b.style.display = 'none'; });
         });
     if (dictSearch)
         dictSearch.addEventListener('input', () => {
@@ -230,6 +244,17 @@ export function initDictionary() {
                 }
             } catch (e) {
                 appendLog(state.currentLabels.status_dict_replace_failed.replace('{}', state.currentLabels[e] || e));
+            }
+        });
+    }
+
+    if (btnDictOpenJson) {
+        btnDictOpenJson.addEventListener('click', async () => {
+            try {
+                // dictType 在模組頂部有宣告
+                await invoke('open_dictionary_location', { dictType: dictType });
+            } catch (e) {
+                appendLog((state.currentLabels.status_open_path_failed || '❌ 開啟路徑失敗: {}').replace('{}', e));
             }
         });
     }

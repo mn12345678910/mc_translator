@@ -384,19 +384,25 @@ impl GuiLabels {
         if !dir.exists() {
             fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
         }
-        let l = Self::default_zh_tw();
-        fs::write(
-            dir.join("zh_tw.json"),
-            serde_json::to_string_pretty(&l).unwrap(),
-        )
-        .map_err(std::io::Error::other)?;
+        let zh_tw_path = dir.join("zh_tw.json");
+        if !zh_tw_path.exists() {
+            let l = Self::default_zh_tw();
+            fs::write(
+                &zh_tw_path,
+                serde_json::to_string_pretty(&l).unwrap(),
+            )
+            .map_err(std::io::Error::other)?;
+        }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
             ("en_us.json", include_str!("i18n_assets/gui/en_us.json")),
             ("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json")),
         ];
         for (n, c) in files {
-            fs::write(dir.join(n), c).map_err(std::io::Error::other)?;
+            let p = dir.join(n);
+            if !p.exists() {
+                fs::write(p, c).map_err(std::io::Error::other)?;
+            }
         }
         Ok(())
     }
@@ -456,19 +462,25 @@ impl CliLabels {
         if !dir.exists() {
             fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
         }
-        let l = Self::default_zh_tw();
-        fs::write(
-            dir.join("zh_tw.json"),
-            serde_json::to_string_pretty(&l).unwrap(),
-        )
-        .map_err(std::io::Error::other)?;
+        let zh_tw_path = dir.join("zh_tw.json");
+        if !zh_tw_path.exists() {
+            let l = Self::default_zh_tw();
+            fs::write(
+                &zh_tw_path,
+                serde_json::to_string_pretty(&l).unwrap(),
+            )
+            .map_err(std::io::Error::other)?;
+        }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),
             ("en_us.json", include_str!("i18n_assets/cli/en_us.json")),
             ("ja_jp.json", include_str!("i18n_assets/cli/ja_jp.json")),
         ];
         for (n, c) in files {
-            fs::write(dir.join(n), c).map_err(std::io::Error::other)?;
+            let p = dir.join(n);
+            if !p.exists() {
+                fs::write(p, c).map_err(std::io::Error::other)?;
+            }
         }
         Ok(())
     }

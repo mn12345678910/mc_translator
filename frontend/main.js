@@ -1,7 +1,7 @@
 // frontend/main.js
 import { state } from './modules/state.js';
 import { debounce, appendLog } from './modules/utils.js';
-import { loadUiLangs, updateUiLanguage } from './modules/i18n.js';
+import { loadUiLangs, updateUiLanguage, updateToggleStateLabel } from './modules/i18n.js';
 import {
     loadConfig,
     saveConfig,
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const configSelects = [
         'pack-format',
-        'glossary-priority',
+        'chk-glossary-priority',
         'chk-skip-json',
         'chk-skip-js',
         'chk-skip-jar',
@@ -112,7 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
     configSelects.forEach((id) => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('change', debouncedSaveConfig);
+        if (el) {
+            el.addEventListener('change', () => {
+                if (id.startsWith('chk-')) {
+                    updateToggleStateLabel(id, el.checked);
+                }
+                debouncedSaveConfig();
+            });
+        }
     });
 
     const styleSelects = ['chk-btn-rounding', 'chk-pulse'];

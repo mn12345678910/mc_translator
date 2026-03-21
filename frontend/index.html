@@ -44,7 +44,7 @@
                 <button id="btn-translate">🚀 立即翻譯</button>
                 <button id="btn-pause" style="display: none">⏸️ 暫停</button>
                 <button id="btn-resume" style="display: none">▶️ 繼續</button>
-                <button id="btn-stop" style="display: none; background-color: #aa1111">⏹️ 停止</button>
+                <button id="btn-stop" style="display: none; background-color: var(--danger-color)">⏹️ 停止</button>
 
                 <!-- [NEW] 導航列 -->
                 <div style="flex: 1; display: flex; justify-content: flex-end; gap: 8px">
@@ -99,13 +99,6 @@
                     <input type="number" id="timeout-sec" min="5" />
                 </div>
                 <div class="form-group">
-                    <label for="glossary-priority">術語優先級</label>
-                    <select id="glossary-priority">
-                        <option value="official">官方推論優先</option>
-                        <option value="user">使用者詞庫優先</option>
-                    </select>
-                </div>
-                <div class="form-group">
                     <label for="pack-format">資源包格式</label>
                     <!-- [NEW] 使用 Select 以復刻常用版本下拉 -->
                     <select id="pack-format">
@@ -144,13 +137,13 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px">
-                <button id="btn-save-config" style="background-color: var(--accent-color); color: #111; flex: 1">
+                <button id="btn-save-config" style="background-color: var(--accent-color); color: var(--btn-text-dark, #111); flex: 1">
                     💾 儲存核心參數
                 </button>
                 <button
                     id="btn-restore-config"
                     class="secondary-btn"
-                    style="background-color: #444; flex: 1; color: #fff; border: 1px solid #555"
+                    style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
                     🔄 恢復預設參數
                 </button>
@@ -185,7 +178,7 @@
                         ><input type="checkbox" id="chk-skip-book" /><span class="slider round"></span
                     ></label>
                 </div>
-                <hr style="grid-column: 1 / -1; width: 100%; border-color: #444" />
+                <hr style="grid-column: 1 / -1; width: 100%; border-color: var(--border-color)" />
                 <div
                     class="switch-group"
                     style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center"
@@ -350,7 +343,7 @@
                 <button
                     id="btn-restore-style"
                     class="secondary-btn"
-                    style="background-color: #444; flex: 1; color: #fff; border: 1px solid #555"
+                    style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
                     🔄 恢復預設樣式
                 </button>
@@ -360,8 +353,8 @@
         <!-- 進度與日誌面板 -->
         <div class="status-section">
             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px">
-                <span id="label-items" style="color: #aaa">條目</span>
-                <span id="batch-status-text" style="color: #aaa; display: none">0 / 0</span>
+                <span id="label-items" style="color: var(--text-muted)">條目</span>
+                <span id="batch-status-text" style="color: var(--text-muted); display: none">0 / 0</span>
             </div>
             <div
                 id="batch-progress-container"
@@ -376,7 +369,7 @@
             >
                 <div
                     id="batch-progress-bar"
-                    style="background-color: #88c0d0; width: 0%; height: 100%; transition: width 0.2s"
+                    style="background-color: var(--accent-color); width: 0%; height: 100%; transition: width 0.2s"
                 ></div>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px">
@@ -391,42 +384,40 @@
         <dialog id="dict-dialog" class="styled-dialog">
             <div class="dialog-header">
                 <h3 id="header-dict-mgr">📖 字典管理器</h3>
-                <div class="search-bar"><input type="text" id="dict-search" placeholder="🔍 搜尋術語..." /></div>
+                <!-- [NEW] 術語優先級切換開關 -->
+                <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px;">
+                    <span id="label-glossary-priority" style="font-size: 0.9rem; color: var(--text-color);">術語優先級: 官方優先</span>
+                    <label class="switch" title="切換 官方優先 或 使用者優先">
+                        <input type="checkbox" id="chk-glossary-priority" />
+                        <span class="slider round"></span>
+                    </label>
+                </div>
                 <button class="close-icon" onclick="document.getElementById('dict-dialog').close()">×</button>
             </div>
             <div class="dialog-body">
-                <div class="tabs">
-                    <button class="tab-btn active" id="tab-user">使用者詞庫</button>
-                    <button class="tab-btn" id="tab-official">官方推論</button>
+                <!-- [NEW] 分頁與按鈕行 -->
+                <div class="tabs" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="tab-btn active" id="tab-user">使用者詞庫</button>
+                        <button class="tab-btn" id="tab-official">官方推論</button>
+                    </div>
+                    <!-- 按鈕群組 -->
+                    <div id="dict-user-buttons" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button id="btn-dict-add" class="action-btn" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕ 新增</button>
+                        <button id="btn-dict-replace" class="action-btn" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄 取代</button>
+                        <button id="btn-dict-import" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥 匯入</button>
+                        <button id="btn-dict-export" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤 匯出</button>
+                        <button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾">📂 .json</button>
+                        <button id="btn-dict-clear" class="action-btn" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px;">🗑 清空全部</button>
+                    </div>
                 </div>
-                <!-- [NEW] 字典操作區 (僅限使用者詞庫) -->
-                <div id="dict-user-controls" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap">
-                    <input type="text" id="dict-input-key" placeholder="原文 (Key)" style="flex: 1; min-width: 150px" />
-                    <input
-                        type="text"
-                        id="dict-input-value"
-                        placeholder="翻譯 (Value)"
-                        style="flex: 1; min-width: 150px"
-                    />
-                    <button
-                        id="btn-dict-add"
-                        class="action-btn"
-                        style="background-color: var(--accent-color); color: #000"
-                    >
-                        ➕ 新增
-                    </button>
-                    <button id="btn-dict-replace" class="action-btn" style="background-color: #666; color: #fff">
-                        🔄 取代
-                    </button>
-                    <button id="btn-dict-clear" class="action-btn" style="background-color: #aa1111; color: #fff">
-                        🗑 清空全部
-                    </button>
-                    <button id="btn-dict-import" class="action-btn" style="background-color: #444; color: #fff">
-                        📥 匯入
-                    </button>
-                    <button id="btn-dict-export" class="action-btn" style="background-color: #444; color: #fff">
-                        📤 匯出
-                    </button>
+                <!-- [NEW] 輸入與搜尋區 -->
+                <div id="dict-user-controls" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="dict-input-key" placeholder="原文 (Key)" style="flex: 1; min-width: 140px; padding: 6px;" />
+                    <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" style="flex: 1; min-width: 140px; padding: 6px;" />
+                    <div class="search-bar" style="margin-left: auto;">
+                        <input type="text" id="dict-search" placeholder="🔍 搜尋術語..." style="width: 180px; padding: 6px 10px; font-size: 0.9rem;" />
+                    </div>
                 </div>
                 <div class="table-container" id="dict-table-container"></div>
             </div>

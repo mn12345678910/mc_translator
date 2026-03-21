@@ -14,7 +14,7 @@ export async function loadConfig() {
     const batchMaxChars = document.getElementById('batch-max-chars');
     const timeoutSec = document.getElementById('timeout-sec');
     const packFormat = document.getElementById('pack-format');
-    const glossaryPriority = document.getElementById('glossary-priority');
+    const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
     const uiLang = document.getElementById('ui-lang');
     const outputDir = document.getElementById('output-dir');
     const systemPrompt = document.getElementById('system-prompt');
@@ -42,7 +42,7 @@ export async function loadConfig() {
         if (batchMaxChars) batchMaxChars.value = config.batch_max_chars || 3500;
         if (timeoutSec) timeoutSec.value = config.timeout || 60;
         if (packFormat) packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
-        if (glossaryPriority) glossaryPriority.value = config.glossary_priority || 'official';
+        if (chkGlossaryPriority) chkGlossaryPriority.checked = config.glossary_priority === 'user';
         if (uiLang) uiLang.value = config.ui_lang || 'zh_tw';
         if (outputDir) outputDir.value = config.output_dir || '';
 
@@ -78,7 +78,7 @@ export async function saveConfig() {
     const batchMaxChars = document.getElementById('batch-max-chars');
     const timeoutSec = document.getElementById('timeout-sec');
     const packFormat = document.getElementById('pack-format');
-    const glossaryPriority = document.getElementById('glossary-priority');
+    const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
     const uiLang = document.getElementById('ui-lang');
     const outputDir = document.getElementById('output-dir');
     const inputPath = document.getElementById('input-path');
@@ -99,7 +99,7 @@ export async function saveConfig() {
         state.currentConfig.batch_max_chars = batchMaxChars ? parseInt(batchMaxChars.value) : 3500;
         state.currentConfig.timeout = timeoutSec ? parseInt(timeoutSec.value) : 60;
         state.currentConfig.pack_format = packFormat ? parseInt(packFormat.value) : 15;
-        state.currentConfig.glossary_priority = glossaryPriority ? glossaryPriority.value : 'official';
+        state.currentConfig.glossary_priority = chkGlossaryPriority && chkGlossaryPriority.checked ? 'user' : 'official';
         state.currentConfig.ui_lang = uiLang ? uiLang.value : 'zh_tw';
         state.currentConfig.output_dir = outputDir ? outputDir.value : '';
         state.currentConfig.path = inputPath ? inputPath.value : '';

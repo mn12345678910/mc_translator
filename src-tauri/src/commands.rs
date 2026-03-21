@@ -426,6 +426,18 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
+    use mc_translator::config::settings::AppConfig;
+    let config = AppConfig::load();
+    let path = if dict_type == "user" {
+        get_user_dict_path(&config.ui_lang)
+    } else {
+        get_official_dict_path(&config.ui_lang)
+    };
+    open_folder(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
 pub fn clear_user_dictionary() -> Result<(), String> {
     use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;

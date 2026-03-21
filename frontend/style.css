@@ -7,6 +7,20 @@
     --btn-text: #e0e0e0;
     --border-radius: 6px;
     --font-size: 15px;
+
+    /* 🎨 擴充主題變數 */
+    --border-color: #3c3c42;
+    --border-light: rgba(128, 128, 128, 0.15);
+    --header-bg: #25252b;
+    --panel-bg: rgba(255, 255, 255, 0.03);
+    --backdrop-bg: rgba(0, 0, 0, 0.6);
+    --hover-bg: #383840;
+    --danger-color: #aa1111;
+    --text-muted: #aaa;
+    --progress-bg: #333;
+    --slider-bg: #2a2a30;
+    --slider-thumb: #e0e0e0;
+    --switch-bg: #1a1a1f;
 }
 
 button,
@@ -47,8 +61,8 @@ h2 {
 }
 
 .control-panel {
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(128, 128, 128, 0.15);
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-light);
     padding: 15px;
     border-radius: var(--border-radius);
     margin-bottom: 20px;
@@ -64,11 +78,12 @@ label {
     color: var(--label-color, var(--text-color));
 }
 
-input[type='text'] {
+input[type='text'],
+input[type='password'] {
     width: 100%;
     padding: 10px;
     background-color: var(--input-bg);
-    border: 1px solid #3c3c42;
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     color: var(--text-color);
     box-sizing: border-box;
@@ -77,7 +92,7 @@ input[type='text'] {
 button {
     background-color: var(--btn-bg);
     color: var(--btn-text);
-    border: 1px solid #444;
+    border: 1px solid var(--border-color);
     padding: 10px 20px;
     border-radius: var(--border-radius);
     cursor: pointer;
@@ -88,7 +103,7 @@ button {
 }
 
 button:hover {
-    background-color: #383840;
+    background-color: var(--hover-bg);
 }
 
 #btn-translate,
@@ -138,7 +153,7 @@ button:hover {
 }
 
 #progress-container {
-    background-color: #333;
+    background-color: var(--progress-bg);
     border-radius: var(--border-radius);
     height: 10px;
     margin-bottom: 10px;
@@ -212,7 +227,7 @@ button:hover {
     height: 80vh;
     background-color: var(--bg-color);
     color: var(--text-color);
-    border: 1px solid #444;
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 0;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
@@ -225,17 +240,17 @@ button:hover {
 }
 
 .styled-dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--backdrop-bg);
     backdrop-filter: blur(2px);
 }
 
 .dialog-header {
     padding: 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #25252b;
+    background-color: var(--header-bg);
 }
 
 .dialog-header h3 {
@@ -274,7 +289,7 @@ button:hover {
     display: flex;
     gap: 10px;
     margin-bottom: 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-color);
     padding-bottom: 5px;
 }
 
@@ -298,7 +313,7 @@ button:hover {
     overflow-y: auto;
     background-color: var(--list-bg);
     border-radius: 4px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
 }
 
 table {
@@ -315,7 +330,7 @@ td {
 }
 
 th {
-    background-color: #25252b;
+    background-color: var(--header-bg);
     color: var(--accent-color);
     position: sticky;
     top: 0;
@@ -327,10 +342,10 @@ tr:hover {
 
 .dialog-footer {
     padding: 12px 15px;
-    border-top: 1px solid #333;
+    border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: center;
-    background-color: #25252b;
+    background-color: var(--header-bg);
 }
 
 .pagination {
@@ -404,10 +419,10 @@ input[type='number'] {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #1a1a1f;
+    background-color: var(--switch-bg);
     padding: 10px 14px;
     border-radius: var(--border-radius);
-    border: 1px solid #333;
+    border: 1px solid var(--border-color);
     transition: background-color 0.2s;
 }
 
@@ -435,9 +450,9 @@ input[type='number'] {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #2a2a30;
+    background-color: var(--slider-bg);
     transition: 0.3s;
-    border: 1px solid #444;
+    border: 1px solid var(--border-color);
 }
 
 .slider:before {
@@ -447,7 +462,7 @@ input[type='number'] {
     width: 14px;
     left: 2px;
     bottom: 2px;
-    background-color: #e0e0e0;
+    background-color: var(--slider-thumb);
     transition: 0.3s;
 }
 
