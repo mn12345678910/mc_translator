@@ -2,7 +2,7 @@ use clap::Parser;
 use dialoguer::{Select, Input, Password};
 use std::path::PathBuf;
 use std::io::Write;
-use mc_translator::i18n::I18nLabels;
+use mc_translator::i18n::CliLabels;
 
 use mc_translator::config::AppConfig;
 use mc_translator::translation::pipeline::start_translation_workflow;
@@ -80,10 +80,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     
     // 確保 langs 目錄與語言檔案存在
-    let _ = I18nLabels::ensure_langs_exists();
+    let _ = CliLabels::ensure_langs_exists();
 
     let mut config = AppConfig::load();
-    let mut i18n = I18nLabels::load_or_default(&config.ui_lang);
+    let mut i18n = CliLabels::load_or_default(&config.ui_lang);
 
     println!("{}", i18n.cli_banner_title);
 
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match step {
                     1 => {
                         // --- Step 1: 介面語言 ---
-                        let langs = I18nLabels::get_available_ui_langs();
+                        let langs = CliLabels::get_available_ui_langs();
                         let default_idx = langs.iter().position(|l| l == &config.ui_lang).unwrap_or(0);
                         
                         let idx = Select::new()
@@ -151,7 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .interact()?;
                         
                         config.ui_lang = langs[idx].clone();
-                        i18n = I18nLabels::load_or_default(&config.ui_lang);
+                        i18n = CliLabels::load_or_default(&config.ui_lang);
                         config.save(); // 即時存入
 
                         print!("\x1B[2J\x1B[1;1H"); // 清空畫面
@@ -194,9 +194,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         let has_saved_key = !config.api_key.is_empty();
                         let key_prompt = if has_saved_key {
-                            format!("{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)", i18n.label_api_key)
+                            format!("{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)", i18n.common.label_api_key)
                         } else {
-                            format!("{} (鍵入 '<' 回到上一步)", i18n.label_api_key)
+                            format!("{} (鍵入 '<' 回到上一步)", i18n.common.label_api_key)
                         };
 
                         let key: String = Password::new()
@@ -232,9 +232,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ).await.unwrap_or_else(|_| Vec::new());
 
                         let is_dynamic = !items.is_empty();
-                        let mut prompt_text = i18n.label_model.clone();
+                        let mut prompt_text = i18n.common.label_model.clone();
                         if !is_dynamic && config.api_provider != "DeepL" && config.api_provider != "Ollama" {
-                            prompt_text = format!("{}{}", i18n.label_model, i18n.cli_model_fetch_failed);
+                            prompt_text = format!("{}{}", i18n.common.label_model, i18n.cli_model_fetch_failed);
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
@@ -308,7 +308,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     6 => {
                         // --- Step 6: 輸出資料夾 ---
                         let default_output = if config.output_dir.is_empty() { "LLMTranslator" } else { &config.output_dir };
-                        let output_prompt = i18n.cli_output_path_prompt.replace("{}", &i18n.label_output_path).replace("{}", default_output);
+                        let output_prompt = i18n.cli_output_path_prompt.replace("{}", &i18n.common.label_output_path).replace("{}", default_output);
                         let output_dir: String = Input::new()
                             .with_prompt(&output_prompt)
                             .allow_empty(true)
@@ -392,7 +392,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    let i18n = I18nLabels::load_or_default(&config.ui_lang);
+    let i18n = CliLabels::load_or_default(&config.ui_lang);
     
     // 包裹成管線需要的 Tuple 格式 (Path Buf, Rel Path)
     let rel_path = input_path.to_string_lossy().to_string();

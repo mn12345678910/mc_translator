@@ -99,12 +99,12 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
 }
 
 #[tauri::command]
-pub fn get_i18n_labels(lang: Option<String>) -> mc_translator::i18n::I18nLabels {
+pub fn get_i18n_labels(lang: Option<String>) -> mc_translator::i18n::GuiLabels {
     if let Some(l) = lang {
-        mc_translator::i18n::I18nLabels::load_or_default(&l)
+        mc_translator::i18n::GuiLabels::load_or_default(&l)
     } else {
         let config = AppConfig::load();
-        mc_translator::i18n::I18nLabels::load_or_default(&config.ui_lang)
+        mc_translator::i18n::GuiLabels::load_or_default(&config.ui_lang)
     }
 }
 

@@ -1,20 +1,26 @@
 #[cfg(test)]
 mod tests {
-    use mc_translator::i18n::I18nLabels;
     use std::fs;
     use std::path::Path;
 
     #[test]
     fn test_i18n_deserialization() {
-        let files = ["en_us.json", "ja_jp.json", "zh_cn.json"];
+        use mc_translator::i18n::{GuiLabels, CliLabels};
+        let files = ["en_us.json", "ja_jp.json", "zh_cn.json", "zh_tw.json"];
         let dir = Path::new("src/i18n_assets");
 
         for file_name in &files {
-            let path = dir.join(file_name);
-            let content = fs::read_to_string(&path).unwrap();
-            println!("Testing file: {}", file_name);
-            let res = serde_json::from_str::<I18nLabels>(&content);
-            assert!(res.is_ok(), "Failed on {}: {:?}", file_name, res.err());
+            // 1. Test Gui
+            let p_gui = dir.join("gui").join(file_name);
+            let c_gui = fs::read_to_string(&p_gui).unwrap();
+            let res_gui = serde_json::from_str::<GuiLabels>(&c_gui);
+            assert!(res_gui.is_ok(), "Gui fail on {}: {:?}", file_name, res_gui.err());
+
+            // 2. Test Cli
+            let p_cli = dir.join("cli").join(file_name);
+            let c_cli = fs::read_to_string(&p_cli).unwrap();
+            let res_cli = serde_json::from_str::<CliLabels>(&c_cli);
+            assert!(res_cli.is_ok(), "Cli fail on {}: {:?}", file_name, res_cli.err());
         }
     }
 }

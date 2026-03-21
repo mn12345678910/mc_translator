@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU32};
-use crate::i18n::I18nLabels;
+use crate::i18n::CommonLabels;
 
 /// 翻譯任務的靜態設定參數
 #[derive(Clone)]
@@ -47,7 +47,7 @@ pub struct JobSharedState {
     pub total_batches: Arc<AtomicU32>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub config: Arc<Mutex<JobConfig>>,
-    pub i18n: I18nLabels,
+    pub i18n: CommonLabels,
 }
 
 impl JobConfig {

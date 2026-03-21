@@ -129,7 +129,7 @@ pub async fn output_resource_pack(
     _translated_files: HashMap<String, String>,
     config: JobConfig,
     log: Arc<Mutex<Vec<String>>>,
-    i18n: crate::i18n::I18nLabels,
+    i18n: crate::i18n::CommonLabels,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::task::spawn_blocking(
         move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

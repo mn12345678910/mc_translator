@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use crate::config::AppConfig;
 use crate::translation::job::{JobConfig, JobSharedState};
-use crate::i18n::I18nLabels;
+use crate::i18n::CommonLabels;
 use crate::utils;
 
 /// 載入並準備字典檔 (McLang 與推論字典)
@@ -89,7 +89,7 @@ pub async fn start_translation_workflow(
     let available_langs = Arc::new(Mutex::new(Vec::new()));
 
     // 載入 i18n 控制
-    let i18n = I18nLabels::load_or_default(&config.ui_lang);
+    let i18n = CommonLabels::load_or_default(&config.ui_lang);
 
     logger_arc(&i18n.status_analyzing_dict);
 
