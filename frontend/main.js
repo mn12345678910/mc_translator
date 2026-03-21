@@ -186,4 +186,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             applyColors(state.currentStyle); debounce(async() => { await invoke('save_style_config', { config: state.currentStyle }); }, 400)();
         });
     }
+
+    // 6. 恢復預設值與清除覆寫事件
+    const btnRestoreConfig = document.getElementById('btn-restore-config');
+    const btnRestoreStyle = document.getElementById('btn-restore-style');
+    const btnPaletteClearItem = document.getElementById('btn-palette-clear-item');
+
+    if (btnRestoreConfig) {
+        btnRestoreConfig.addEventListener('click', async () => {
+            const confirmMsg = state.currentLabels.confirm_restore_text || '確定要將所有設定恢復為系統預設值嗎？';
+            if (confirm(confirmMsg)) {
+                try {
+                    const defaultConfig = await invoke('get_default_config');
+                    await invoke('save_config', { config: defaultConfig });
+                    await loadConfig();
+                    appendLog(state.currentLabels.status_restore_config_success || '✅ 參數已恢復預設！');
+                } catch (e) {
+                    appendLog((state.currentLabels.status_restore_config_failed || '❌ 恢復參數失敗: {}').replace('{}', e));
+                }
+            }
+        });
+    }
+
+    if (btnRestoreStyle) {
+        btnRestoreStyle.addEventListener('click', async () => {
+            const confirmMsg = state.currentLabels.confirm_restore_text || '確定要將外觀佈景恢復為預設嗎？';
+            if (confirm(confirmMsg)) {
+                try {
+                    const defaultStyle = await invoke('get_default_style_config');
+                    await invoke('save_style_config', { config: defaultStyle });
+                    await loadStyle();
+                    appendLog(state.currentLabels.status_restore_style_success || '🎨 外觀已恢復預設！');
+                } catch (e) {
+                    appendLog((state.currentLabels.status_restore_style_failed || '❌ 恢復樣式失敗: {}').replace('{}', e));
+                }
+            }
+        });
+    }
+
+    if (btnPaletteClearItem) {
+        btnPaletteClearItem.addEventListener('click', async () => {
+            if (!paletteTargetType || paletteTargetType.value !== 'specific' || !paletteTargetItem) return;
+            const target = paletteTargetItem.value;
+            if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
+                delete state.currentStyle.instance_overrides[target];
+                const el = document.getElementById(target);
+                if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
+                updatePaletteValue();
+                applyColors(state.currentStyle);
+                await invoke('save_style_config', { config: state.currentStyle });
+                appendLog(state.currentLabels.status_palette_clear_item || '🗑 已清除該元件的所有自訂覆寫。');
+            }
+        });
+    }
 });

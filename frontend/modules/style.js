@@ -67,6 +67,8 @@ export function applyColors(style) {
     const btnTxt = isDark ? style.dark_btn_text : style.light_btn_text;
     const inputBg = isDark ? style.dark_input_bg : style.light_input_bg;
     const listBg = isDark ? style.dark_list_bg : style.light_list_bg;
+    const tabActive = isDark ? style.dark_tab_active : style.light_tab_active;
+    const tabInactive = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
 
     if (bg) document.documentElement.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
     if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
@@ -74,6 +76,8 @@ export function applyColors(style) {
     if (btnTxt) document.documentElement.style.setProperty('--btn-text', `rgb(${btnTxt[0]},${btnTxt[1]},${btnTxt[2]})`);
     if (inputBg) document.documentElement.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
     if (listBg) document.documentElement.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
+    if (tabActive) document.documentElement.style.setProperty('--tab-active-bg', `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`);
+    if (tabInactive) document.documentElement.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
 
     if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
 
@@ -118,6 +122,20 @@ export function updatePaletteValue() {
 
     const isSpecific = paletteTargetType.value === 'specific';
     const target = paletteTargetItem.value;
+
+    const noTextItems = ['progress-bar', 'batch-progress-bar'];
+    if (isSpecific && paletteProperty) {
+        Array.from(paletteProperty.options).forEach(opt => {
+            if (opt.value === 'text') {
+                opt.style.display = noTextItems.includes(target) ? 'none' : 'block';
+                opt.disabled = noTextItems.includes(target);
+                if (noTextItems.includes(target) && paletteProperty.value === 'text') {
+                    paletteProperty.value = 'bg';
+                }
+            }
+        });
+    }
+
     const prop = paletteProperty ? paletteProperty.value : 'bg';
 
     if (paletteClearGroup) paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
