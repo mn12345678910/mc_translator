@@ -57,7 +57,7 @@ jobs:
     - name: Build CLI Release
       run: cargo build --release --bin mc_translator_cli
     - name: Upload CLI Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: mc_translator_cli
         path: target/release/mc_translator_cli.exe
@@ -87,16 +87,29 @@ jobs:
       shell: pwsh
       run: |
         $found = $false
-        if (Test-Path "src-tauri/target/release/app.exe") { Copy-Item "src-tauri/target/release/app.exe" -Destination "./mc_translator_gui.exe" -Force; $found = $true }
-        if (Test-Path "src-tauri/target/release/mc_translator.exe") { Copy-Item "src-tauri/target/release/mc_translator.exe" -Destination "./mc_translator_gui.exe" -Force; $found = $true }
-        if (Test-Path "src-tauri/target/release/mc_translator_rs.exe") { Copy-Item "src-tauri/target/release/mc_translator_rs.exe" -Destination "./mc_translator_gui.exe" -Force; $found = $true }
+        $paths = @(
+            "target/release/app.exe",
+            "target/release/mc_translator.exe",
+            "target/release/mc_translator_rs.exe",
+            "src-tauri/target/release/app.exe",
+            "src-tauri/target/release/mc_translator.exe",
+            "src-tauri/target/release/mc_translator_rs.exe"
+        )
+        foreach ($p in $paths) {
+            if (Test-Path $p) {
+                Copy-Item $p -Destination "./mc_translator_gui.exe" -Force
+                $found = $true
+                break
+            }
+        }
         if (-not $found) {
-            Write-Warning "Could not find any GUI binary in src-tauri/target/release!"
-            Get-ChildItem -Path "src-tauri/target/release" -Filter "*.exe"
+            Write-Warning "Could not find any GUI binary in target directories!"
+            if (Test-Path "target/release") { Get-ChildItem -Path "target/release" -Filter "*.exe" }
+            if (Test-Path "src-tauri/target/release") { Get-ChildItem -Path "src-tauri/target/release" -Filter "*.exe" }
             exit 1
         }
     - name: Upload GUI Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: mc_translator_gui
         path: mc_translator_gui.exe
@@ -113,11 +126,11 @@ jobs:
       contents: write
     steps:
     - name: Download CLI Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: mc_translator_cli
     - name: Download GUI Artifact
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: mc_translator_gui
     - name: Create GitHub Release
