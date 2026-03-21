@@ -528,3 +528,52 @@ async fn run_translation(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn test_args_parsing_input() {
+        let args = Args::try_parse_from(["mc_translator_cli", "-i", "/path/to/mod.jar"]).unwrap();
+        assert_eq!(args.input.unwrap(), "/path/to/mod.jar");
+        assert_eq!(args.output, None);
+        assert!(!args.skip_json);
+    }
+
+    #[test]
+    fn test_args_parsing_flags() {
+        let args = Args::try_parse_from([
+            "mc_translator_cli",
+            "--input",
+            "test_dir",
+            "--skip-json",
+            "--skip-jar",
+            "-p",
+            "Ollama",
+        ])
+        .unwrap();
+
+        assert_eq!(args.input.unwrap(), "test_dir");
+        assert!(args.skip_json);
+        assert!(args.skip_jar);
+        assert!(!args.skip_js); // 預設應為 false
+        assert_eq!(args.provider.unwrap(), "Ollama");
+    }
+
+    #[test]
+    fn test_args_parsing_integers() {
+        let args = Args::try_parse_from([
+            "mc_translator_cli",
+            "--batch-size",
+            "50",
+            "--timeout",
+            "120",
+        ])
+        .unwrap();
+
+        assert_eq!(args.batch_size.unwrap(), 50);
+        assert_eq!(args.timeout.unwrap(), 120);
+    }
+}

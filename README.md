@@ -131,6 +131,15 @@ npx @tauri-apps/cli build
 cargo build --release --bin mc_translator_cli
 ```
 
+## 開發與測試
+
+**1) 前端測試 (Vitest)**
+- 首次使用需安裝依賴：`npm install`
+- 執行測試：`npm run test:frontend`
+
+**2) 後端與整合測試 (Cargo)**
+- 執行本機單元、參數與 E2E 整合測試：`cargo test --all-targets`
+
 ---
 
 ## 文檔索引

@@ -479,3 +479,35 @@ pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
 pub fn show_window(window: tauri::Window) {
     let _ = window.show();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_default_config() {
+        let config = get_default_config();
+        assert_eq!(config.api_provider, "無"); // 預設值
+        assert_eq!(config.source_lang, "en_us");
+    }
+
+    #[test]
+    fn test_get_default_style_config() {
+        let style = get_default_style_config();
+        assert_eq!(style.font_size, 15.0); // 預設值
+        assert!(style.btn_rounding_enabled);
+    }
+
+    #[test]
+    fn test_get_i18n_labels_none() {
+        let labels = get_i18n_labels(None);
+        // 預設應該會帶入 get_config().ui_lang，通常是 zh_tw
+        assert!(!labels.common.btn_save.is_empty());
+    }
+
+    #[test]
+    fn test_get_i18n_labels_specific() {
+        let labels = get_i18n_labels(Some("en_us".to_string()));
+        assert!(!labels.common.btn_save.is_empty());
+    }
+}

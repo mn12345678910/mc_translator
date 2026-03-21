@@ -28,6 +28,7 @@
   "homepage": "https://github.com/mn12345678910/mc_translator#readme",
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^9.10.0",
     "happy-dom": "^20.8.4",
     "prettier": "^3.3.3",

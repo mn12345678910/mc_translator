@@ -15,6 +15,11 @@
 - `translation/glossary/automaton.rs`：術語匹配
 - `translation/api/client.rs`：JSON 抽取與容錯
 
+## 測試工具鏈
+
+- **後端 (Rust)**: 使用標準 `cargo test`。E2E 整合測試會自動啟動本地 `TcpListener` 模擬 API 連線與回應。
+- **前端 (JavaScript)**: 使用 `Vitest` + `Happy DOM` 環境。設定位於 `vitest.config.js`，主要藉由 Mocking 隔離 Tauri `invoke` 等 API 進行 DOM 交互渲染驗證。
+
 ## 測試位置
 
 - 單元測試放在各檔案 `mod tests` 內

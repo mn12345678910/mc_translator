@@ -76,8 +76,10 @@ pub fn validate_and_cleanup(text: &str) -> String {
     if (s.starts_with('{') && s.ends_with('}')) || (s.starts_with('[') && s.ends_with(']')) {
         if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
             if let Some(obj) = v.as_object() {
-                if let Some(val) = obj.values().next().and_then(|v| v.as_str()) {
-                    s = val.to_string();
+                if obj.len() == 1 {
+                    if let Some(val) = obj.values().next().and_then(|v| v.as_str()) {
+                        s = val.to_string();
+                    }
                 } else if obj.is_empty() {
                     s = String::new();
                 }
