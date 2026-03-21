@@ -208,6 +208,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (paletteTargetItem) paletteTargetItem.addEventListener('change', updatePaletteValue);
     if (paletteProperty) paletteProperty.addEventListener('change', updatePaletteValue);
 
+    const debouncedSavePalette = debounce(async () => {
+        await invoke('save_style_config', { config: state.currentStyle });
+    }, 400);
+
     if (paletteColor) {
         paletteColor.addEventListener('input', () => {
             const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
@@ -226,9 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 state.currentStyle.instance_overrides[target][prop] = rgb;
             }
             applyColors(state.currentStyle);
-            debounce(async () => {
-                await invoke('save_style_config', { config: state.currentStyle });
-            }, 400)();
+            debouncedSavePalette();
         });
     }
 
@@ -243,9 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 state.currentStyle.instance_overrides[target].rounding = val;
             }
             applyColors(state.currentStyle);
-            debounce(async () => {
-                await invoke('save_style_config', { config: state.currentStyle });
-            }, 400)();
+            debouncedSavePalette();
         });
     }
 
@@ -296,48 +296,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const target = paletteTargetItem.value;
 
             try {
-                const ds = await invoke('get_default_style_config');
-                const isDark = state.currentStyle.theme !== 'light';
-                let bg,
-                    text,
-                    rounding = ds.btn_rounding_value;
-                const targetStr = String(target);
-
-                if (targetStr.startsWith('btn-') && targetStr !== 'btn-translate') {
-                    bg = isDark ? ds.dark_btn_bg : ds.light_btn_bg;
-                    text = isDark ? ds.dark_btn_text : ds.light_btn_text;
-                } else if (targetStr === 'btn-translate') {
-                    bg = [212, 175, 55];
-                    text = [17, 17, 17];
-                } else if (targetStr.includes('prompt') || targetStr.includes('dir') || targetStr.includes('path')) {
-                    bg = isDark ? ds.dark_input_bg : ds.light_input_bg;
-                    text = isDark ? ds.dark_text : ds.light_text;
-                } else if (targetStr === 'log-output' || targetStr === 'dict-dialog') {
-                    bg =
-                        targetStr === 'dict-dialog'
-                            ? isDark
-                                ? ds.dark_bg
-                                : ds.light_bg
-                            : isDark
-                              ? ds.dark_list_bg
-                              : ds.light_list_bg;
-                    text = isDark ? ds.dark_text : ds.light_text;
-                } else if (targetStr === 'progress-bar') {
-                    bg = [212, 175, 55];
-                } else if (targetStr === 'batch-progress-bar') {
-                    bg = [136, 192, 208];
-                }
-
-                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                state.currentStyle.instance_overrides[target] = { rounding };
-                if (bg) state.currentStyle.instance_overrides[target].bg = bg;
-                if (text) state.currentStyle.instance_overrides[target].text = text;
-
-                const el = document.getElementById(target);
-                if (el) {
-                    el.style.backgroundColor = '';
-                    el.style.color = '';
-                    el.style.borderRadius = '';
+                if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
+                    delete state.currentStyle.instance_overrides[target];
                 }
 
                 updatePaletteValue();

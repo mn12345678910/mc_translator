@@ -1,5 +1,7 @@
-use mc_translator::config::{AppConfig, settings::StyleConfig};
-use mc_translator::config::dictionary::{get_user_dict_path, get_official_dict_path, load_dict, save_dict};
+use mc_translator::config::dictionary::{
+    get_official_dict_path, get_user_dict_path, load_dict, save_dict,
+};
+use mc_translator::config::{settings::StyleConfig, AppConfig};
 use std::collections::HashMap;
 use tauri::Emitter;
 
@@ -21,7 +23,9 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                                 names.push(n.to_string());
                             }
                         }
-                        if !names.is_empty() { return Ok(names); }
+                        if !names.is_empty() {
+                            return Ok(names);
+                        }
                     }
                 }
             }
@@ -31,7 +35,10 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
-            let url = format!("https://generativelanguage.googleapis.com/v1beta/models?key={}", api_key);
+            let url = format!(
+                "https://generativelanguage.googleapis.com/v1beta/models?key={}",
+                api_key
+            );
             if let Ok(resp) = client.get(&url).send().await {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
@@ -43,7 +50,9 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                                 }
                             }
                         }
-                        if !names.is_empty() { return Ok(names); }
+                        if !names.is_empty() {
+                            return Ok(names);
+                        }
                     }
                 }
             }
@@ -53,9 +62,12 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
-            if let Ok(resp) = client.get("https://api.openai.com/v1/models")
+            if let Ok(resp) = client
+                .get("https://api.openai.com/v1/models")
                 .header("Authorization", format!("Bearer {}", api_key))
-                .send().await {
+                .send()
+                .await
+            {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
                         let mut names = Vec::new();
@@ -67,7 +79,9 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                             }
                         }
                         names.sort();
-                        if !names.is_empty() { return Ok(names); }
+                        if !names.is_empty() {
+                            return Ok(names);
+                        }
                     }
                 }
             }
@@ -77,9 +91,12 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
-            if let Ok(resp) = client.get("https://api.deepseek.com/models")
+            if let Ok(resp) = client
+                .get("https://api.deepseek.com/models")
                 .header("Authorization", format!("Bearer {}", api_key))
-                .send().await {
+                .send()
+                .await
+            {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
                         let mut names = Vec::new();
@@ -88,7 +105,9 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                                 names.push(n.to_string());
                             }
                         }
-                        if !names.is_empty() { return Ok(names); }
+                        if !names.is_empty() {
+                            return Ok(names);
+                        }
                     }
                 }
             }
@@ -140,7 +159,6 @@ pub async fn start_translation(
     input_paths: Vec<String>,
     config: AppConfig,
 ) -> Result<(), String> {
-
     // 轉換路徑為 Pipeline 所需格式 (PathBuf, 顯示檔名)
     let paths: Vec<(std::path::PathBuf, String)> = input_paths
         .into_iter()
@@ -163,16 +181,17 @@ pub async fn start_translation(
 
     // 定義進度 Callback
     let handle_progress = handle.clone();
-    let progress_updater = move |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
-        let payload = serde_json::json!({
-            "current": current as u32,
-            "total": total as u32,
-            "batch_current": batch_curr as u32,
-            "batch_total": batch_tot as u32,
-            "status": status.to_string()
-        });
-        let _ = handle_progress.emit("translation-progress", payload);
-    };
+    let progress_updater =
+        move |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
+            let payload = serde_json::json!({
+                "current": current as u32,
+                "total": total as u32,
+                "batch_current": batch_curr as u32,
+                "batch_total": batch_tot as u32,
+                "status": status.to_string()
+            });
+            let _ = handle_progress.emit("translation-progress", payload);
+        };
 
     // 啟動工作流
     let res = mc_translator::translation::pipeline::start_translation_workflow(
@@ -192,7 +211,6 @@ pub async fn start_translation(
 
     Ok(())
 }
-
 
 #[tauri::command]
 pub fn get_style_config() -> StyleConfig {
@@ -249,14 +267,20 @@ pub fn query_dictionary(
             let full_dict: HashMap<String, String> = load_dict(&path);
             let mut it: Vec<_> = full_dict.into_iter().collect();
             it.sort_by(|a, b| a.0.cmp(&b.0));
-            *cache = Some(DictCache { path: path_str.clone(), items: it.clone() });
+            *cache = Some(DictCache {
+                path: path_str.clone(),
+                items: it.clone(),
+            });
             it
         }
     } else {
         let full_dict: HashMap<String, String> = load_dict(&path);
         let mut it: Vec<_> = full_dict.into_iter().collect();
         it.sort_by(|a, b| a.0.cmp(&b.0));
-        *cache = Some(DictCache { path: path_str.clone(), items: it.clone() });
+        *cache = Some(DictCache {
+            path: path_str.clone(),
+            items: it.clone(),
+        });
         it
     };
 
@@ -270,13 +294,13 @@ pub fn query_dictionary(
     // 3. 分頁切片
     let total_count = filtered_items.len();
     let total_pages = total_count.div_ceil(page_size);
-    
+
     let start = page * page_size;
     if start >= total_count {
         return Ok((vec![], total_pages));
     }
     let end = (start + page_size).min(total_count);
-    
+
     Ok((filtered_items[start..end].to_vec(), total_pages))
 }
 
@@ -330,7 +354,8 @@ pub fn resume_translation() -> Result<(), String> {
 pub fn stop_translation() -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
-            job.cancelled.store(true, std::sync::atomic::Ordering::SeqCst);
+            job.cancelled
+                .store(true, std::sync::atomic::Ordering::SeqCst);
             job.pause_notifier.notify_one();
             return Ok(());
         }
@@ -365,7 +390,11 @@ pub fn open_folder(path: String) -> Result<(), String> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let cmd = if cfg!(target_os = "macos") { "open" } else { "xdg-open" };
+        let cmd = if cfg!(target_os = "macos") {
+            "open"
+        } else {
+            "xdg-open"
+        };
         std::process::Command::new(cmd)
             .arg(p)
             .spawn()
@@ -420,7 +449,8 @@ pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
     let mut current_dict: HashMap<String, String> = load_dict(&user_path);
 
     let content = std::fs::read_to_string(file_path).map_err(|e| e.to_string())?;
-    let imported: HashMap<String, String> = serde_json::from_str(&content).map_err(|e| e.to_string())?;
+    let imported: HashMap<String, String> =
+        serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
     for (k, v) in imported {
         current_dict.insert(k, v);
