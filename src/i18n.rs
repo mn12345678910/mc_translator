@@ -387,11 +387,8 @@ impl GuiLabels {
         let zh_tw_path = dir.join("zh_tw.json");
         if !zh_tw_path.exists() {
             let l = Self::default_zh_tw();
-            fs::write(
-                &zh_tw_path,
-                serde_json::to_string_pretty(&l).unwrap(),
-            )
-            .map_err(std::io::Error::other)?;
+            fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
+                .map_err(std::io::Error::other)?;
         }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
@@ -465,11 +462,8 @@ impl CliLabels {
         let zh_tw_path = dir.join("zh_tw.json");
         if !zh_tw_path.exists() {
             let l = Self::default_zh_tw();
-            fs::write(
-                &zh_tw_path,
-                serde_json::to_string_pretty(&l).unwrap(),
-            )
-            .map_err(std::io::Error::other)?;
+            fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
+                .map_err(std::io::Error::other)?;
         }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),
