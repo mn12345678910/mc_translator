@@ -11,9 +11,11 @@ export function setRunningState(isRunning) {
     const btnResume = document.getElementById('btn-resume');
     const btnStop = document.getElementById('btn-stop');
 
-    const inputs = document.querySelectorAll('.control-panel input:not(#input-path), .control-panel select, .control-panel textarea');
-    inputs.forEach(el => el.disabled = isRunning);
-    
+    const inputs = document.querySelectorAll(
+        '.control-panel input:not(#input-path), .control-panel select, .control-panel textarea'
+    );
+    inputs.forEach((el) => (el.disabled = isRunning));
+
     if (btnTranslate && btnPause && btnStop && btnResume) {
         if (isRunning) {
             btnTranslate.style.display = 'none';
@@ -54,7 +56,10 @@ export function initTranslation() {
 
                 await invoke('start_translation', { config: state.currentConfig });
                 setRunningState(true);
-                if (progressBar) { progressBar.style.width = '0%'; progressBar.style.display = 'block'; }
+                if (progressBar) {
+                    progressBar.style.width = '0%';
+                    progressBar.style.display = 'block';
+                }
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
             } catch (e) {
                 appendLog(state.currentLabels.status_trans_failed_mask.replace('{}', e));
@@ -103,7 +108,10 @@ export function initTranslation() {
             }
             if (statusText) {
                 const mask = state.currentLabels.status_progress_mask;
-                statusText.textContent = mask.replace('{}', data.current).replace('{}', data.total).replace('{}', data.msg);
+                statusText.textContent = mask
+                    .replace('{}', data.current)
+                    .replace('{}', data.total)
+                    .replace('{}', data.msg);
             }
             if (data.msg) appendLog(data.msg);
         });
@@ -112,7 +120,10 @@ export function initTranslation() {
             const data = event.payload; // { success: bool, msg: "..." }
             setRunningState(false);
             if (progressBar) progressBar.style.width = '100%';
-            if (statusText) statusText.textContent = data.success ? state.currentLabels.status_finished : state.currentLabels.status_failed_or_cancelled;
+            if (statusText)
+                statusText.textContent = data.success
+                    ? state.currentLabels.status_finished
+                    : state.currentLabels.status_failed_or_cancelled;
             appendLog(data.msg);
         });
 
@@ -124,7 +135,7 @@ export function initTranslation() {
                 const pct = (data.batch_index / data.total_batches) * 100;
                 batchProgress.style.width = `${pct}%`;
                 if (batchProgress.nextElementSibling) {
-                     batchProgress.nextElementSibling.style.animation = 'pulse 1.5s infinite';
+                    batchProgress.nextElementSibling.style.animation = 'pulse 1.5s infinite';
                 }
             }
             if (batchText) {
@@ -134,7 +145,7 @@ export function initTranslation() {
         });
 
         listen('native-log', (event) => {
-             appendLog(event.payload);
+            appendLog(event.payload);
         });
     }
 }

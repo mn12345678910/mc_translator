@@ -46,7 +46,8 @@ pub fn write_to_temp_or_output(
 
         let is_absolute = Path::new(&clean_name).is_absolute();
         let has_dirs = name_unix.contains("/");
-        let is_originally_resource = name_unix.starts_with("assets/") || name_unix.contains("patchouli_books/");
+        let is_originally_resource =
+            name_unix.starts_with("assets/") || name_unix.contains("patchouli_books/");
 
         // 1. 路徑轉換：僅針對 BUNDLE 中的單純 JSON 或絕對路徑 JSON 進行資源包化補全
         if (is_absolute || !has_dirs) && is_json && is_bundle {
@@ -60,8 +61,11 @@ pub fn write_to_temp_or_output(
                 };
 
                 if let Some(modid) = parent.file_name() {
-                    final_path =
-                        format!("assets/{}/lang/{}", modid.to_string_lossy(), target_fname_owned);
+                    final_path = format!(
+                        "assets/{}/lang/{}",
+                        modid.to_string_lossy(),
+                        target_fname_owned
+                    );
                 } else {
                     final_path = format!("assets/unknown/lang/{}", target_fname_owned);
                 }
@@ -106,11 +110,13 @@ pub fn write_to_temp_or_output(
             // 獨立檔案鏡像 (保持相對路徑)
             // 移除領先斜線以確保 join 正常工作 (Fix missing folders)
             let mut final_path_stripped = final_path.trim_start_matches('/').to_string();
-            
+
             // 如果是 Windows 磁碟機格式 (如 C:/)，也需要處理 (通常 scanner 不應產出此格式於 rel_path)
             if final_path_stripped.contains(':') {
                 if let Some(pos) = final_path_stripped.find(':') {
-                    final_path_stripped = final_path_stripped[pos + 1..].trim_start_matches('/').to_string();
+                    final_path_stripped = final_path_stripped[pos + 1..]
+                        .trim_start_matches('/')
+                        .to_string();
                 }
             }
 
@@ -152,7 +158,13 @@ pub async fn output_resource_pack(
                 return Ok(());
             }
 
-            crate::utils::add_log(&log, &i18n.log_generating_pack, &config.source_lang, &config.target_lang, "");
+            crate::utils::add_log(
+                &log,
+                &i18n.log_generating_pack,
+                &config.source_lang,
+                &config.target_lang,
+                "",
+            );
 
             let pack_mcmeta = serde_json::json!({
                 "pack": {
@@ -169,7 +181,9 @@ pub async fn output_resource_pack(
             let zip_path = output_path.join(zip_filename);
 
             if zip_path.exists() {
-                log.lock().unwrap().push(i18n.log_pack_item_exists_warn.replace("{}", zip_filename));
+                log.lock()
+                    .unwrap()
+                    .push(i18n.log_pack_item_exists_warn.replace("{}", zip_filename));
             }
 
             let zip_file = fs::File::create(&zip_path)?;

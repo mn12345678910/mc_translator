@@ -1,6 +1,6 @@
+use aho_corasick::{AhoCorasick, MatchKind};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use aho_corasick::{AhoCorasick, MatchKind};
 
 pub struct GlossaryAutomaton {
     pub ac: AhoCorasick,
@@ -65,7 +65,10 @@ impl GlossaryAutomaton {
     }
 
     /// 建構术語自動機（簡化版，不帶推論）
-    pub fn new_simple(exact_map: &HashMap<String, String>, memory_map: &HashMap<String, String>) -> Self {
+    pub fn new_simple(
+        exact_map: &HashMap<String, String>,
+        memory_map: &HashMap<String, String>,
+    ) -> Self {
         Self::new(exact_map, memory_map, &HashMap::new(), "official")
     }
 
@@ -154,10 +157,11 @@ mod tests {
         let mut exact = HashMap::new();
         exact.insert("Apple".to_string(), "蘋果".to_string());
         exact.insert("Stone".to_string(), "石頭".to_string());
-        
-        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
+
+        let automaton =
+            GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         let results = automaton.extract(&["I have an Apple and some Stone".to_string()]);
-        
+
         assert!(results.contains_key("apple")); // match is lowercase
         assert_eq!(results.get("apple").unwrap().0, "蘋果");
         assert!(results.contains_key("stone"));
@@ -169,12 +173,13 @@ mod tests {
         let mut exact = HashMap::new();
         // 包含表情符號與複合字元的 UTF-8 術語
         exact.insert("❄️ Ice方塊".to_string(), "冰塊".to_string());
-        
-        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
+
+        let automaton =
+            GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         // 測試在句子中精確匹配 UTF-8 術語
         let results = automaton.extract(&["這是一個 ❄️ Ice方塊 在這裡".to_string()]);
-        
-        assert!(results.contains_key("❄️ ice方塊")); 
+
+        assert!(results.contains_key("❄️ ice方塊"));
         assert_eq!(results.get("❄️ ice方塊").unwrap().0, "冰塊");
     }
 
@@ -185,10 +190,11 @@ mod tests {
         // 模擬循環定義：A -> B, B -> A
         exact.insert("A".to_string(), "B".to_string());
         exact.insert("B".to_string(), "A".to_string());
-        
-        let automaton = GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
+
+        let automaton =
+            GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
         let results = automaton.extract(&["A and B".to_string()]);
-        
+
         // 自動機應能正常提取，且不應陷入死循環（因為 Aho-Corasick 是單次掃描）
         assert!(results.contains_key("a"));
         assert!(results.contains_key("b"));

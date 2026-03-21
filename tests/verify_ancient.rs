@@ -9,7 +9,7 @@ fn test_intra_batch_deduplication_ancient_json() {
     println!("=== 開始驗證 ancient.json 去重邏輯 ===");
 
     let target_text = "This profile is read only and cannot be modified! If you want to make a new profile based on this then you can make a copy to a new name";
-    
+
     // 1. 模擬 5 筆重複條目
     let mut items = [
         GlobalBatchItem::new(target_text, 1, "cities.__readonly__"),
@@ -35,10 +35,10 @@ fn test_intra_batch_deduplication_ancient_json() {
 
     for (p_idx, &idx) in batch_indices.iter().enumerate() {
         let item = &items[idx];
-        
+
         if seen_texts.contains(&item.preprocessed) {
             println!("   -> 項目索引 {} ({}) 被去重跳過！", idx, item.key);
-            continue; 
+            continue;
         }
         seen_texts.insert(item.preprocessed.clone());
 
@@ -68,7 +68,9 @@ fn test_intra_batch_deduplication_ancient_json() {
     println!("\n--- 模擬 LLM 回傳成功 ---");
     let mut results_map = std::collections::HashMap::new();
     let orig_tag = format!("[i0]{}", target_text);
-    let trans_tag = "[i0]此設定檔是唯讀的，無法修改！如果您想基於此建立一個新設定檔，可以複製為新名稱".to_string();
+    let trans_tag =
+        "[i0]此設定檔是唯讀的，無法修改！如果您想基於此建立一個新設定檔，可以複製為新名稱"
+            .to_string();
     results_map.insert(orig_tag, trans_tag);
 
     let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
@@ -79,10 +81,10 @@ fn test_intra_batch_deduplication_ancient_json() {
                 if relative_idx < batch_indices.len() {
                     let abs_idx = batch_indices[relative_idx];
                     let orig_text = items[abs_idx].original.clone();
-                    
+
                     let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
                     let final_trans = clean_translated; // 略過 postprocess
-                    
+
                     for &other_abs_idx in &batch_indices {
                         if items[other_abs_idx].original == orig_text {
                             items[other_abs_idx].translated = Some(final_trans.clone());

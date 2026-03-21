@@ -14,14 +14,18 @@ pub fn save_api_key(key: &str) -> Result<(), String> {
     }
     let entry = Entry::new(SERVICE_NAME, ACCOUNT_NAME)
         .map_err(|e| format!("無法初始化 Keyring Entry: {}", e))?;
-    entry.set_password(key).map_err(|e| format!("儲存金鑰失敗: {}", e))
+    entry
+        .set_password(key)
+        .map_err(|e| format!("儲存金鑰失敗: {}", e))
 }
 
 /// 從系統憑證管理員讀取 API 金鑰
 pub fn get_api_key() -> Result<String, String> {
     let entry = Entry::new(SERVICE_NAME, ACCOUNT_NAME)
         .map_err(|e| format!("無法初始化 Keyring Entry: {}", e))?;
-    entry.get_password().map_err(|e| format!("讀取金鑰失敗: {}", e))
+    entry
+        .get_password()
+        .map_err(|e| format!("讀取金鑰失敗: {}", e))
 }
 
 #[cfg(test)]

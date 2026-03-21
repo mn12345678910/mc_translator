@@ -9,7 +9,10 @@
     --font-size: 15px;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
     font-size: var(--font-size);
     border-radius: var(--border-radius);
 }
@@ -25,7 +28,9 @@ body {
     flex-direction: column;
     height: 100vh;
     box-sizing: border-box;
-    transition: background-color 0.2s, color 0.2s;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
 }
 
 h1 {
@@ -42,7 +47,7 @@ h2 {
 }
 
 .control-panel {
-    background-color: rgba(255, 255, 255, 0.03); 
+    background-color: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(128, 128, 128, 0.15);
     padding: 15px;
     border-radius: var(--border-radius);
@@ -59,7 +64,7 @@ label {
     color: var(--label-color, var(--text-color));
 }
 
-input[type="text"] {
+input[type='text'] {
     width: 100%;
     padding: 10px;
     background-color: var(--input-bg);
@@ -77,19 +82,23 @@ button {
     border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.2s, color 0.2s;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
 }
 
 button:hover {
     background-color: #383840;
 }
 
-#btn-translate, #btn-save-style {
+#btn-translate,
+#btn-save-style {
     background-color: var(--accent-color);
     color: #111;
 }
 
-#btn-translate:hover, #btn-save-style:hover {
+#btn-translate:hover,
+#btn-save-style:hover {
     filter: brightness(1.2);
 }
 
@@ -111,7 +120,7 @@ button:hover {
     color: #aeaeae;
 }
 
-.color-item input[type="color"] {
+.color-item input[type='color'] {
     width: 100%;
     height: 38px;
     border: 1px solid #444;
@@ -145,9 +154,20 @@ button:hover {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-color); }
-    50% { opacity: 1; box-shadow: 0 0 15px var(--accent-color), inset 0 0 5px rgba(255,255,255,0.5); }
-    100% { opacity: 0.8; box-shadow: 0 0 5px var(--accent-color); }
+    0% {
+        opacity: 0.8;
+        box-shadow: 0 0 5px var(--accent-color);
+    }
+    50% {
+        opacity: 1;
+        box-shadow:
+            0 0 15px var(--accent-color),
+            inset 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    100% {
+        opacity: 0.8;
+        box-shadow: 0 0 5px var(--accent-color);
+    }
 }
 
 #log-output {
@@ -179,9 +199,10 @@ button:hover {
     margin-bottom: 0; /* 覆蓋全域 label */
 }
 
-.checkbox-grid input[type="checkbox"] {
+.checkbox-grid input[type='checkbox'] {
     cursor: pointer;
-    width: 16px; height: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 /* 📖 字典管理器彈窗 原生 Dialog */
@@ -194,7 +215,7 @@ button:hover {
     border: 1px solid #444;
     border-radius: var(--border-radius);
     padding: 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     display: none;
     flex-direction: column;
 }
@@ -237,7 +258,9 @@ button:hover {
     cursor: pointer;
 }
 
-.close-icon:hover { color: #fff; }
+.close-icon:hover {
+    color: #fff;
+}
 
 .dialog-body {
     flex: 1;
@@ -285,7 +308,8 @@ table {
     text-align: left;
 }
 
-th, td {
+th,
+td {
     padding: 10px;
     border-bottom: 1px solid #2a2a30;
 }
@@ -293,10 +317,13 @@ th, td {
 th {
     background-color: #25252b;
     color: var(--accent-color);
-    position: sticky; top: 0;
+    position: sticky;
+    top: 0;
 }
 
-tr:hover { background-color: rgba(255,255,255,0.03); }
+tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
 
 .dialog-footer {
     padding: 12px 15px;
@@ -312,15 +339,20 @@ tr:hover { background-color: rgba(255,255,255,0.03); }
     gap: 15px;
 }
 
-.page-btn { padding: 4px 12px; font-size: 0.85rem; }
+.page-btn {
+    padding: 4px 12px;
+    font-size: 0.85rem;
+}
 
 /* 輔助按鈕 Row */
 .button-row {
-    display: flex; gap: 10px; margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
 }
 
 .secondary-btn {
-    background-color: var(--btn-bg); 
+    background-color: var(--btn-bg);
     color: var(--btn-text);
 }
 
@@ -332,7 +364,8 @@ tr:hover { background-color: rgba(255,255,255,0.03); }
 }
 
 .input-row {
-    display: flex; gap: 8px;
+    display: flex;
+    gap: 8px;
 }
 
 .input-row input {
@@ -340,7 +373,9 @@ tr:hover { background-color: rgba(255,255,255,0.03); }
 }
 
 .action-btn {
-    padding: 8px 12px; font-size: 0.85rem; white-space: nowrap;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 select {
@@ -354,7 +389,7 @@ select {
     cursor: pointer;
 }
 
-input[type="number"] {
+input[type='number'] {
     width: 100%;
     padding: 10px;
     background-color: var(--input-bg);
@@ -387,7 +422,7 @@ input[type="number"] {
     height: 20px;
 }
 
-.switch input { 
+.switch input {
     opacity: 0;
     width: 0;
     height: 0;
@@ -396,21 +431,24 @@ input[type="number"] {
 .slider {
     position: absolute;
     cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-color: #2a2a30;
-    transition: .3s;
+    transition: 0.3s;
     border: 1px solid #444;
 }
 
 .slider:before {
     position: absolute;
-    content: "";
+    content: '';
     height: 14px;
     width: 14px;
     left: 2px;
     bottom: 2px;
     background-color: #e0e0e0;
-    transition: .3s;
+    transition: 0.3s;
 }
 
 input:checked + .slider {
@@ -434,4 +472,3 @@ input:checked + .slider:before {
 .secondary-btn:hover {
     background-color: #4a4a55 !important;
 }
-

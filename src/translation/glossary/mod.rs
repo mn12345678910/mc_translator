@@ -1,7 +1,7 @@
-pub mod automaton;
 pub mod analyzer;
+pub mod automaton;
 pub mod mc_lang;
 
-pub use automaton::*;
 pub use analyzer::*;
+pub use automaton::*;
 pub use mc_lang::*;

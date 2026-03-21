@@ -31,10 +31,12 @@ export async function loadConfig() {
         state.currentConfig = config;
 
         if (apiProvider) apiProvider.value = config.api_provider || 'Gemini';
-        
+
         const savedKey = await invoke('get_api_key_cmd');
         if (apiKey) apiKey.value = savedKey || '';
-        
+
+        if (inputPath) inputPath.value = config.path || '';
+
         if (ollamaUrl) ollamaUrl.value = config.ollama_url || 'http://localhost:11434';
         if (batchSize) batchSize.value = config.batch_size || 150;
         if (batchMaxChars) batchMaxChars.value = config.batch_max_chars || 3500;
@@ -129,12 +131,14 @@ export async function loadModels() {
     try {
         const models = await invoke('get_models_from_provider', { provider });
         selectedModel.innerHTML = `<option value="">${state.currentLabels.prompt_select_model}</option>`;
-        models.forEach(m => {
+        models.forEach((m) => {
             const opt = document.createElement('option');
-            opt.value = m; opt.textContent = m;
+            opt.value = m;
+            opt.textContent = m;
             selectedModel.appendChild(opt);
         });
     } catch (e) {
+        console.error(e);
         selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models || '(無可用模型)'}</option>`;
     }
 }
@@ -161,6 +165,7 @@ export function validateCanTranslate() {
     const selectedModel = document.getElementById('selected-model');
     const apiProvider = document.getElementById('api-provider');
     if (btnTranslate && selectedModel && apiProvider) {
-        btnTranslate.disabled = !selectedModel.value && apiProvider.value !== 'Google Free' && apiProvider.value !== 'Ollama';
+        btnTranslate.disabled =
+            !selectedModel.value && apiProvider.value !== 'Google Free' && apiProvider.value !== 'Ollama';
     }
 }

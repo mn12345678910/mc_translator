@@ -15,3 +15,6 @@ docs/guides/MAINTENANCE_LOG.md
 
 # Node.js
 node_modules/
+
+# 歷史過時歸檔 (Outdated Archives)
+docs/outdated/

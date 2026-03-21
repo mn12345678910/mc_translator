@@ -1,14 +1,17 @@
 use clap::Parser;
-use dialoguer::{Select, Input, Password};
-use std::path::PathBuf;
-use std::io::Write;
+use dialoguer::{Input, Password, Select};
 use mc_translator::i18n::CliLabels;
+use std::io::Write;
+use std::path::PathBuf;
 
 use mc_translator::config::AppConfig;
 use mc_translator::translation::pipeline::start_translation_workflow;
 
 #[derive(Parser, Debug)]
-#[command(name = "mc_translator_cli", about = "Minecraft 模組翻譯工具 - CLI 模式")]
+#[command(
+    name = "mc_translator_cli",
+    about = "Minecraft 模組翻譯工具 - CLI 模式"
+)]
 struct Args {
     /// 輸入檔案或資料夾路徑 (例如: ./mods/test.jar)
     #[arg(short, long)]
@@ -78,7 +81,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
+
     // 確保 langs 目錄與語言檔案存在
     let _ = CliLabels::ensure_langs_exists();
 
@@ -88,21 +91,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", i18n.cli_banner_title);
 
     // --- 參數覆蓋設定檔 (Parity Mapping) ---
-    if let Some(o) = args.output.clone() { config.output_dir = o; }
-    if let Some(p) = args.provider.clone() { config.api_provider = p; }
-    if let Some(m) = args.model.clone() { config.model = m; }
-    if let Some(k) = args.api_key.clone() { config.api_key = k; }
-    if let Some(b) = args.batch_size { config.batch_size = b; }
-    if let Some(c) = args.batch_max_chars { config.batch_max_chars = c; }
-    if let Some(t) = args.timeout { config.timeout = t; }
-    if let Some(g) = args.glossary_priority.clone() { config.glossary_priority = g; }
-    if let Some(s) = args.source_lang.clone() { config.source_lang = s; }
-    if let Some(t) = args.target_lang.clone() { config.target_lang = t; }
-    if args.skip_json { config.skip_json = true; }
-    if args.skip_js { config.skip_js = true; }
-    if args.skip_jar { config.skip_jar = true; }
-    if args.skip_book { config.skip_book = true; }
-    if args.log_llm { config.enable_llm_log = true; }
+    if let Some(o) = args.output.clone() {
+        config.output_dir = o;
+    }
+    if let Some(p) = args.provider.clone() {
+        config.api_provider = p;
+    }
+    if let Some(m) = args.model.clone() {
+        config.model = m;
+    }
+    if let Some(k) = args.api_key.clone() {
+        config.api_key = k;
+    }
+    if let Some(b) = args.batch_size {
+        config.batch_size = b;
+    }
+    if let Some(c) = args.batch_max_chars {
+        config.batch_max_chars = c;
+    }
+    if let Some(t) = args.timeout {
+        config.timeout = t;
+    }
+    if let Some(g) = args.glossary_priority.clone() {
+        config.glossary_priority = g;
+    }
+    if let Some(s) = args.source_lang.clone() {
+        config.source_lang = s;
+    }
+    if let Some(t) = args.target_lang.clone() {
+        config.target_lang = t;
+    }
+    if args.skip_json {
+        config.skip_json = true;
+    }
+    if args.skip_js {
+        config.skip_js = true;
+    }
+    if args.skip_jar {
+        config.skip_jar = true;
+    }
+    if args.skip_book {
+        config.skip_book = true;
+    }
+    if args.log_llm {
+        config.enable_llm_log = true;
+    }
 
     let is_headless = args.input.is_some();
 
@@ -122,7 +155,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   提供商: {}", config.api_provider);
         println!("   模型: {}", config.model);
         println!("   輸入: {}", input_path_str);
-        println!("   輸出: {}", if config.output_dir.is_empty() { "LLMTranslator/ (預設)" } else { &config.output_dir });
+        println!(
+            "   輸出: {}",
+            if config.output_dir.is_empty() {
+                "LLMTranslator/ (預設)"
+            } else {
+                &config.output_dir
+            }
+        );
         println!();
 
         run_translation(config, input_path).await?;
@@ -142,14 +182,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     1 => {
                         // --- Step 1: 介面語言 ---
                         let langs = CliLabels::get_available_ui_langs();
-                        let default_idx = langs.iter().position(|l| l == &config.ui_lang).unwrap_or(0);
-                        
+                        let default_idx =
+                            langs.iter().position(|l| l == &config.ui_lang).unwrap_or(0);
+
                         let idx = Select::new()
                             .with_prompt(&i18n.cli_select_ui_lang)
                             .items(&langs)
                             .default(default_idx)
                             .interact()?;
-                        
+
                         config.ui_lang = langs[idx].clone();
                         i18n = CliLabels::load_or_default(&config.ui_lang);
                         config.save(); // 即時存入
@@ -163,9 +204,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     2 => {
                         // --- Step 2: API 提供商 ---
-                        let providers = ["Gemini", "OpenAI", "DeepSeek", "Mistral", "Ollama", "DeepL", "Google Free"];
-                        let default_idx = providers.iter().position(|&p| p == config.api_provider).unwrap_or(0);
-                        let mut items: Vec<String> = providers.iter().map(|s| s.to_string()).collect();
+                        let providers = [
+                            "Gemini",
+                            "OpenAI",
+                            "DeepSeek",
+                            "Mistral",
+                            "Ollama",
+                            "DeepL",
+                            "Google Free",
+                        ];
+                        let default_idx = providers
+                            .iter()
+                            .position(|&p| p == config.api_provider)
+                            .unwrap_or(0);
+                        let mut items: Vec<String> =
+                            providers.iter().map(|s| s.to_string()).collect();
                         items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
 
                         let idx = Select::new()
@@ -178,7 +231,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             step = status_history.pop().unwrap_or(1);
                             continue;
                         }
-                        
+
                         config.api_provider = providers[idx].to_string();
                         config.save(); // 即時存入
                         status_history.push(2);
@@ -194,7 +247,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         let has_saved_key = !config.api_key.is_empty();
                         let key_prompt = if has_saved_key {
-                            format!("{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)", i18n.common.label_api_key)
+                            format!(
+                                "{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)",
+                                i18n.common.label_api_key
+                            )
                         } else {
                             format!("{} (鍵入 '<' 回到上一步)", i18n.common.label_api_key)
                         };
@@ -203,7 +259,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .with_prompt(&key_prompt)
                             .allow_empty_password(true)
                             .interact()?;
-                        
+
                         if key == "<" {
                             step = status_history.pop().unwrap_or(1);
                             continue;
@@ -224,17 +280,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             continue;
                         }
 
-                        println!("{}", i18n.cli_fetching_models.replace("{}", &config.api_provider));
-                        let mut items = mc_translator::translation::api::models::fetch_dynamic_models(
-                            &config.api_provider,
-                            &config.api_key,
-                            &config.ollama_url,
-                        ).await.unwrap_or_else(|_| Vec::new());
+                        println!(
+                            "{}",
+                            i18n.cli_fetching_models.replace("{}", &config.api_provider)
+                        );
+                        let mut items =
+                            mc_translator::translation::api::models::fetch_dynamic_models(
+                                &config.api_provider,
+                                &config.api_key,
+                                &config.ollama_url,
+                            )
+                            .await
+                            .unwrap_or_else(|_| Vec::new());
 
                         let is_dynamic = !items.is_empty();
                         let mut prompt_text = i18n.common.label_model.clone();
-                        if !is_dynamic && config.api_provider != "DeepL" && config.api_provider != "Ollama" {
-                            prompt_text = format!("{}{}", i18n.common.label_model, i18n.cli_model_fetch_failed);
+                        if !is_dynamic
+                            && config.api_provider != "DeepL"
+                            && config.api_provider != "Ollama"
+                        {
+                            prompt_text = format!(
+                                "{}{}",
+                                i18n.common.label_model, i18n.cli_model_fetch_failed
+                            );
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
@@ -253,7 +321,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .interact()?;
 
                         if idx == items.len() - 1 {
-                            if config.api_provider == "Ollama" || config.api_provider == "Google Free" {
+                            if config.api_provider == "Ollama"
+                                || config.api_provider == "Google Free"
+                            {
                                 step = 2; // 跳過不適用的 APIKey 步驟
                             } else {
                                 step = status_history.pop().unwrap_or(1);
@@ -282,10 +352,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     5 => {
                         // --- Step 5: 輸入路徑 ---
                         let input_prompt = &i18n.cli_input_path_prompt;
-                        let input_path_str: String = Input::new()
-                            .with_prompt(input_prompt)
-                            .interact()?;
-                        
+                        let input_path_str: String =
+                            Input::new().with_prompt(input_prompt).interact()?;
+
                         if input_path_str == "<" {
                             if config.api_provider == "Google Free" {
                                 step = 2; // Google Free 同時跳過 3 與 4
@@ -307,13 +376,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     6 => {
                         // --- Step 6: 輸出資料夾 ---
-                        let default_output = if config.output_dir.is_empty() { "LLMTranslator" } else { &config.output_dir };
-                        let output_prompt = i18n.cli_output_path_prompt.replace("{}", &i18n.common.label_output_path).replace("{}", default_output);
+                        let default_output = if config.output_dir.is_empty() {
+                            "LLMTranslator"
+                        } else {
+                            &config.output_dir
+                        };
+                        let output_prompt = i18n
+                            .cli_output_path_prompt
+                            .replace("{}", &i18n.common.label_output_path)
+                            .replace("{}", default_output);
                         let output_dir: String = Input::new()
                             .with_prompt(&output_prompt)
                             .allow_empty(true)
                             .interact()?;
-                        
+
                         if output_dir == "<" {
                             step = status_history.pop().unwrap_or(1);
                             continue;
@@ -332,7 +408,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             i18n.label_yes_confirm_cli.clone(),
                             i18n.prompt_advanced_settings_cli.clone(),
                             i18n.label_no_cancel_cli.clone(),
-                            i18n.label_back_to_prev_cli.to_string() // 修正重覆 <-
+                            i18n.label_back_to_prev_cli.to_string(), // 修正重覆 <-
                         ];
 
                         let start = Select::new()
@@ -340,14 +416,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .items(&items)
                             .default(0)
                             .interact()?;
-                        
-                        if start == 3 { // 回上一步
+
+                        if start == 3 {
+                            // 回上一步
                             step = status_history.pop().unwrap_or(1);
                             continue;
-                        } else if start == 2 { // 取消離開
+                        } else if start == 2 {
+                            // 取消離開
                             println!("{}", i18n.cli_op_cancelled);
                             return Ok(());
-                        } else if start == 1 { // 進階參數
+                        } else if start == 1 {
+                            // 進階參數
                             // 簡易進階切換，此處可以彈出單次輸入或不彈，若使用者只要跟GUI對等，
                             // 這邊可加入簡單 skips 或批次量 Input，為了保持結構先讓它一律過!
                             println!("{}", i18n.cli_adv_settings_synced);
@@ -365,12 +444,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let choice = Select::new()
                 .with_prompt(&i18n.prompt_task_finished_cli)
-                .items(&[i18n.prompt_new_task_cli.clone(), i18n.label_no_cancel_cli.clone()])
+                .items(&[
+                    i18n.prompt_new_task_cli.clone(),
+                    i18n.label_no_cancel_cli.clone(),
+                ])
                 .default(0)
                 .interact()?;
-            
+
             if choice == 1 {
-                break; 
+                break;
             }
 
             println!("\n=========================================");
@@ -391,9 +473,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_translation(
+    config: AppConfig,
+    input_path: PathBuf,
+) -> Result<(), Box<dyn std::error::Error>> {
     let i18n = CliLabels::load_or_default(&config.ui_lang);
-    
+
     // 包裹成管線需要的 Tuple 格式 (Path Buf, Rel Path)
     let rel_path = input_path.to_string_lossy().to_string();
     let paths = vec![(input_path, rel_path)];
@@ -402,36 +487,37 @@ async fn run_translation(config: AppConfig, input_path: PathBuf) -> Result<(), B
         // 去除換行避免與進度條衝突
         let clean_msg = msg.replace("\n", " ").trim().to_string();
         if !clean_msg.is_empty() {
-             // 覆蓋當前進度條行並打上日誌
-             print!("\r\x1B[K-> {}\n", clean_msg);
-             let _ = std::io::stdout().flush();
+            // 覆蓋當前進度條行並打上日誌
+            print!("\r\x1B[K-> {}\n", clean_msg);
+            let _ = std::io::stdout().flush();
         }
     };
 
-    let progress_updater = |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
-        let pct = if total > 0.0 { current / total } else { 0.0 };
-        let bar_len = 25;
-        let filled = (pct * bar_len as f32).max(0.0) as usize;
-        let filled = filled.min(bar_len);
-        let bar = format!("{}{}", "█".repeat(filled), "░".repeat(bar_len - filled));
-        
-        let sub_info = if batch_tot > 0.0 {
-            format!(" | 條目: {}/{}", batch_curr as u32, batch_tot as u32)
-        } else {
-            String::new()
+    let progress_updater =
+        |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
+            let pct = if total > 0.0 { current / total } else { 0.0 };
+            let bar_len = 25;
+            let filled = (pct * bar_len as f32).max(0.0) as usize;
+            let filled = filled.min(bar_len);
+            let bar = format!("{}{}", "█".repeat(filled), "░".repeat(bar_len - filled));
+
+            let sub_info = if batch_tot > 0.0 {
+                format!(" | 條目: {}/{}", batch_curr as u32, batch_tot as u32)
+            } else {
+                String::new()
+            };
+
+            print!(
+                "\r\x1B[K[{}] {:.0}%{} | {}",
+                bar,
+                (pct * 100.0).clamp(0.0, 100.0),
+                sub_info,
+                status
+            );
+            let _ = std::io::stdout().flush();
         };
 
-        print!("\r\x1B[K[{}] {:.0}%{} | {}", bar, (pct * 100.0).clamp(0.0, 100.0), sub_info, status);
-        let _ = std::io::stdout().flush();
-    };
-
-
-    let res = start_translation_workflow(
-        config,
-        paths,
-        logger,
-        progress_updater,
-    ).await;
+    let res = start_translation_workflow(config, paths, logger, progress_updater).await;
 
     println!("{}", i18n.cli_pipeline_ended);
 

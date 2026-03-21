@@ -1,6 +1,6 @@
 // frontend/modules/style.js
 import { state } from './state.js';
-import { rgbToHex, hexToRgb, appendLog, debounce } from './utils.js';
+import { rgbToHex } from './utils.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 
@@ -24,7 +24,7 @@ export async function loadStyle() {
         if (colorText) colorText.value = rgbToHex(isDark ? style.dark_text : style.light_text);
         if (colorBtnBg) colorBtnBg.value = rgbToHex(isDark ? style.dark_btn_bg : style.light_btn_bg);
         if (colorBtnText) colorBtnText.value = rgbToHex(isDark ? style.dark_btn_text : style.light_btn_text);
-        
+
         if (style.font_size && fontSize) {
             fontSize.value = style.font_size;
             document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
@@ -60,9 +60,21 @@ export async function saveStyle() {
 
 export function applyColors(style) {
     const overrideableIds = [
-        'btn-translate', 'btn-pause', 'btn-stop', 'btn-browse-file', 'btn-browse-dir',
-        'btn-browse-output', 'btn-browse-output-open', 'user-prompt', 'system-prompt',
-        'input-path', 'output-dir', 'dict-dialog', 'log-output', 'progress-bar', 'batch-progress-bar'
+        'btn-translate',
+        'btn-pause',
+        'btn-stop',
+        'btn-browse-file',
+        'btn-browse-dir',
+        'btn-browse-output',
+        'btn-browse-output-open',
+        'user-prompt',
+        'system-prompt',
+        'input-path',
+        'output-dir',
+        'dict-dialog',
+        'log-output',
+        'progress-bar',
+        'batch-progress-bar',
     ];
     for (const id of overrideableIds) {
         const el = document.getElementById(id);
@@ -89,11 +101,24 @@ export function applyColors(style) {
     if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
     if (btnBg) document.documentElement.style.setProperty('--btn-bg', `rgb(${btnBg[0]},${btnBg[1]},${btnBg[2]})`);
     if (btnTxt) document.documentElement.style.setProperty('--btn-text', `rgb(${btnTxt[0]},${btnTxt[1]},${btnTxt[2]})`);
-    if (inputBg) document.documentElement.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
+    if (inputBg)
+        document.documentElement.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
     if (listBg) document.documentElement.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
-    if (tabActive) document.documentElement.style.setProperty('--tab-active-bg', `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`);
-    if (tabInactive) document.documentElement.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
-    if (labelColor) document.documentElement.style.setProperty('--label-color', `rgb(${labelColor[0]},${labelColor[1]},${labelColor[2]})`);
+    if (tabActive)
+        document.documentElement.style.setProperty(
+            '--tab-active-bg',
+            `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`
+        );
+    if (tabInactive)
+        document.documentElement.style.setProperty(
+            '--tab-inactive-bg',
+            `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`
+        );
+    if (labelColor)
+        document.documentElement.style.setProperty(
+            '--label-color',
+            `rgb(${labelColor[0]},${labelColor[1]},${labelColor[2]})`
+        );
 
     if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
 
@@ -114,7 +139,8 @@ export function applyColors(style) {
         for (const [id, override] of Object.entries(style.instance_overrides)) {
             const el = document.getElementById(id);
             if (el) {
-                if (override.bg) el.style.backgroundColor = `rgb(${override.bg[0]},${override.bg[1]},${override.bg[2]})`;
+                if (override.bg)
+                    el.style.backgroundColor = `rgb(${override.bg[0]},${override.bg[1]},${override.bg[2]})`;
                 if (override.text) el.style.color = `rgb(${override.text[0]},${override.text[1]},${override.text[2]})`;
                 if (override.rounding !== undefined) el.style.borderRadius = `${override.rounding}px`;
             }
@@ -141,7 +167,7 @@ export function updatePaletteValue() {
 
     const noTextItems = ['progress-bar', 'batch-progress-bar'];
     if (isSpecific && paletteProperty) {
-        Array.from(paletteProperty.options).forEach(opt => {
+        Array.from(paletteProperty.options).forEach((opt) => {
             if (opt.value === 'text') {
                 opt.style.display = noTextItems.includes(target) ? 'none' : 'block';
                 opt.disabled = noTextItems.includes(target);
@@ -156,7 +182,10 @@ export function updatePaletteValue() {
 
     if (paletteClearGroup) paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
 
-    function rgbToHexStr(arr) { if (!arr || arr.length < 3) return '#1e1e23'; return '#' + arr.map(x => x.toString(16).padStart(2, '0')).join(''); }
+    function rgbToHexStr(arr) {
+        if (!arr || arr.length < 3) return '#1e1e23';
+        return '#' + arr.map((x) => x.toString(16).padStart(2, '0')).join('');
+    }
 
     if (!isSpecific) {
         if (palettePropertyGroup) palettePropertyGroup.style.display = 'none';
@@ -172,11 +201,14 @@ export function updatePaletteValue() {
         if (prop === 'rounding') {
             if (paletteColorGroup) paletteColorGroup.style.display = 'none';
             if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'block';
-            if (paletteRounding) paletteRounding.value = (override && override.rounding !== undefined) ? override.rounding : 4;
+            if (paletteRounding)
+                paletteRounding.value = override && override.rounding !== undefined ? override.rounding : 4;
         } else {
             if (paletteColorGroup) paletteColorGroup.style.display = 'block';
             if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'none';
-            if (labelPaletteColor) labelPaletteColor.textContent = prop === 'bg' ? state.currentLabels.label_bg_color : state.currentLabels.label_text_color;
+            if (labelPaletteColor)
+                labelPaletteColor.textContent =
+                    prop === 'bg' ? state.currentLabels.label_bg_color : state.currentLabels.label_text_color;
 
             let color = override ? (prop === 'bg' ? override.bg : override.text) : null;
             if (paletteColor) paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';

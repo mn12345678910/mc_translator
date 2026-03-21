@@ -1,16 +1,16 @@
 //! # 共通翻譯驅動管線 (Shared Execution Pipeline)
-//! 
+//!
 //! 本模組負責聚合「字典載入、準備環境、建立共用狀態與呼叫檔案管線」的完整工作流。
 //! 透過 Callback 機制來更新進度與日誌，解耦 GUI 與 CLI。
 
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::Ordering;
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 
 use crate::config::AppConfig;
-use crate::translation::job::{JobConfig, JobSharedState};
 use crate::i18n::CommonLabels;
+use crate::translation::job::{JobConfig, JobSharedState};
 use crate::utils;
 
 /// 載入並準備字典檔 (McLang 與推論字典)
@@ -22,9 +22,9 @@ pub async fn load_and_prepare_dictionaries(
     term_arc: Arc<Mutex<Vec<(String, String)>>>,
     available_langs_arc: Arc<Mutex<Vec<String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    
     // 呼叫底層讀取
-    let (files, exact, unfiltered) = utils::load_mc_dicts(&config.source_lang, &config.target_lang).await?;
+    let (files, exact, unfiltered) =
+        utils::load_mc_dicts(&config.source_lang, &config.target_lang).await?;
 
     {
         let mut exact_map = exact_arc.lock().unwrap();
@@ -43,7 +43,10 @@ pub async fn load_and_prepare_dictionaries(
     }
 
     // 儲存推論字典
-    crate::config::save_dict(&crate::config::get_official_dict_path(&config.ui_lang), &inferred);
+    crate::config::save_dict(
+        &crate::config::get_official_dict_path(&config.ui_lang),
+        &inferred,
+    );
 
     // 更新可用語言
     let mut langs: Vec<String> = files.langs.keys().cloned().collect();
@@ -66,7 +69,6 @@ pub async fn start_translation_workflow(
     logger: impl Fn(&str) + Send + Sync + 'static,
     progress_updater: impl Fn(f32, f32, f32, f32, &str) + Send + Sync + 'static,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-
     let logger_arc = Arc::new(logger);
     let progress_arc = Arc::new(progress_updater);
 
@@ -80,7 +82,7 @@ pub async fn start_translation_workflow(
         }
     }
     let input_paths = expanded_paths;
-    
+
     // 1. 初始化空狀態容器 (Pipeline 需要)
     let mc_lang = Arc::new(Mutex::new(None));
     let exact_match_map = Arc::new(Mutex::new(HashMap::new()));
@@ -101,7 +103,8 @@ pub async fn start_translation_workflow(
         inferred_match_map.clone(),
         term_replacements.clone(),
         available_langs.clone(),
-    ).await?;
+    )
+    .await?;
 
     logger_arc(&i18n.status_analyzing_files);
 
@@ -131,7 +134,7 @@ pub async fn start_translation_workflow(
     // 4. 建立 JobSharedState
     let log_arc = Arc::new(Mutex::new(Vec::new()));
     let status_arc = Arc::new(Mutex::new(i18n.status_analyzing_files.clone()));
-    
+
     let job_state = JobSharedState {
         log: log_arc.clone(),
         status: status_arc.clone(),
@@ -149,7 +152,7 @@ pub async fn start_translation_workflow(
         config: job_config.clone(),
         i18n: i18n.clone(),
     };
-    
+
     // 保存至全域，方便暫停/中止連鎖控制
     if let Ok(mut active) = super::ACTIVE_JOB.lock() {
         *active = Some(job_state.clone());
@@ -160,13 +163,13 @@ pub async fn start_translation_workflow(
     let status_monitor = status_arc.clone();
     let global_progress_monitor = job_state.global_progress.clone();
     let global_total_monitor = job_state.global_total.clone();
-    
+
     let monitor_abort = Arc::new(std::sync::atomic::AtomicBool::new(false));
     let abort_clone = monitor_abort.clone();
 
     let logger_clone = logger_arc.clone();
     let progress_clone = progress_arc.clone();
-    
+
     let log_monitor_c = log_monitor.clone();
     let status_monitor_c = status_monitor.clone();
     let global_progress_monitor_c = global_progress_monitor.clone();
@@ -196,11 +199,10 @@ pub async fn start_translation_workflow(
                 progress_clone(current_g, total_g, current_b, total_b, &status_str);
             }
 
-
             tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         }
     });
-    
+
     // 6. 喚起檔案管線
     let res = crate::file::pipeline::process_all_files(
         input_paths,
@@ -209,7 +211,8 @@ pub async fn start_translation_workflow(
         term_replacements,
         exact_match_map,
         inferred_match_map,
-    ).await;
+    )
+    .await;
 
     // 7. 停止監控任務
     monitor_abort.store(true, Ordering::SeqCst);

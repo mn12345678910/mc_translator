@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 
- 
 pub const DEFAULT_LANG: &str = "zh_tw";
 
 // --- 重構後之共通結構體 ---
@@ -154,22 +153,37 @@ pub struct CommonLabels {
 
 impl CommonLabels {
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let dir = get_langs_dir("gui"); 
+        let dir = get_langs_dir("gui");
         let p = dir.join(format!("{}.json", lang));
         if let Ok(c) = fs::read_to_string(p) {
             let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value = serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) { for (k,v) in l { d.insert(k.clone(),v.clone()); } }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) { return Some(lb); }
+            let mut d_val: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
+            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
+                for (k, v) in l {
+                    d.insert(k.clone(), v.clone());
+                }
+            }
+            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
+                return Some(lb);
+            }
         }
         None
     }
     pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) { return l; }
-        if lang != "zh_tw" { if let Some(z) = Self::load_from_file("zh_tw") { return z; } }
+        if let Some(l) = Self::load_from_file(lang) {
+            return l;
+        }
+        if lang != "zh_tw" {
+            if let Some(z) = Self::load_from_file("zh_tw") {
+                return z;
+            }
+        }
         Self::default_zh_tw()
     }
-    pub fn default_zh_tw() -> Self { serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap() }
+    pub fn default_zh_tw() -> Self {
+        serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap()
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -351,11 +365,15 @@ pub struct CliLabels {
 // --- 輔助載入規劃 ---
 fn get_langs_dir(sub: &str) -> std::path::PathBuf {
     let cwd_langs = std::path::PathBuf::from("langs").join(sub);
-    if cwd_langs.exists() { return cwd_langs; }
+    if cwd_langs.exists() {
+        return cwd_langs;
+    }
     if let Ok(mut exe_path) = std::env::current_exe() {
         exe_path.pop();
         let exe_langs = exe_path.join("langs").join(sub);
-        if exe_langs.exists() { return exe_langs; }
+        if exe_langs.exists() {
+            return exe_langs;
+        }
     }
     std::path::PathBuf::from("langs").join(sub)
 }
@@ -363,75 +381,143 @@ fn get_langs_dir(sub: &str) -> std::path::PathBuf {
 impl GuiLabels {
     pub fn ensure_langs_exists() -> Result<(), Box<dyn std::error::Error>> {
         let dir = get_langs_dir("gui");
-        if !dir.exists() { fs::create_dir_all(&dir).map_err(std::io::Error::other)?; }
+        if !dir.exists() {
+            fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
+        }
         let l = Self::default_zh_tw();
-        fs::write(dir.join("zh_tw.json"), serde_json::to_string_pretty(&l).unwrap()).map_err(std::io::Error::other)?;
-        let files = [("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),("en_us.json", include_str!("i18n_assets/gui/en_us.json")),("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json"))];
-        for (n, c) in files { fs::write(dir.join(n), c).map_err(std::io::Error::other)?; }
+        fs::write(
+            dir.join("zh_tw.json"),
+            serde_json::to_string_pretty(&l).unwrap(),
+        )
+        .map_err(std::io::Error::other)?;
+        let files = [
+            ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
+            ("en_us.json", include_str!("i18n_assets/gui/en_us.json")),
+            ("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json")),
+        ];
+        for (n, c) in files {
+            fs::write(dir.join(n), c).map_err(std::io::Error::other)?;
+        }
         Ok(())
     }
     pub fn load_from_file(lang: &str) -> Option<Self> {
         let p = get_langs_dir("gui").join(format!("{}.json", lang));
         if let Ok(c) = fs::read_to_string(p) {
             let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value = serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) { for (k,v) in l { d.insert(k.clone(),v.clone()); } }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) { return Some(lb); }
+            let mut d_val: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
+            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
+                for (k, v) in l {
+                    d.insert(k.clone(), v.clone());
+                }
+            }
+            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
+                return Some(lb);
+            }
         }
         None
     }
     pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) { return l; }
-        if lang != "zh_tw" { if let Some(z) = Self::load_from_file("zh_tw") { return z; } }
+        if let Some(l) = Self::load_from_file(lang) {
+            return l;
+        }
+        if lang != "zh_tw" {
+            if let Some(z) = Self::load_from_file("zh_tw") {
+                return z;
+            }
+        }
         Self::default_zh_tw()
     }
-    pub fn default_zh_tw() -> Self { serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap() }
+    pub fn default_zh_tw() -> Self {
+        serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap()
+    }
     pub fn get_available_ui_langs() -> Vec<String> {
         let mut l = Vec::new();
         if let Ok(es) = std::fs::read_dir(get_langs_dir("gui")) {
             for e in es.flatten() {
-                 if e.path().extension().is_some_and(|x| x == "json") { if let Some(s) = e.path().file_stem() { l.push(s.to_string_lossy().to_string()); } }
+                if e.path().extension().is_some_and(|x| x == "json") {
+                    if let Some(s) = e.path().file_stem() {
+                        l.push(s.to_string_lossy().to_string());
+                    }
+                }
             }
         }
-        if l.is_empty() { l.push("zh_tw".to_string()); }
-        l.sort(); l
+        if l.is_empty() {
+            l.push("zh_tw".to_string());
+        }
+        l.sort();
+        l
     }
 }
 
 impl CliLabels {
     pub fn ensure_langs_exists() -> Result<(), Box<dyn std::error::Error>> {
         let dir = get_langs_dir("cli");
-        if !dir.exists() { fs::create_dir_all(&dir).map_err(std::io::Error::other)?; }
+        if !dir.exists() {
+            fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
+        }
         let l = Self::default_zh_tw();
-        fs::write(dir.join("zh_tw.json"), serde_json::to_string_pretty(&l).unwrap()).map_err(std::io::Error::other)?;
-        let files = [("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),("en_us.json", include_str!("i18n_assets/cli/en_us.json")),("ja_jp.json", include_str!("i18n_assets/cli/ja_jp.json"))];
-        for (n, c) in files { fs::write(dir.join(n), c).map_err(std::io::Error::other)?; }
+        fs::write(
+            dir.join("zh_tw.json"),
+            serde_json::to_string_pretty(&l).unwrap(),
+        )
+        .map_err(std::io::Error::other)?;
+        let files = [
+            ("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),
+            ("en_us.json", include_str!("i18n_assets/cli/en_us.json")),
+            ("ja_jp.json", include_str!("i18n_assets/cli/ja_jp.json")),
+        ];
+        for (n, c) in files {
+            fs::write(dir.join(n), c).map_err(std::io::Error::other)?;
+        }
         Ok(())
     }
     pub fn load_from_file(lang: &str) -> Option<Self> {
         let p = get_langs_dir("cli").join(format!("{}.json", lang));
         if let Ok(c) = fs::read_to_string(p) {
             let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value = serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) { for (k,v) in l { d.insert(k.clone(),v.clone()); } }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) { return Some(lb); }
+            let mut d_val: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).ok()?;
+            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
+                for (k, v) in l {
+                    d.insert(k.clone(), v.clone());
+                }
+            }
+            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
+                return Some(lb);
+            }
         }
         None
     }
     pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) { return l; }
-        if lang != "zh_tw" { if let Some(z) = Self::load_from_file("zh_tw") { return z; } }
+        if let Some(l) = Self::load_from_file(lang) {
+            return l;
+        }
+        if lang != "zh_tw" {
+            if let Some(z) = Self::load_from_file("zh_tw") {
+                return z;
+            }
+        }
         Self::default_zh_tw()
     }
-    pub fn default_zh_tw() -> Self { serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).unwrap() }
+    pub fn default_zh_tw() -> Self {
+        serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).unwrap()
+    }
     pub fn get_available_ui_langs() -> Vec<String> {
         let mut l = Vec::new();
         if let Ok(es) = std::fs::read_dir(get_langs_dir("cli")) {
             for e in es.flatten() {
-                 if e.path().extension().is_some_and(|x| x == "json") { if let Some(s) = e.path().file_stem() { l.push(s.to_string_lossy().to_string()); } }
+                if e.path().extension().is_some_and(|x| x == "json") {
+                    if let Some(s) = e.path().file_stem() {
+                        l.push(s.to_string_lossy().to_string());
+                    }
+                }
             }
         }
-        if l.is_empty() { l.push("zh_tw".to_string()); }
-        l.sort(); l
+        if l.is_empty() {
+            l.push("zh_tw".to_string());
+        }
+        l.sort();
+        l
     }
 }

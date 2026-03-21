@@ -78,8 +78,13 @@ pub fn should_skip_value(val: &str) -> bool {
     // 無空格之特殊格式過濾 (聚合在一組以簡化邏輯)
     if !contains_space {
         // 1. 檔名、副檔名或路徑
-        if s.ends_with(".jar") || s.ends_with(".zip") || s.ends_with(".json") ||
-           s.ends_with(".js") || s.ends_with(".png") || s.ends_with(".jpg") {
+        if s.ends_with(".jar")
+            || s.ends_with(".zip")
+            || s.ends_with(".json")
+            || s.ends_with(".js")
+            || s.ends_with(".png")
+            || s.ends_with(".jpg")
+        {
             return true;
         }
 
@@ -89,7 +94,9 @@ pub fn should_skip_value(val: &str) -> bool {
         }
 
         // 3. 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16)
-        if bytes.iter().all(|&c| c.is_ascii_hexdigit()) && (s.len() == 6 || s.len() == 8 || s.len() >= 16) {
+        if bytes.iter().all(|&c| c.is_ascii_hexdigit())
+            && (s.len() == 6 || s.len() == 8 || s.len() >= 16)
+        {
             return true;
         }
 
@@ -101,11 +108,15 @@ pub fn should_skip_value(val: &str) -> bool {
         // 5. 變數與常數排除 (包含底線 _ 或在內部含有 .)
         if s.contains('_') || (s.contains('.') && !s.ends_with('.')) || s.contains('/') {
             // 全大寫常數 (ALL_CAPS)
-            if s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_') {
+            if s.chars()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
+            {
                 return true;
             }
             // 系統識別碼 (snake_case, 路徑, 原文 ID, 類別路徑等)
-            if bytes.iter().all(|&c| c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.' || c == b'-') {
+            if bytes.iter().all(|&c| {
+                c.is_ascii_alphanumeric() || c == b'_' || c == b'/' || c == b'.' || c == b'-'
+            }) {
                 return true;
             }
         }
@@ -121,14 +132,21 @@ pub fn should_skip_value(val: &str) -> bool {
         }
 
         // 7. 短編碼排除 (例如 BB, BPPB, B0PB)：全大寫與數字，長度 1~6 之間，且無空白
-        if s.len() <= 6 && s.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
+        if s.len() <= 6
+            && s.chars()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+        {
             return true;
         }
     }
 
     // 8. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
     let no_symbols = s.replace(['.', ':', ' '], "");
-    if s.contains('.') && s.contains(':') && !no_symbols.is_empty() && no_symbols.chars().all(|c| c.is_ascii_digit()) {
+    if s.contains('.')
+        && s.contains(':')
+        && !no_symbols.is_empty()
+        && no_symbols.chars().all(|c| c.is_ascii_digit())
+    {
         return true;
     }
 
@@ -177,7 +195,9 @@ mod tests {
         // snake_case 與底線
         assert!(should_skip_value("tconstruct_broad_axe"));
         // 含有點且大小寫混合 (CamelCase/Java Class)
-        assert!(should_skip_value("com.hollingsworth.arsnouveau.client.patchouli.component.RotatingItemListComponent"));
+        assert!(should_skip_value(
+            "com.hollingsworth.arsnouveau.client.patchouli.component.RotatingItemListComponent"
+        ));
         assert!(should_skip_value("item.minecraft.apple"));
         assert!(should_skip_value("Folder/SubFolder/Class"));
     }

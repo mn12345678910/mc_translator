@@ -102,7 +102,7 @@
 | `-o, --output <OUTPUT>` | 輸出資料夾路徑 [預設: `./LLMTranslator`] |
 | `-p, --provider <PROVIDER>`| API 提供商 (`Gemini`, `OpenAI`, `DeepSeek`, `Mistral`, `Ollama`, `DeepL`, `Google Free`) |
 | `-m, --model <MODEL>` | 模型名稱 |
-| `--api-key <API_KEY>` | 覆蓋 API Key (`.env` 已存檔金鑰將優先使用，傳入將覆蓋) |
+| `--api-key <API_KEY>` | 覆蓋 API Key (系統憑證 Keyring 已存檔金鑰將優先使用，傳入將覆蓋) |
 | `--log-llm` | 啟用 LLM 通訊日誌 |
 | `--batch-size <BATCH_SIZE>` | 批次量 (預設: `150`) |
 | `--batch-max-chars <CHARS>`| 批次字數上限 (預設: `3500`) |
@@ -123,8 +123,8 @@
 ```powershell
 npx @tauri-apps/cli build
 ```
-產出的「純免安裝 `.exe`」通常位於 `src-tauri/target/release/mc_translator.exe`。
-*(註：Tauri 預設也會在 `bundle/nsis/` 產生安裝包，若只需要獨立執行檔，直接取用 release 目錄下的 `.exe` 即可。)*
+產出的「純免安裝 `.exe`」通常位於根目錄 `target/release/mc_translator.exe`。
+*(註：Tauri 預設也會在 `src-tauri/target/release/bundle/nsis/` 產生安裝包。)*
 
 **2) CLI 單檔編譯**
 ```powershell

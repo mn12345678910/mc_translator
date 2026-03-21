@@ -1,4 +1,3 @@
-
 #[test]
 fn test_config_initialization() {
     // 這裡示範如何測試公開的 AppConfig

@@ -7,11 +7,15 @@ use std::fs;
 pub const DICT_DIR: &str = "dicts";
 
 pub fn get_user_dict_path(lang: &str) -> std::path::PathBuf {
-    std::path::Path::new(DICT_DIR).join("user").join(format!("{}.json", lang))
+    std::path::Path::new(DICT_DIR)
+        .join("user")
+        .join(format!("{}.json", lang))
 }
 
 pub fn get_official_dict_path(lang: &str) -> std::path::PathBuf {
-    std::path::Path::new(DICT_DIR).join("official").join(format!("{}.json", lang))
+    std::path::Path::new(DICT_DIR)
+        .join("official")
+        .join(format!("{}.json", lang))
 }
 
 /// 確保辭典目錄存在
@@ -33,7 +37,7 @@ static DICT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 /// 泛型儲存辭典檔案
 pub fn save_dict<T: serde::Serialize>(path: &std::path::Path, data: &T) {
     let _guard = DICT_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    
+
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }
@@ -62,12 +66,14 @@ mod tests {
     fn test_save_load_dict_standard() {
         const TEST_DICT: &str = "test_temp_dictionary_standard.json";
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
-        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
         let mut data = HashMap::new();
         data.insert("Apple".to_string(), "蘋果".to_string());
-        
+
         save_dict(&path, &data);
-        
+
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("Apple").unwrap(), "蘋果");
 
@@ -80,12 +86,14 @@ mod tests {
     fn test_save_load_dict_utf8_edge() {
         const TEST_DICT: &str = "test_temp_dictionary_utf8.json";
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
-        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
         let mut data = HashMap::new();
         data.insert("❄️ Ice".to_string(), "冰塊".to_string());
-        
+
         save_dict(&path, &data);
-        
+
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("❄️ Ice").unwrap(), "冰塊");
 
@@ -98,9 +106,11 @@ mod tests {
     fn test_load_corrupt_dict_fallback() {
         const TEST_DICT: &str = "test_temp_dictionary_corrupt.json";
         let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
-        if let Some(parent) = path.parent() { let _ = fs::create_dir_all(parent); }
+        if let Some(parent) = path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
         let _ = std::fs::write(&path, "{ invalid_json: ");
-        
+
         let loaded: HashMap<String, String> = load_dict(&path);
         assert!(loaded.is_empty());
 

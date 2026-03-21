@@ -2,5 +2,5 @@
 export const state = {
     currentConfig: {},
     currentStyle: {},
-    currentLabels: {}
+    currentLabels: {},
 };

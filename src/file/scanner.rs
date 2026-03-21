@@ -14,7 +14,7 @@ pub fn scan_files_recursive(
             if let Some(ext) = path.extension() {
                 if ext == "jar" || ext == "json" || ext == "js" {
                     let path_norm = path.canonicalize().unwrap_or(path.to_path_buf());
-                    
+
                     let rel = match path_norm.strip_prefix(&base_norm) {
                         Ok(p) => p.to_string_lossy().to_string(),
                         Err(_) => {
@@ -31,9 +31,3 @@ pub fn scan_files_recursive(
     }
     files
 }
-
-
-
-
-
-

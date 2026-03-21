@@ -47,8 +47,8 @@
 
 ## i18n
 
-- UI 文字來自 `langs/<lang>.json`，預設 `zh_tw`。
-- `I18nLabels::ensure_langs_exists()` 會確保預設語系檔案存在。
+- UI 文字來自 `langs/gui` 與 `langs/cli` 的拆分結構，預設 `zh_tw`。
+- `GuiLabels::ensure_langs_exists()` 與 `CliLabels` 獨立運作。
 
 ## 字典監控
 

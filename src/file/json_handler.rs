@@ -1,8 +1,8 @@
+use crate::file::pipeline::{FileStatus, FileTask};
 use crate::translation::batching::GlobalBatchItem;
-use crate::translation::job::{JobConfig, JobSharedState};
-use crate::file::pipeline::{FileTask, FileStatus};
-use crate::translation::context::{TranslationContext, ContextOptions};
+use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
+use crate::translation::job::{JobConfig, JobSharedState};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -13,10 +13,7 @@ pub async fn collect_json_task(
     path: &Path,
     rel_path: String,
     state: &JobSharedState,
-) -> Result<
-    Option<(FileTask, Vec<GlobalBatchItem>)>,
-    Box<dyn std::error::Error + Send + Sync>,
-> {
+) -> Result<Option<(FileTask, Vec<GlobalBatchItem>)>, Box<dyn std::error::Error + Send + Sync>> {
     let path_clone = path.to_path_buf();
     let target_lang = state.config.lock().unwrap().target_lang.clone();
     let (content, source_value, target_base) = tokio::task::spawn_blocking(move || -> Result<(String, serde_json::Value, serde_json::Value), Box<dyn std::error::Error + Send + Sync>> {
@@ -51,7 +48,9 @@ pub async fn collect_json_task(
 
     let empty_map = HashMap::new();
     let empty_vec = Vec::new();
-    let glossary_automaton = Arc::new(crate::translation::glossary::GlossaryAutomaton::new_simple(&empty_map, &empty_map));
+    let glossary_automaton = Arc::new(crate::translation::glossary::GlossaryAutomaton::new_simple(
+        &empty_map, &empty_map,
+    ));
     let ctx = TranslationContext::new(ContextOptions {
         config: state.config.clone(),
         inferred: &empty_map,

@@ -34,13 +34,13 @@ pub fn add_log(
     let mut log = log_arc.lock().unwrap();
     let now = chrono::Local::now();
     let timestamp = now.format("%H:%M:%S").to_string();
-    
+
     let lang_info = if source_lang.is_empty() && target_lang.is_empty() {
         String::new()
     } else {
         format!("<{}->{}> ", source_lang, target_lang)
     };
-    
+
     let file_info = if file_name.is_empty() {
         String::new()
     } else {
@@ -49,7 +49,10 @@ pub fn add_log(
 
     for line in msg.lines() {
         if !line.trim().is_empty() {
-            log.push(format!("[{}] {}{}{}", timestamp, lang_info, file_info, line));
+            log.push(format!(
+                "[{}] {}{}{}",
+                timestamp, lang_info, file_info, line
+            ));
         } else {
             log.push("".to_string());
         }
@@ -116,15 +119,24 @@ mod tests {
     #[test]
     fn test_hashmap_to_entries_standard() {
         let mut map = HashMap::new();
-        map.insert("Apple".to_string(), ("蘋果".to_string(), TermType::Official));
-        map.insert("Stone".to_string(), ("石頭".to_string(), TermType::Official));
+        map.insert(
+            "Apple".to_string(),
+            ("蘋果".to_string(), TermType::Official),
+        );
+        map.insert(
+            "Stone".to_string(),
+            ("石頭".to_string(), TermType::Official),
+        );
 
         let entries = hashmap_to_entries(&map);
         assert_eq!(entries.len(), 2);
-        
+
         map.clear();
         map.insert("A".to_string(), ("A1".to_string(), TermType::Official));
-        map.insert("Apple".to_string(), ("蘋果".to_string(), TermType::Official));
+        map.insert(
+            "Apple".to_string(),
+            ("蘋果".to_string(), TermType::Official),
+        );
         let entries = hashmap_to_entries(&map);
         assert_eq!(entries[0].original, "Apple"); // 照長度排序
     }

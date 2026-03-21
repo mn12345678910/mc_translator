@@ -26,7 +26,8 @@ pub async fn translate_json_recursive(
     }
 
     let total_to_translate = pending_items.len();
-    ctx.total_progress.store((total_to_translate as f32).to_bits(), Ordering::SeqCst);
+    ctx.total_progress
+        .store((total_to_translate as f32).to_bits(), Ordering::SeqCst);
     ctx.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
     *ctx.counter.lock().unwrap() = 0;
 
@@ -39,7 +40,10 @@ pub async fn translate_json_recursive(
     let unique_pending: Vec<String> = unique_texts.into_iter().collect();
     let total_unique_to_translate = unique_pending.len();
 
-    ctx.total_progress.store((total_unique_to_translate as f32).to_bits(), Ordering::SeqCst);
+    ctx.total_progress.store(
+        (total_unique_to_translate as f32).to_bits(),
+        Ordering::SeqCst,
+    );
     ctx.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
     *ctx.counter.lock().unwrap() = 0;
 
@@ -70,7 +74,9 @@ pub async fn translate_json_recursive(
                 None
             };
 
-            *ctx.status.lock().unwrap() = ctx.i18n.status_processing_batch
+            *ctx.status.lock().unwrap() = ctx
+                .i18n
+                .status_processing_batch
                 .replace("{}", &(i + 1).to_string())
                 .replacen("{}", &chunks.len().to_string(), 1)
                 .replacen("{}", &ctx.filename, 1);
@@ -118,7 +124,12 @@ pub async fn translate_json_recursive(
 
                     if let Some((ref fs_path, ref content)) = realtime_save_info {
                         let translations_map = ctx.translations.lock().unwrap().clone();
-                        realtime_save_file_helper(fs_path.clone(), content.clone(), translations_map).await;
+                        realtime_save_file_helper(
+                            fs_path.clone(),
+                            content.clone(),
+                            translations_map,
+                        )
+                        .await;
                     }
 
                     let current = {
@@ -126,8 +137,11 @@ pub async fn translate_json_recursive(
                         *c += unique_resolved;
                         *c
                     };
-                    ctx.progress.store((current as f32).to_bits(), Ordering::SeqCst);
-                    *ctx.status.lock().unwrap() = ctx.i18n.status_processing_batch
+                    ctx.progress
+                        .store((current as f32).to_bits(), Ordering::SeqCst);
+                    *ctx.status.lock().unwrap() = ctx
+                        .i18n
+                        .status_processing_batch
                         .replace("{}", &ctx.filename)
                         .replacen("{}", &current.to_string(), 1)
                         .replacen("{}", &total_unique_to_translate.to_string(), 1);
@@ -169,7 +183,10 @@ pub async fn translate_json_recursive(
         let (preprocessed, markers) = preprocess_text(orig_text);
         let mut finalized_str = None;
 
-        *ctx.status.lock().unwrap() = ctx.i18n.status_translating_item.replace("{}", &ctx.filename);
+        *ctx.status.lock().unwrap() = ctx
+            .i18n
+            .status_translating_item
+            .replace("{}", &ctx.filename);
         let single_glossary = Some(
             ctx.glossary_automaton
                 .extract(std::slice::from_ref(orig_text)),
@@ -185,12 +202,17 @@ pub async fn translate_json_recursive(
         .await
         {
             Ok(translated) => {
-                if let Some(final_str) = finalize_single_translation(&translated, &markers, &current_single_config.target_lang) {
+                if let Some(final_str) = finalize_single_translation(
+                    &translated,
+                    &markers,
+                    &current_single_config.target_lang,
+                ) {
                     finalized_str = Some(final_str);
                 } else {
-                    ctx.current_log.lock().unwrap().push(
-                        ctx.i18n.log_loop_detected.replace("{}", &ctx.filename)
-                    );
+                    ctx.current_log
+                        .lock()
+                        .unwrap()
+                        .push(ctx.i18n.log_loop_detected.replace("{}", &ctx.filename));
                     finalized_str = None;
                 }
             }
@@ -230,8 +252,11 @@ pub async fn translate_json_recursive(
             *c += 1;
             *c
         };
-        ctx.progress.store((current as f32).to_bits(), Ordering::SeqCst);
-        *ctx.status.lock().unwrap() = ctx.i18n.status_processing_item
+        ctx.progress
+            .store((current as f32).to_bits(), Ordering::SeqCst);
+        *ctx.status.lock().unwrap() = ctx
+            .i18n
+            .status_processing_item
             .replace("{}", &ctx.filename)
             .replacen("{}", &current.to_string(), 1)
             .replacen("{}", &total_unique_to_translate.to_string(), 1);
@@ -297,8 +322,6 @@ pub fn collect_translatable_strings(
                     }
                 }
             }
-
-
 
             pending.push((
                 s.clone(),
@@ -391,8 +414,5 @@ async fn realtime_save_file_helper(
     translations_map: std::collections::HashMap<String, Vec<String>>,
 ) {
     let final_content = sync_formatting(&content, &translations_map);
-    let _ = tokio::task::spawn_blocking(move || {
-        std::fs::write(fs_path, final_content)
-    })
-    .await;
+    let _ = tokio::task::spawn_blocking(move || std::fs::write(fs_path, final_content)).await;
 }

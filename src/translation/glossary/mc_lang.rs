@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::path::Path;
-use std::fs;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
 
 /// Minecraft 官方語言檔案集合 (動態快取)
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -17,7 +17,10 @@ struct GithubContentItem {
 
 /// 從本地快取或 GitHub 下載並建構 mc_lang 字典
 /// 回傳: (語言檔案, 精確匹配表, 常規差異表)
-pub async fn load_mc_dicts(source_lang: &str, target_lang: &str) -> Result<
+pub async fn load_mc_dicts(
+    source_lang: &str,
+    target_lang: &str,
+) -> Result<
     (McLangFiles, HashMap<String, String>, Vec<(String, String)>),
     Box<dyn std::error::Error + Send + Sync>,
 > {
@@ -69,7 +72,9 @@ pub async fn load_mc_dicts(source_lang: &str, target_lang: &str) -> Result<
             if path.extension().is_some_and(|ext| ext == "json") {
                 if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
                     if let Ok(content) = fs::read_to_string(&path) {
-                        if let Ok(json_map) = serde_json::from_str::<HashMap<String, String>>(&content) {
+                        if let Ok(json_map) =
+                            serde_json::from_str::<HashMap<String, String>>(&content)
+                        {
                             files.langs.insert(stem.to_string(), json_map);
                         }
                     }
@@ -110,4 +115,3 @@ pub async fn load_mc_dicts(source_lang: &str, target_lang: &str) -> Result<
 
     Ok((files, exact, unfiltered_diffs))
 }
-

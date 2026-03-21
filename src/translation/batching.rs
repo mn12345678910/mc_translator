@@ -1,10 +1,8 @@
 use crate::translation::api;
 use crate::translation::job::JobConfig;
-use crate::utils::text_processing::{
-    postprocess_text, preprocess_text, validate_and_cleanup,
-};
-use std::sync::{Arc, Mutex};
+use crate::utils::text_processing::{postprocess_text, preprocess_text, validate_and_cleanup};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
 
 /// 在全域模式下的一個翻譯項目
 #[derive(Debug, Clone)]
@@ -44,8 +42,8 @@ pub async fn translate_global_batches(
     config: Arc<Mutex<JobConfig>>,
     status: Arc<Mutex<String>>,
     progress: Arc<AtomicU32>,
-    current_batch: Arc<AtomicU32>,  // 當前批次
-    total_batches: Arc<AtomicU32>,   // 總批次
+    current_batch: Arc<AtomicU32>, // 當前批次
+    total_batches: Arc<AtomicU32>, // 總批次
     cancelled: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
     log: Arc<Mutex<Vec<String>>>,
@@ -126,14 +124,25 @@ pub async fn run_translation_batch(
 
     // 初始化本批次進度（包含全域 Offset 與原本就已翻譯的項目）
     let already_done = total_items - pending_indices.len();
-    progress.store(((ctx.global_items_offset + already_done) as f32).to_bits(), Ordering::SeqCst);
+    progress.store(
+        ((ctx.global_items_offset + already_done) as f32).to_bits(),
+        Ordering::SeqCst,
+    );
 
     if pending_indices.is_empty() {
-        progress.store(((ctx.global_items_offset + total_items) as f32).to_bits(), Ordering::SeqCst);
+        progress.store(
+            ((ctx.global_items_offset + total_items) as f32).to_bits(),
+            Ordering::SeqCst,
+        );
         return Ok(());
     }
 
-    let initial_batches = create_adaptive_batches_from_indices(items, &pending_indices, cfg.batch_size, cfg.batch_max_chars);
+    let initial_batches = create_adaptive_batches_from_indices(
+        items,
+        &pending_indices,
+        cfg.batch_size,
+        cfg.batch_max_chars,
+    );
     total_batches.store(initial_batches.len() as u32, Ordering::SeqCst);
 
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
@@ -141,7 +150,7 @@ pub async fn run_translation_batch(
             break;
         }
         current_batch.store((batch_idx + 1) as u32, Ordering::SeqCst);
-        
+
         while paused.load(Ordering::SeqCst) {
             if cancelled.load(Ordering::SeqCst) {
                 break;
@@ -185,7 +194,8 @@ pub async fn run_translation_batch(
                 let err_msg = e.to_string();
                 crate::utils::add_log(
                     &log,
-                    &i18n.log_batch_failed_retry
+                    &i18n
+                        .log_batch_failed_retry
                         .replace("{}", &(batch_idx + 1).to_string())
                         .replacen("{}", &initial_batches.len().to_string(), 1)
                         .replacen("{}", &err_msg, 1),
@@ -202,7 +212,9 @@ pub async fn run_translation_batch(
     if !failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
         crate::utils::add_log(
             &log,
-            &i18n.log_retry_start.replace("{}", &failed_indices.len().to_string()),
+            &i18n
+                .log_retry_start
+                .replace("{}", &failed_indices.len().to_string()),
             &cfg.source_lang,
             &cfg.target_lang,
             &ctx.file_name,
@@ -248,7 +260,10 @@ pub async fn run_translation_batch(
                     }
                     success_count += batch_success;
                     let already_done = total_items - pending_indices.len();
-                    progress.store(((ctx.global_items_offset + already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
+                    progress.store(
+                        ((ctx.global_items_offset + already_done + success_count) as f32).to_bits(),
+                        Ordering::SeqCst,
+                    );
                 }
                 Err(_) => {
                     second_failed_indices.extend(batch.clone());
@@ -260,7 +275,9 @@ pub async fn run_translation_batch(
         if !second_failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
             crate::utils::add_log(
                 &log,
-                &i18n.log_single_retry_start.replace("{}", &second_failed_indices.len().to_string()),
+                &i18n
+                    .log_single_retry_start
+                    .replace("{}", &second_failed_indices.len().to_string()),
                 &cfg.source_lang,
                 &cfg.target_lang,
                 &ctx.file_name,
@@ -289,7 +306,11 @@ pub async fn run_translation_batch(
                         item.translated = Some(hanconv::s2tw(&cleaned));
                         success_count += 1;
                         let already_done = total_items - pending_indices.len();
-                        progress.store(((ctx.global_items_offset + already_done + success_count) as f32).to_bits(), Ordering::SeqCst);
+                        progress.store(
+                            ((ctx.global_items_offset + already_done + success_count) as f32)
+                                .to_bits(),
+                            Ordering::SeqCst,
+                        );
                     }
                     Err(e) => {
                         crate::utils::add_log(
@@ -308,7 +329,6 @@ pub async fn run_translation_batch(
     // 移除全域統計日誌，由 pipeline 統一按檔案路徑輸出
     Ok(())
 }
-
 
 fn create_adaptive_batches_from_indices(
     items: &[GlobalBatchItem],
@@ -359,12 +379,17 @@ struct BatchContext<'a> {
 async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mode_str = if ctx.is_retry { &ctx.i18n.status_retry } else { &ctx.i18n.status_translating };
-    
+    let mode_str = if ctx.is_retry {
+        &ctx.i18n.status_retry
+    } else {
+        &ctx.i18n.status_translating
+    };
+
     *ctx.status_arc.lock().unwrap() = format!("{}...", mode_str);
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
-    let (tagged_texts, texts_to_translate) = build_tagged_batch_texts(ctx.all_items, ctx.batch_indices);
+    let (tagged_texts, texts_to_translate) =
+        build_tagged_batch_texts(ctx.all_items, ctx.batch_indices);
 
     // 2. 提取術語
     let glossary = ctx
@@ -419,19 +444,19 @@ fn apply_batch_results(
 ) -> bool {
     let mut resolved_any = false;
     let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
-    
+
     for (orig_tagged, trans_tagged) in results_map {
         if let Some(caps) = tag_re.captures(orig_tagged) {
             if let Ok(relative_idx) = caps[1].parse::<usize>() {
                 if relative_idx < batch_indices.len() {
                     let abs_idx = batch_indices[relative_idx];
                     let orig_text = all_items[abs_idx].original.clone();
-                    
+
                     let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
                     let restored = postprocess_text(&clean_translated, &all_items[abs_idx].markers);
                     let cleaned = validate_and_cleanup(&restored);
                     let final_trans = hanconv::s2tw(&cleaned);
-                    
+
                     for &other_abs_idx in batch_indices {
                         if all_items[other_abs_idx].original == orig_text {
                             all_items[other_abs_idx].translated = Some(final_trans.clone());
@@ -444,5 +469,3 @@ fn apply_batch_results(
     }
     resolved_any
 }
-
-

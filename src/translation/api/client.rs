@@ -1,5 +1,5 @@
-use crate::translation::job::JobConfig;
 use crate::translation::glossary::TermType;
+use crate::translation::job::JobConfig;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
@@ -155,7 +155,9 @@ pub async fn translate_one(
     }
 }
 
-async fn call_google_api_raw(url: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+async fn call_google_api_raw(
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let mut last_error = "未知錯誤".to_string();
     for i in 0..3 {
         match CLIENT
@@ -208,14 +210,11 @@ pub async fn translate_batch(
     let result = match config.api_provider.as_str() {
         "Gemini" => translate_with_gemini(&batch_instruction, config, file_name, glossary).await?,
         "OpenAI" | "DeepSeek" | "Mistral" => {
-            translate_with_openai_compatible(&batch_instruction, config, file_name, glossary).await?
+            translate_with_openai_compatible(&batch_instruction, config, file_name, glossary)
+                .await?
         }
-        "Ollama" => {
-            call_ollama_raw(&batch_instruction, config, file_name, glossary).await?
-        }
-        "DeepL" => {
-            translate_with_deepl(&batch_instruction, config).await?
-        }
+        "Ollama" => call_ollama_raw(&batch_instruction, config, file_name, glossary).await?,
+        "DeepL" => translate_with_deepl(&batch_instruction, config).await?,
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
 
@@ -226,11 +225,11 @@ pub async fn translate_batch(
         if let Some(value) = parse_json_from_text(&result) {
             if let Some(obj) = value.as_object() {
                 for (idx_str, trans_val) in obj {
-                    if let (Ok(idx), Some(trans_s)) =
-                        (idx_str.parse::<usize>(), trans_val.as_str())
+                    if let (Ok(idx), Some(trans_s)) = (idx_str.parse::<usize>(), trans_val.as_str())
                     {
                         if idx >= 1 && idx <= texts.len() {
-                            let cleaned = crate::utils::text_processing::validate_and_cleanup(trans_s);
+                            let cleaned =
+                                crate::utils::text_processing::validate_and_cleanup(trans_s);
                             if !cleaned.is_empty() && cleaned != "{}" && cleaned != "{ }" {
                                 map.insert(texts[idx - 1].clone(), cleaned);
                             }
@@ -295,7 +294,8 @@ async fn translate_free_google_with_config(
     let tl = map_lang_google(&config.target_lang);
     let url = format!(
         "https://translate.googleapis.com/translate_a/single?client=gtx&sl={}&tl={}&dt=t&q={}",
-        sl, tl,
+        sl,
+        tl,
         urlencoding::encode(text)
     );
     call_google_api_raw(&url).await
@@ -362,7 +362,13 @@ async fn translate_with_gemini(
         .as_str()
         .ok_or_else(|| format!("解析 Gemini 回傳失敗: {:?}", json))?;
 
-    Ok(finalize_translation(translated, config, &sys_prompt, text, file_name))
+    Ok(finalize_translation(
+        translated,
+        config,
+        &sys_prompt,
+        text,
+        file_name,
+    ))
 }
 
 /// Ollama 本地 API 翻譯
@@ -433,7 +439,7 @@ fn extract_json_from_text(text: &str) -> Option<String> {
     // 2. 嘗試從大括號開始提取（自我修復支援）
     if let Some(m) = JSON_BRACE_RE.find(trimmed) {
         let mut candidate = m.as_str().trim().to_string();
-        
+
         // 優先嘗試直接解析（處理完整的 JSON）
         // 注意：這裡需要處理可能存在的後續雜質，所以嘗試找到最後一個 }
         if let Some(last_brace) = candidate.rfind('}') {
@@ -502,11 +508,15 @@ async fn call_ollama_raw(
     };
 
     let json = with_timeout(config.timeout, full_future).await?;
-    let response = json["response"]
-        .as_str()
-        .ok_or("Ollama 回傳回應為空")?;
+    let response = json["response"].as_str().ok_or("Ollama 回傳回應為空")?;
 
-    Ok(finalize_translation(response, config, &sys_prompt, text, file_name))
+    Ok(finalize_translation(
+        response,
+        config,
+        &sys_prompt,
+        text,
+        file_name,
+    ))
 }
 
 async fn translate_with_openai_compatible(
@@ -558,7 +568,13 @@ async fn translate_with_openai_compatible(
         .as_str()
         .ok_or("解析回傳失敗")?;
 
-    Ok(finalize_translation(translated, config, &system_content, text, file_name))
+    Ok(finalize_translation(
+        translated,
+        config,
+        &system_content,
+        text,
+        file_name,
+    ))
 }
 
 async fn translate_with_deepl(
@@ -602,7 +618,13 @@ async fn translate_with_deepl(
     Ok(translated.to_string())
 }
 
-pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, char_count: usize, file_name: &str) {
+pub fn log_llm_communication(
+    prompt: &str,
+    response: &str,
+    config: &JobConfig,
+    char_count: usize,
+    file_name: &str,
+) {
     use std::io::Write;
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     if let Ok(mut file) = std::fs::OpenOptions::new()
@@ -616,7 +638,11 @@ pub fn log_llm_communication(prompt: &str, response: &str, config: &JobConfig, c
             config.selected_model,
             config.source_lang,
             config.target_lang,
-            if file_name.is_empty() { "無" } else { file_name },
+            if file_name.is_empty() {
+                "無"
+            } else {
+                file_name
+            },
             config.batch_size,
             char_count,
             config.timeout
@@ -641,14 +667,23 @@ mod tests {
 {"1": "hello"}
 ```
 "#;
-        assert_eq!(extract_json_from_text(raw2), Some(r#"{"1": "hello"}"#.to_string()));
+        assert_eq!(
+            extract_json_from_text(raw2),
+            Some(r#"{"1": "hello"}"#.to_string())
+        );
 
         // 場景 3: 自我修復 - 缺少結尾括號
         let raw3 = r#"{"1": "hello", "2": "world""#; // 缺少最後一個 }
-        assert_eq!(extract_json_from_text(raw3), Some(r#"{"1": "hello", "2": "world"}"#.to_string()));
+        assert_eq!(
+            extract_json_from_text(raw3),
+            Some(r#"{"1": "hello", "2": "world"}"#.to_string())
+        );
 
         // 場景 4: 前後有雜質但括號完整
         let raw4 = r#"The LLM says: {"key": "val"} hope you like it."#;
-        assert_eq!(extract_json_from_text(raw4), Some(r#"{"key": "val"}"#.to_string()));
+        assert_eq!(
+            extract_json_from_text(raw4),
+            Some(r#"{"key": "val"}"#.to_string())
+        );
     }
 }

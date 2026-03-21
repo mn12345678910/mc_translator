@@ -169,35 +169,78 @@ pub struct ComponentStyle {
     pub rounding: Option<f32>,
 }
 
-fn default_dark_bg() -> [u8; 3] { [30, 30, 35] }
-fn default_dark_text() -> [u8; 3] { [200, 160, 100] }
-fn default_light_bg() -> [u8; 3] { [0xFF, 0xFD, 0xF0] }
-fn default_light_text() -> [u8; 3] { [34, 34, 34] }
+fn default_dark_bg() -> [u8; 3] {
+    [30, 30, 35]
+}
+fn default_dark_text() -> [u8; 3] {
+    [200, 160, 100]
+}
+fn default_light_bg() -> [u8; 3] {
+    [0xFF, 0xFD, 0xF0]
+}
+fn default_light_text() -> [u8; 3] {
+    [34, 34, 34]
+}
 
-fn default_dark_label() -> [u8; 3] { [200, 160, 100] }
-fn default_light_label() -> [u8; 3] { [34, 34, 34] }
+fn default_dark_label() -> [u8; 3] {
+    [200, 160, 100]
+}
+fn default_light_label() -> [u8; 3] {
+    [34, 34, 34]
+}
 
-fn default_dark_btn_bg() -> [u8; 3] { [45, 45, 50] }
-fn default_dark_btn_text() -> [u8; 3] { [220, 220, 220] }
-fn default_light_btn_bg() -> [u8; 3] { [240, 240, 230] }
-fn default_light_btn_text() -> [u8; 3] { [40, 40, 40] }
+fn default_dark_btn_bg() -> [u8; 3] {
+    [45, 45, 50]
+}
+fn default_dark_btn_text() -> [u8; 3] {
+    [220, 220, 220]
+}
+fn default_light_btn_bg() -> [u8; 3] {
+    [240, 240, 230]
+}
+fn default_light_btn_text() -> [u8; 3] {
+    [40, 40, 40]
+}
 
-fn default_dark_input_bg() -> [u8; 3] { [20, 20, 25] }
-fn default_light_input_bg() -> [u8; 3] { [250, 250, 245] }
+fn default_dark_input_bg() -> [u8; 3] {
+    [20, 20, 25]
+}
+fn default_light_input_bg() -> [u8; 3] {
+    [250, 250, 245]
+}
 
-fn default_dark_list_bg() -> [u8; 3] { [25, 25, 30] }
-fn default_light_list_bg() -> [u8; 3] { [255, 255, 250] }
+fn default_dark_list_bg() -> [u8; 3] {
+    [25, 25, 30]
+}
+fn default_light_list_bg() -> [u8; 3] {
+    [255, 255, 250]
+}
 
-fn default_dark_tab_active() -> [u8; 3] { [60, 60, 70] }
-fn default_dark_tab_inactive() -> [u8; 3] { [35, 35, 40] }
-fn default_light_tab_active() -> [u8; 3] { [220, 220, 210] }
-fn default_light_tab_inactive() -> [u8; 3] { [245, 245, 240] }
+fn default_dark_tab_active() -> [u8; 3] {
+    [60, 60, 70]
+}
+fn default_dark_tab_inactive() -> [u8; 3] {
+    [35, 35, 40]
+}
+fn default_light_tab_active() -> [u8; 3] {
+    [220, 220, 210]
+}
+fn default_light_tab_inactive() -> [u8; 3] {
+    [245, 245, 240]
+}
 
-fn default_rounding() -> f32 { 4.0 }
-fn default_pulse_speed() -> f32 { 1.0 }
-fn default_true() -> bool { true }
-fn default_ui_lang() -> String { "zh_tw".to_string() }
-
+fn default_rounding() -> f32 {
+    4.0
+}
+fn default_pulse_speed() -> f32 {
+    1.0
+}
+fn default_true() -> bool {
+    true
+}
+fn default_ui_lang() -> String {
+    "zh_tw".to_string()
+}
 
 impl Default for StyleConfig {
     fn default() -> Self {

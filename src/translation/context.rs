@@ -1,7 +1,7 @@
 use crate::translation::job::JobConfig;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU32};
+use std::sync::{Arc, Mutex};
 
 /// 翻譯上下文，攜帶字典與當前任務狀態等資訊
 pub struct TranslationContext<'a> {

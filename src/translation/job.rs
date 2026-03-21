@@ -1,10 +1,10 @@
 //! # 翻譯任務定義與共用狀態
 //! 封裝翻譯任務所需的設定參數與跨執行緒共享的狀態物件。
 
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, AtomicU32};
 use crate::i18n::CommonLabels;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicU32};
+use std::sync::{Arc, Mutex};
 
 /// 翻譯任務的靜態設定參數
 #[derive(Clone)]

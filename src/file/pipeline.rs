@@ -1,16 +1,16 @@
-use crate::translation::batching::{GlobalBatchItem, translate_global_batches};
-use crate::translation::job::JobSharedState;
-use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
-use crate::translation::glossary::GlossaryAutomaton;
-use crate::utils::text_processing::sync_formatting;
-use crate::file::json_handler::collect_json_task;
-use crate::file::js_handler::collect_js_task;
 use crate::file::jar_handler::collect_jar_tasks;
+use crate::file::js_handler::collect_js_task;
+use crate::file::json_handler::collect_json_task;
+use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
+use crate::translation::batching::{translate_global_batches, GlobalBatchItem};
 use crate::translation::glossary::mc_lang::McLangFiles;
+use crate::translation::glossary::GlossaryAutomaton;
+use crate::translation::job::JobSharedState;
+use crate::utils::text_processing::sync_formatting;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
 use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FileStatus {
@@ -109,24 +109,35 @@ pub async fn process_all_files(
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         match ext {
             "json" => {
-                if skip_json { continue; }
-                if let Ok(Some((task, items))) = collect_json_task(current_file_id, &path, rel_path, &state).await {
+                if skip_json {
+                    continue;
+                }
+                if let Ok(Some((task, items))) =
+                    collect_json_task(current_file_id, &path, rel_path, &state).await
+                {
                     file_tasks.push(task);
                     global_items.extend(items);
                     current_file_id += 1;
                 }
             }
             "js" => {
-                if skip_js { continue; }
-                if let Ok(Some((task, items))) = collect_js_task(current_file_id, &path, rel_path, &state).await {
+                if skip_js {
+                    continue;
+                }
+                if let Ok(Some((task, items))) =
+                    collect_js_task(current_file_id, &path, rel_path, &state).await
+                {
                     file_tasks.push(task);
                     global_items.extend(items);
                     current_file_id += 1;
                 }
             }
             "jar" => {
-                if skip_jar { continue; }
-                if let Ok((tasks, items)) = collect_jar_tasks(current_file_id, &path, &state).await {
+                if skip_jar {
+                    continue;
+                }
+                if let Ok((tasks, items)) = collect_jar_tasks(current_file_id, &path, &state).await
+                {
                     let tasks: Vec<FileTask> = tasks;
                     let items: Vec<GlobalBatchItem> = items;
                     let task_len = tasks.len();
@@ -141,7 +152,9 @@ pub async fn process_all_files(
     // ----------------------------
 
     // --- 階段二：排序與分組 ---
-    state.global_progress.store(0.0f32.to_bits(), Ordering::SeqCst);
+    state
+        .global_progress
+        .store(0.0f32.to_bits(), Ordering::SeqCst);
     state.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
     if let Ok(mut p) = state.current_processing_path.lock() {
         p.clear();
@@ -157,9 +170,10 @@ pub async fn process_all_files(
     };
 
     file_tasks.sort_by(|a, b| get_group_key(&a.path).cmp(&get_group_key(&b.path)));
-    
+
     // [Bug Fix] 重新規整 global_items，使其與已排序的 file_tasks 順序一致，防範切片失配
-    let mut task_item_groups: std::collections::HashMap<usize, Vec<GlobalBatchItem>> = std::collections::HashMap::new();
+    let mut task_item_groups: std::collections::HashMap<usize, Vec<GlobalBatchItem>> =
+        std::collections::HashMap::new();
     for item in global_items {
         task_item_groups.entry(item.file_id).or_default().push(item);
     }
@@ -170,7 +184,7 @@ pub async fn process_all_files(
         }
     }
     global_items = reordered_items;
-    
+
     // 更新全域進度總量 (以此來源數量為準)
     let unique_files_count = {
         let mut seen = std::collections::HashSet::new();
@@ -180,10 +194,14 @@ pub async fn process_all_files(
         seen.len()
     };
     if unique_files_count > 0 {
-        state.global_total.store((unique_files_count as f32).to_bits(), Ordering::SeqCst);
+        state
+            .global_total
+            .store((unique_files_count as f32).to_bits(), Ordering::SeqCst);
     }
     // 定錨全域條目總數
-    state.progress_total.store((global_items.len() as f32).to_bits(), Ordering::SeqCst);
+    state
+        .progress_total
+        .store((global_items.len() as f32).to_bits(), Ordering::SeqCst);
     // ----------------------------
 
     if global_items.is_empty() {
@@ -210,7 +228,8 @@ pub async fn process_all_files(
         let source_path = file_tasks[task_ptr].path.clone();
         let group_key = get_group_key(&source_path);
         let mut group_tasks = Vec::new();
-        while task_ptr < file_tasks.len() && get_group_key(&file_tasks[task_ptr].path) == group_key {
+        while task_ptr < file_tasks.len() && get_group_key(&file_tasks[task_ptr].path) == group_key
+        {
             group_tasks.push(&file_tasks[task_ptr]);
             task_ptr += 1;
         }
@@ -223,25 +242,42 @@ pub async fn process_all_files(
             seen.len() as f32
         };
 
-        let group_file_ids: std::collections::HashSet<usize> = group_tasks.iter().map(|t| t.file_id).collect();
+        let group_file_ids: std::collections::HashSet<usize> =
+            group_tasks.iter().map(|t| t.file_id).collect();
         let start_item_idx = item_ptr;
-        while item_ptr < global_items.len() && group_file_ids.contains(&global_items[item_ptr].file_id) {
+        while item_ptr < global_items.len()
+            && group_file_ids.contains(&global_items[item_ptr].file_id)
+        {
             item_ptr += 1;
         }
         let items_in_source = &mut global_items[start_item_idx..item_ptr];
 
         if items_in_source.is_empty() {
             let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
-            state.global_progress.store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
+            state
+                .global_progress
+                .store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
             global_items_offset += items_in_source.len();
             continue;
         }
 
-        let display_name = if source_path.extension().and_then(|e| e.to_str()).unwrap_or("").eq_ignore_ascii_case("jar") {
-            source_path.file_name().unwrap_or_default().to_string_lossy().to_string()
+        let display_name = if source_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .eq_ignore_ascii_case("jar")
+        {
+            source_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string()
         } else {
             let parent = source_path.parent().unwrap_or(&source_path);
-            format!("{}/", parent.file_name().unwrap_or_default().to_string_lossy())
+            format!(
+                "{}/",
+                parent.file_name().unwrap_or_default().to_string_lossy()
+            )
         };
 
         if let Ok(mut p) = state.current_processing_path.lock() {
@@ -274,18 +310,29 @@ pub async fn process_all_files(
 
         let mut translated_results = HashMap::new();
         for task in group_tasks {
-            let task_items: Vec<GlobalBatchItem> = items_in_source.iter().filter(|it| it.file_id == task.file_id).cloned().collect();
+            let task_items: Vec<GlobalBatchItem> = items_in_source
+                .iter()
+                .filter(|it| it.file_id == task.file_id)
+                .cloned()
+                .collect();
             let content = get_translated_content_for_task(task, &task_items);
-            
-            let is_jar = source_path.extension().is_some_and(|ext| ext.to_string_lossy().to_lowercase() == "jar");
-            let key = if is_jar { format!("[BUNDLE]{}", task.rel_path) } else { task.rel_path.clone() };
+
+            let is_jar = source_path
+                .extension()
+                .is_some_and(|ext| ext.to_string_lossy().to_lowercase() == "jar");
+            let key = if is_jar {
+                format!("[BUNDLE]{}", task.rel_path)
+            } else {
+                task.rel_path.clone()
+            };
             translated_results.insert(key, content);
         }
 
         let config_locked = job_config.lock().unwrap().clone();
         tokio::task::spawn_blocking(move || {
             write_to_temp_or_output(&config_locked, translated_results)
-        }).await??;
+        })
+        .await??;
 
         // [新增] 補齊檔案處理完成日誌
         let cfg = job_config.lock().unwrap().clone();
@@ -298,7 +345,9 @@ pub async fn process_all_files(
         );
 
         let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
-        state.global_progress.store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
+        state
+            .global_progress
+            .store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
 
         // 累計全域 Offset
         global_items_offset += items_in_source.len();
@@ -306,7 +355,14 @@ pub async fn process_all_files(
 
     if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
-        output_resource_pack(&std::path::PathBuf::new(), HashMap::new(), config_locked, log.clone(), state.i18n.clone()).await?;
+        output_resource_pack(
+            &std::path::PathBuf::new(),
+            HashMap::new(),
+            config_locked,
+            log.clone(),
+            state.i18n.clone(),
+        )
+        .await?;
     }
 
     Ok(())
@@ -316,7 +372,10 @@ fn get_translated_content_for_task(task: &FileTask, items: &[GlobalBatchItem]) -
     let mut local_map: HashMap<String, Vec<String>> = HashMap::new();
     for item in items {
         if let Some(ref t) = item.translated {
-            local_map.entry(item.key.clone()).or_default().push(t.clone());
+            local_map
+                .entry(item.key.clone())
+                .or_default()
+                .push(t.clone());
         }
     }
 

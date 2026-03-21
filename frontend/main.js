@@ -2,7 +2,13 @@
 import { state } from './modules/state.js';
 import { debounce, appendLog } from './modules/utils.js';
 import { loadUiLangs, updateUiLanguage } from './modules/i18n.js';
-import { loadConfig, saveConfig, toggleOllamaGroup, toggleApiKeyVisibility, validateCanTranslate } from './modules/config.js';
+import {
+    loadConfig,
+    saveConfig,
+    toggleOllamaGroup,
+    toggleApiKeyVisibility,
+    validateCanTranslate,
+} from './modules/config.js';
 import { loadStyle, saveStyle, applyColors, updatePaletteValue } from './modules/style.js';
 import { initDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
@@ -44,11 +50,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnBrowseFile) btnBrowseFile.addEventListener('click', () => browsePath('file', inputPath));
     if (btnBrowseDir) btnBrowseDir.addEventListener('click', () => browsePath('dir', inputPath));
     if (btnBrowseOutput) btnBrowseOutput.addEventListener('click', () => browsePath('dir', outputDir));
-    
+
     if (btnBrowseOutputOpen) {
         btnBrowseOutputOpen.addEventListener('click', async () => {
             const target = outputDir ? outputDir.value.trim() : './LLMTranslator';
-            try { await invoke('open_folder', { path: target || './LLMTranslator' }); } catch (e) { }
+            try {
+                await invoke('open_folder', { path: target || './LLMTranslator' });
+            } catch (e) {
+                console.error(e);
+            }
         });
     }
 
@@ -56,36 +66,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     const apiProvider = document.getElementById('api-provider');
     if (apiProvider) {
         apiProvider.addEventListener('change', async () => {
-             toggleOllamaGroup();
-             toggleApiKeyVisibility();
-             const loadModelsModule = await import('./modules/config.js').then(m => m.loadModels);
-             await loadModelsModule();
-             validateCanTranslate();
+            toggleOllamaGroup();
+            toggleApiKeyVisibility();
+            const loadModelsModule = await import('./modules/config.js').then((m) => m.loadModels);
+            await loadModelsModule();
+            validateCanTranslate();
         });
     }
 
-    const debouncedSaveConfig = debounce(async () => { await saveConfig(); }, 500);
-    const debouncedSaveStyle = debounce(async () => { await saveStyle(); }, 500);
+    const debouncedSaveConfig = debounce(async () => {
+        await saveConfig();
+    }, 500);
+    const debouncedSaveStyle = debounce(async () => {
+        await saveStyle();
+    }, 500);
 
-    const configInputs = ['api-key', 'ollama-url', 'batch-size', 'batch-max-chars', 'timeout-sec', 'user-prompt', 'system-prompt'];
-    configInputs.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', debouncedSaveConfig); });
+    const configInputs = [
+        'api-key',
+        'ollama-url',
+        'batch-size',
+        'batch-max-chars',
+        'timeout-sec',
+        'user-prompt',
+        'system-prompt',
+    ];
+    configInputs.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', debouncedSaveConfig);
+    });
 
     const styleInputs = ['font-size', 'btn-rounding-value', 'pulse-speed'];
-    styleInputs.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', debouncedSaveStyle); });
+    styleInputs.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', debouncedSaveStyle);
+    });
 
-    const configSelects = ['pack-format', 'glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log'];
-    configSelects.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', debouncedSaveConfig); });
+    const configSelects = [
+        'pack-format',
+        'glossary-priority',
+        'chk-skip-json',
+        'chk-skip-js',
+        'chk-skip-jar',
+        'chk-skip-book',
+        'chk-llm-log',
+    ];
+    configSelects.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', debouncedSaveConfig);
+    });
 
     const styleSelects = ['chk-btn-rounding', 'chk-pulse'];
-    styleSelects.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', debouncedSaveStyle); });
+    styleSelects.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', debouncedSaveStyle);
+    });
 
     const uiLang = document.getElementById('ui-lang');
     if (uiLang) {
         uiLang.addEventListener('change', async () => {
-             state.currentConfig.ui_lang = uiLang.value;
-             document.documentElement.lang = uiLang.value.replace('_', '-');
-             await invoke('save_config', { config: state.currentConfig });
-             await updateUiLanguage();
+            state.currentConfig.ui_lang = uiLang.value;
+            document.documentElement.lang = uiLang.value.replace('_', '-');
+            await invoke('save_config', { config: state.currentConfig });
+            await updateUiLanguage();
         });
     }
 
@@ -107,28 +149,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnNavApi) {
         btnNavApi.addEventListener('click', async () => {
             state.currentConfig.show_api_settings = !state.currentConfig.show_api_settings;
-            if (state.currentConfig.show_api_settings) { state.currentConfig.show_developer_mode = false; state.currentStyle.show_palette_settings = false; }
-            updatePanelVisibility(); await invoke('save_config', { config: state.currentConfig });
+            if (state.currentConfig.show_api_settings) {
+                state.currentConfig.show_developer_mode = false;
+                state.currentStyle.show_palette_settings = false;
+            }
+            updatePanelVisibility();
+            await invoke('save_config', { config: state.currentConfig });
         });
     }
     if (btnNavDev) {
         btnNavDev.addEventListener('click', async () => {
             state.currentConfig.show_developer_mode = !state.currentConfig.show_developer_mode;
-            if (state.currentConfig.show_developer_mode) { state.currentConfig.show_api_settings = false; state.currentStyle.show_palette_settings = false; }
-            updatePanelVisibility(); await invoke('save_config', { config: state.currentConfig });
+            if (state.currentConfig.show_developer_mode) {
+                state.currentConfig.show_api_settings = false;
+                state.currentStyle.show_palette_settings = false;
+            }
+            updatePanelVisibility();
+            await invoke('save_config', { config: state.currentConfig });
         });
     }
     if (btnNavPalette) {
         btnNavPalette.addEventListener('click', async () => {
             state.currentStyle.show_palette_settings = !state.currentStyle.show_palette_settings;
-            if (state.currentStyle.show_palette_settings) { state.currentConfig.show_api_settings = false; state.currentConfig.show_developer_mode = false; }
-            updatePanelVisibility(); await invoke('save_config', { config: state.currentConfig });
+            if (state.currentStyle.show_palette_settings) {
+                state.currentConfig.show_api_settings = false;
+                state.currentConfig.show_developer_mode = false;
+            }
+            updatePanelVisibility();
+            await invoke('save_config', { config: state.currentConfig });
         });
     }
     if (btnNavTheme) {
         btnNavTheme.addEventListener('click', async () => {
             state.currentStyle.theme = state.currentStyle.theme === 'dark' ? 'light' : 'dark';
-            applyColors(state.currentStyle); await invoke('save_style_config', { config: state.currentStyle });
+            applyColors(state.currentStyle);
+            await invoke('save_style_config', { config: state.currentStyle });
         });
     }
 
@@ -138,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const paletteProperty = document.getElementById('palette-property');
     const paletteRounding = document.getElementById('palette-rounding');
     const paletteColor = document.getElementById('palette-color');
-    
+
     if (paletteTargetType) {
         paletteTargetType.addEventListener('change', () => {
             const isSpecific = paletteTargetType.value === 'specific';
@@ -154,23 +209,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (paletteProperty) paletteProperty.addEventListener('change', updatePaletteValue);
 
     if (paletteColor) {
-         paletteColor.addEventListener('input', () => {
-              const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
-              const target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
-              const prop = paletteProperty ? paletteProperty.value : 'bg';
-              const hex = paletteColor.value;
-              if (!hex.startsWith('#')) return;
-              const bigint = parseInt(hex.slice(1), 16);
-              const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+        paletteColor.addEventListener('input', () => {
+            const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
+            const target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
+            const prop = paletteProperty ? paletteProperty.value : 'bg';
+            const hex = paletteColor.value;
+            if (!hex.startsWith('#')) return;
+            const bigint = parseInt(hex.slice(1), 16);
+            const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
 
-              if (!isSpecific) { state.currentStyle[target] = rgb; } 
-              else {
-                  if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                  if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-                  state.currentStyle.instance_overrides[target][prop] = rgb;
-              }
-              applyColors(state.currentStyle); debounce(async() => { await invoke('save_style_config', { config: state.currentStyle }); }, 400)();
-         });
+            if (!isSpecific) {
+                state.currentStyle[target] = rgb;
+            } else {
+                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
+                if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
+                state.currentStyle.instance_overrides[target][prop] = rgb;
+            }
+            applyColors(state.currentStyle);
+            debounce(async () => {
+                await invoke('save_style_config', { config: state.currentStyle });
+            }, 400)();
+        });
     }
 
     if (paletteRounding) {
@@ -183,7 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
                 state.currentStyle.instance_overrides[target].rounding = val;
             }
-            applyColors(state.currentStyle); debounce(async() => { await invoke('save_style_config', { config: state.currentStyle }); }, 400)();
+            applyColors(state.currentStyle);
+            debounce(async () => {
+                await invoke('save_style_config', { config: state.currentStyle });
+            }, 400)();
         });
     }
 
@@ -202,7 +264,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await loadConfig();
                     appendLog(state.currentLabels.status_restore_config_success || '✅ 參數已恢復預設！');
                 } catch (e) {
-                    appendLog((state.currentLabels.status_restore_config_failed || '❌ 恢復參數失敗: {}').replace('{}', e));
+                    appendLog(
+                        (state.currentLabels.status_restore_config_failed || '❌ 恢復參數失敗: {}').replace('{}', e)
+                    );
                 }
             }
         });
@@ -218,7 +282,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await loadStyle();
                     appendLog(state.currentLabels.status_restore_style_success || '🎨 外觀已恢復預設！');
                 } catch (e) {
-                    appendLog((state.currentLabels.status_restore_style_failed || '❌ 恢復樣式失敗: {}').replace('{}', e));
+                    appendLog(
+                        (state.currentLabels.status_restore_style_failed || '❌ 恢復樣式失敗: {}').replace('{}', e)
+                    );
                 }
             }
         });
@@ -228,45 +294,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnPaletteClearItem.addEventListener('click', async () => {
             if (!paletteTargetType || paletteTargetType.value !== 'specific' || !paletteTargetItem) return;
             const target = paletteTargetItem.value;
-            
+
             try {
                 const ds = await invoke('get_default_style_config');
                 const isDark = state.currentStyle.theme !== 'light';
-                let bg, text, rounding = ds.btn_rounding_value;
+                let bg,
+                    text,
+                    rounding = ds.btn_rounding_value;
                 const targetStr = String(target);
-                
+
                 if (targetStr.startsWith('btn-') && targetStr !== 'btn-translate') {
                     bg = isDark ? ds.dark_btn_bg : ds.light_btn_bg;
                     text = isDark ? ds.dark_btn_text : ds.light_btn_text;
                 } else if (targetStr === 'btn-translate') {
-                    bg = [212, 175, 55]; 
+                    bg = [212, 175, 55];
                     text = [17, 17, 17];
                 } else if (targetStr.includes('prompt') || targetStr.includes('dir') || targetStr.includes('path')) {
                     bg = isDark ? ds.dark_input_bg : ds.light_input_bg;
                     text = isDark ? ds.dark_text : ds.light_text;
                 } else if (targetStr === 'log-output' || targetStr === 'dict-dialog') {
-                    bg = targetStr === 'dict-dialog' ? (isDark ? ds.dark_bg : ds.light_bg) : (isDark ? ds.dark_list_bg : ds.light_list_bg);
+                    bg =
+                        targetStr === 'dict-dialog'
+                            ? isDark
+                                ? ds.dark_bg
+                                : ds.light_bg
+                            : isDark
+                              ? ds.dark_list_bg
+                              : ds.light_list_bg;
                     text = isDark ? ds.dark_text : ds.light_text;
                 } else if (targetStr === 'progress-bar') {
                     bg = [212, 175, 55];
                 } else if (targetStr === 'batch-progress-bar') {
                     bg = [136, 192, 208];
                 }
-                
+
                 if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
                 state.currentStyle.instance_overrides[target] = { rounding };
                 if (bg) state.currentStyle.instance_overrides[target].bg = bg;
                 if (text) state.currentStyle.instance_overrides[target].text = text;
 
                 const el = document.getElementById(target);
-                if (el) { el.style.backgroundColor = ''; el.style.color = ''; el.style.borderRadius = ''; }
-                
+                if (el) {
+                    el.style.backgroundColor = '';
+                    el.style.color = '';
+                    el.style.borderRadius = '';
+                }
+
                 updatePaletteValue();
                 applyColors(state.currentStyle);
                 await invoke('save_style_config', { config: state.currentStyle });
-                
+
                 const targetName = paletteTargetItem.options[paletteTargetItem.selectedIndex].text;
-                appendLog((state.currentLabels.status_palette_clear_item || '🗑 已清除元件覆寫: {}').replace('{}', targetName));
+                appendLog(
+                    (state.currentLabels.status_palette_clear_item || '🗑 已清除元件覆寫: {}').replace('{}', targetName)
+                );
             } catch (e) {
                 console.error(e);
             }

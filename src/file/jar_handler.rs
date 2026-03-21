@@ -1,8 +1,8 @@
-use crate::translation::batching::GlobalBatchItem;
-use crate::translation::job::JobSharedState;
 use crate::file::pipeline::FileTask;
-use crate::translation::context::{TranslationContext, ContextOptions};
+use crate::translation::batching::GlobalBatchItem;
+use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
+use crate::translation::job::JobSharedState;
 use std::collections::HashMap;
 use std::fs;
 use std::io::{Read, Write};
@@ -13,14 +13,15 @@ pub async fn collect_jar_tasks(
     start_file_id: usize,
     path: &Path,
     state: &JobSharedState,
-) -> Result<
-    (Vec<FileTask>, Vec<GlobalBatchItem>),
-    Box<dyn std::error::Error + Send + Sync>,
-> {
+) -> Result<(Vec<FileTask>, Vec<GlobalBatchItem>), Box<dyn std::error::Error + Send + Sync>> {
     let path_clone = path.to_path_buf();
     let (source_lang, target_lang, skip_book) = {
         let cfg = state.config.lock().unwrap();
-        (cfg.source_lang.clone(), cfg.target_lang.clone(), cfg.skip_book)
+        (
+            cfg.source_lang.clone(),
+            cfg.target_lang.clone(),
+            cfg.skip_book,
+        )
     };
 
     type JarTaskData = (String, serde_json::Value, String, serde_json::Value);
@@ -29,7 +30,7 @@ pub async fn collect_jar_tasks(
             let file = fs::File::open(&path_clone)?;
             let mut archive = zip::ZipArchive::new(file)?;
             let mut entries = Vec::new();
-            
+
             let src_suffix = format!("{}.json", source_lang);
             let src_dir = format!("/{}/", source_lang);
 
@@ -46,16 +47,25 @@ pub async fn collect_jar_tasks(
                     let mut f = match archive.by_index(i) {
                         Ok(f) => f,
                         Err(e) => {
-                            eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JAR 檔案索引 {}: {}\x1b[0m", 
-                                chrono::Local::now().format("%H:%M:%S"), i, e);
+                            eprintln!(
+                                "\x1b[31m[{}] [錯誤] 無法讀取 JAR 檔案索引 {}: {}\x1b[0m",
+                                chrono::Local::now().format("%H:%M:%S"),
+                                i,
+                                e
+                            );
                             continue;
                         }
                     };
                     let name = f.name().to_string();
-                    let is_book = name.contains("patchouli_books") && (name.contains(&format!("/{}", source_lang)) || name.contains("/en_us/"));
-                    
-                    let is_actual_source = (name.ends_with(&src_suffix) || name.contains(&src_dir)) && name.ends_with(".json");
-                    let is_fallback = (name.ends_with("en_us.json") || name.contains("/en_us/")) && name.ends_with(".json") && source_lang != "en_us";
+                    let is_book = name.contains("patchouli_books")
+                        && (name.contains(&format!("/{}", source_lang))
+                            || name.contains("/en_us/"));
+
+                    let is_actual_source = (name.ends_with(&src_suffix) || name.contains(&src_dir))
+                        && name.ends_with(".json");
+                    let is_fallback = (name.ends_with("en_us.json") || name.contains("/en_us/"))
+                        && name.ends_with(".json")
+                        && source_lang != "en_us";
 
                     let mut is_source = false;
                     if is_actual_source {
@@ -75,8 +85,12 @@ pub async fn collect_jar_tasks(
                     let mut content = String::new();
                     if is_target {
                         if let Err(e) = f.read_to_string(&mut content) {
-                            eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JAR 內檔案 {}: {}\x1b[0m", 
-                                chrono::Local::now().format("%H:%M:%S"), name, e);
+                            eprintln!(
+                                "\x1b[31m[{}] [錯誤] 無法讀取 JAR 內檔案 {}: {}\x1b[0m",
+                                chrono::Local::now().format("%H:%M:%S"),
+                                name,
+                                e
+                            );
                         }
                     }
                     (is_target, name, content)
@@ -85,10 +99,18 @@ pub async fn collect_jar_tasks(
                 if is_target {
                     if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) {
                         let target_name = if name.contains("patchouli_books/") {
-                            let src_book = if name.contains("/en_us/") { "/en_us/".to_string() } else { format!("/{}/", source_lang) };
+                            let src_book = if name.contains("/en_us/") {
+                                "/en_us/".to_string()
+                            } else {
+                                format!("/{}/", source_lang)
+                            };
                             name.replace(&src_book, &format!("/{}/", target_lang))
                         } else {
-                            let src_file = if name.ends_with("en_us.json") { "en_us.json".to_string() } else { src_suffix.clone() };
+                            let src_file = if name.ends_with("en_us.json") {
+                                "en_us.json".to_string()
+                            } else {
+                                src_suffix.clone()
+                            };
                             name.replace(&src_file, &format!("{}.json", target_lang))
                         };
                         let mut target_base = serde_json::Value::Null;
