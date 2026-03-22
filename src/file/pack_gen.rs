@@ -95,16 +95,14 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        // 3. 路徑安全清理 (防止絕對路徑或驅動器前綴引發路徑穿越)
-        let mut safe_path = final_path.trim_start_matches('/').to_string();
-        if safe_path.contains(':') {
-            if let Some(pos) = safe_path.find(':') {
-                safe_path = safe_path[pos + 1..]
-                    .trim_start_matches('/')
-                    .to_string();
+        // 3. 路徑安全清理 (僅保留 Normal 組件，防止絕對路徑或 .. 引發路徑穿越)
+        let mut safe_buf = std::path::PathBuf::new();
+        for comp in std::path::Path::new(&final_path).components() {
+            if let std::path::Component::Normal(c) = comp {
+                safe_buf.push(c);
             }
         }
-        final_path = safe_path;
+        final_path = safe_buf.to_string_lossy().to_string();
 
         // 4. 輸出分流：
         //    - 只有 BUNDLE (JAR/Mods) 或原本就位於資源結構中的 JSON 進入 ZIP 暫存區
