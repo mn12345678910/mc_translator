@@ -385,7 +385,7 @@ impl GuiLabels {
             fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
         }
         let zh_tw_path = dir.join("zh_tw.json");
-        if !zh_tw_path.exists() {
+        if cfg!(debug_assertions) || !zh_tw_path.exists() {
             let l = Self::default_zh_tw();
             fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
                 .map_err(std::io::Error::other)?;
@@ -397,7 +397,7 @@ impl GuiLabels {
         ];
         for (n, c) in files {
             let p = dir.join(n);
-            if !p.exists() {
+            if cfg!(debug_assertions) || !p.exists() {
                 fs::write(p, c).map_err(std::io::Error::other)?;
             }
         }
@@ -467,7 +467,7 @@ impl CliLabels {
             fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
         }
         let zh_tw_path = dir.join("zh_tw.json");
-        if !zh_tw_path.exists() {
+        if cfg!(debug_assertions) || !zh_tw_path.exists() {
             let l = Self::default_zh_tw();
             fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
                 .map_err(std::io::Error::other)?;
@@ -479,7 +479,7 @@ impl CliLabels {
         ];
         for (n, c) in files {
             let p = dir.join(n);
-            if !p.exists() {
+            if cfg!(debug_assertions) || !p.exists() {
                 fs::write(p, c).map_err(std::io::Error::other)?;
             }
         }

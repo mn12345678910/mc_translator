@@ -25,7 +25,13 @@ export async function loadDictionary() {
 
         if (pageInfo) {
             const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';
-            pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
+            const parts = mask.split('{}');
+            if (parts.length >= 3) {
+                pageInfo.textContent = `${parts[0]}${dictPage + 1}${parts[1]}${totalPages || 1}${parts[2]}`;
+            } else {
+                // 退回機制
+                pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
+            }
         }
         if (pagePrev) pagePrev.disabled = dictPage === 0;
         if (pageNext) pageNext.disabled = totalPages === 0 || dictPage + 1 >= totalPages;
@@ -137,6 +143,14 @@ export function initDictionary() {
             dictPage = 0;
             loadDictionary();
         });
+
+    const chkPriority = document.getElementById('chk-glossary-priority');
+    if (chkPriority) {
+        chkPriority.addEventListener('change', () => {
+            dictPage = 0; // 重置頁碼
+            loadDictionary();
+        });
+    }
     if (pagePrev)
         pagePrev.addEventListener('click', () => {
             if (dictPage > 0) {

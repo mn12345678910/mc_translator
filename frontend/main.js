@@ -139,6 +139,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const targetLang = document.getElementById('target-lang');
+    if (targetLang) {
+        targetLang.addEventListener('change', async () => {
+            const lang = targetLang.value;
+            try {
+                const labels = await invoke('get_i18n_labels_cmd', { lang: lang });
+                const userPrompt = document.getElementById('user-prompt');
+                const systemPrompt = document.getElementById('system-prompt');
+                if (userPrompt && labels.default_user_prompt) {
+                    userPrompt.value = labels.default_user_prompt;
+                }
+                if (systemPrompt && labels.default_system_prompt) {
+                    systemPrompt.value = labels.default_system_prompt;
+                }
+                debouncedSaveConfig();
+            } catch (e) {
+                console.error('載入預設 Prompts 失敗:', e);
+            }
+        });
+    }
+
     // 5. 導覽面板控制
     const btnNavApi = document.getElementById('btn-nav-api');
     const btnNavDev = document.getElementById('btn-nav-dev');
