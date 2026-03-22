@@ -11,21 +11,21 @@
         <!-- 🎮 翻譯控制面板 -->
         <div class="control-panel">
             <div class="form-group">
-<label for="input-path">:</label>
+<label for="input-path" data-i18n="label_input_path">:</label>
                 <div class="input-row">
-                    <input type="text" id="input-path" placeholder="輸入或拖放路徑至此..." />
-<button id="btn-browse-file" class="action-btn">📂</button>
-<button id="btn-browse-dir" class="action-btn">📁</button>
+                    <input type="text" id="input-path" placeholder="輸入或拖放路徑至此..." data-i18n-placeholder="placeholder_input_path" />
+<button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂</button>
+<button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁</button>
                 </div>
             </div>
 
             <!-- [NEW] 輸出路徑 (100% 復刻) -->
             <div class="form-group" style="margin-top: 10px">
-<label for="output-dir">:</label>
+<label for="output-dir" data-i18n="label_output_path">:</label>
                 <div class="input-row">
-                    <input type="text" id="output-dir" placeholder="./LLMTranslator (預設)" />
-<button id="btn-browse-output" class="action-btn">📁</button>
-<button id="btn-browse-output-open" class="action-btn">📂</button>
+                    <input type="text" id="output-dir" placeholder="./LLMTranslator (預設)" data-i18n-placeholder="placeholder_output_path" />
+<button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁</button>
+<button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂</button>
                 </div>
             </div>
 
@@ -41,28 +41,28 @@
             </div>
 
             <div class="button-row" style="margin-top: 15px">
-<button id="btn-translate">🚀</button>
-<button id="btn-pause" style="display: none">⏸️</button>
-<button id="btn-resume" style="display: none">▶️</button>
-<button id="btn-stop" style="display: none; background-color: var(--danger-color)">⏹️</button>
+<button id="btn-translate" data-i18n="btn_run_trans">🚀</button>
+<button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
+<button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
+<button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
 
                 <!-- [NEW] 導航列 -->
                 <div style="flex: 1; display: flex; justify-content: flex-end; gap: 8px">
-<button id="btn-nav-api" class="secondary-btn" title="API 與常數設置">⚙️</button>
-<button id="btn-nav-dict" class="secondary-btn" title="字典管理器">📖</button>
-<button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理">🎨</button>
-<button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題">🌓</button>
-<button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項">🔧</button>
+<button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
+<button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
+<button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
+<button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題" data-i18n-title="btn_nav_theme">🌓</button>
+<button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項" data-i18n-title="btn_nav_dev">🔧</button>
                 </div>
             </div>
         </div>
 
         <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
         <div class="control-panel api-settings" style="display: none">
-<h2 id="header-api-settings">⚙️ API</h2>
+<h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
             <div class="form-grid">
                 <div class="form-group">
-<label for="api-provider"></label>
+<label for="api-provider" data-i18n="label_provider"></label>
                     <select id="api-provider">
                         <option value="Gemini">Gemini (Google)</option>
                         <option value="OpenAI">OpenAI</option>
@@ -79,7 +79,7 @@
                     <input type="password" id="api-key" placeholder="輸入 API Key..." />
                 </div>
                 <div class="form-group">
-<label for="selected-model"></label>
+<label for="selected-model" data-i18n="label_model"></label>
                     <select id="selected-model"></select>
                 </div>
                 <div class="form-group" id="ollama-url-group" style="display: none">
@@ -91,18 +91,18 @@
                     <input type="number" id="batch-size" min="1" max="300" />
                 </div>
                 <div class="form-group">
-<label for="batch-max-chars"></label>
+<label for="batch-max-chars" data-i18n="label_max_chars"></label>
                     <input type="number" id="batch-max-chars" step="100" />
                 </div>
                 <div class="form-group">
-<label for="timeout-sec">API</label>
+<label for="timeout-sec" data-i18n="label_timeout">API</label>
                     <input type="number" id="timeout-sec" min="5" />
                 </div>
             </div>
             
             <div class="form-grid" style="margin-top: 15px">
                 <div class="form-group">
-                    <label for="source-lang" id="label-source-lang"></label>
+                    <label for="source-lang" id="label-source-lang" data-i18n="label_source_lang"></label>
                     <select id="source-lang">
                         <option value="en_us">English (US)</option>
                         <option value="zh_tw">繁體中文 (台灣)</option>
@@ -111,7 +111,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="target-lang" id="label-target-lang"></label>
+                    <label for="target-lang" id="label-target-lang" data-i18n="label_target_lang"></label>
                     <select id="target-lang">
                         <option value="zh_tw">繁體中文 (台灣)</option>
                         <option value="en_us">English (US)</option>
@@ -140,7 +140,7 @@
             <!-- [NEW] 自訂 Prompts 設定區 -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-<label for="user-prompt">:</label>
+<label for="user-prompt" data-i18n="label_user_prompt">:</label>
                     <textarea
                         id="user-prompt"
                         rows="3"
@@ -158,12 +158,13 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px">
-                <button id="btn-save-config" style="background-color: var(--accent-color); color: var(--btn-text-dark, #111); flex: 1">
+                <button id="btn-save-config" data-i18n="btn_save_config" style="background-color: var(--accent-color); color: var(--btn-text-dark, #111); flex: 1">
                     💾 儲存核心參數
                 </button>
                 <button
                     id="btn-restore-config"
                     class="secondary-btn"
+                    data-i18n="btn_restore_defaults"
                     style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
                     🔄 恢復預設參數
@@ -173,28 +174,28 @@
 
         <!-- 🔧 開發人員選項 -->
         <div class="control-panel developer-settings" style="display: none">
-<h2 id="header-dev-mode">🔧</h2>
+<h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
             <div class="checkbox-grid">
                 <div class="switch-group">
-<span id="label-skip-json">.json</span>
+<span id="label-skip-json" data-i18n="label_skip_json">.json</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-json" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-js">.js</span>
+<span id="label-skip-js" data-i18n="label_skip_js">.js</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-js" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-jar">.jar</span>
+<span id="label-skip-jar" data-i18n="label_skip_jar">.jar</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-jar" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-book">Patchouli</span>
+<span id="label-skip-book" data-i18n="label_skip_book">Patchouli</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-book" /><span class="slider round"></span
                     ></label>
@@ -214,17 +215,17 @@
 
         <!-- 🎨 調色盤與佈局管理面板 -->
         <div class="control-panel theme-settings" style="display: none">
-<h2 id="header-palette">🎨</h2>
+<h2 id="header-palette" data-i18n="header_palette">🎨</h2>
             <div class="form-grid">
                 <div class="form-group">
-<label for="palette-target-type"></label>
+<label for="palette-target-type" data-i18n="label_palette_target_type"></label>
                     <select id="palette-target-type" style="width: 100%">
                         <option value="global">全域樣式</option>
                         <option value="specific">特定元件覆寫</option>
                     </select>
                 </div>
                 <div class="form-group">
-<label for="palette-target-item"></label>
+<label for="palette-target-item" data-i18n="label_palette_target_item"></label>
                     <select id="palette-target-item" style="width: 100%">
                         <!-- 全域類別 -->
                         <optgroup label="全域類別" id="group-global">
@@ -260,7 +261,7 @@
                 </div>
                 <!-- [NEW] 屬性選擇 -->
                 <div class="form-group" id="palette-property-group" style="display: none">
-<label for="palette-property"></label>
+<label for="palette-property" data-i18n="label_palette_property"></label>
                     <select id="palette-property" style="width: 100%">
                         <option value="bg">背景顏色</option>
                         <option value="text">文字顏色</option>
@@ -268,7 +269,7 @@
                     </select>
                 </div>
                 <div class="form-group" id="palette-color-group">
-<label for="palette-color" id="label-palette-color"></label>
+<label for="palette-color" id="label-palette-color" data-i18n="label_palette_color"></label>
                     <input
                         type="color"
                         id="palette-color"
@@ -283,7 +284,7 @@
                     />
                 </div>
                 <div class="form-group" id="palette-rounding-group" style="display: none">
-<label for="palette-rounding"></label>
+<label for="palette-rounding" data-i18n="label_palette_rounding"></label>
                     <input
                         type="number"
                         id="palette-rounding"
@@ -308,7 +309,7 @@
             <!-- [NEW] 字體大小與圓角/動畫設定 -->
             <div class="form-grid" style="margin-top: 15px">
                 <div class="form-group">
-<label for="font-size">:</label>
+<label for="font-size" data-i18n="label_font_size">:</label>
                     <input type="number" id="font-size" value="15" min="12" max="30" step="0.5" />
                 </div>
                 <div class="form-group">
@@ -344,10 +345,11 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px">
-<button id="btn-save-style" style="flex: 1">💾</button>
+<button id="btn-save-style" style="flex: 1" data-i18n="btn_save_style">💾</button>
                 <button
                     id="btn-restore-style"
                     class="secondary-btn"
+                    data-i18n="btn_restore_defaults"
                     style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
                     🔄 恢復預設樣式
@@ -388,10 +390,10 @@
         <!-- 📖 字典管理器彈窗 -->
         <dialog id="dict-dialog" class="styled-dialog">
             <div class="dialog-header">
-<h3 id="header-dict-mgr">📖</h3>
+<h3 id="header-dict-mgr" data-i18n="header_dict_mgr">📖</h3>
                 <!-- [NEW] 術語優先級切換開關 -->
                 <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px;">
-<span id="label-glossary-priority" style="font-size: 0.9rem; color: var(--text-color);">:</span>
+<span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem; color: var(--text-color);">:</span>
                     <label class="switch" title="切換 官方優先 或 使用者優先">
                         <input type="checkbox" id="chk-glossary-priority" />
                         <span class="slider round"></span>
@@ -403,18 +405,18 @@
                 <!-- [NEW] 分頁與按鈕行 -->
                 <div class="tabs" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; gap: 10px;">
-<button class="tab-btn active" id="tab-user"></button>
-<button class="tab-btn" id="tab-official"></button>
+<button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user"></button>
+<button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official"></button>
                     </div>
                     <!-- 按鈕群組 -->
                     <div id="dict-user-buttons" style="display: flex; gap: 6px; flex-wrap: wrap; flex: 1;">
-<button id="btn-dict-add" class="action-btn" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕</button>
-<button id="btn-dict-replace" class="action-btn" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
-<button id="btn-dict-import" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
-<button id="btn-dict-export" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤</button>
+<button id="btn-dict-add" class="action-btn" data-i18n="btn_add" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕</button>
+<button id="btn-dict-replace" class="action-btn" data-i18n="btn_replace" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
+<button id="btn-dict-import" class="action-btn" data-i18n="btn_import" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
+<button id="btn-dict-export" class="action-btn" data-i18n="btn_export" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤</button>
 <button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾">📂 .json</button>
 
-<button id="btn-dict-clear" class="action-btn" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px; margin-left: auto;">🗑</button>
+<button id="btn-dict-clear" class="action-btn" data-i18n="btn_clear_all" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px; margin-left: auto;">🗑</button>
                     </div>
                 </div>
                 <!-- [NEW] 輸入與搜尋區 -->
@@ -429,9 +431,9 @@
             </div>
             <div class="dialog-footer">
                 <div class="pagination">
-<button id="page-prev" class="page-btn"></button>
+<button id="page-prev" class="page-btn" data-i18n="btn_page_prev"></button>
 <span id="page-info">1 / 1</span>
-<button id="page-next" class="page-btn"></button>
+<button id="page-next" class="page-btn" data-i18n="btn_page_next"></button>
                 </div>
             </div>
         </dialog>

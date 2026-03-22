@@ -84,4 +84,141 @@ describe('i18n.js 介面語言模組', () => {
         // 畫面應該更新為 English 預設
         expect(promptArea.value.trim()).toBe('English prompt defaults...');
     });
+    it('loadUiLangs 應該在 invoke 拋出異常時妥善處理', async () => {
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        mockInvoke.mockRejectedValue(new Error('Backend Error'));
+
+        await i18nModule.loadUiLangs();
+
+        expect(consoleErrorSpy).toHaveBeenCalled();
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('updateUiLanguage 應該在 labels 缺失時支援 Fallback 備援', async () => {
+        const mockLabels = {
+            app_title: 'MCTitle',
+            label_provider: 'Provider', 
+        };
+        mockInvoke.mockResolvedValue(mockLabels);
+
+        const el = document.createElement('label');
+        el.setAttribute('for', 'api-provider'); 
+        el.setAttribute('data-i18n', 'label_provider'); 
+        document.body.appendChild(el);
+
+        await i18nModule.updateUiLanguage();
+
+        expect(el.textContent).toBe('Provider'); 
+    });
+
+    it('updateToggleStateLabel 應該正確更新所有開關文字', () => {
+        stateModule.state.currentLabels = {
+            glossary_priority_user: 'User First',
+            glossary_priority_official: 'Official First',
+            label_enable_log: 'Log On',
+            label_disable_log: 'Log Off',
+        };
+
+        document.body.innerHTML += `
+            <div id="label-glossary-priority"></div>
+            <div id="label-llm-log"></div>
+        `;
+
+        i18nModule.updateToggleStateLabel('chk-glossary-priority', true);
+        expect(document.getElementById('label-glossary-priority').textContent).toBe('User First');
+
+        i18nModule.updateToggleStateLabel('chk-glossary-priority', false);
+        expect(document.getElementById('label-glossary-priority').textContent).toBe('Official First');
+
+        i18nModule.updateToggleStateLabel('chk-llm-log', true);
+        expect(document.getElementById('label-llm-log').textContent).toBe('Log On');
+    });
+    it('updateUiLanguage 應該更新輸入框的 Placeholder', async () => {
+        const mockLabels = {
+            placeholder_search_terms: '搜尋字典...',
+        };
+        mockInvoke.mockResolvedValue(mockLabels);
+
+        document.body.innerHTML += `
+            <input id="dict-search" placeholder="Original" />
+        `;
+
+        await i18nModule.updateUiLanguage();
+
+        expect(document.getElementById('dict-search').placeholder).toBe('搜尋字典...');
+    });
+
+    it('updateUiLanguage 應該覆蓋完整的 DOM 視覺映射與屬性替換', async () => {
+        const mockLabels = {
+            btn_select_file: 'Select File',
+            btn_select_folder: 'Select Folder',
+            btn_output_dir: 'Output Dir',
+            btn_open_output: 'Open Output',
+            btn_run_trans: 'Translate',
+            btn_save_config: 'Save Config',
+            header_api_settings: 'API Settings',
+            label_provider: 'Provider',
+            label_model: 'Model',
+            label_max_chars: 'Max Chars',
+            label_timeout: 'Timeout',
+            label_glossary_priority: 'Priority',
+            label_palette_target_type: 'Target Type',
+            label_palette_target_item: 'Target Item',
+            label_palette_property: 'Property',
+            label_palette_color: 'Color',
+            label_palette_rounding: 'Rounding',
+            label_user_prompt: 'User Prompt',
+            label_system_prompt: 'System Prompt',
+            label_input_path: 'Input Path',
+            label_output_path: 'Output Path',
+            placeholder_search_terms: 'Search...',
+            placeholder_dict_key: 'Key...',
+            placeholder_dict_value: 'Value...',
+            placeholder_input_path: 'Input Path...',
+        };
+        mockInvoke.mockResolvedValue(mockLabels);
+
+        document.body.innerHTML += `
+            <!-- mapping -->
+            <button id="btn-browse-file" data-i18n="btn_select_file"></button>
+            <button id="btn-browse-dir" data-i18n="btn_select_folder"></button>
+            <button id="btn-browse-output" data-i18n="btn_output_dir"></button>
+            <button id="btn-browse-output-open" data-i18n="btn_open_output"></button>
+            <button id="btn-translate" data-i18n="btn_run_trans"></button>
+            <button id="btn-save-config" data-i18n="btn_save_config"></button>
+            <button id="header-api-settings" data-i18n="header_api_settings"></button>
+            
+            <!-- label[for] -->
+            <label for="api-provider" data-i18n="label_provider"></label>
+            <label for="selected-model" data-i18n="label_model"></label>
+            <label for="batch-max-chars" data-i18n="label_max_chars"></label>
+            <label for="timeout-sec" data-i18n="label_timeout"></label>
+            <label for="glossary-priority" data-i18n="label_glossary_priority"></label>
+            <label for="palette-target-type" data-i18n="label_palette_target_type"></label>
+            <label for="palette-target-item" data-i18n="label_palette_target_item"></label>
+            <label for="palette-property" data-i18n="label_palette_property"></label>
+            <label for="palette-color" data-i18n="label_palette_color"></label>
+            <label for="palette-rounding" data-i18n="label_palette_rounding"></label>
+            <label for="user-prompt" data-i18n="label_user_prompt"></label>
+            <label for="system-prompt" data-i18n="label_system_prompt"></label>
+            <label for="input-path" data-i18n="label_input_path"></label>
+            <label for="output-dir" data-i18n="label_output_path"></label>
+
+            <!-- placeholder -->
+            <input id="dict-search" placeholder="Def" data-i18n-placeholder="placeholder_search_terms" />
+            <input id="dict-input-key" placeholder="Def" data-i18n-placeholder="placeholder_dict_key" />
+            <input id="dict-input-value" placeholder="Def" data-i18n-placeholder="placeholder_dict_value" />
+            <input id="input-path" placeholder="Def" data-i18n-placeholder="placeholder_input_path" />
+
+        `;
+
+        await i18nModule.updateUiLanguage();
+
+        expect(document.getElementById('btn-browse-file').textContent).toBe('Select File');
+        expect(document.querySelector('label[for="api-provider"]').textContent).toBe('Provider');
+        expect(document.getElementById('dict-search').placeholder).toBe('Search...');
+    });
 });
+
+
+

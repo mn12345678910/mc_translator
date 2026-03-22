@@ -56,85 +56,26 @@ export async function updateUiLanguage() {
         const titleNode = document.querySelector('h1 span') || document.querySelector('h1');
         if (titleNode && labels.app_title) titleNode.textContent = labels.app_title;
 
-        const mapping = {
-            'btn-browse-file': labels.btn_select_file,
-            'btn-browse-dir': labels.btn_select_folder,
-            'btn-browse-output': labels.btn_output_dir,
-            'btn-browse-output-open': labels.btn_open_output,
-            'btn-translate': labels.btn_run_trans,
-            'btn-pause': labels.btn_pause,
-            'btn-stop': labels.btn_stop,
-            'btn-resume': labels.btn_resume,
-            'btn-save-config': labels.btn_save_config,
-            'btn-restore-config': labels.btn_restore_defaults,
-            'btn-save-style': labels.btn_save_style,
-            'btn-restore-style': labels.btn_restore_defaults,
-            'header-api-settings': labels.header_api_settings,
-            'header-palette': labels.header_palette,
-            'header-dev-mode': labels.header_dev_mode,
-            'header-dict-mgr': labels.header_dict_mgr,
-            'btn-dict-clear': labels.btn_clear_all,
-            'btn-dict-import': labels.btn_import,
-            'btn-dict-export': labels.btn_export,
-            'btn-dict-replace': labels.btn_replace,
-            'btn-dict-add': labels.btn_add,
-            'tab-user': labels.glossary_tab_user,
-            'tab-official': labels.glossary_tab_official,
-            'page-prev': labels.btn_page_prev,
-            'page-next': labels.btn_page_next,
-            'label-items': labels.label_items,
-            'label-files': labels.label_files,
-            'btn-palette-clear-item': labels.btn_restore_defaults,
-        };
+        // 🟡 舊有 Mapping 映射已移除，全面採用 data-i18n 驅動
 
-        for (const [id, txt] of Object.entries(mapping)) {
-            const el = document.getElementById(id);
-            if (el && txt) el.textContent = txt;
-        }
-
-        document.querySelectorAll('label[for]').forEach((el) => {
-            const forId = el.getAttribute('for');
-            const underscored = forId.replace(/-/g, '_');
-            const key1 = `label_${underscored}`;
-            const key2 = underscored;
-
-            if (forId === 'api-provider' && labels.label_provider) el.textContent = labels.label_provider;
-            else if (forId === 'selected-model' && labels.label_model) el.textContent = labels.label_model;
-            else if (forId === 'batch-max-chars' && labels.label_max_chars) el.textContent = labels.label_max_chars;
-            else if (forId === 'timeout-sec' && labels.label_timeout) el.textContent = labels.label_timeout;
-            else if (forId === 'glossary-priority' && labels.label_glossary_priority)
-                el.textContent = labels.label_glossary_priority;
-            else if (forId === 'palette-target-type' && labels.label_palette_target_type)
-                el.textContent = labels.label_palette_target_type;
-            else if (forId === 'palette-target-item' && labels.label_palette_target_item)
-                el.textContent = labels.label_palette_target_item;
-            else if (forId === 'palette-property' && labels.label_palette_property)
-                el.textContent = labels.label_palette_property;
-            else if (forId === 'palette-color' && labels.label_palette_color)
-                el.textContent = labels.label_palette_color;
-            else if (forId === 'palette-rounding' && labels.label_palette_rounding)
-                el.textContent = labels.label_palette_rounding;
-            else if (forId === 'user-prompt' && labels.label_user_prompt) el.textContent = labels.label_user_prompt;
-            else if (forId === 'system-prompt' && labels.label_system_prompt)
-                el.textContent = labels.label_system_prompt;
-            else if (forId === 'input-path' && labels.label_input_path) el.textContent = labels.label_input_path;
-            else if (forId === 'output-dir' && labels.label_output_path) el.textContent = labels.label_output_path;
-            else if (forId === 'btn-rounding-value' && labels.label_global_rounding)
-                el.textContent = labels.label_global_rounding;
-            else if (forId === 'chk-llm-log' && (labels.label_enable_log || labels.label_llm_log))
-                el.textContent = labels.label_enable_log || labels.label_llm_log;
-            else if (labels[key1]) el.textContent = labels[key1];
-            else if (labels[key2]) el.textContent = labels[key2];
+        // 🟢 1. 執行屬性驅動的通用映射 (data-i18n)
+        document.querySelectorAll('[data-i18n]').forEach((el) => {
+            const key = el.getAttribute('data-i18n');
+            if (labels[key]) el.textContent = labels[key];
         });
 
-        document.querySelectorAll('span[id]').forEach((el) => {
-            const id = el.id;
-            const underscored = id.replace(/-/g, '_');
-            const key1 = underscored.startsWith('label_') ? underscored : `label_${underscored}`;
-            const key2 = underscored;
-            if (labels[key1]) el.textContent = labels[key1];
-            else if (labels[key2]) el.textContent = labels[key2];
+        // 🟢 2. 執行屬性驅動的 Placeholder 映射 (data-i18n-placeholder)
+        document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (labels[key]) el.placeholder = labels[key];
         });
+
+        // 🟢 3. 執行屬性驅動的 Title 懸停提示映射 (data-i18n-title)
+        document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-title');
+            if (labels[key]) el.title = labels[key];
+        });
+
 
         const optionMapping = {
             'palette-target-type': { global: labels.group_batch, specific: labels.group_specific },

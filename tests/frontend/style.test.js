@@ -138,4 +138,59 @@ describe('style.js 樣式與主題管理模組', () => {
             expect(document.getElementById('palette-color').value).toBe('#0f0f14');
         });
     });
+    describe('saveStyle', () => {
+        it('應該讀取 DOM 數值並調用 save_style_config', async () => {
+            stateModule.state.currentStyle = { theme: 'dark' };
+
+            document.getElementById('font-size').value = '20';
+            document.getElementById('chk-btn-rounding').checked = true;
+            document.getElementById('btn-rounding-value').value = '10';
+
+            await styleModule.saveStyle();
+
+            expect(stateModule.state.currentStyle.font_size).toBe(20);
+            expect(stateModule.state.currentStyle.btn_rounding_enabled).toBe(true);
+            expect(stateModule.state.currentStyle.btn_rounding_value).toBe(10);
+            expect(mockInvoke).toHaveBeenCalledWith('save_style_config', { config: expect.any(Object) });
+        });
+    });
+
+    describe('updatePaletteValue - 進階', () => {
+        it('指定元件且屬性為圓角時，應顯示圓角控制群組', () => {
+            stateModule.state.currentStyle = { instance_overrides: { 'btn-translate': { rounding: 12 } } };
+
+            const targetType = document.getElementById('palette-target-type');
+            const targetItem = document.getElementById('palette-target-item');
+            const property = document.getElementById('palette-property');
+            targetType.value = 'specific';
+            targetItem.value = 'btn-translate';
+            property.value = 'rounding';
+
+            styleModule.updatePaletteValue();
+
+            expect(document.getElementById('palette-rounding-group').style.display).toBe('block');
+            expect(document.getElementById('palette-color-group').style.display).toBe('none');
+            expect(document.getElementById('palette-rounding').value).toBe('12');
+        });
+
+        it('進度條元件應該隱藏文字選項', () => {
+            const targetItem = document.getElementById('palette-target-item');
+            const opt = document.createElement('option');
+            opt.value = 'progress-bar';
+            targetItem.appendChild(opt);
+
+            const targetType = document.getElementById('palette-target-type');
+            const property = document.getElementById('palette-property');
+            
+            targetType.value = 'specific';
+            targetItem.value = 'progress-bar';
+
+
+            styleModule.updatePaletteValue();
+
+            const textOpt = Array.from(property.options).find(opt => opt.value === 'text');
+            expect(textOpt.style.display).toBe('none');
+        });
+    });
 });
+

@@ -153,4 +153,47 @@ describe('dictionary.js 字典管理模組', () => {
         await tabUser.dispatchEvent(new Event('click'));
         expect(controls.style.display).toBe('flex');
     });
+    it('點擊表格內的刪除按鈕，點按確認後應調用刪除 API', async () => {
+        stateModule.state.currentLabels.status_dict_item_delete_confirm = '刪除 {}?';
+        mockInvoke.mockResolvedValue([[['apple', '蘋果']], 1]);
+        globalThis.confirm.mockReturnValue(true); 
+
+        await dictionaryModule.loadDictionary();
+
+        const container = document.getElementById('dict-table-container');
+        const deleteBtn = container.querySelector('.delete-item');
+        
+        await deleteBtn.dispatchEvent(new Event('click'));
+
+        expect(mockInvoke).toHaveBeenCalledWith('edit_dictionary_item', {
+            key: 'apple',
+            value: '',
+            delete: true
+        });
+    });
+
+    it('新增條目時如果 Key 為空應觸發 alert 警告', async () => {
+        stateModule.state.currentLabels.status_dict_key_empty = 'Key cannot be empty';
+        dictionaryModule.initDictionary();
+
+        document.getElementById('dict-input-key').value = ''; 
+        document.getElementById('dict-input-value').value = '貓咪';
+
+        const addBtn = document.getElementById('btn-dict-add');
+        await addBtn.dispatchEvent(new Event('click'));
+
+        expect(globalThis.alert).toHaveBeenCalled();
+    });
+
+    it('點擊匯入按鈕應開啟路徑選擇並觸發 import', async () => {
+        mockInvoke.mockResolvedValue('C:/test.json'); 
+        dictionaryModule.initDictionary();
+
+        const importBtn = document.getElementById('btn-dict-import');
+        await importBtn.dispatchEvent(new Event('click'));
+
+        expect(mockInvoke).toHaveBeenCalledWith('open_path_dialog', { diagType: 'file' });
+        expect(mockInvoke).toHaveBeenCalledWith('import_user_dictionary', { filePath: 'C:/test.json' });
+    });
 });
+
