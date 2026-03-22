@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 
 // Mock 外部模組防止交互副作用
 vi.mock('../../frontend/modules/utils.js', () => ({
-    appendLog: vi.fn()
+    appendLog: vi.fn(),
+    escapeHtml: (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }));
 
 describe('dictionary.js 字典管理模組', () => {

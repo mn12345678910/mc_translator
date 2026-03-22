@@ -188,9 +188,17 @@ pub async fn start_translation(
                 "total": total as u32,
                 "batch_current": batch_curr as u32,
                 "batch_total": batch_tot as u32,
-                "status": status.to_string()
+                "status": status.to_string(),
+                "msg": status.to_string() // 👈 支援前端 msg 解讀
             });
             let _ = handle_progress.emit("translation-progress", payload);
+
+            // 補發 translation-batch-update
+            let batch_payload = serde_json::json!({
+                "batch_index": batch_curr as u32,
+                "total_batches": batch_tot as u32,
+            });
+            let _ = handle_progress.emit("translation-batch-update", batch_payload);
         };
 
     // 啟動工作流
@@ -208,6 +216,13 @@ pub async fn start_translation(
         Err(e) => return Err(e.to_string()),
     };
     let _ = handle.emit("translation-status", status_msg.to_string());
+
+    // 補發 translation-finished 連通前端
+    let finish_payload = serde_json::json!({
+        "success": res.is_ok(),
+        "msg": if res.is_ok() { "翻譯已完成" } else { "翻譯發生錯誤" }
+    });
+    let _ = handle.emit("translation-finished", finish_payload);
 
     Ok(())
 }

@@ -54,7 +54,10 @@ export function initTranslation() {
                 state.currentConfig.path = inputPath ? inputPath.value : '';
                 state.currentConfig.output_dir = outputDir ? outputDir.value : '';
 
-                await invoke('start_translation', { config: state.currentConfig });
+                await invoke('start_translation', { 
+                    config: state.currentConfig,
+                    input_paths: [state.currentConfig.path] 
+                });
                 setRunningState(true);
                 if (progressBar) {
                     progressBar.style.width = '0%';

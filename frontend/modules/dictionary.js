@@ -1,6 +1,6 @@
 // frontend/modules/dictionary.js
 import { state } from './state.js';
-import { appendLog } from './utils.js';
+import { appendLog, escapeHtml } from './utils.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 
@@ -46,8 +46,8 @@ export async function loadDictionary() {
             items.forEach(([k, v]) => {
                 const safeK = k.replace(/'/g, '&apos;').replace(/"/g, '&quot;');
                 html += `<tr>
-                    <td>${k}</td>
-                    <td><input type="text" value="${v}" id="dict-val-${safeK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
+                    <td>${escapeHtml(k)}</td>
+                    <td><input type="text" value="${escapeHtml(v)}" id="dict-val-${safeK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
                     <td>
                         <button class="small-btn save-item" data-key="${safeK}" style="padding:4px 8px;">💾</button>
                         ${dictType === 'user' ? `<button class="small-btn delete-item" data-key="${safeK}" style="background-color:#aa1111; color:#fff; padding:4px 8px;">🗑</button>` : ''}

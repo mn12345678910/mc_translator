@@ -123,7 +123,6 @@ export async function saveConfig() {
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
 
         await invoke('save_config', { config: state.currentConfig });
-        appendLog(state.currentLabels.status_save_config_success);
         updateUiLanguage();
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed;
