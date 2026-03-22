@@ -32,12 +32,13 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
 
     - name: Build Application for Linux
-      run: cargo build
+      run: cargo build --manifest-path src-tauri/Cargo.toml
 
     - name: Fool Tauri Service Binary Check
       run: |
         mkdir -p src-tauri/target/release
-        BINARY_PATH=$(find target -type f -executable | grep -v -E "mc_translator_cli|\.d$|/deps/|/examples/" | head -n 1)
+        BINARY_PATH=$(find target -type f -executable | grep -v -E "mc_translator_cli|\.d$|/deps/|/examples/|/build/" | head -n 1)
+
         echo "Found representative binary: $BINARY_PATH"
         if [ -z "$BINARY_PATH" ]; then
           echo "ERROR: Couldn't find appropriate GUI binary in target folder!"
