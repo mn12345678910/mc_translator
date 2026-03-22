@@ -8,7 +8,10 @@ use tauri::Emitter;
 #[tauri::command]
 pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, String> {
     let api_key = mc_translator::config::encryption::get_api_key().unwrap_or_default();
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
 
     match provider.as_str() {
         "Ollama" => {
@@ -308,13 +311,14 @@ pub fn query_dictionary(
 
     // 3. 分頁切片
     let total_count = filtered_items.len();
-    let total_pages = total_count.div_ceil(page_size);
+    let safe_page_size = if page_size == 0 { 10 } else { page_size };
+    let total_pages = total_count.div_ceil(safe_page_size);
 
-    let start = page * page_size;
+    let start = page * safe_page_size;
     if start >= total_count {
         return Ok((vec![], total_pages));
     }
-    let end = (start + page_size).min(total_count);
+    let end = (start + safe_page_size).min(total_count);
 
     Ok((filtered_items[start..end].to_vec(), total_pages))
 }

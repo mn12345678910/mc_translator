@@ -182,11 +182,7 @@ export async function updateUiLanguage() {
             }
         }
 
-        const btnNavApi = document.getElementById('btn-nav-api');
-        const btnNavDict = document.getElementById('btn-nav-dict');
-        const btnNavPalette = document.getElementById('btn-nav-palette');
-        const btnNavTheme = document.getElementById('btn-nav-theme');
-        const btnNavDev = document.getElementById('btn-nav-dev');
+        // 已在函式開頭宣告過，直接使用
 
         if (labels.btn_nav_settings && btnNavApi) btnNavApi.title = labels.btn_nav_settings;
         if (labels.btn_nav_dict && btnNavDict) btnNavDict.title = labels.btn_nav_dict;
