@@ -44,11 +44,10 @@ export async function loadDictionary() {
             html += `<tr><td colspan="3" style="text-align:center;">${emptyText}</td></tr>`;
         } else {
             items.forEach(([k, v]) => {
-                const safeK = k.replace(/[^a-zA-Z0-9]/g, '_');
                 const attrK = k.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 html += `<tr>
                     <td>${escapeHtml(k)}</td>
-                    <td><input type="text" value="${escapeHtml(v)}" id="dict-val-${safeK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
+                    <td><input type="text" value="${escapeHtml(v)}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
                     <td>
                         <button class="small-btn save-item" data-key="${attrK}" style="padding:4px 8px;">💾</button>
                         ${dictType === 'user' ? `<button class="small-btn delete-item" data-key="${attrK}" style="background-color:#aa1111; color:#fff; padding:4px 8px;">🗑</button>` : ''}
@@ -61,9 +60,9 @@ export async function loadDictionary() {
 
         document.querySelectorAll('.save-item').forEach((b) =>
             b.addEventListener('click', async (e) => {
-                const key = e.currentTarget.getAttribute('data-key');
-                const safeK = key.replace(/[^a-zA-Z0-9]/g, '_');
-                const val = document.getElementById(`dict-val-${safeK}`).value;
+                const btn = e.currentTarget;
+                const key = btn.getAttribute('data-key');
+                const val = btn.closest('tr').querySelector('.dict-input').value;
                 await invoke('edit_dictionary_item', { key: key, value: val, delete: false });
                 const mask = state.currentLabels.status_dict_item_updated;
                 appendLog(mask.replace('{}', key));

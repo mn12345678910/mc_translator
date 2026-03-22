@@ -147,7 +147,7 @@ export function initTranslation() {
             }
         });
 
-        listen('native-log', (event) => {
+        listen('translation-log', (event) => {
             appendLog(event.payload);
         });
     }

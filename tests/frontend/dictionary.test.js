@@ -104,7 +104,7 @@ describe('dictionary.js 字典管理模組', () => {
         await dictionaryModule.loadDictionary();
 
         const container = document.getElementById('dict-table-container');
-        const input = container.querySelector('#dict-val-apple');
+        const input = container.querySelector('.dict-input');
         input.value = '青蘋果'; // 使用者修改數值
 
         const saveBtn = container.querySelector('.save-item');
