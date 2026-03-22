@@ -37,9 +37,14 @@ jobs:
     - name: Fool Tauri Service Binary Check
       run: |
         mkdir -p src-tauri/target/release
-        BINARY_PATH=$(find target -type f -executable | grep -E "/app$" | head -n 1)
-        echo "Resolving binary to absolute path: $BINARY_PATH"
+        BINARY_PATH=$(find target -type f -executable | grep -v -E "mc_translator_cli|\.d$|/deps/|/examples/" | head -n 1)
+        echo "Found representative binary: $BINARY_PATH"
+        if [ -z "$BINARY_PATH" ]; then
+          echo "ERROR: Couldn't find appropriate GUI binary in target folder!"
+          exit 1
+        fi
         ln -s "$(pwd)/$BINARY_PATH" src-tauri/target/release/mc_translator
+
 
     - name: Run E2E Tests
       env:
