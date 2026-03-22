@@ -5,7 +5,7 @@ describe('Tauri 應用端到端冒煙測試', () => {
         console.log('現有視窗標題為:', title);
         
         // 驗證標題是否包含 mc_translator
-        expect(title.toLowerCase()).toContain('mc_translator');
+        expect(title).toContain('Minecraft 模組翻譯工具');
     });
 
     it('應能尋找翻譯按紐，且按紐應存在', async () => {
