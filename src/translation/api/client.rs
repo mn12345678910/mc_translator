@@ -69,7 +69,7 @@ where
     match tokio::time::timeout(std::time::Duration::from_secs(timeout_secs), future).await {
         Ok(Ok(v)) => Ok(v),
         Ok(Err(e)) => Err(e),
-        Err(_) => Err(format!("OLLAMA_TIMEOUT:{}", timeout_secs).into()),
+        Err(_) => Err(format!("TIMEOUT:{}", timeout_secs).into()),
     }
 }
 

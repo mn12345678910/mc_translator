@@ -303,7 +303,12 @@ pub async fn run_translation_batch(
                     Ok(translated) => {
                         let restored = postprocess_text(&translated, &item.markers);
                         let cleaned = validate_and_cleanup(&restored);
-                        item.translated = Some(hanconv::s2tw(&cleaned));
+                        let final_trans = if cfg_snapshot.target_lang == "zh_tw" {
+                            hanconv::s2tw(&cleaned)
+                        } else {
+                            cleaned
+                        };
+                        item.translated = Some(final_trans);
                         success_count += 1;
                         let already_done = total_items - pending_indices.len();
                         progress.store(
@@ -402,7 +407,12 @@ async fn process_one_global_batch(
     match api::translate_batch(&tagged_texts, &cfg, ctx.file_name, Some(&entries)).await {
         Ok(results_map) => {
             // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)
-            let resolved_any = apply_batch_results(ctx.all_items, ctx.batch_indices, &results_map);
+            let resolved_any = apply_batch_results(
+                ctx.all_items,
+                ctx.batch_indices,
+                &results_map,
+                &cfg.target_lang,
+            );
 
             if resolved_any {
                 Ok(())
@@ -441,6 +451,7 @@ fn apply_batch_results(
     all_items: &mut [GlobalBatchItem],
     batch_indices: &[usize],
     results_map: &std::collections::HashMap<String, String>,
+    target_lang: &str,
 ) -> bool {
     let mut resolved_any = false;
     let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
@@ -450,16 +461,23 @@ fn apply_batch_results(
             if let Ok(relative_idx) = caps[1].parse::<usize>() {
                 if relative_idx < batch_indices.len() {
                     let abs_idx = batch_indices[relative_idx];
-                    let orig_text = all_items[abs_idx].original.clone();
+                    let target_preprocessed = all_items[abs_idx].preprocessed.clone();
 
                     let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
-                    let restored = postprocess_text(&clean_translated, &all_items[abs_idx].markers);
-                    let cleaned = validate_and_cleanup(&restored);
-                    let final_trans = hanconv::s2tw(&cleaned);
 
                     for &other_abs_idx in batch_indices {
-                        if all_items[other_abs_idx].original == orig_text {
-                            all_items[other_abs_idx].translated = Some(final_trans.clone());
+                        if all_items[other_abs_idx].preprocessed == target_preprocessed {
+                            let restored = postprocess_text(
+                                &clean_translated,
+                                &all_items[other_abs_idx].markers,
+                            );
+                            let cleaned = validate_and_cleanup(&restored);
+                            let final_trans = if target_lang == "zh_tw" {
+                                hanconv::s2tw(&cleaned)
+                            } else {
+                                cleaned
+                            };
+                            all_items[other_abs_idx].translated = Some(final_trans);
                         }
                     }
                     resolved_any = true;

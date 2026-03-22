@@ -95,7 +95,18 @@ pub fn write_to_temp_or_output(
             }
         }
 
-        // 3. 輸出分流：
+        // 3. 路徑安全清理 (防止絕對路徑或驅動器前綴引發路徑穿越)
+        let mut safe_path = final_path.trim_start_matches('/').to_string();
+        if safe_path.contains(':') {
+            if let Some(pos) = safe_path.find(':') {
+                safe_path = safe_path[pos + 1..]
+                    .trim_start_matches('/')
+                    .to_string();
+            }
+        }
+        final_path = safe_path;
+
+        // 4. 輸出分流：
         //    - 只有 BUNDLE (JAR/Mods) 或原本就位於資源結構中的 JSON 進入 ZIP 暫存區
         //    - 獨立檔案 (JS, 非 BUNDLE JSON) 直接鏡像輸出
         let should_zip = (is_bundle || is_originally_resource) && is_json;
@@ -108,19 +119,7 @@ pub fn write_to_temp_or_output(
             let _ = fs::write(&zip_temp_path, &content);
         } else {
             // 獨立檔案鏡像 (保持相對路徑)
-            // 移除領先斜線以確保 join 正常工作 (Fix missing folders)
-            let mut final_path_stripped = final_path.trim_start_matches('/').to_string();
-
-            // 如果是 Windows 磁碟機格式 (如 C:/)，也需要處理 (通常 scanner 不應產出此格式於 rel_path)
-            if final_path_stripped.contains(':') {
-                if let Some(pos) = final_path_stripped.find(':') {
-                    final_path_stripped = final_path_stripped[pos + 1..]
-                        .trim_start_matches('/')
-                        .to_string();
-                }
-            }
-
-            let fs_path = output_path.join(&final_path_stripped);
+            let fs_path = output_path.join(&final_path);
             if let Some(parent) = fs_path.parent() {
                 let _ = fs::create_dir_all(parent);
             }

@@ -148,7 +148,7 @@ pub async fn translate_json_recursive(
                 }
                 Err(e) => {
                     let err_msg = e.to_string();
-                    if err_msg.starts_with("OLLAMA_TIMEOUT:")
+                    if err_msg.starts_with("TIMEOUT:")
                         || err_msg.starts_with("API_ERROR:")
                         || err_msg.starts_with("NETWORK_ERROR:")
                         || err_msg.starts_with("PARSE_ERROR:")
@@ -218,7 +218,7 @@ pub async fn translate_json_recursive(
             }
             Err(e) => {
                 let err_msg = e.to_string();
-                if err_msg.starts_with("OLLAMA_TIMEOUT:") {
+                if err_msg.starts_with("TIMEOUT:") {
                     return Err(e);
                 }
                 ctx.current_log
