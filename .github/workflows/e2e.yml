@@ -39,4 +39,4 @@ jobs:
         TAURI_BINARY_PATH: ./target/debug/app
       run: |
         # 啟動 Xvfb 並執行 WebdriverIO 測試
-        xvfb-run -a npx wdio run wdio.conf.js
+        xvfb-run -a npx wdio run wdio.conf.mjs

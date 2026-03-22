@@ -1,4 +1,4 @@
-exports.config = {
+export const config = {
     runner: 'local',
     specs: [
         './tests/e2e/**/*.test.js'
@@ -9,9 +9,7 @@ exports.config = {
         maxInstances: 1,
         browserName: 'wry', // tauri 核心渲染視窗代表
         'tauri:options': {
-            // 這個路徑在 CI 中會用 Process env 指向 target/debug/mc_translator
             application: process.env.TAURI_BINARY_PATH || './target/debug/app'
-
         }
     }],
     logLevel: 'info',

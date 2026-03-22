@@ -41,10 +41,10 @@ jobs:
     - name: Run Tests GUI
       run: cargo test --manifest-path src-tauri/Cargo.toml
     - name: Install Tarpaulin (Coverage Tool)
-      run: |
-        curl -sL https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | bash
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-        $HOME/.cargo/bin/cargo-binstall -y cargo-tarpaulin
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-tarpaulin
+
 
     - name: Run Coverage
       run: cargo tarpaulin --workspace --out Xml --output-dir .
