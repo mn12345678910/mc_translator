@@ -45,10 +45,7 @@ describe('config.js 設定管理模組', () => {
             <input id="batch-max-chars" />
             <input id="timeout-sec" />
             <input id="pack-format" />
-            <select id="glossary-priority">
-                <option value="official">official</option>
-                <option value="user">user</option>
-            </select>
+            <input id="chk-glossary-priority" type="checkbox" />
             <select id="ui-lang">
                 <option value="zh_tw">zh_tw</option>
             </select>
@@ -115,7 +112,7 @@ describe('config.js 設定管理模組', () => {
         expect(document.getElementById('batch-max-chars').value).toBe('4000');
         expect(document.getElementById('timeout-sec').value).toBe('90');
         expect(document.getElementById('pack-format').value).toBe('12');
-        expect(document.getElementById('glossary-priority').value).toBe('user');
+        expect(document.getElementById('chk-glossary-priority').checked).toBe(true);
         expect(document.getElementById('output-dir').value).toBe('/test/output');
         expect(document.getElementById('system-prompt').value).toBe('System rule');
         expect(document.getElementById('user-prompt').value).toBe('User prompt');

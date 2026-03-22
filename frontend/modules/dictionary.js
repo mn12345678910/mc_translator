@@ -24,20 +24,16 @@ export async function loadDictionary() {
         });
 
         if (pageInfo) {
-            const mask = state.currentLabels.label_page_info;
+            const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';
             pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
         }
         if (pagePrev) pagePrev.disabled = dictPage === 0;
         if (pageNext) pageNext.disabled = totalPages === 0 || dictPage + 1 >= totalPages;
 
-        const colKey = state.currentLabels.glossary_key
-            ? state.currentLabels.glossary_key.replace(':', '')
-            : '原文 (Key)';
-        const colVal = state.currentLabels.glossary_value
-            ? state.currentLabels.glossary_value.replace(':', '')
-            : '翻譯 (Value)';
-        const colAct = state.currentLabels.glossary_col_actions;
-        const emptyText = state.currentLabels.glossary_empty;
+        const colKey = (state.currentLabels.glossary_key || '原文').replace(':', '');
+        const colVal = (state.currentLabels.glossary_value || '翻譯').replace(':', '');
+        const colAct = state.currentLabels.glossary_col_actions || '操作';
+        const emptyText = state.currentLabels.glossary_empty || '無資料';
 
         let html = `<table class="dict-table"><thead><tr><th>${colKey}</th><th>${colVal}</th><th>${colAct}</th></tr></thead><tbody>`;
         if (!items || items.length === 0) {
@@ -81,7 +77,7 @@ export async function loadDictionary() {
             })
         );
     } catch (e) {
-        const mask = state.currentLabels.status_dict_load_failed;
+        const mask = state.currentLabels.status_dict_load_failed || '讀取字典失敗 {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
@@ -123,12 +119,7 @@ export function initDictionary() {
             loadDictionary();
             
             // 顯示使用者編輯元件
-            if (dictInputKey) dictInputKey.style.display = 'block';
-            if (dictInputValue) dictInputValue.style.display = 'block';
-            
-            // 由於按鈕也分散了，我們直接控制各按紐的可視度來確保正確性
-            const editableBtns = [btnDictAdd, btnDictReplace, btnDictImport, btnDictExport, btnDictClear];
-            editableBtns.forEach(b => { if (b) b.style.display = 'inline-block'; });
+            if (dictUserControls) dictUserControls.style.display = 'flex';
         });
     if (tabOfficial)
         tabOfficial.addEventListener('click', () => {
@@ -139,11 +130,7 @@ export function initDictionary() {
             loadDictionary();
 
             // 隱藏使用者編輯元件 (官方不可直接編輯)
-            if (dictInputKey) dictInputKey.style.display = 'none';
-            if (dictInputValue) dictInputValue.style.display = 'none';
-
-            const editableBtns = [btnDictAdd, btnDictReplace, btnDictImport, btnDictExport, btnDictClear];
-            editableBtns.forEach(b => { if (b) b.style.display = 'none'; });
+            if (dictUserControls) dictUserControls.style.display = 'none';
         });
     if (dictSearch)
         dictSearch.addEventListener('input', () => {

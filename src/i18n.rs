@@ -432,7 +432,14 @@ impl GuiLabels {
         Self::default_zh_tw()
     }
     pub fn default_zh_tw() -> Self {
-        serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap()
+        let json_str = include_str!("i18n_assets/gui/zh_tw.json");
+        match serde_json::from_str::<Self>(json_str) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("\n[DEBUG] Serde error: {:?}", e);
+                panic!("Serde error: {:?}", e);
+            }
+        }
     }
     pub fn get_available_ui_langs() -> Vec<String> {
         let mut l = Vec::new();

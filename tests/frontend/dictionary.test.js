@@ -135,6 +135,10 @@ describe('dictionary.js 字典管理模組', () => {
     });
 
     it('切換 Tab 應異動面板顯示狀態', async () => {
+        // 模擬切換 Tab 時加載字典不報錯
+        mockInvoke.mockResolvedValue([[], 1]);
+        stateModule.state.currentLabels.status_dict_load_failed = '讀取失敗 {}';
+
         dictionaryModule.initDictionary();
 
         const tabOfficial = document.getElementById('tab-official');
