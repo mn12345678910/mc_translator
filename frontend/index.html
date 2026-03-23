@@ -20,7 +20,7 @@
             </div>
 
             <!-- [NEW] 輸出路徑 (100% 復刻) -->
-            <div class="form-group" style="margin-top: 10px">
+            <div class="form-group mt-sm">
 <label for="output-dir" data-i18n="label_output_path">:</label>
                 <div class="input-row">
                     <input type="text" id="output-dir" placeholder="./LLMTranslator (預設)" data-i18n-placeholder="placeholder_output_path" />
@@ -30,8 +30,8 @@
             </div>
 
             <!-- [NEW] 介面語言與導航列 (100% 復刻) -->
-            <div class="form-group" style="margin-top: 10px">
-<label for="ui-lang">:</label>
+            <div class="form-group mt-sm">
+                <label for="ui-lang" data-i18n="label_ui_lang">:</label>
                 <select id="ui-lang" style="max-width: 150px; padding: 6px">
                     <option value="zh_tw">繁體中文 (zh_tw)</option>
                     <option value="zh_cn">简体中文 (zh_cn)</option>
@@ -40,14 +40,14 @@
                 </select>
             </div>
 
-            <div class="button-row" style="margin-top: 15px">
+            <div class="button-row mt-md">
 <button id="btn-translate" data-i18n="btn_run_trans">🚀</button>
 <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
 <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
 <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
 
                 <!-- [NEW] 導航列 -->
-                <div style="flex: 1; display: flex; justify-content: flex-end; gap: 8px">
+                <div class="flex-end flex-1">
 <button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
 <button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
 <button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
@@ -58,7 +58,7 @@
         </div>
 
         <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
-        <div class="control-panel api-settings" style="display: none">
+        <div class="control-panel api-settings hidden">
 <h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -87,7 +87,7 @@
                     <input type="text" id="ollama-url" />
                 </div>
                 <div class="form-group">
-<label for="batch-size"></label>
+                    <label for="batch-size" data-i18n="label_batch_size"></label>
                     <input type="number" id="batch-size" min="1" max="300" />
                 </div>
                 <div class="form-group">
@@ -120,7 +120,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-<label for="pack-format"></label>
+                    <label for="pack-format" data-i18n="label_pack_format"></label>
                     <!-- [NEW] 使用 Select 以復刻常用版本下拉 -->
                     <select id="pack-format">
                         <option value="46">1.21.4 (46)</option>
@@ -173,7 +173,7 @@
         </div>
 
         <!-- 🔧 開發人員選項 -->
-        <div class="control-panel developer-settings" style="display: none">
+        <div class="control-panel developer-settings hidden">
 <h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
             <div class="checkbox-grid">
                 <div class="switch-group">
@@ -214,7 +214,7 @@
         </div>
 
         <!-- 🎨 調色盤與佈局管理面板 -->
-        <div class="control-panel theme-settings" style="display: none">
+        <div class="control-panel theme-settings hidden">
 <h2 id="header-palette" data-i18n="header_palette">🎨</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -403,13 +403,13 @@
             </div>
             <div class="dialog-body">
                 <!-- [NEW] 分頁與按鈕行 -->
-                <div class="tabs" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div class="tabs flex-between">
                     <div style="display: flex; gap: 10px;">
 <button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user"></button>
 <button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official"></button>
                     </div>
                     <!-- 按鈕群組 -->
-                    <div id="dict-user-buttons" style="display: flex; gap: 6px; flex-wrap: wrap; flex: 1;">
+                    <div id="dict-user-buttons" class="flex-wrap" style="flex: 1;">
 <button id="btn-dict-add" class="action-btn" data-i18n="btn_add" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕</button>
 <button id="btn-dict-replace" class="action-btn" data-i18n="btn_replace" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
 <button id="btn-dict-import" class="action-btn" data-i18n="btn_import" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
@@ -420,7 +420,7 @@
                     </div>
                 </div>
                 <!-- [NEW] 輸入與搜尋區 -->
-                <div id="dict-user-controls" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <div id="dict-user-controls" class="flex-wrap mt-sm">
                     <input type="text" id="dict-input-key" placeholder="原文 (Key)" style="flex: 1; min-width: 140px; padding: 6px;" />
                     <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" style="flex: 1; min-width: 140px; padding: 6px;" />
                     <div class="search-bar" style="margin-left: auto;">

@@ -21,6 +21,11 @@
     --slider-bg: #2a2a30;
     --slider-thumb: #e0e0e0;
     --switch-bg: #1a1a1f;
+    
+    /* 📐 間距系統 */
+    --space-sm: 10px;
+    --space-md: 15px;
+    --space-lg: 20px;
 }
 
 button,
@@ -45,6 +50,36 @@ body {
     transition:
         background-color 0.2s,
         color 0.2s;
+}
+
+/* 📐 實用工具類別 (Utility Classes) */
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+
+.hidden { display: none !important; }
+
+.flex-end {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.w-100 { width: 100%; }
+.flex-1 { flex: 1; }
+
+.flex-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 h1 {
@@ -379,8 +414,10 @@ tr:hover {
 }
 
 .input-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
     gap: 8px;
+    align-items: center;
 }
 
 .input-row input {

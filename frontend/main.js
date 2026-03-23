@@ -170,9 +170,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelTheme = document.querySelector('.theme-settings');
 
     function updatePanelVisibility() {
-        if (panelApi) panelApi.style.display = state.currentConfig.show_api_settings ? 'block' : 'none';
-        if (panelDev) panelDev.style.display = state.currentConfig.show_developer_mode ? 'block' : 'none';
-        if (panelTheme) panelTheme.style.display = state.currentStyle.show_palette_settings ? 'block' : 'none';
+        if (panelApi) panelApi.classList.toggle('hidden', !state.currentConfig.show_api_settings);
+        if (panelDev) panelDev.classList.toggle('hidden', !state.currentConfig.show_developer_mode);
+        if (panelTheme) panelTheme.classList.toggle('hidden', !state.currentStyle.show_palette_settings);
     }
 
     if (btnNavApi) {
@@ -228,8 +228,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isSpecific = paletteTargetType.value === 'specific';
             const groupGlobal = document.getElementById('group-global');
             const groupSpecific = document.getElementById('group-specific');
-            if (groupGlobal) groupGlobal.style.display = isSpecific ? 'none' : 'block';
-            if (groupSpecific) groupSpecific.style.display = isSpecific ? 'block' : 'none';
+            if (groupGlobal) groupGlobal.classList.toggle('hidden', isSpecific);
+            if (groupSpecific) groupSpecific.classList.toggle('hidden', !isSpecific);
             if (paletteTargetItem) paletteTargetItem.value = isSpecific ? 'btn-translate' : 'dark_bg';
             updatePaletteValue();
         });
