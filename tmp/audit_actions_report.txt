@@ -1,0 +1,35 @@
+ID: 23423790625
+Workflow: Rust CI & Release
+Status: in_progress
+Conclusion: None
+URL: https://github.com/mn12345678910/mc_translator/actions/runs/23423790625
+Jobs URL: https://api.github.com/repos/mn12345678910/mc_translator/actions/runs/23423790625/jobs
+----------------------------------------
+ID: 23423768259
+Workflow: Rust CI & Release
+Status: completed
+Conclusion: failure
+URL: https://github.com/mn12345678910/mc_translator/actions/runs/23423768259
+Jobs URL: https://api.github.com/repos/mn12345678910/mc_translator/actions/runs/23423768259/jobs
+----------------------------------------
+ID: 23423768254
+Workflow: Frontend CI
+Status: completed
+Conclusion: success
+URL: https://github.com/mn12345678910/mc_translator/actions/runs/23423768254
+Jobs URL: https://api.github.com/repos/mn12345678910/mc_translator/actions/runs/23423768254/jobs
+----------------------------------------
+ID: 23423686007
+Workflow: E2E Tests (Linux)
+Status: completed
+Conclusion: failure
+URL: https://github.com/mn12345678910/mc_translator/actions/runs/23423686007
+Jobs URL: https://api.github.com/repos/mn12345678910/mc_translator/actions/runs/23423686007/jobs
+----------------------------------------
+ID: 23423686000
+Workflow: Frontend CI
+Status: completed
+Conclusion: success
+URL: https://github.com/mn12345678910/mc_translator/actions/runs/23423686000
+Jobs URL: https://api.github.com/repos/mn12345678910/mc_translator/actions/runs/23423686000/jobs
+----------------------------------------
