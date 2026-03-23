@@ -207,7 +207,7 @@ pub async fn translate_batch(
 
     let batch_instruction = build_batch_instruction(texts);
 
-    let result = match config.api_provider.as_str() {
+    let provider_result = match config.api_provider.as_str() {
         "Gemini" => translate_with_gemini(&batch_instruction, config, file_name, glossary).await?,
         "OpenAI" | "DeepSeek" | "Mistral" => {
             translate_with_openai_compatible(&batch_instruction, config, file_name, glossary)
@@ -218,7 +218,7 @@ pub async fn translate_batch(
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
 
-    let result = crate::utils::text_processing::validate_and_cleanup(&result);
+    let result = crate::utils::text_processing::validate_and_cleanup(&provider_result);
     let mut map = HashMap::new();
 
     if config.api_provider == "Ollama" || result.contains('{') {
@@ -290,12 +290,12 @@ async fn translate_free_google_with_config(
     text: &str,
     config: &JobConfig,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let sl = map_lang_google(&config.source_lang);
-    let tl = map_lang_google(&config.target_lang);
+    let source_lang_code = map_lang_google(&config.source_lang);
+    let target_lang_code = map_lang_google(&config.target_lang);
     let url = format!(
         "https://translate.googleapis.com/translate_a/single?client=gtx&sl={}&tl={}&dt=t&q={}",
-        sl,
-        tl,
+        source_lang_code,
+        target_lang_code,
         urlencoding::encode(text)
     );
     call_google_api_raw(&url).await
@@ -396,7 +396,7 @@ pub async fn translate_with_ollama(
                     .or_else(|| {
                         obj.values()
                             .next()
-                            .and_then(|v| v.as_str())
+                            .and_then(|val| val.as_str())
                             .map(|s| s.to_string())
                     })
                     .unwrap_or_else(|| response_trimmed.to_string())

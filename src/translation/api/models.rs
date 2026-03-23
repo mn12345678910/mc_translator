@@ -14,8 +14,8 @@ pub async fn fetch_ollama_models(ollama_url: &str) -> Vec<String> {
             if let Ok(json) = resp.json::<serde_json::Value>().await {
                 if let Some(models) = json["models"].as_array() {
                     let mut model_names: Vec<String> = Vec::new();
-                    for m in models {
-                        if let Some(name) = m["name"].as_str() {
+                    for model in models {
+                        if let Some(name) = model["name"].as_str() {
                             model_names.push(name.to_string());
                         }
                     }
@@ -64,13 +64,13 @@ async fn fetch_gemini_models(api_key: &str) -> Vec<String> {
             if let Some(models) = json["models"].as_array() {
                 return models
                     .iter()
-                    .filter_map(|m| {
-                        let name = m["name"].as_str()?;
+                    .filter_map(|model| {
+                        let name = model["name"].as_str()?;
                         if name.contains("gemini")
-                            && m["supportedGenerationMethods"]
+                            && model["supportedGenerationMethods"]
                                 .as_array()?
                                 .iter()
-                                .any(|v| v == "generateContent")
+                                .any(|method| method == "generateContent")
                         {
                             Some(name.replace("models/", ""))
                         } else {
@@ -95,7 +95,7 @@ async fn fetch_openai_compatible_models(api_key: &str, url: &str) -> Vec<String>
             if let Some(models) = json["data"].as_array() {
                 return models
                     .iter()
-                    .filter_map(|m| m["id"].as_str().map(|s| s.to_string()))
+                    .filter_map(|model| model["id"].as_str().map(|id| id.to_string()))
                     .collect();
             }
         }
@@ -109,9 +109,9 @@ pub async fn fetch_mc_versions() -> Vec<(String, u32)> {
         if let Ok(json) = resp.json::<serde_json::Value>().await {
             if let Some(versions) = json["versions"].as_array() {
                 let mut results: Vec<(String, u32)> = Vec::new();
-                for v in versions {
-                    if v["type"].as_str() == Some("release") {
-                        if let Some(id) = v["id"].as_str() {
+                for version in versions {
+                    if version["type"].as_str() == Some("release") {
+                        if let Some(id) = version["id"].as_str() {
                             results.push((id.to_string(), version_to_pack_format(id)));
                         }
                     }

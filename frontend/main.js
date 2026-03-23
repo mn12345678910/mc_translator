@@ -92,14 +92,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         'system-prompt',
     ];
     configInputs.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', debouncedSaveConfig);
+        const inputEl = document.getElementById(id);
+        if (inputEl) inputEl.addEventListener('input', debouncedSaveConfig);
     });
 
     const styleInputs = ['font-size', 'btn-rounding-value', 'pulse-speed'];
     styleInputs.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', debouncedSaveStyle);
+        const inputEl = document.getElementById(id);
+        if (inputEl) inputEl.addEventListener('input', debouncedSaveStyle);
     });
 
     const configSelects = [
@@ -112,11 +112,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         'chk-llm-log',
     ];
     configSelects.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('change', () => {
+        const selectEl = document.getElementById(id);
+        if (selectEl) {
+            selectEl.addEventListener('change', () => {
                 if (id.startsWith('chk-')) {
-                    updateToggleStateLabel(id, el.checked);
+                    updateToggleStateLabel(id, selectEl.checked);
                 }
                 debouncedSaveConfig();
             });
@@ -125,8 +125,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const styleSelects = ['chk-btn-rounding', 'chk-pulse'];
     styleSelects.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', debouncedSaveStyle);
+        const selectEl = document.getElementById(id);
+        if (selectEl) selectEl.addEventListener('change', debouncedSaveStyle);
     });
 
     const uiLang = document.getElementById('ui-lang');

@@ -154,18 +154,20 @@ pub struct CommonLabels {
 impl CommonLabels {
     pub fn load_from_file(lang: &str) -> Option<Self> {
         let dir = get_langs_dir("gui");
-        let p = dir.join(format!("{}.json", lang));
-        if let Ok(c) = fs::read_to_string(p) {
-            let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value =
+        let lang_path = dir.join(format!("{}.json", lang));
+        if let Ok(file_content) = fs::read_to_string(&lang_path) {
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+            let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
-                for (k, v) in l {
-                    d.insert(k.clone(), v.clone());
+            if let (Some(lang_obj), Some(default_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in lang_obj {
+                    default_obj.insert(k.clone(), v.clone());
                 }
             }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
-                return Some(lb);
+            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
+                return Some(labels);
             }
         }
         None
@@ -386,36 +388,41 @@ impl GuiLabels {
         }
         let zh_tw_path = dir.join("zh_tw.json");
         if cfg!(debug_assertions) || !zh_tw_path.exists() {
-            let l = Self::default_zh_tw();
-            fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
-                .map_err(std::io::Error::other)?;
+            let default_labels = Self::default_zh_tw();
+            fs::write(
+                &zh_tw_path,
+                serde_json::to_string_pretty(&default_labels).unwrap(),
+            )
+            .map_err(std::io::Error::other)?;
         }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
             ("en_us.json", include_str!("i18n_assets/gui/en_us.json")),
             ("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json")),
         ];
-        for (n, c) in files {
-            let p = dir.join(n);
-            if cfg!(debug_assertions) || !p.exists() {
-                fs::write(p, c).map_err(std::io::Error::other)?;
+        for (file_name, file_content) in files {
+            let file_path = dir.join(file_name);
+            if cfg!(debug_assertions) || !file_path.exists() {
+                fs::write(file_path, file_content).map_err(std::io::Error::other)?;
             }
         }
         Ok(())
     }
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let p = get_langs_dir("gui").join(format!("{}.json", lang));
-        if let Ok(c) = fs::read_to_string(p) {
-            let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value =
+        let lang_path = get_langs_dir("gui").join(format!("{}.json", lang));
+        if let Ok(file_content) = fs::read_to_string(&lang_path) {
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+            let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
-                for (k, v) in l {
-                    d.insert(k.clone(), v.clone());
+            if let (Some(lang_obj), Some(default_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in lang_obj {
+                    default_obj.insert(k.clone(), v.clone());
                 }
             }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
-                return Some(lb);
+            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
+                return Some(labels);
             }
         }
         None
@@ -468,36 +475,41 @@ impl CliLabels {
         }
         let zh_tw_path = dir.join("zh_tw.json");
         if cfg!(debug_assertions) || !zh_tw_path.exists() {
-            let l = Self::default_zh_tw();
-            fs::write(&zh_tw_path, serde_json::to_string_pretty(&l).unwrap())
-                .map_err(std::io::Error::other)?;
+            let default_labels = Self::default_zh_tw();
+            fs::write(
+                &zh_tw_path,
+                serde_json::to_string_pretty(&default_labels).unwrap(),
+            )
+            .map_err(std::io::Error::other)?;
         }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),
             ("en_us.json", include_str!("i18n_assets/cli/en_us.json")),
             ("ja_jp.json", include_str!("i18n_assets/cli/ja_jp.json")),
         ];
-        for (n, c) in files {
-            let p = dir.join(n);
-            if cfg!(debug_assertions) || !p.exists() {
-                fs::write(p, c).map_err(std::io::Error::other)?;
+        for (file_name, file_content) in files {
+            let file_path = dir.join(file_name);
+            if cfg!(debug_assertions) || !file_path.exists() {
+                fs::write(file_path, file_content).map_err(std::io::Error::other)?;
             }
         }
         Ok(())
     }
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let p = get_langs_dir("cli").join(format!("{}.json", lang));
-        if let Ok(c) = fs::read_to_string(p) {
-            let l_val: serde_json::Value = serde_json::from_str(&c).ok()?;
-            let mut d_val: serde_json::Value =
+        let lang_path = get_langs_dir("cli").join(format!("{}.json", lang));
+        if let Ok(file_content) = fs::read_to_string(&lang_path) {
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+            let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).ok()?;
-            if let (Some(l), Some(d)) = (l_val.as_object(), d_val.as_object_mut()) {
-                for (k, v) in l {
-                    d.insert(k.clone(), v.clone());
+            if let (Some(lang_obj), Some(default_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in lang_obj {
+                    default_obj.insert(k.clone(), v.clone());
                 }
             }
-            if let Ok(lb) = serde_json::from_value::<Self>(d_val) {
-                return Some(lb);
+            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
+                return Some(labels);
             }
         }
         None

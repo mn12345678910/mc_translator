@@ -12,8 +12,6 @@ describe('config.js 設定管理模組', () => {
     let mockInvoke;
     let configModule;
     let stateModule;
-    let utilsModule;
-    let i18nModule;
 
     beforeAll(async () => {
         // 1. Mock Tauri API
@@ -27,8 +25,6 @@ describe('config.js 設定管理模組', () => {
         // 2. 動態載入
         configModule = await import('../../frontend/modules/config.js');
         stateModule = await import('../../frontend/modules/state.js');
-        utilsModule = await import('../../frontend/modules/utils.js');
-        i18nModule = await import('../../frontend/modules/i18n.js');
     });
 
     beforeEach(() => {
@@ -94,7 +90,7 @@ describe('config.js 設定管理模組', () => {
             model: 'llama3'
         };
 
-        mockInvoke.mockImplementation(async (cmd, args) => {
+        mockInvoke.mockImplementation(async (cmd) => {
             if (cmd === 'get_config') return fakeConfig;
             if (cmd === 'get_api_key_cmd') return 'test-key-123';
             if (cmd === 'get_models_from_provider') return ['llama3', 'mistral'];

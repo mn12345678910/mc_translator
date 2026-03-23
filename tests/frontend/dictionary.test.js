@@ -10,7 +10,6 @@ describe('dictionary.js 字典管理模組', () => {
     let mockInvoke;
     let dictionaryModule;
     let stateModule;
-    let utilsModule;
 
     beforeAll(async () => {
         // 1. Mock Tauri API
@@ -28,7 +27,6 @@ describe('dictionary.js 字典管理模組', () => {
         // 3. 動態載入
         dictionaryModule = await import('../../frontend/modules/dictionary.js');
         stateModule = await import('../../frontend/modules/state.js');
-        utilsModule = await import('../../frontend/modules/utils.js');
     });
 
     beforeEach(() => {

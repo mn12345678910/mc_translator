@@ -73,15 +73,14 @@ pub async fn start_translation_workflow(
     let progress_arc = Arc::new(progress_updater);
 
     // --- 自動資料夾展開 ---
-    let mut expanded_paths = Vec::new();
+    let mut expanded_input_paths = Vec::new();
     for (path, rel_path) in input_paths {
         if path.is_dir() {
-            expanded_paths.extend(crate::file::scanner::scan_files_recursive(&path, &path));
+            expanded_input_paths.extend(crate::file::scanner::scan_files_recursive(&path, &path));
         } else {
-            expanded_paths.push((path, rel_path));
+            expanded_input_paths.push((path, rel_path));
         }
     }
-    let input_paths = expanded_paths;
 
     // 1. 初始化空狀態容器 (Pipeline 需要)
     let mc_lang = Arc::new(Mutex::new(None));
@@ -205,7 +204,7 @@ pub async fn start_translation_workflow(
 
     // 6. 喚起檔案管線
     let res = crate::file::pipeline::process_all_files(
-        input_paths,
+        expanded_input_paths,
         job_state.clone(),
         mc_lang,
         term_replacements,

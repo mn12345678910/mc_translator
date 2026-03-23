@@ -188,8 +188,8 @@ pub async fn output_resource_pack(
             let options = zip::write::FileOptions::default()
                 .compression_method(zip::CompressionMethod::Deflated);
 
-            for entry in walkdir::WalkDir::new(&temp_dir) {
-                let entry = entry.unwrap();
+            for dir_entry in walkdir::WalkDir::new(&temp_dir) {
+                let entry = dir_entry.unwrap();
                 let path = entry.path();
                 if path.is_file() {
                     let relative_path = path

@@ -137,7 +137,7 @@ mod tests {
             "Apple".to_string(),
             ("蘋果".to_string(), TermType::Official),
         );
-        let entries = hashmap_to_entries(&map);
-        assert_eq!(entries[0].original, "Apple"); // 照長度排序
+        let entries_after_clear = hashmap_to_entries(&map);
+        assert_eq!(entries_after_clear[0].original, "Apple"); // 照長度排序
     }
 }

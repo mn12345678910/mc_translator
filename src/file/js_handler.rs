@@ -37,7 +37,7 @@ pub async fn collect_js_task(
     let content = tokio::task::spawn_blocking(
         move || -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
             match fs::read_to_string(&path_clone) {
-                Ok(c) => Ok(c),
+                Ok(file_content) => Ok(file_content),
                 Err(e) => {
                     eprintln!(
                         "\x1b[31m[{}] [錯誤] 無法讀取 JS 檔案 {:?}: {}\x1b[0m",
@@ -99,13 +99,13 @@ pub async fn collect_js_task(
         return Ok(None);
     }
 
-    js_matches.sort_by_key(|m| m.0);
+    js_matches.sort_by_key(|match_item| match_item.0);
     let mut filtered_matches = Vec::new();
     let mut last_end = 0;
-    for m in js_matches {
-        if m.0 >= last_end {
-            filtered_matches.push(m.clone());
-            last_end = m.1;
+    for match_item in js_matches {
+        if match_item.0 >= last_end {
+            filtered_matches.push(match_item.clone());
+            last_end = match_item.1;
         }
     }
 

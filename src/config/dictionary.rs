@@ -77,7 +77,6 @@ mod tests {
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("Apple").unwrap(), "蘋果");
 
-        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
         let _ = std::fs::remove_file(path);
     }
 
@@ -97,7 +96,6 @@ mod tests {
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("❄️ Ice").unwrap(), "冰塊");
 
-        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
         let _ = std::fs::remove_file(path);
     }
 

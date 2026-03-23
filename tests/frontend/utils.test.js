@@ -71,17 +71,17 @@ describe('utils.js 工具模組', () => {
             const logOutput = document.getElementById('log-output');
             expect(logOutput.childNodes.length).toBe(1);
             
-            const p = logOutput.querySelector('p');
-            expect(p.textContent).toContain('測試一則訊息');
+            const logLine = logOutput.querySelector('p');
+            expect(logLine.textContent).toContain('測試一則訊息');
         });
 
         it('當訊息包含 ❌ 或 Error 時，顏色應為紅色', () => {
             utilsModule.appendLog('❌ 發生錯誤');
 
             const logOutput = document.getElementById('log-output');
-            const p = logOutput.querySelector('p');
+            const logLine = logOutput.querySelector('p');
             // 相容 Happy DOM 回傳 #ff6b6b 或 瀏覽器回傳 rgb
-            expect(['#ff6b6b', 'rgb(255, 107, 107)']).toContain(p.style.color);
+            expect(['#ff6b6b', 'rgb(255, 107, 107)']).toContain(logLine.style.color);
         });
 
         it('當日誌數量超過 500，應刪除最舊的項目', () => {

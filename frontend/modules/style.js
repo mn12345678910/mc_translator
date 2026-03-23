@@ -77,42 +77,42 @@ export function applyColors(style) {
         'batch-progress-bar',
     ];
     for (const id of overrideableIds) {
-        const el = document.getElementById(id);
-        if (el) {
-            el.style.backgroundColor = '';
-            el.style.color = '';
-            el.style.borderRadius = '';
+        const targetEl = document.getElementById(id);
+        if (targetEl) {
+            targetEl.style.backgroundColor = '';
+            targetEl.style.color = '';
+            targetEl.style.borderRadius = '';
         }
     }
 
     const progressBar = document.getElementById('progress-bar');
     const isDark = style.theme !== 'light';
-    const bg = isDark ? style.dark_bg : style.light_bg;
-    const txt = isDark ? style.dark_text : style.light_text;
-    const btnBg = isDark ? style.dark_btn_bg : style.light_btn_bg;
-    const btnTxt = isDark ? style.dark_btn_text : style.light_btn_text;
-    const inputBg = isDark ? style.dark_input_bg : style.light_input_bg;
-    const listBg = isDark ? style.dark_list_bg : style.light_list_bg;
-    const tabActive = isDark ? style.dark_tab_active : style.light_tab_active;
-    const tabInactive = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
+    const backgroundColor = isDark ? style.dark_bg : style.light_bg;
+    const textColor = isDark ? style.dark_text : style.light_text;
+    const buttonBgColor = isDark ? style.dark_btn_bg : style.light_btn_bg;
+    const buttonTextColor = isDark ? style.dark_btn_text : style.light_btn_text;
+    const inputBgColor = isDark ? style.dark_input_bg : style.light_input_bg;
+    const listBgColor = isDark ? style.dark_list_bg : style.light_list_bg;
+    const activeTabBg = isDark ? style.dark_tab_active : style.light_tab_active;
+    const inactiveTabBg = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
     const labelColor = isDark ? style.dark_label : style.light_label;
 
-    if (bg) document.documentElement.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
-    if (txt) document.documentElement.style.setProperty('--text-color', `rgb(${txt[0]},${txt[1]},${txt[2]})`);
-    if (btnBg) document.documentElement.style.setProperty('--btn-bg', `rgb(${btnBg[0]},${btnBg[1]},${btnBg[2]})`);
-    if (btnTxt) document.documentElement.style.setProperty('--btn-text', `rgb(${btnTxt[0]},${btnTxt[1]},${btnTxt[2]})`);
-    if (inputBg)
-        document.documentElement.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
-    if (listBg) document.documentElement.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
-    if (tabActive)
+    if (backgroundColor) document.documentElement.style.setProperty('--bg-color', `rgb(${backgroundColor[0]},${backgroundColor[1]},${backgroundColor[2]})`);
+    if (textColor) document.documentElement.style.setProperty('--text-color', `rgb(${textColor[0]},${textColor[1]},${textColor[2]})`);
+    if (buttonBgColor) document.documentElement.style.setProperty('--btn-bg', `rgb(${buttonBgColor[0]},${buttonBgColor[1]},${buttonBgColor[2]})`);
+    if (buttonTextColor) document.documentElement.style.setProperty('--btn-text', `rgb(${buttonTextColor[0]},${buttonTextColor[1]},${buttonTextColor[2]})`);
+    if (inputBgColor)
+        document.documentElement.style.setProperty('--input-bg', `rgb(${inputBgColor[0]},${inputBgColor[1]},${inputBgColor[2]})`);
+    if (listBgColor) document.documentElement.style.setProperty('--list-bg', `rgb(${listBgColor[0]},${listBgColor[1]},${listBgColor[2]})`);
+    if (activeTabBg)
         document.documentElement.style.setProperty(
             '--tab-active-bg',
-            `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`
+            `rgb(${activeTabBg[0]},${activeTabBg[1]},${activeTabBg[2]})`
         );
-    if (tabInactive)
+    if (inactiveTabBg)
         document.documentElement.style.setProperty(
             '--tab-inactive-bg',
-            `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`
+            `rgb(${inactiveTabBg[0]},${inactiveTabBg[1]},${inactiveTabBg[2]})`
         );
     if (labelColor)
         document.documentElement.style.setProperty(
@@ -137,12 +137,12 @@ export function applyColors(style) {
 
     if (style.instance_overrides) {
         for (const [id, override] of Object.entries(style.instance_overrides)) {
-            const el = document.getElementById(id);
-            if (el) {
+            const targetEl = document.getElementById(id);
+            if (targetEl) {
                 if (override.bg)
-                    el.style.backgroundColor = `rgb(${override.bg[0]},${override.bg[1]},${override.bg[2]})`;
-                if (override.text) el.style.color = `rgb(${override.text[0]},${override.text[1]},${override.text[2]})`;
-                if (override.rounding !== undefined) el.style.borderRadius = `${override.rounding}px`;
+                    targetEl.style.backgroundColor = `rgb(${override.bg[0]},${override.bg[1]},${override.bg[2]})`;
+                if (override.text) targetEl.style.color = `rgb(${override.text[0]},${override.text[1]},${override.text[2]})`;
+                if (override.rounding !== undefined) targetEl.style.borderRadius = `${override.rounding}px`;
             }
         }
     }

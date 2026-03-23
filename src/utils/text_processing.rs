@@ -8,11 +8,11 @@ use std::sync::LazyLock;
 
 /// 解析翻譯結果，移除 Markdown 代碼塊或修復損壞的標籤
 pub fn validate_and_cleanup(text: &str) -> String {
-    let mut s = text.trim().to_string();
+    let mut cleaned = text.trim().to_string();
 
-    if s.contains("```") {
-        if let Some(start) = s.find("```") {
-            let sub = &s[start + 3..];
+    if cleaned.contains("```") {
+        if let Some(start) = cleaned.find("```") {
+            let sub = &cleaned[start + 3..];
             if let Some(end) = sub.find("```") {
                 let content = sub[..end].trim();
                 let lines: Vec<&str> = content.lines().collect();
@@ -22,16 +22,16 @@ pub fn validate_and_cleanup(text: &str) -> String {
                         || lines[0] == "javascript"
                         || lines[0] == "js")
                 {
-                    s = lines[1..].join("\n").trim().to_string();
+                    cleaned = lines[1..].join("\n").trim().to_string();
                 } else {
-                    s = content.to_string();
+                    cleaned = content.to_string();
                 }
             }
         }
     }
 
-    if s.contains('\n') {
-        let lines: Vec<&str> = s
+    if cleaned.contains('\n') {
+        let lines: Vec<&str> = cleaned
             .lines()
             .map(|l| l.trim())
             .filter(|l| !l.is_empty())
@@ -73,23 +73,25 @@ pub fn validate_and_cleanup(text: &str) -> String {
         }
     }
 
-    if (s.starts_with('{') && s.ends_with('}')) || (s.starts_with('[') && s.ends_with(']')) {
-        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
+    if (cleaned.starts_with('{') && cleaned.ends_with('}'))
+        || (cleaned.starts_with('[') && cleaned.ends_with(']'))
+    {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&cleaned) {
             if let Some(obj) = v.as_object() {
                 if obj.len() == 1 {
-                    if let Some(val) = obj.values().next().and_then(|v| v.as_str()) {
-                        s = val.to_string();
+                    if let Some(val) = obj.values().next().and_then(|node| node.as_str()) {
+                        cleaned = val.to_string();
                     }
                 } else if obj.is_empty() {
-                    s = String::new();
+                    cleaned = String::new();
                 }
             } else if let Some(arr) = v.as_array() {
                 if arr.len() == 1 {
-                    if let Some(val) = arr.first().and_then(|v| v.as_str()) {
-                        s = val.to_string();
+                    if let Some(val) = arr.first().and_then(|node| node.as_str()) {
+                        cleaned = val.to_string();
                     }
                 } else if arr.is_empty() {
-                    s = String::new();
+                    cleaned = String::new();
                 }
             }
         }
@@ -113,13 +115,16 @@ pub fn validate_and_cleanup(text: &str) -> String {
         "번역:",
     ];
     for p in prefixes {
-        if s.to_lowercase().starts_with(&p.to_lowercase()) {
-            s = s[p.len()..].trim().to_string();
+        if cleaned.to_lowercase().starts_with(&p.to_lowercase()) {
+            cleaned = cleaned[p.len()..].trim().to_string();
         }
     }
 
-    if s.contains("我們已將") || s.contains("以下是翻譯") || s.contains("JSON 格式") {
-        let lines: Vec<&str> = s
+    if cleaned.contains("我們已將")
+        || cleaned.contains("以下是翻譯")
+        || cleaned.contains("JSON 格式")
+    {
+        let lines: Vec<&str> = cleaned
             .lines()
             .map(|l| l.trim())
             .filter(|l| !l.is_empty())
@@ -130,12 +135,12 @@ pub fn validate_and_cleanup(text: &str) -> String {
                     && !l.contains("請確認")
             })
             .collect();
-        s = lines.join("\n");
+        cleaned = lines.join("\n");
     }
 
-    s = s.trim().to_string();
+    cleaned = cleaned.trim().to_string();
 
-    let mut chars: Vec<char> = s.chars().collect();
+    let mut chars: Vec<char> = cleaned.chars().collect();
     if chars.len() >= 2 {
         let first = chars[0];
         let last = chars[chars.len() - 1];
@@ -146,15 +151,15 @@ pub fn validate_and_cleanup(text: &str) -> String {
         {
             chars.pop();
             chars.remove(0);
-            s = chars.into_iter().collect::<String>().trim().to_string();
+            cleaned = chars.into_iter().collect::<String>().trim().to_string();
         }
     }
 
-    if s == "{}" || s == "{ }" || s == "[]" || s == "[ ]" {
+    if cleaned == "{}" || cleaned == "{ }" || cleaned == "[]" || cleaned == "[ ]" {
         return String::new();
     }
 
-    s
+    cleaned
 }
 
 /// 偵測翻譯文字是否陷入無限循環

@@ -133,9 +133,9 @@ pub async fn translate_json_recursive(
                     }
 
                     let current = {
-                        let mut c = ctx.counter.lock().unwrap();
-                        *c += unique_resolved;
-                        *c
+                        let mut counter_guard = ctx.counter.lock().unwrap();
+                        *counter_guard += unique_resolved;
+                        *counter_guard
                     };
                     ctx.progress
                         .store((current as f32).to_bits(), Ordering::SeqCst);
@@ -248,9 +248,9 @@ pub async fn translate_json_recursive(
         }
 
         let current = {
-            let mut c = ctx.counter.lock().unwrap();
-            *c += 1;
-            *c
+            let mut counter_guard = ctx.counter.lock().unwrap();
+            *counter_guard += 1;
+            *counter_guard
         };
         ctx.progress
             .store((current as f32).to_bits(), Ordering::SeqCst);

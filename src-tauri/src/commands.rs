@@ -398,12 +398,12 @@ pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
 
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<(), String> {
-    let p = std::path::Path::new(&path);
+    let os_path = std::path::Path::new(&path);
     // 即使路徑不存在也嘗試開啟上一層或直接讓系統報錯
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("explorer")
-            .arg(p)
+            .arg(os_path)
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -415,7 +415,7 @@ pub fn open_folder(path: String) -> Result<(), String> {
             "xdg-open"
         };
         std::process::Command::new(cmd)
-            .arg(p)
+            .arg(os_path)
             .spawn()
             .map_err(|e| e.to_string())?;
     }

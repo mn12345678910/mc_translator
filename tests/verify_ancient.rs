@@ -45,9 +45,9 @@ fn test_intra_batch_deduplication_ancient_json() {
         if item.file_id != current_file_id {
             current_file_id = item.file_id;
             let rel_f_id = *file_map.entry(current_file_id).or_insert_with(|| {
-                let id = file_relative_id;
+                let rel_file_id = file_relative_id;
                 file_relative_id += 1;
-                id
+                rel_file_id
             });
             tagged_texts.push(format!("[f{}]", rel_f_id));
         }

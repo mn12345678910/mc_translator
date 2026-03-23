@@ -23,17 +23,17 @@ export function appendLog(text) {
     const logOutput = document.getElementById('log-output');
     if (!logOutput) return;
 
-    const p = document.createElement('p');
-    p.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+    const logLine = document.createElement('p');
+    logLine.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
     if (
         String(text).includes('❌') ||
         String(text).includes('⚠️') ||
         String(text).includes('Error') ||
         String(text).includes('⚠')
     ) {
-        p.style.color = '#ff6b6b';
+        logLine.style.color = '#ff6b6b';
     }
-    logOutput.appendChild(p);
+    logOutput.appendChild(logLine);
     logOutput.scrollTop = logOutput.scrollHeight;
     if (logOutput.childNodes.length > 500) {
         logOutput.removeChild(logOutput.firstChild);

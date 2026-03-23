@@ -48,15 +48,15 @@ pub fn should_skip_value(val: &str) -> bool {
     if val.is_empty() {
         return true;
     }
-    let s = val.trim();
-    if s.is_empty() {
+    let trimmed = val.trim();
+    if trimmed.is_empty() {
         return false;
     } // 只有空格的字串不應該被跳過
 
-    let bytes = s.as_bytes();
+    let bytes = trimmed.as_bytes();
 
     // 布林值
-    if s.eq_ignore_ascii_case("true") || s.eq_ignore_ascii_case("false") {
+    if trimmed.eq_ignore_ascii_case("true") || trimmed.eq_ignore_ascii_case("false") {
         return true;
     }
 
@@ -74,41 +74,45 @@ pub fn should_skip_value(val: &str) -> bool {
     }
 
     // 檔名、副檔名或路徑 (無空格，以特定後綴結尾)
-    let contains_space = s.contains(' ');
+    let contains_space = trimmed.contains(' ');
     // 無空格之特殊格式過濾 (聚合在一組以簡化邏輯)
     if !contains_space {
         // 1. 檔名、副檔名或路徑
-        if s.ends_with(".jar")
-            || s.ends_with(".zip")
-            || s.ends_with(".json")
-            || s.ends_with(".js")
-            || s.ends_with(".png")
-            || s.ends_with(".jpg")
+        if trimmed.ends_with(".jar")
+            || trimmed.ends_with(".zip")
+            || trimmed.ends_with(".json")
+            || trimmed.ends_with(".js")
+            || trimmed.ends_with(".png")
+            || trimmed.ends_with(".jpg")
         {
             return true;
         }
 
         // 2. 命名空間 ID，例如 "tconstruct:broad_axe"
-        if s.contains(':') {
+        if trimmed.contains(':') {
             return true;
         }
 
         // 3. 16 進位字串 / 雜湊碼 / 顏色碼排除 (長度 6、8 或 >=16)
         if bytes.iter().all(|&c| c.is_ascii_hexdigit())
-            && (s.len() == 6 || s.len() == 8 || s.len() >= 16)
+            && (trimmed.len() == 6 || trimmed.len() == 8 || trimmed.len() >= 16)
         {
             return true;
         }
 
         // 4. UUID 排除規則 (長度 36 且包含 4 個連字號)
-        if s.len() == 36 && s.chars().filter(|&c| c == '-').count() == 4 {
+        if trimmed.len() == 36 && trimmed.chars().filter(|&c| c == '-').count() == 4 {
             return true;
         }
 
         // 5. 變數與常數排除 (包含底線 _ 或在內部含有 .)
-        if s.contains('_') || (s.contains('.') && !s.ends_with('.')) || s.contains('/') {
+        if trimmed.contains('_')
+            || (trimmed.contains('.') && !trimmed.ends_with('.'))
+            || trimmed.contains('/')
+        {
             // 全大寫常數 (ALL_CAPS)
-            if s.chars()
+            if trimmed
+                .chars()
                 .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
             {
                 return true;
@@ -122,18 +126,19 @@ pub fn should_skip_value(val: &str) -> bool {
         }
 
         // 6. Base64 結尾排除規則
-        if s.len() >= 8 && s.ends_with('=') {
+        if trimmed.len() >= 8 && trimmed.ends_with('=') {
             return true;
         }
 
         // 7. 錨點 / 標籤錨點排除 (例如 #recipe, #tier#), 沒有空白且以 # 起手
-        if s.starts_with('#') {
+        if trimmed.starts_with('#') {
             return true;
         }
 
         // 7. 短編碼排除 (例如 BB, BPPB, B0PB)：全大寫與數字，長度 1~6 之間，且無空白
-        if s.len() <= 6
-            && s.chars()
+        if trimmed.len() <= 6
+            && trimmed
+                .chars()
                 .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
         {
             return true;
@@ -141,9 +146,9 @@ pub fn should_skip_value(val: &str) -> bool {
     }
 
     // 8. 日期格式排除規則 (包含 '.' 與 ':' 且除去後全為數字)
-    let no_symbols = s.replace(['.', ':', ' '], "");
-    if s.contains('.')
-        && s.contains(':')
+    let no_symbols = trimmed.replace(['.', ':', ' '], "");
+    if trimmed.contains('.')
+        && trimmed.contains(':')
         && !no_symbols.is_empty()
         && no_symbols.chars().all(|c| c.is_ascii_digit())
     {

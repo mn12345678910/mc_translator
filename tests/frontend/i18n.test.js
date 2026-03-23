@@ -101,14 +101,14 @@ describe('i18n.js 介面語言模組', () => {
         };
         mockInvoke.mockResolvedValue(mockLabels);
 
-        const el = document.createElement('label');
-        el.setAttribute('for', 'api-provider'); 
-        el.setAttribute('data-i18n', 'label_provider'); 
-        document.body.appendChild(el);
+        const labelEl = document.createElement('label');
+        labelEl.setAttribute('for', 'api-provider'); 
+        labelEl.setAttribute('data-i18n', 'label_provider'); 
+        document.body.appendChild(labelEl);
 
         await i18nModule.updateUiLanguage();
 
-        expect(el.textContent).toBe('Provider'); 
+        expect(labelEl.textContent).toBe('Provider'); 
     });
 
     it('updateToggleStateLabel 應該正確更新所有開關文字', () => {

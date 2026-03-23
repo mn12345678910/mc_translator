@@ -88,8 +88,8 @@ pub async fn process_all_files(
 
     // --- 階段一：掃描與條目收集 ---
     {
-        let mut s = status_arc.lock().unwrap();
-        *s = state.i18n.status_scanning_files.clone();
+        let mut status = status_arc.lock().unwrap();
+        *status = state.i18n.status_scanning_files.clone();
     }
 
     let mut file_tasks = Vec::new();
@@ -138,8 +138,6 @@ pub async fn process_all_files(
                 }
                 if let Ok((tasks, items)) = collect_jar_tasks(current_file_id, &path, &state).await
                 {
-                    let tasks: Vec<FileTask> = tasks;
-                    let items: Vec<GlobalBatchItem> = items;
                     let task_len = tasks.len();
                     file_tasks.extend(tasks);
                     global_items.extend(items);
@@ -156,8 +154,8 @@ pub async fn process_all_files(
         .global_progress
         .store(0.0f32.to_bits(), Ordering::SeqCst);
     state.progress.store(0.0f32.to_bits(), Ordering::SeqCst);
-    if let Ok(mut p) = state.current_processing_path.lock() {
-        p.clear();
+    if let Ok(mut current_path) = state.current_processing_path.lock() {
+        current_path.clear();
     }
 
     let get_group_key = |path: &std::path::Path| -> std::path::PathBuf {
@@ -188,8 +186,8 @@ pub async fn process_all_files(
     // 更新全域進度總量 (以此來源數量為準)
     let unique_files_count = {
         let mut seen = std::collections::HashSet::new();
-        for t in &file_tasks {
-            seen.insert(t.path.clone());
+        for task in &file_tasks {
+            seen.insert(task.path.clone());
         }
         seen.len()
     };
@@ -392,12 +390,12 @@ fn get_translated_content_for_task(task: &FileTask, items: &[GlobalBatchItem]) -
         }
         replacements.sort_by_key(|r| r.0);
         replacements.reverse();
-        let mut c = task.original_content.clone();
+        let mut content = task.original_content.clone();
         for (s, e, t) in replacements {
-            if s < e && e <= c.len() {
-                c.replace_range(s..e, &t);
+            if s < e && e <= content.len() {
+                content.replace_range(s..e, &t);
             }
         }
-        c
+        content
     }
 }

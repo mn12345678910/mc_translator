@@ -497,8 +497,8 @@ async fn run_translation(
         |current: f32, total: f32, batch_curr: f32, batch_tot: f32, status: &str| {
             let pct = if total > 0.0 { current / total } else { 0.0 };
             let bar_len = 25;
-            let filled = (pct * bar_len as f32).max(0.0) as usize;
-            let filled = filled.min(bar_len);
+            let filled_raw = (pct * bar_len as f32).max(0.0) as usize;
+            let filled = filled_raw.min(bar_len);
             let bar = format!("{}{}", "█".repeat(filled), "░".repeat(bar_len - filled));
 
             let sub_info = if batch_tot > 0.0 {

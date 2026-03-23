@@ -206,8 +206,8 @@ export async function updateUiLanguage() {
         // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
         const allSwitches = ['chk-glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log'];
         allSwitches.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(id, el.checked);
+            const toggleEl = document.getElementById(id);
+            if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
         });
 
     } catch (err) {

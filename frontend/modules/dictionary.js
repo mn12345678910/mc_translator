@@ -166,12 +166,12 @@ export function initDictionary() {
 
     if (btnDictAdd && dictInputKey && dictInputValue) {
         btnDictAdd.addEventListener('click', async () => {
-            const k = dictInputKey.value.trim();
-            const v = dictInputValue.value.trim();
-            if (!k) return alert(state.currentLabels.status_dict_key_empty);
+            const dictKey = dictInputKey.value.trim();
+            const dictValue = dictInputValue.value.trim();
+            if (!dictKey) return alert(state.currentLabels.status_dict_key_empty);
             try {
-                await invoke('edit_dictionary_item', { key: k, value: v, delete: false });
-                appendLog(state.currentLabels.status_dict_add_success.replace('{}', k).replace('{}', v));
+                await invoke('edit_dictionary_item', { key: dictKey, value: dictValue, delete: false });
+                appendLog(state.currentLabels.status_dict_add_success.replace('{}', dictKey).replace('{}', dictValue));
                 dictInputKey.value = '';
                 dictInputValue.value = '';
                 loadDictionary();
@@ -240,9 +240,9 @@ export function initDictionary() {
             try {
                 const path = await invoke('open_path_dialog', { diagType: 'save_file' });
                 if (path) {
-                    const p = path.endsWith('.json') ? path : path + '.json';
-                    await invoke('export_user_dictionary', { filePath: p });
-                    appendLog(state.currentLabels.status_dict_export_success.replace('{}', p));
+                    const exportPath = path.endsWith('.json') ? path : path + '.json';
+                    await invoke('export_user_dictionary', { filePath: exportPath });
+                    appendLog(state.currentLabels.status_dict_export_success.replace('{}', exportPath));
                 }
             } catch (e) {
                 appendLog(state.currentLabels.status_dict_replace_failed.replace('{}', state.currentLabels[e] || e));
