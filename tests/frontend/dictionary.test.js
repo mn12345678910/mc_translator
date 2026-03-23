@@ -104,9 +104,7 @@ describe('dictionary.js 字典管理模組', () => {
         const container = document.getElementById('dict-table-container');
         const input = container.querySelector('.dict-input');
         input.value = '青蘋果'; // 使用者修改數值
-
-        const saveBtn = container.querySelector('.save-item');
-        await saveBtn.dispatchEvent(new Event('click'));
+        await input.dispatchEvent(new Event('change'));
 
         // 驗證 invoke 被呼叫
         expect(mockInvoke).toHaveBeenCalledWith('edit_dictionary_item', {
@@ -144,12 +142,12 @@ describe('dictionary.js 字典管理模組', () => {
 
         // 切換至官方
         await tabOfficial.dispatchEvent(new Event('click'));
-        expect(controls.style.display).toBe('none');
+        expect(controls.classList.contains('hidden')).toBe(true);
 
         // 切換回使用者
         const tabUser = document.getElementById('tab-user');
         await tabUser.dispatchEvent(new Event('click'));
-        expect(controls.style.display).toBe('flex');
+        expect(controls.classList.contains('hidden')).toBe(false);
     });
     it('點擊表格內的刪除按鈕，點按確認後應調用刪除 API', async () => {
         stateModule.state.currentLabels.status_dict_item_delete_confirm = '刪除 {}?';
