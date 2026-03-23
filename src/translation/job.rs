@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
 
 /// 翻譯任務的靜態設定參數
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct JobConfig {
     pub api_key: String,
     pub api_provider: String,

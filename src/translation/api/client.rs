@@ -100,9 +100,8 @@ pub fn finalize_translation(
     file_name: &str,
 ) -> String {
     let cleaned = translated
-        .trim_matches('"')
-        .trim_matches('\'')
-        .trim_matches('`')
+        .trim()
+        .trim_matches(|c| c == '"' || c == '\'' || c == '`')
         .trim()
         .to_string();
 
@@ -686,4 +685,73 @@ mod tests {
             Some(r#"{"key": "val"}"#.to_string())
         );
     }
+
+    #[test]
+    fn test_build_system_prompt() {
+        use crate::translation::glossary::{GlossaryEntry, TermType};
+        let base_prompt = "Translate this:";
+        let technical_constraints = "\nTechnical constraints.";
+        let glossary = vec![
+            GlossaryEntry {
+                original: "hello".to_string(),
+                translated: "你好".to_string(),
+                source: TermType::Official,
+            },
+            GlossaryEntry {
+                original: "world".to_string(),
+                translated: "世界".to_string(),
+                source: TermType::Inferred,
+            },
+        ];
+
+        let result = build_system_prompt(base_prompt, Some(&glossary), technical_constraints);
+        assert!(result.contains("Translate this:"));
+        assert!(result.contains("請根據以下【術語建議】"));
+        assert!(result.contains("- hello => 你好"));
+        assert!(result.contains("- world => 世界"));
+        assert!(result.contains("Technical constraints."));
+    }
+
+    #[tokio::test]
+    async fn test_with_timeout_success() {
+        let future = async { Ok("success") };
+        let result = with_timeout(2, future).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "success");
+    }
+
+    #[tokio::test]
+    async fn test_with_timeout_failure() {
+        let future = async {
+            tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            Ok("too_late")
+        };
+        let result = with_timeout(1, future).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "TIMEOUT:1");
+    }
+
+    #[test]
+    fn test_build_batch_instruction() {
+        let texts = vec!["apple".to_string(), "banana".to_string()];
+        let result = build_batch_instruction(&texts);
+        assert!(result.contains("[1] apple"));
+        assert!(result.contains("[2] banana"));
+    }
+
+    #[test]
+    fn test_finalize_translation() {
+        let config = JobConfig::default();
+        let result = finalize_translation("`\"test\"` ", &config, "", "", "");
+        assert_eq!(result, "test");
+    }
+
+    #[test]
+    fn test_map_lang() {
+        assert_eq!(map_lang_google("zh_tw"), "zh-TW");
+        assert_eq!(map_lang_google("unknown"), "en");
+        assert_eq!(map_lang_deepl("en_us"), "EN-US");
+        assert_eq!(map_lang_deepl("unknown"), "ZH");
+    }
 }
+
