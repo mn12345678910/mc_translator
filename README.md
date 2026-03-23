@@ -1,5 +1,7 @@
 # Minecraft Mod Auto-Translator (mc_translator)
 
+[![codecov](https://codecov.io/gh/mn12345678910/mc_translator/graph/badge.svg)](https://codecov.io/gh/mn12345678910/mc_translator)
+
 > [!NOTE]
 > 安全須知:
 > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。
