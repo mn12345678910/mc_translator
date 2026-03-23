@@ -754,4 +754,3 @@ mod tests {
         assert_eq!(map_lang_deepl("unknown"), "ZH");
     }
 }
-

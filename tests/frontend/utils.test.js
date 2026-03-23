@@ -99,4 +99,17 @@ describe('utils.js 工具模組', () => {
             expect(logOutput.lastChild.textContent).toContain('訊息 505');
         });
     });
+
+    describe('escapeHtml HTML 跳脫', () => {
+        it('應該正確跳脫 HTML 字元', () => {
+            expect(utilsModule.escapeHtml('<script>')).toBe('&lt;script&gt;');
+        });
+
+        it('當傳入空值、null 或 undefined 應回傳空字串', () => {
+            expect(utilsModule.escapeHtml(null)).toBe('');
+            expect(utilsModule.escapeHtml(undefined)).toBe('');
+            expect(utilsModule.escapeHtml('')).toBe('');
+        });
+    });
 });
+

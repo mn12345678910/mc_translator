@@ -159,4 +159,47 @@ describe('config.js 設定管理模組', () => {
         expect(selectModel.options[1].value).toBe('gemini-1.5-pro');
         expect(selectModel.options[2].value).toBe('gemini-1.5-flash');
     });
+
+    describe('異常處理 (Catch Blocks)', () => {
+        it('loadConfig 失敗時應該擷取異常並觸發 appendLog', async () => {
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_config') throw 'backend-error';
+                return null;
+            });
+            const { appendLog } = await import('../../frontend/modules/utils.js');
+            stateModule.state.currentLabels = { status_load_config_failed: '載入失敗: {}' };
+
+            await configModule.loadConfig();
+
+            expect(appendLog).toHaveBeenCalledWith(expect.stringContaining('backend-error'));
+        });
+
+        it('saveConfig 失敗時應該擷取異常並觸發 appendLog', async () => {
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'save_api_key_cmd') throw 'save-key-failed';
+                return null;
+            });
+            const { appendLog } = await import('../../frontend/modules/utils.js');
+            stateModule.state.currentLabels = { status_save_config_failed: '儲存失敗: {}' };
+
+            await configModule.saveConfig();
+
+            expect(appendLog).toHaveBeenCalledWith(expect.stringContaining('save-key-failed'));
+        });
+
+        it('loadModels 失敗時應該捕獲異常並顯示 label_no_models', async () => {
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_models_from_provider') throw 'fetch-models-failed';
+                return null;
+            });
+            stateModule.state.currentLabels = { label_no_models: '無可用模型' };
+            document.getElementById('api-provider').value = 'Gemini';
+
+            await configModule.loadModels();
+
+            const selectModel = document.getElementById('selected-model');
+            expect(selectModel.innerHTML).toContain('無可用模型');
+        });
+    });
 });
+

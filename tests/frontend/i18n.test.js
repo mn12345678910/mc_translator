@@ -175,11 +175,38 @@ describe('i18n.js 介面語言模組', () => {
             placeholder_dict_key: 'Key...',
             placeholder_dict_value: 'Value...',
             placeholder_input_path: 'Input Path...',
+            header_dict_mgr: 'Mgr',
+            glossary_priority_hover: 'Hover',
+            title_some_key: 'Tooltip Title'
         };
+
         mockInvoke.mockResolvedValue(mockLabels);
 
         document.body.innerHTML += `
+            <!-- option mapping selects -->
+            <select id="palette-target-type">
+                <option value="global"></option>
+                <option value="specific"></option>
+            </select>
+            <select id="api-provider">
+                <option value="Ollama"></option>
+                <option value="無"></option>
+            </select>
+            <select id="palette-target-item">
+                <option value="dark_bg"></option>
+            </select>
+            <select id="palette-property">
+                <option value="bg"></option>
+            </select>
+            <div id="header-dict-mgr"></div>
+            <div>
+                 <input id="chk-glossary-priority" />
+            </div>
+            <div data-i18n-title="title_some_key"></div>
+
             <!-- mapping -->
+
+
             <button id="btn-browse-file" data-i18n="btn_select_file"></button>
             <button id="btn-browse-dir" data-i18n="btn_select_folder"></button>
             <button id="btn-browse-output" data-i18n="btn_output_dir"></button>
@@ -218,7 +245,66 @@ describe('i18n.js 介面語言模組', () => {
         expect(document.querySelector('label[for="api-provider"]').textContent).toBe('Provider');
         expect(document.getElementById('dict-search').placeholder).toBe('Search...');
     });
+
+    describe('額外涵蓋範圍 (Coverage Extension)', () => {
+        it('updateUiLanguage 應該在 System Prompt 符合預設提示時，更新它', async () => {
+            const mockLabels = { default_system_prompt: 'English system defaults...' };
+            mockInvoke.mockResolvedValue(mockLabels);
+
+            document.body.innerHTML += `<textarea id="system-prompt"></textarea>`;
+            const promptArea = document.getElementById('system-prompt');
+            promptArea.value = '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。';
+
+            await i18nModule.updateUiLanguage();
+
+            expect(promptArea.value.trim()).toBe('English system defaults...');
+        });
+
+        it('updateUiLanguage 應該在 invoke 拋出異常時妥善處理 (Catch)', async () => {
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            mockInvoke.mockRejectedValue(new Error('Labels Fetch Failed'));
+
+            await i18nModule.updateUiLanguage();
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('updateToggleStateLabel 應該正確更新剩餘的跳過開關文字', () => {
+            stateModule.state.currentLabels = {
+                label_skip_json: 'Skip JSON ON',
+                label_no_skip_json: 'Skip JSON OFF',
+                label_skip_js: 'Skip JS ON',
+                label_no_skip_js: 'Skip JS OFF',
+                label_skip_jar: 'Skip JAR ON',
+                label_no_skip_jar: 'Skip JAR OFF',
+                label_skip_book: 'Skip Book ON',
+                label_no_skip_book: 'Skip Book OFF',
+            };
+
+            const ids = ['chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book'];
+            ids.forEach(id => {
+                 document.body.innerHTML += `<div id="label-${id.replace('chk-', '')}"></div>`;
+            });
+
+            i18nModule.updateToggleStateLabel('chk-skip-json', true);
+            expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON ON');
+
+            i18nModule.updateToggleStateLabel('chk-skip-json', false);
+            expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON OFF');
+
+            i18nModule.updateToggleStateLabel('chk-skip-js', true);
+            expect(document.getElementById('label-skip-js').textContent).toBe('Skip JS ON');
+
+            i18nModule.updateToggleStateLabel('chk-skip-jar', true);
+            expect(document.getElementById('label-skip-jar').textContent).toBe('Skip JAR ON');
+
+            i18nModule.updateToggleStateLabel('chk-skip-book', true);
+            expect(document.getElementById('label-skip-book').textContent).toBe('Skip Book ON');
+        });
+    });
 });
+
 
 
 

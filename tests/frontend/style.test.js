@@ -61,6 +61,9 @@ describe('style.js 樣式與主題管理模組', () => {
         document.documentElement.style.removeProperty('--bg-color');
         document.documentElement.style.removeProperty('--text-color');
 
+        // 手動加載 label-palette-color 避免 uncovered 210
+        document.body.innerHTML += `<div id="label-palette-color"></div>`;
+
         mockInvoke.mockReset();
         stateModule.state.currentStyle = {};
         stateModule.state.currentLabels = { label_bg_color: '背景色', label_text_color: '文字色' };
@@ -71,8 +74,16 @@ describe('style.js 樣式與主題管理模組', () => {
             const fakeStyle = {
                 theme: 'dark',
                 dark_bg: [30, 30, 35],
-                dark_text: [255, 255, 255]
+                dark_text: [255, 255, 255],
+                dark_btn_bg: [0, 100, 200],
+                dark_btn_text: [255, 255, 255],
+                dark_input_bg: [10, 20, 30],
+                dark_list_bg: [40, 50, 60],
+                dark_tab_active: [70, 80, 90],
+                dark_tab_inactive: [100, 110, 120],
+                dark_label: [130, 140, 150]
             };
+
 
             styleModule.applyColors(fakeStyle);
 
@@ -185,12 +196,46 @@ describe('style.js 樣式與主題管理模組', () => {
             targetType.value = 'specific';
             targetItem.value = 'progress-bar';
 
-
             styleModule.updatePaletteValue();
 
             const textOpt = Array.from(property.options).find(opt => opt.value === 'text');
             expect(textOpt.style.display).toBe('none');
         });
+
+        it('當選擇 progress-bar 且屬性為 text 時應該 fallback 為 bg', () => {
+            const targetType = document.getElementById('palette-target-type');
+            const targetItem = document.getElementById('palette-target-item');
+            const property = document.getElementById('palette-property');
+            
+            targetType.value = 'specific';
+            // 手動加入進度條選項
+            const opt = document.createElement('option');
+            opt.value = 'progress-bar';
+            targetItem.appendChild(opt);
+            targetItem.value = 'progress-bar';
+            
+            property.value = 'text';
+
+            styleModule.updatePaletteValue();
+
+            expect(property.value).toBe('bg');
+        });
+    });
+
+    describe('applyColors - 進階', () => {
+        it('應該在 rounding_enabled 為 false 時設定 border-radius 為 0px', () => {
+            const fakeStyle = { theme: 'dark', btn_rounding_enabled: false };
+            styleModule.applyColors(fakeStyle);
+            expect(document.documentElement.style.getPropertyValue('--border-radius')).toBe('0px');
+        });
+
+        it('應該在啟用脈動且進度條存在時設定 animation', () => {
+            const fakeStyle = { theme: 'dark', progress_pulse_enabled: true, progress_pulse_speed: 2.0 };
+            styleModule.applyColors(fakeStyle);
+            const progressBar = document.getElementById('progress-bar');
+            expect(progressBar.style.animation).toContain('pulse');
+        });
     });
 });
+
 

@@ -13,11 +13,29 @@ pub fn get_output_dir(config: &JobConfig) -> std::path::PathBuf {
     base.join("LLMTranslator")
 }
 
+fn to_extended_abs_path(path: &Path) -> std::path::PathBuf {
+    let abs_path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."))
+            .join(path)
+    };
+    #[cfg(target_os = "windows")]
+    {
+        let path_str = abs_path.to_string_lossy();
+        if !path_str.starts_with(r"\\?\") {
+            return std::path::PathBuf::from(format!(r"\\?\{}", path_str));
+        }
+    }
+    abs_path
+}
+
 pub fn write_to_temp_or_output(
     config: &JobConfig,
     translated_files: HashMap<String, String>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let output_path = get_output_dir(config);
+    let output_path = to_extended_abs_path(&get_output_dir(config));
 
     if !output_path.exists() {
         fs::create_dir_all(&output_path).unwrap_or(());
@@ -136,7 +154,7 @@ pub async fn output_resource_pack(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::task::spawn_blocking(
         move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-            let output_path = get_output_dir(&config);
+            let output_path = to_extended_abs_path(&get_output_dir(&config));
 
             let temp_dir = output_path.join("temp_translator");
 
