@@ -330,6 +330,8 @@ pub struct GuiLabels {
     pub label_files: String,
     pub label_fps: String,
     pub label_fps_preset_vsync: String,
+    pub btn_dict_open_json: String,
+    pub btn_palette_clear_item: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

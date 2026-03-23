@@ -75,15 +75,15 @@
                     </select>
                 </div>
                 <div class="form-group" id="api-key-group">
-<label for="api-key">API</label>
-                    <input type="password" id="api-key" placeholder="輸入 API Key..." />
+<label for="api-key" data-i18n="label_api_key">API</label>
+                    <input type="password" id="api-key" placeholder="輸入 API Key..." data-i18n-placeholder="placeholder_api_key" />
                 </div>
                 <div class="form-group">
 <label for="selected-model" data-i18n="label_model"></label>
                     <select id="selected-model"></select>
                 </div>
                 <div class="form-group" id="ollama-url-group" style="display: none">
-                    <label for="ollama-url">Ollama URL</label>
+                    <label for="ollama-url" data-i18n="label_ollama_url">Ollama URL</label>
                     <input type="text" id="ollama-url" />
                 </div>
                 <div class="form-group">
@@ -300,6 +300,7 @@
                     <button
                         id="btn-palette-clear-item"
                         class="action-btn"
+                        data-i18n="btn_palette_clear_item"
                         style="background-color: #aa1111; color: #fff; width: 100%; height: 38px"
                     >
                         🗑 清除元件覆寫
@@ -313,7 +314,7 @@
                     <input type="number" id="font-size" value="15" min="12" max="30" step="0.5" />
                 </div>
                 <div class="form-group">
-<label for="btn-rounding-value">:</label>
+<label for="btn-rounding-value" data-i18n="label_rounding_value">:</label>
                     <div style="display: flex; gap: 8px; align-items: center">
                         <input type="checkbox" id="chk-btn-rounding" checked style="width: 20px" />
                         <input
@@ -328,7 +329,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-<label for="pulse-speed">:</label>
+<label for="pulse-speed" data-i18n="label_anim_speed">:</label>
                     <div style="display: flex; gap: 8px; align-items: center">
                         <input type="checkbox" id="chk-pulse" checked style="width: 20px" />
                         <input
@@ -394,7 +395,7 @@
                 <!-- [NEW] 術語優先級切換開關 -->
                 <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px;">
 <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem; color: var(--text-color);">:</span>
-                    <label class="switch" title="切換 官方優先 或 使用者優先">
+                    <label class="switch" title="切換 官方優先 或 使用者優先" data-i18n-title="glossary_priority_hover">
                         <input type="checkbox" id="chk-glossary-priority" />
                         <span class="slider round"></span>
                     </label>
@@ -414,17 +415,17 @@
 <button id="btn-dict-replace" class="action-btn" data-i18n="btn_replace" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
 <button id="btn-dict-import" class="action-btn" data-i18n="btn_import" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
 <button id="btn-dict-export" class="action-btn" data-i18n="btn_export" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤</button>
-<button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾">📂 .json</button>
+<button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾" data-i18n-title="btn_dict_open_json">📂 .json</button>
 
 <button id="btn-dict-clear" class="action-btn" data-i18n="btn_clear_all" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px; margin-left: auto;">🗑</button>
                     </div>
                 </div>
                 <!-- [NEW] 輸入與搜尋區 -->
                 <div id="dict-user-controls" class="flex-wrap mt-sm">
-                    <input type="text" id="dict-input-key" placeholder="原文 (Key)" style="flex: 1; min-width: 140px; padding: 6px;" />
-                    <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" style="flex: 1; min-width: 140px; padding: 6px;" />
+                    <input type="text" id="dict-input-key" placeholder="原文 (Key)" data-i18n-placeholder="placeholder_dict_key" style="flex: 1; min-width: 140px; padding: 6px;" />
+                    <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" data-i18n-placeholder="placeholder_dict_value" style="flex: 1; min-width: 140px; padding: 6px;" />
                     <div class="search-bar" style="margin-left: auto;">
-                        <input type="text" id="dict-search" placeholder="🔍 搜尋術語..." style="width: 180px; padding: 6px 10px; font-size: 0.9rem;" />
+                        <input type="text" id="dict-search" placeholder="🔍 搜尋術語..." data-i18n-placeholder="placeholder_search_terms" style="width: 180px; padding: 6px 10px; font-size: 0.9rem;" />
                     </div>
                 </div>
                 <div class="table-container" id="dict-table-container"></div>

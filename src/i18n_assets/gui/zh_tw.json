@@ -279,5 +279,6 @@
     "label_files": "檔案",
     "label_fps": "FPS:",
     "label_fps_preset_vsync": "(預設:vsync)",
-    "btn_dict_open_json": "開啟所在分頁檔案及檔案所在資料夾"
+    "btn_dict_open_json": "開啟所在分頁檔案及檔案所在資料夾",
+    "btn_palette_clear_item": "🗑 清除元件覆寫"
 }

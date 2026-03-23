@@ -279,5 +279,6 @@
     "label_files": "ファイル",
     "label_fps": "FPS:",
     "label_fps_preset_vsync": "(デフォルト:vsync)",
-    "btn_dict_open_json": "現在のページファイルとその親フォルダを開く"
+    "btn_dict_open_json": "現在のページファイルとその親フォルダを開く",
+    "btn_palette_clear_item": "🗑 上書きをクリア"
 }
