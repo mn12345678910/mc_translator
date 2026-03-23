@@ -147,3 +147,47 @@ pub fn find_common_hanzi(texts: Vec<&String>) -> Option<String> {
         .map(|(s, _, _)| s);
     result.and_then(|s| clean_inferred_zh(&s))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_cjk_check() {
+        assert!(is_cjk('中'));
+        assert!(is_cjk('文'));
+        assert!(!is_cjk('A'));
+        assert!(!is_cjk('1'));
+    }
+
+    #[test]
+    fn test_clean_inferred_zh_cases() {
+        assert_eq!(clean_inferred_zh("紅色"), Some("紅".to_string()));
+        assert_eq!(clean_inferred_zh("色床"), Some("床".to_string()));
+        assert_eq!(clean_inferred_zh("木牌"), Some("牌".to_string()));
+        assert_eq!(clean_inferred_zh("的"), None); // 黑名單
+    }
+
+    #[test]
+    fn test_find_common_hanzi_structure() {
+        let s1 = "紅色的床".to_string();
+        let s2 = "藍色的床".to_string();
+        let s3 = "綠色的床".to_string();
+        let texts = vec![&s1, &s2, &s3];
+        let common = find_common_hanzi(texts);
+        // 的床 頻率 3/3，長度 2。
+        assert_eq!(common, Some("的床".to_string()));
+    }
+
+    #[test]
+    fn test_analyze_dictionary_inferring() {
+        let mut map = HashMap::new();
+        map.insert("Red Bed".to_string(), "紅色的床".to_string());
+        map.insert("Blue Bed".to_string(), "藍色的床".to_string());
+        map.insert("Green Bed".to_string(), "綠色的床".to_string());
+
+        let inferred = analyze_dictionary(&map);
+        assert!(inferred.contains_key("bed"));
+        assert_eq!(inferred.get("bed").unwrap(), "的床");
+    }
+}

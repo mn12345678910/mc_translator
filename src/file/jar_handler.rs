@@ -44,8 +44,8 @@ pub async fn collect_jar_tasks(
 
             for i in 0..archive.len() {
                 let (is_target, name, content) = {
-                    let mut f = match archive.by_index(i) {
-                        Ok(f) => f,
+                    let mut zip_entry = match archive.by_index(i) {
+                        Ok(e) => e,
                         Err(e) => {
                             eprintln!(
                                 "\x1b[31m[{}] [錯誤] 無法讀取 JAR 檔案索引 {}: {}\x1b[0m",
@@ -56,7 +56,7 @@ pub async fn collect_jar_tasks(
                             continue;
                         }
                     };
-                    let name = f.name().to_string();
+                    let name = zip_entry.name().to_string();
                     let is_book = name.contains("patchouli_books")
                         && (name.contains(&format!("/{}", source_lang))
                             || name.contains("/en_us/"));
@@ -84,7 +84,7 @@ pub async fn collect_jar_tasks(
                     let is_target = is_source && !(is_book && skip_book);
                     let mut content = String::new();
                     if is_target {
-                        if let Err(e) = f.read_to_string(&mut content) {
+                        if let Err(e) = zip_entry.read_to_string(&mut content) {
                             eprintln!(
                                 "\x1b[31m[{}] [錯誤] 無法讀取 JAR 內檔案 {}: {}\x1b[0m",
                                 chrono::Local::now().format("%H:%M:%S"),

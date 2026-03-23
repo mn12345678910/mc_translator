@@ -199,4 +199,42 @@ mod tests {
         assert!(results.contains_key("a"));
         assert!(results.contains_key("b"));
     }
+
+    /// 4. 優先權合併測試 (Official vs User)
+    #[test]
+    fn test_glossary_priority_merging() {
+        let mut official = HashMap::new();
+        official.insert("Apple".to_string(), "官方蘋果".to_string());
+
+        let mut user = HashMap::new();
+        user.insert("Apple".to_string(), "使用者蘋果".to_string());
+
+        // 測試 Official 優先
+        let automaton_off = GlossaryAutomaton::new(&official, &user, &HashMap::new(), "official");
+        let results_off = automaton_off.extract(&["Apple".to_string()]);
+        assert_eq!(results_off.get("apple").unwrap().0, "官方蘋果");
+
+        // 測試 User 優先
+        let automaton_user = GlossaryAutomaton::new(&official, &user, &HashMap::new(), "user");
+        let results_user = automaton_user.extract(&["Apple".to_string()]);
+        assert_eq!(results_user.get("apple").unwrap().0, "使用者蘋果");
+    }
+
+    /// 5. 邊界匹配測試 (避免單字內嵌誤判)
+    #[test]
+    fn test_glossary_match_boundaries() {
+        let mut exact = HashMap::new();
+        exact.insert("Apple".to_string(), "蘋果".to_string());
+
+        let automaton =
+            GlossaryAutomaton::new(&exact, &HashMap::new(), &HashMap::new(), "official");
+
+        // 包含在單字內，不應匹配 (Pineapple)
+        let results = automaton.extract(&["Pineapple".to_string()]);
+        assert!(!results.contains_key("apple"));
+
+        // 作為獨立單字應匹配
+        let results_ok = automaton.extract(&["I eat an Apple".to_string()]);
+        assert!(results_ok.contains_key("apple"));
+    }
 }

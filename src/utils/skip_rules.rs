@@ -219,4 +219,19 @@ mod tests {
         assert!(should_skip_value("A1"));
         assert!(!should_skip_value("Hello")); // 含有小寫
     }
+
+    #[test]
+    fn test_should_skip_value_edge_cases() {
+        // 空白與只有空格
+        assert!(should_skip_value("")); // 實務上為空應跳過
+        assert!(!should_skip_value("   ")); // 只有空格不應該被跳過
+
+        // Base64 規則：長度 >=8 且以 = 結尾 且不包含空格
+        assert!(should_skip_value("aGVsbG8="));
+        assert!(!should_skip_value("hello=")); // 長度太短不符合過濾規格
+
+        // 日期格式
+        assert!(should_skip_value("2025.12.31 12:00")); // Rule 8 (包含 '.' 和 ':')
+        assert!(should_skip_value("2025.12.31")); // 被 Rule 5 (系統識別碼) 提早過濾為 true，仍應跳過
+    }
 }

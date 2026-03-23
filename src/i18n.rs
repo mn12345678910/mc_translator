@@ -451,21 +451,21 @@ impl GuiLabels {
         }
     }
     pub fn get_available_ui_langs() -> Vec<String> {
-        let mut l = Vec::new();
+        let mut langs_list = Vec::new();
         if let Ok(es) = std::fs::read_dir(get_langs_dir("gui")) {
             for e in es.flatten() {
                 if e.path().extension().is_some_and(|x| x == "json") {
-                    if let Some(s) = e.path().file_stem() {
-                        l.push(s.to_string_lossy().to_string());
+                    if let Some(stem) = e.path().file_stem() {
+                        langs_list.push(stem.to_string_lossy().to_string());
                     }
                 }
             }
         }
-        if l.is_empty() {
-            l.push("zh_tw".to_string());
+        if langs_list.is_empty() {
+            langs_list.push("zh_tw".to_string());
         }
-        l.sort();
-        l
+        langs_list.sort();
+        langs_list
     }
 }
 
@@ -531,20 +531,20 @@ impl CliLabels {
         serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).unwrap()
     }
     pub fn get_available_ui_langs() -> Vec<String> {
-        let mut l = Vec::new();
+        let mut langs_list = Vec::new();
         if let Ok(es) = std::fs::read_dir(get_langs_dir("cli")) {
             for e in es.flatten() {
                 if e.path().extension().is_some_and(|x| x == "json") {
-                    if let Some(s) = e.path().file_stem() {
-                        l.push(s.to_string_lossy().to_string());
+                    if let Some(stem) = e.path().file_stem() {
+                        langs_list.push(stem.to_string_lossy().to_string());
                     }
                 }
             }
         }
-        if l.is_empty() {
-            l.push("zh_tw".to_string());
+        if langs_list.is_empty() {
+            langs_list.push("zh_tw".to_string());
         }
-        l.sort();
-        l
+        langs_list.sort();
+        langs_list
     }
 }

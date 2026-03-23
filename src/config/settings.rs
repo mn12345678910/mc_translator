@@ -368,3 +368,56 @@ impl AppConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_app_config_defaults() {
+        let config = AppConfig::default();
+        assert_eq!(config.api_provider, "無");
+        assert_eq!(config.main_width, 800.0);
+        assert_eq!(config.main_height, 600.0);
+        assert_eq!(config.batch_size, 150);
+    }
+
+    #[test]
+    fn test_app_config_deserialization_aliases() {
+        // 先序列化一個完整的 Default 設定
+        let mut config_json = serde_json::to_value(AppConfig::default()).unwrap();
+        let obj = config_json.as_object_mut().unwrap();
+
+        // 移除原欄位，改用別名插入
+        obj.remove("api_provider");
+        obj.insert(
+            "服務提供商".to_string(),
+            serde_json::Value::String("Gemini".to_string()),
+        );
+
+        obj.remove("model");
+        obj.insert(
+            "模型名稱".to_string(),
+            serde_json::Value::String("gemini-1.5-pro".to_string()),
+        );
+
+        obj.remove("batch_size");
+        obj.insert("批次量".to_string(), serde_json::Value::Number(200.into()));
+
+        // 反序列化驗證
+        let config: Result<AppConfig, _> = serde_json::from_value(config_json);
+        assert!(config.is_ok(), "反序列化別名失敗: {:?}", config.err());
+        let config = config.unwrap();
+        assert_eq!(config.api_provider, "Gemini");
+        assert_eq!(config.model, "gemini-1.5-pro");
+        assert_eq!(config.batch_size, 200);
+    }
+
+    #[test]
+    fn test_style_config_defaults() {
+        let config = StyleConfig::default();
+        assert_eq!(config.theme, "dark");
+        assert_eq!(config.font_size, 15.0);
+        assert_eq!(config.dark_bg, [30, 30, 35]);
+    }
+}

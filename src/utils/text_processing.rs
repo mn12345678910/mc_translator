@@ -340,4 +340,45 @@ mod tests {
         let normal_long = "這是一段很長但沒有重複的正常文字，用於測試偵測器不會誤判。".repeat(5);
         assert!(!detect_loop(&normal_long));
     }
+
+    /// 4. 預處理與後處理測試 (格式保留)
+    #[test]
+    fn test_preprocess_postprocess_formatting() {
+        let text = "Hello §aGreen &bBlue #ff00ff %s {0} \\nWorld";
+        let (processed, markers) = preprocess_text(text);
+
+        assert!(processed.contains("%%MC_0%%")); // §a
+        assert!(processed.contains("%%MC_1%%")); // &b
+        assert!(processed.contains("%%HEX_2%%")); // #ff00ff
+        assert!(processed.contains("%%VAR_3%%")); // %s
+
+        let restored = postprocess_text(&processed, &markers);
+        assert_eq!(restored, text);
+    }
+
+    /// 5. 格式同步測試 (JSON 結構)
+    #[test]
+    fn test_sync_formatting_json_structure() {
+        let original = r#"{
+    "menu.title": "Main Menu",
+    "btn_start": "Start",
+    "list": [
+        "item1",
+        "item2"
+    ]
+}"#;
+        let mut translations = HashMap::new();
+        translations.insert("menu.title".to_string(), vec!["主選單".to_string()]);
+        translations.insert("btn_start".to_string(), vec!["開始".to_string()]);
+        translations.insert(
+            "__ARRAY_ELEMENT__".to_string(),
+            vec!["項目一".to_string(), "項目二".to_string()],
+        );
+
+        let synced = sync_formatting(original, &translations);
+        assert!(synced.contains(r#""menu.title" : "主選單""#));
+        assert!(synced.contains(r#""btn_start" : "開始""#));
+        assert!(synced.contains(r#""項目一""#));
+        assert!(synced.contains(r#""項目二""#));
+    }
 }

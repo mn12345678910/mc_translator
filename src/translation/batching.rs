@@ -484,3 +484,36 @@ fn apply_batch_results(
     }
     resolved_any
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_adaptive_batches_from_indices_limits() {
+        let mut items = Vec::new();
+        for i in 1..=5 {
+            items.push(GlobalBatchItem::new(
+                &format!("Item {}", i),
+                i,
+                &format!("k{}", i),
+            ));
+        }
+
+        let indices = vec![0, 1, 2, 3, 4];
+
+        // 1. 測試數量上限：每批最多 2 件，不計字數
+        let batches = create_adaptive_batches_from_indices(&items, &indices, 2, 1000);
+        assert_eq!(batches.len(), 3);
+        assert_eq!(batches[0], vec![0, 1]);
+        assert_eq!(batches[1], vec![2, 3]);
+        assert_eq!(batches[2], vec![4]);
+
+        // 2. 測試字數上限：字數限制 13 (每個 Item 均為 6 字元，2件 12 字元，3件 18 字元)
+        let batches_chars = create_adaptive_batches_from_indices(&items, &indices, 10, 13);
+        assert_eq!(batches_chars.len(), 3); // 應切分為 [0, 1], [2, 3], [4]
+        assert_eq!(batches_chars[0], vec![0, 1]);
+        assert_eq!(batches_chars[1], vec![2, 3]);
+        assert_eq!(batches_chars[2], vec![4]);
+    }
+}

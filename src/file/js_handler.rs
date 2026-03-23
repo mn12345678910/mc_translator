@@ -58,10 +58,10 @@ pub async fn collect_js_task(
     for re in JS_REGEX_LIST.iter() {
         for cap in re.captures_iter(&content) {
             if let Some(m) = cap.get(1) {
-                let s = m.as_str();
+                let matched_str = m.as_str();
                 if re.as_str().contains(r"\[(.*?)\]") {
                     let offset = m.start();
-                    for inner_cap in JS_INNER_SINGLE_RE.captures_iter(s) {
+                    for inner_cap in JS_INNER_SINGLE_RE.captures_iter(matched_str) {
                         if let Some(mi) = inner_cap.get(1) {
                             if !should_skip_value(mi.as_str()) {
                                 js_matches.push((
@@ -74,7 +74,7 @@ pub async fn collect_js_task(
                             }
                         }
                     }
-                    for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(s) {
+                    for inner_cap in JS_INNER_DOUBLE_RE.captures_iter(matched_str) {
                         if let Some(mi) = inner_cap.get(1) {
                             if !should_skip_value(mi.as_str()) {
                                 js_matches.push((
@@ -87,8 +87,8 @@ pub async fn collect_js_task(
                             }
                         }
                     }
-                } else if !should_skip_value(s) {
-                    js_matches.push((m.start(), m.end(), s.to_string(), match_counter));
+                } else if !should_skip_value(matched_str) {
+                    js_matches.push((m.start(), m.end(), matched_str.to_string(), match_counter));
                     match_counter += 1;
                 }
             }
