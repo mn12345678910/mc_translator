@@ -43,10 +43,9 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 20px;
-    display: block;
-    height: auto;
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
-    overflow-y: auto !important;
     box-sizing: border-box;
     transition:
         background-color 0.2s,
@@ -654,14 +653,24 @@ input:checked + .slider:before {
     border: 1px solid var(--border-light) !important;
 }
 
-/* 🛠️ 日誌區域回復自適應 (解決固定高度限制問題) */
+/* 🛠️ 日誌區域回復自適應 (彈性伸縮填滿底部) */
 .status-section {
-    flex: none !important;
+    flex: 1 !important;
+    display: flex;
+    flex-direction: column;
     height: auto !important;
 }
 
 #log-output {
-    flex: none !important;
-    height: auto !important;
+    flex: 1 !important;
+    overflow-y: auto !important;
     min-height: 150px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg);
+    padding: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
 }

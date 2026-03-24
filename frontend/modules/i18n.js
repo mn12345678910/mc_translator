@@ -210,7 +210,7 @@ export async function updateUiLanguage() {
             if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
         });
 
-        if (window.__TAURI__) {
+        if (window.__TAURI__ && window.__TAURI__.event) {
             window.__TAURI__.event.emit('ui-lang-changed', uiLang ? uiLang.value : undefined);
         }
 

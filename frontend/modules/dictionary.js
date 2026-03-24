@@ -117,7 +117,7 @@ export function initDictionary() {
         });
     }
 
-    if (window.__TAURI__) {
+    if (window.__TAURI__ && window.__TAURI__.event) {
         // 📢 監聽字典變動事件進行多視窗同步
         window.__TAURI__.event.listen('dictionary-changed', () => {
             loadDictionary();

@@ -9,7 +9,7 @@
     </head>
     <body>
         <header class="top-navbar">
-            <div class="nav-links">
+            <div class="nav-links" style="margin-left: auto;">
                 <button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
                 <button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
                 <button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
@@ -65,7 +65,8 @@
                 <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
                 <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
                 <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
-                <span id="current-status-label" class="status-label ml-md" data-i18n="status_idle" style="margin-left: 15px; color: var(--text-muted);">待命</span>
+                <span id="status-prefix" class="status-label ml-md" style="margin-left: 15px; color: var(--text-muted);" data-i18n="label_current_status">目前狀態: </span>
+                <span id="current-status-label" class="status-label" data-i18n="status_idle" style="color: var(--text-muted);">待命</span>
             </div>
         </div>
 
@@ -368,6 +369,7 @@
                     🔄 恢復預設樣式
                 </button>
             </div>
+        </div>
 
         <!-- 進度與日誌面板 -->
         <div class="status-section">

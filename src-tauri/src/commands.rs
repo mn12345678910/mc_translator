@@ -324,7 +324,12 @@ pub fn query_dictionary(
 }
 
 #[tauri::command]
-pub fn edit_dictionary_item(app: tauri::AppHandle, key: String, value: String, delete: bool) -> Result<(), String> {
+pub fn edit_dictionary_item(
+    app: tauri::AppHandle,
+    key: String,
+    value: String,
+    delete: bool,
+) -> Result<(), String> {
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);
 
@@ -551,7 +556,7 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
         let dict_window = tauri::WebviewWindowBuilder::new(
             &app_c,
             "dict_manager",
-            tauri::WebviewUrl::App("dict.html".into())
+            tauri::WebviewUrl::App("dict.html".into()),
         )
         .title("建議詞管理器")
         .inner_size(800.0, 600.0)
