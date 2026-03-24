@@ -130,6 +130,7 @@ pub fn run() {
             commands::open_path_dialog,
             commands::open_folder,
             commands::get_available_langs,
+            commands::open_dict_window,
             commands::show_window
         ])
         .run(tauri::generate_context!())

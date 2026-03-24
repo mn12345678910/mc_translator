@@ -1,0 +1,2 @@
+    Checking app v0.6.10 (X:\D\MCTEST\mc_translator_rs\src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.98s

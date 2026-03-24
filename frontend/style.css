@@ -43,9 +43,10 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto !important;
     box-sizing: border-box;
     transition:
         background-color 0.2s,
@@ -57,6 +58,20 @@ body {
 .mt-md { margin-top: var(--space-md); }
 
 .hidden { display: none !important; }
+
+/* 🌟 1.A & 2.A 動畫轉場核心 */
+.collapsible-panel {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.collapsible-panel.expanded {
+    max-height: 500px; /* 足夠高的預設，可視內容自適應 */
+    opacity: 1;
+    margin-bottom: 20px;
+}
 
 .flex-end {
     display: flex;
@@ -95,6 +110,30 @@ h2 {
     color: var(--accent-color);
 }
 
+/* 🧭 置頂工具列 */
+.top-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-light);
+    border-radius: var(--border-radius);
+    margin-bottom: 15px;
+}
+
+.nav-brand {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin: 0;
+}
+
+.nav-links {
+    display: flex;
+    gap: 8px;
+}
+
 .control-panel {
     background-color: var(--panel-bg);
     border: 1px solid var(--border-light);
@@ -109,8 +148,36 @@ h2 {
 
 label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 0px;
     color: var(--label-color, var(--text-color));
+}
+
+.label-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.row-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.row-buttons button {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+}
+
+.input-row {
+    display: flex;
+    gap: 30px; /* 🚨 保持防誤觸安全間距 */
+    width: 100%;
+    align-items: center;
+}
+
+.input-row input {
+    flex: 1;
 }
 
 input[type='text'],
@@ -132,13 +199,13 @@ button {
     border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: bold;
-    transition:
-        background-color 0.2s,
-        color 0.2s;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, background-color 0.2s;
 }
 
 button:hover {
     background-color: var(--hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 0 10px var(--accent-color); /* 🌟 1.A 微發光效果 */
 }
 
 #btn-translate,
@@ -150,6 +217,39 @@ button:hover {
 #btn-translate:hover,
 #btn-save-style:hover {
     filter: brightness(1.2);
+}
+
+/* 🗂️ 基礎排版 Grid */
+.form-grid, .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    .form-grid, .checkbox-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .form-grid, .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 📜 滾動與狀態排版 */
+.scrolling-content {
+    flex: 0 1 auto;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.button-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 12px;
 }
 
 /* 🎨 調色盤 Grid 樣式 */
@@ -185,6 +285,16 @@ button:hover {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 200px; /* 🚨 保障最少高度安全區 */
+}
+
+#log-output {
+    flex: 1;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 10px;
+    overflow-y: auto;
 }
 
 #progress-container {
@@ -523,4 +633,35 @@ input:checked + .slider:before {
 
 .secondary-btn:hover {
     background-color: #4a4a55 !important;
+}
+
+/* 🛠️ 折疊面板邊距修正 (解決空白區塊問題) */
+.collapsible-panel {
+    max-height: 0;
+    overflow-y: hidden;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+}
+
+.collapsible-panel.expanded {
+    max-height: 800px; /* 🚨 大約足夠展開的高度 */
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+    border: 1px solid var(--border-light) !important;
+}
+
+/* 🛠️ 日誌區域回復自適應 (解決固定高度限制問題) */
+.status-section {
+    flex: none !important;
+    height: auto !important;
+}
+
+#log-output {
+    flex: none !important;
+    height: auto !important;
+    min-height: 150px;
 }

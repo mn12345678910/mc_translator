@@ -1,6 +1,7 @@
 // frontend/modules/dictionary.js
 import { state } from './state.js';
 import { appendLog, escapeHtml } from './utils.js';
+import { updateToggleStateLabel } from './i18n.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 
@@ -106,12 +107,20 @@ export function initDictionary() {
     const btnDictExport = document.getElementById('btn-dict-export');
     const btnDictOpenJson = document.getElementById('btn-dict-open-json');
 
-    if (btnNavDict && dictDialog) {
-        btnNavDict.addEventListener('click', () => {
-            dictPage = 0;
-            dictDialog.showModal();
+    if (btnNavDict) {
+        btnNavDict.addEventListener('click', async () => {
+            try {
+                await invoke('open_dict_window');
+            } catch (e) {
+                console.error('開啟字典視窗失敗:', e);
+            }
+        });
+    }
+
+    if (window.__TAURI__) {
+        // 📢 監聽字典變動事件進行多視窗同步
+        window.__TAURI__.event.listen('dictionary-changed', () => {
             loadDictionary();
-            if (dictUserControls) dictUserControls.classList.toggle('hidden', false);
         });
     }
     if (tabUser)
@@ -146,6 +155,9 @@ export function initDictionary() {
     if (chkPriority) {
         chkPriority.addEventListener('change', () => {
             dictPage = 0; // 重置頁碼
+            if (typeof updateToggleStateLabel === 'function') {
+                updateToggleStateLabel('chk-glossary-priority', chkPriority.checked);
+            }
             loadDictionary();
         });
     }

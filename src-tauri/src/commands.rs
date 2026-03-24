@@ -3,7 +3,7 @@ use mc_translator::config::dictionary::{
 };
 use mc_translator::config::{settings::StyleConfig, AppConfig};
 use std::collections::HashMap;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 #[tauri::command]
 pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, String> {
@@ -324,7 +324,7 @@ pub fn query_dictionary(
 }
 
 #[tauri::command]
-pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<(), String> {
+pub fn edit_dictionary_item(app: tauri::AppHandle, key: String, value: String, delete: bool) -> Result<(), String> {
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);
 
@@ -342,6 +342,9 @@ pub fn edit_dictionary_item(key: String, value: String, delete: bool) -> Result<
     if let Ok(mut cache) = dict_cache().lock() {
         *cache = None;
     }
+
+    // 📢 發送全域通知同步各視窗
+    let _ = app.emit("dictionary-changed", ());
 
     Ok(())
 }
@@ -484,7 +487,7 @@ pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn clear_user_dictionary() -> Result<(), String> {
+pub fn clear_user_dictionary(app: tauri::AppHandle) -> Result<(), String> {
     use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
@@ -494,11 +497,15 @@ pub fn clear_user_dictionary() -> Result<(), String> {
     if let Ok(mut cache) = dict_cache().lock() {
         *cache = None;
     }
+
+    // 📢 發送全域通知同步各視窗
+    let _ = app.emit("dictionary-changed", ());
+
     Ok(())
 }
 
 #[tauri::command]
-pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
+pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
     use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
@@ -517,6 +524,10 @@ pub fn import_user_dictionary(file_path: String) -> Result<(), String> {
     if let Ok(mut cache) = dict_cache().lock() {
         *cache = None;
     }
+
+    // 📢 發送全域通知同步各視窗
+    let _ = app.emit("dictionary-changed", ());
+
     Ok(())
 }
 
@@ -530,6 +541,36 @@ pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
 
     let json = serde_json::to_string_pretty(&dict).map_err(|e| e.to_string())?;
     std::fs::write(file_path, json).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
+    let app_c = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        let dict_window = tauri::WebviewWindowBuilder::new(
+            &app_c,
+            "dict_manager",
+            tauri::WebviewUrl::App("dict.html".into())
+        )
+        .title("建議詞管理器")
+        .inner_size(800.0, 600.0)
+        .resizable(true)
+        .devtools(true)
+        .build();
+
+        match dict_window {
+            Ok(window) => {
+                let _ = window.set_focus();
+            }
+            Err(_) => {
+                if let Some(window) = app_c.get_webview_window("dict_manager") {
+                    let _ = window.set_focus();
+                }
+            }
+        }
+    });
+
     Ok(())
 }
 

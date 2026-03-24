@@ -170,9 +170,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelTheme = document.querySelector('.theme-settings');
 
     function updatePanelVisibility() {
-        if (panelApi) panelApi.classList.toggle('hidden', !state.currentConfig.show_api_settings);
-        if (panelDev) panelDev.classList.toggle('hidden', !state.currentConfig.show_developer_mode);
-        if (panelTheme) panelTheme.classList.toggle('hidden', !state.currentStyle.show_palette_settings);
+        if (panelApi) panelApi.classList.toggle('expanded', state.currentConfig.show_api_settings);
+        if (panelDev) panelDev.classList.toggle('expanded', state.currentConfig.show_developer_mode);
+        if (panelTheme) panelTheme.classList.toggle('expanded', state.currentStyle.show_palette_settings);
     }
 
     if (btnNavApi) {

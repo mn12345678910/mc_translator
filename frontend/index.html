@@ -8,24 +8,44 @@
         <script type="module" src="main.js" defer></script>
     </head>
     <body>
+        <header class="top-navbar">
+            <div class="nav-links">
+                <button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
+                <button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
+                <button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
+                <button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題" data-i18n-title="btn_nav_theme">🌓</button>
+                <button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項" data-i18n-title="btn_nav_dev">🔧</button>
+            </div>
+        </header>
+
         <!-- 🎮 翻譯控制面板 -->
         <div class="control-panel">
             <div class="form-group">
-<label for="input-path" data-i18n="label_input_path">:</label>
+                <div class="label-row">
+                    <label for="input-path" data-i18n="label_input_path">:</label>
+                    <div class="row-buttons">
+                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂選擇檔案</button>
+                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁選擇資料夾</button>
+                    </div>
+                </div>
                 <div class="input-row">
                     <input type="text" id="input-path" placeholder="輸入或拖放路徑至此..." data-i18n-placeholder="placeholder_input_path" />
-<button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂</button>
-<button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁</button>
+                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('input-path').value=''" data-i18n-title="btn_clear" title="清除">❌</button>
                 </div>
             </div>
 
             <!-- [NEW] 輸出路徑 (100% 復刻) -->
             <div class="form-group mt-sm">
-<label for="output-dir" data-i18n="label_output_path">:</label>
+                <div class="label-row">
+                    <label for="output-dir" data-i18n="label_output_path">输出资料夹路径:</label>
+                    <div class="row-buttons">
+                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁選擇資料夾</button>
+                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂打開資料夾</button>
+                    </div>
+                </div>
                 <div class="input-row">
                     <input type="text" id="output-dir" placeholder="./LLMTranslator (預設)" data-i18n-placeholder="placeholder_output_path" />
-<button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁</button>
-<button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂</button>
+                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('output-dir').value=''" data-i18n-title="btn_clear" title="清除">❌</button>
                 </div>
             </div>
 
@@ -41,24 +61,16 @@
             </div>
 
             <div class="button-row mt-md">
-<button id="btn-translate" data-i18n="btn_run_trans">🚀</button>
-<button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
-<button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
-<button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
-
-                <!-- [NEW] 導航列 -->
-                <div class="flex-end flex-1">
-<button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
-<button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
-<button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
-<button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題" data-i18n-title="btn_nav_theme">🌓</button>
-<button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項" data-i18n-title="btn_nav_dev">🔧</button>
-                </div>
+                <button id="btn-translate" data-i18n="btn_run_trans">🚀</button>
+                <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
+                <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
+                <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
+                <span id="current-status-label" class="status-label ml-md" data-i18n="status_idle" style="margin-left: 15px; color: var(--text-muted);">待命</span>
             </div>
         </div>
 
         <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
-        <div class="control-panel api-settings hidden">
+        <div class="control-panel api-settings collapsible-panel">
 <h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -173,7 +185,7 @@
         </div>
 
         <!-- 🔧 開發人員選項 -->
-        <div class="control-panel developer-settings hidden">
+        <div class="control-panel developer-settings collapsible-panel">
 <h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
             <div class="checkbox-grid">
                 <div class="switch-group">
@@ -214,7 +226,7 @@
         </div>
 
         <!-- 🎨 調色盤與佈局管理面板 -->
-        <div class="control-panel theme-settings hidden">
+        <div class="control-panel theme-settings collapsible-panel">
 <h2 id="header-palette" data-i18n="header_palette">🎨</h2>
             <div class="form-grid">
                 <div class="form-group">
@@ -356,7 +368,6 @@
                     🔄 恢復預設樣式
                 </button>
             </div>
-        </div>
 
         <!-- 進度與日誌面板 -->
         <div class="status-section">
@@ -388,55 +399,5 @@
             <div id="log-output" style="margin-top: 10px"></div>
         </div>
 
-        <!-- 📖 字典管理器彈窗 -->
-        <dialog id="dict-dialog" class="styled-dialog">
-            <div class="dialog-header">
-<h3 id="header-dict-mgr" data-i18n="header_dict_mgr">📖</h3>
-                <!-- [NEW] 術語優先級切換開關 -->
-                <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px;">
-<span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem; color: var(--text-color);">:</span>
-                    <label class="switch" title="切換 官方優先 或 使用者優先" data-i18n-title="glossary_priority_hover">
-                        <input type="checkbox" id="chk-glossary-priority" />
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <button class="close-icon" onclick="document.getElementById('dict-dialog').close()">×</button>
-            </div>
-            <div class="dialog-body">
-                <!-- [NEW] 分頁與按鈕行 -->
-                <div class="tabs flex-between">
-                    <div style="display: flex; gap: 10px;">
-<button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user"></button>
-<button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official"></button>
-                    </div>
-                    <!-- 按鈕群組 -->
-                    <div id="dict-user-buttons" class="flex-wrap" style="flex: 1;">
-<button id="btn-dict-add" class="action-btn" data-i18n="btn_add" style="background-color: var(--accent-color); color: #000; padding: 6px 12px;">➕</button>
-<button id="btn-dict-replace" class="action-btn" data-i18n="btn_replace" style="background-color: var(--border-hover, #666); color: #fff; padding: 6px 12px;">🔄</button>
-<button id="btn-dict-import" class="action-btn" data-i18n="btn_import" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📥</button>
-<button id="btn-dict-export" class="action-btn" data-i18n="btn_export" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;">📤</button>
-<button id="btn-dict-open-json" class="action-btn" style="background-color: var(--btn-bg); color: #fff; padding: 6px 12px;" title="開啟所在分頁檔案及檔案所在資料夾" data-i18n-title="btn_dict_open_json">📂 .json</button>
-
-<button id="btn-dict-clear" class="action-btn" data-i18n="btn_clear_all" style="background-color: var(--danger-color); color: #fff; padding: 6px 12px; margin-left: auto;">🗑</button>
-                    </div>
-                </div>
-                <!-- [NEW] 輸入與搜尋區 -->
-                <div id="dict-user-controls" class="flex-wrap mt-sm">
-                    <input type="text" id="dict-input-key" placeholder="原文 (Key)" data-i18n-placeholder="placeholder_dict_key" style="flex: 1; min-width: 140px; padding: 6px;" />
-                    <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" data-i18n-placeholder="placeholder_dict_value" style="flex: 1; min-width: 140px; padding: 6px;" />
-                    <div class="search-bar" style="margin-left: auto;">
-                        <input type="text" id="dict-search" placeholder="🔍 搜尋術語..." data-i18n-placeholder="placeholder_search_terms" style="width: 180px; padding: 6px 10px; font-size: 0.9rem;" />
-                    </div>
-                </div>
-                <div class="table-container" id="dict-table-container"></div>
-            </div>
-            <div class="dialog-footer">
-                <div class="pagination">
-<button id="page-prev" class="page-btn" data-i18n="btn_page_prev"></button>
-<span id="page-info">1 / 1</span>
-<button id="page-next" class="page-btn" data-i18n="btn_page_next"></button>
-                </div>
-            </div>
-        </dialog>
     </body>
 </html>
