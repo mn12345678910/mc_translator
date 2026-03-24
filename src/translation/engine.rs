@@ -416,3 +416,470 @@ async fn realtime_save_file_helper(
     let final_content = sync_formatting(&content, &translations_map);
     let _ = tokio::task::spawn_blocking(move || std::fs::write(fs_path, final_content)).await;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::translation::context::{ContextOptions, TranslationContext};
+    use crate::translation::glossary::GlossaryAutomaton;
+    use crate::translation::job::JobConfig;
+    use std::collections::HashMap;
+    use std::sync::{atomic::AtomicBool, atomic::AtomicU32, Arc, Mutex};
+
+    fn setup_test_context<'a>(
+        config: JobConfig,
+        glossary: &'a GlossaryAutomaton,
+        i18n: &'a crate::i18n::CommonLabels,
+        inferred: &'a HashMap<String, String>,
+        terms: &'a Vec<(String, String)>,
+    ) -> TranslationContext<'a> {
+        TranslationContext::new(ContextOptions {
+            config: Arc::new(Mutex::new(config)),
+            inferred,
+            terms,
+            glossary_automaton: glossary,
+            status: Arc::new(Mutex::new("".to_string())),
+            progress: Arc::new(AtomicU32::new(0)),
+            total_progress: Arc::new(AtomicU32::new(0)),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
+            current_log: Arc::new(Mutex::new(Vec::new())),
+            filename: "test.json".to_string(),
+            translation_memory: Arc::new(Mutex::new(HashMap::new())),
+            skip_memory: false,
+            pause_notifier: Arc::new(tokio::sync::Notify::new()),
+            i18n,
+        })
+    }
+
+    #[test]
+    fn test_collect_translatable_strings_skips() {
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+        let config = JobConfig::default();
+
+        let ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+        let mut pending = Vec::new();
+
+        // 1. 測試 should_skip_key
+        let val_skip_key = serde_json::json!("should_translate_me");
+        collect_translatable_strings(
+            &val_skip_key,
+            &serde_json::Value::Null,
+            Some("id"),
+            &mut pending,
+            &ctx,
+        );
+        assert!(pending.is_empty(), "應該跳過 'id' key");
+
+        // 2. 測試 should_skip_value
+        let val_skip_value = serde_json::json!("123.45"); // 測試數值字串或日期應被跳過
+        collect_translatable_strings(
+            &val_skip_value,
+            &serde_json::Value::Null,
+            Some("text"),
+            &mut pending,
+            &ctx,
+        );
+        assert!(pending.is_empty(), "應該跳過純數字/日期 value");
+
+        // 3. 正常收集
+        let val_ok = serde_json::json!("Hello World");
+        collect_translatable_strings(
+            &val_ok,
+            &serde_json::Value::Null,
+            Some("text"),
+            &mut pending,
+            &ctx,
+        );
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].0, "Hello World");
+    }
+
+    #[test]
+    fn test_collect_translatable_strings_nested() {
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+        let config = JobConfig::default();
+
+        let ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+        let mut pending = Vec::new();
+
+        let nested_json = serde_json::json!({
+            "title": "Welcome",
+            "list": [
+                "Item 1",
+                "Item 2",
+                { "nested_key": "Nested Value" }
+            ],
+            "details": {
+                "desc": "Detail info"
+            }
+        });
+
+        collect_translatable_strings(
+            &nested_json,
+            &serde_json::Value::Null,
+            None,
+            &mut pending,
+            &ctx,
+        );
+
+        // 應收集到 5 個字串:
+        // "Welcome" (title)
+        // "Item 1" (__ARRAY_ELEMENT__)
+        // "Item 2" (__ARRAY_ELEMENT__)
+        // "Nested Value" (nested_key)
+        // "Detail info" (desc)
+        assert_eq!(pending.len(), 5);
+        let collected_values: Vec<String> = pending.iter().map(|(s, _)| s.clone()).collect();
+        assert!(collected_values.contains(&"Welcome".to_string()));
+        assert!(collected_values.contains(&"Item 1".to_string()));
+        assert!(collected_values.contains(&"Item 2".to_string()));
+        assert!(collected_values.contains(&"Nested Value".to_string()));
+        assert!(collected_values.contains(&"Detail info".to_string()));
+    }
+
+    #[test]
+    fn test_collect_translatable_strings_prefilled() {
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+        let config = JobConfig::default();
+
+        let ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+        let mut pending = Vec::new();
+
+        let value = serde_json::json!("Original Text");
+        let target_base = serde_json::json!("已翻譯文字");
+
+        collect_translatable_strings(&value, &target_base, Some("title"), &mut pending, &ctx);
+
+        // 因為 target_base 有值且不等於 value，這會計入 ctx.prefilled 並且 early return，pending 應維持為空
+        assert!(pending.is_empty(), "Prefilled 應該跳過 pending 填充");
+        let prefilled = ctx.prefilled.lock().unwrap();
+        assert_eq!(prefilled.len(), 1);
+        assert_eq!(prefilled[0].0, "Original Text");
+        assert_eq!(prefilled[0].1, "title");
+        assert_eq!(prefilled[0].2, "已翻譯文字");
+    }
+
+    #[tokio::test]
+    async fn test_translate_json_recursive_batch_success() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 模擬 Ollama API: 批次回應
+        let mock_response = serde_json::json!({
+            "response": "{\"translated\": \"[1] translated-A [2] translated-B\"}"
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+
+        let mut config = JobConfig::default();
+        config.api_provider = "Ollama".to_string();
+        config.ollama_url = server.uri();
+        config.selected_model = "llama3".to_string();
+        config.batch_size = 5; // 大於 1
+        config.timeout = 30;
+        config.target_lang = "zh_tw".to_string(); // 觸發 hanconv::s2tw
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+
+        let mut source_json = serde_json::json!({
+            "itemA": "text-A",
+            "itemB": "text-B"
+        });
+
+        let res = translate_json_recursive(
+            &mut source_json,
+            &serde_json::Value::Null,
+            None,
+            vec![],
+            &mut ctx,
+            None,
+        )
+        .await;
+
+        assert!(res.is_ok());
+        let translations = ctx.translations.lock().unwrap();
+        assert!(translations.contains_key("itemA") || translations.contains_key("itemB"));
+    }
+
+    #[tokio::test]
+    async fn test_translate_json_recursive_single_item() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 模擬單位回應 (單筆與批次的處理路徑不同)
+        let mock_response = serde_json::json!({
+            "response": "{\"translated\": \"single-translated-text\"}"
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+
+        let mut config = JobConfig::default();
+        config.api_provider = "Ollama".to_string();
+        config.ollama_url = server.uri();
+        config.selected_model = "llama3".to_string();
+        config.batch_size = 1; // 1 會跳過批次直接進入單筆
+        config.timeout = 30;
+        config.target_lang = "zh_tw".to_string(); // 觸發 hanconv::s2tw
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+
+        let mut source_json = serde_json::json!({
+            "itemA": "text-A"
+        });
+
+        let res = translate_json_recursive(
+            &mut source_json,
+            &serde_json::Value::Null,
+            None,
+            vec![],
+            &mut ctx,
+            None,
+        )
+        .await;
+
+        assert!(res.is_ok());
+        let translations = ctx.translations.lock().unwrap();
+        assert!(translations.contains_key("itemA"));
+    }
+
+    #[test]
+    fn test_count_strings_nested() {
+        let value = serde_json::json!({
+            "title": "Welcome",
+            "list": ["Item 1", "Item 2"],
+            "id": 123 // 跳過 key
+        });
+        let count = count_strings(&value, None, &serde_json::Value::Null);
+        // title: 1, list: 2, id: skipped. Total 3
+        assert_eq!(count, 3);
+    }
+
+    #[test]
+    fn test_collect_translatable_strings_skip_memory() {
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+        let config = JobConfig::default();
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+        ctx.skip_memory = true; // 觸發 skip_memory 分支
+        let mut pending = Vec::new();
+
+        collect_translatable_strings(
+            &serde_json::json!("Test text"),
+            &serde_json::Value::Null,
+            None,
+            &mut pending,
+            &ctx,
+        );
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].0, "Test text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_json_recursive_empty_json() {
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+        let config = JobConfig::default();
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+        let mut source_json = serde_json::json!({
+            "id": "123" // 測試 skip_key 或 skip_value
+        });
+
+        // 導致 pending_items 為空，觸發 early return
+        let res = translate_json_recursive(
+            &mut source_json,
+            &serde_json::Value::Null,
+            None,
+            vec![],
+            &mut ctx,
+            None,
+        )
+        .await;
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_realtime_save_file_helper_works() {
+        let temp_dir = std::env::temp_dir();
+        let path = temp_dir.join("realtime_test.json");
+        let content = "{\"items\": []}".to_string();
+        let mut map = HashMap::new();
+        map.insert("items".to_string(), vec![]);
+
+        realtime_save_file_helper(path.clone(), content, map).await;
+        assert!(path.exists());
+        let _ = std::fs::remove_file(path);
+    }
+
+    #[tokio::test]
+    async fn test_translate_json_recursive_batch_error_logging() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 模擬 Ollama API 報錯 (例如 500)
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+
+        let mut config = JobConfig::default();
+        config.api_provider = "Ollama".to_string();
+        config.ollama_url = server.uri();
+        config.selected_model = "llama3".to_string();
+        config.batch_size = 5;
+        config.timeout = 30;
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+
+        let mut source_json = serde_json::json!({
+            "itemA": "text-A",
+            "itemB": "text-B"
+        });
+
+        let res = translate_json_recursive(
+            &mut source_json,
+            &serde_json::Value::Null,
+            None,
+            vec![],
+            &mut ctx,
+            None,
+        )
+        .await;
+
+        // 批次報錯如果為 API_ERROR 等重大錯誤，將會 early return Err
+        assert!(res.is_err(), "批次重大錯誤應該提早退出");
+    }
+
+    #[tokio::test]
+    async fn test_translate_json_recursive_single_error_logging() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 模擬 Ollama API 報錯
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+
+        let i18n = crate::i18n::CommonLabels::default();
+        let glossary = GlossaryAutomaton::new(
+            &HashMap::new(),
+            &HashMap::new(),
+            &HashMap::new(),
+            "official",
+        );
+        let inferred = HashMap::new();
+        let terms = Vec::new();
+
+        let mut config = JobConfig::default();
+        config.api_provider = "Ollama".to_string();
+        config.ollama_url = server.uri();
+        config.selected_model = "llama3".to_string();
+        config.batch_size = 1; // 單筆
+        config.timeout = 30;
+
+        let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
+
+        let mut source_json = serde_json::json!({
+            "itemA": "text-A"
+        });
+
+        let res = translate_json_recursive(
+            &mut source_json,
+            &serde_json::Value::Null,
+            None,
+            vec![],
+            &mut ctx,
+            None,
+        )
+        .await;
+
+        assert!(res.is_ok());
+        let logs = ctx.current_log.lock().unwrap();
+        assert!(!logs.is_empty(), "應該有單筆錯誤日誌記錄");
+    }
+}

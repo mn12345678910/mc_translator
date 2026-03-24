@@ -81,7 +81,13 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    run_main_with_args(args, &RealCliInteract).await
+}
 
+async fn run_main_with_args(
+    args: Args,
+    interact: &dyn CliInteract,
+) -> Result<(), Box<dyn std::error::Error>> {
     // 確保 langs 目錄與語言檔案存在
     let _ = CliLabels::ensure_langs_exists();
 
@@ -185,11 +191,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         let default_idx =
                             langs.iter().position(|l| l == &config.ui_lang).unwrap_or(0);
 
-                        let idx = Select::new()
-                            .with_prompt(&i18n.cli_select_ui_lang)
-                            .items(&langs)
-                            .default(default_idx)
-                            .interact()?;
+                        let idx = interact.select(&i18n.cli_select_ui_lang, &langs, default_idx)?;
 
                         config.ui_lang = langs[idx].clone();
                         i18n = CliLabels::load_or_default(&config.ui_lang);
@@ -221,11 +223,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             providers.iter().map(|s| s.to_string()).collect();
                         items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
 
-                        let idx = Select::new()
-                            .with_prompt(&i18n.prompt_select_provider_cli)
-                            .items(&items)
-                            .default(default_idx)
-                            .interact()?;
+                        let idx = interact.select(
+                            &i18n.prompt_select_provider_cli,
+                            &items,
+                            default_idx,
+                        )?;
 
                         if idx == items.len() - 1 {
                             step = status_history.pop().unwrap_or(1);
@@ -255,10 +257,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             format!("{} (鍵入 '<' 回到上一步)", i18n.common.label_api_key)
                         };
 
-                        let key: String = Password::new()
-                            .with_prompt(&key_prompt)
-                            .allow_empty_password(true)
-                            .interact()?;
+                        let key = interact.password(&key_prompt)?;
 
                         if key == "<" {
                             step = status_history.pop().unwrap_or(1);
@@ -314,11 +313,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             0
                         };
 
-                        let idx = Select::new()
-                            .with_prompt(&prompt_text)
-                            .items(&items)
-                            .default(default_idx)
-                            .interact()?;
+                        let idx = interact.select(&prompt_text, &items, default_idx)?;
 
                         if idx == items.len() - 1 {
                             if config.api_provider == "Ollama"
@@ -332,10 +327,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
 
                         if items[idx] == i18n.label_custom_input_cli {
-                            let model: String = Input::new()
-                                .with_prompt(&i18n.cli_custom_model_prompt)
-                                .allow_empty(true)
-                                .interact()?;
+                            let model = interact.input(&i18n.cli_custom_model_prompt, true)?;
                             if model == "<" {
                                 continue;
                             }
@@ -352,8 +344,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     5 => {
                         // --- Step 5: 輸入路徑 ---
                         let input_prompt = &i18n.cli_input_path_prompt;
-                        let input_path_str: String =
-                            Input::new().with_prompt(input_prompt).interact()?;
+                        let input_path_str = interact.input(input_prompt, false)?;
 
                         if input_path_str == "<" {
                             if config.api_provider == "Google Free" {
@@ -385,10 +376,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .cli_output_path_prompt
                             .replace("{}", &i18n.common.label_output_path)
                             .replace("{}", default_output);
-                        let output_dir: String = Input::new()
-                            .with_prompt(&output_prompt)
-                            .allow_empty(true)
-                            .interact()?;
+                        let output_dir = interact.input(&output_prompt, true)?;
 
                         if output_dir == "<" {
                             step = status_history.pop().unwrap_or(1);
@@ -411,11 +399,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             i18n.label_back_to_prev_cli.to_string(), // 修正重覆 <-
                         ];
 
-                        let start = Select::new()
-                            .with_prompt(&i18n.prompt_confirm_start_cli)
-                            .items(&items)
-                            .default(0)
-                            .interact()?;
+                        let start = interact.select(&i18n.prompt_confirm_start_cli, &items, 0)?;
 
                         if start == 3 {
                             // 回上一步
@@ -442,14 +426,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             config.save();
             let _ = run_translation(config.clone(), input_path).await; // 忽略單次錯誤
 
-            let choice = Select::new()
-                .with_prompt(&i18n.prompt_task_finished_cli)
-                .items(&[
+            let choice = interact.select(
+                &i18n.prompt_task_finished_cli,
+                &[
                     i18n.prompt_new_task_cli.clone(),
                     i18n.label_no_cancel_cli.clone(),
-                ])
-                .default(0)
-                .interact()?;
+                ],
+                0,
+            )?;
 
             if choice == 1 {
                 break;
@@ -529,6 +513,48 @@ async fn run_translation(
     Ok(())
 }
 
+pub trait CliInteract {
+    fn select(
+        &self,
+        prompt: &str,
+        items: &[String],
+        default: usize,
+    ) -> Result<usize, dialoguer::Error>;
+    fn input(&self, prompt: &str, allow_empty: bool) -> Result<String, dialoguer::Error>;
+    fn password(&self, prompt: &str) -> Result<String, dialoguer::Error>;
+}
+
+pub struct RealCliInteract;
+
+impl CliInteract for RealCliInteract {
+    fn select(
+        &self,
+        prompt: &str,
+        items: &[String],
+        default: usize,
+    ) -> Result<usize, dialoguer::Error> {
+        Select::new()
+            .with_prompt(prompt)
+            .items(items)
+            .default(default)
+            .interact()
+    }
+
+    fn input(&self, prompt: &str, allow_empty: bool) -> Result<String, dialoguer::Error> {
+        Input::<String>::new()
+            .with_prompt(prompt)
+            .allow_empty(allow_empty)
+            .interact()
+    }
+
+    fn password(&self, prompt: &str) -> Result<String, dialoguer::Error> {
+        Password::new()
+            .with_prompt(prompt)
+            .allow_empty_password(true)
+            .interact()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -575,5 +601,483 @@ mod tests {
 
         assert_eq!(args.batch_size.unwrap(), 50);
         assert_eq!(args.timeout.unwrap(), 120);
+    }
+
+    pub struct MockCliInteract {
+        pub select_answers: std::cell::RefCell<Vec<usize>>,
+        pub input_answers: std::cell::RefCell<Vec<String>>,
+        pub password_answers: std::cell::RefCell<Vec<String>>,
+    }
+
+    impl CliInteract for MockCliInteract {
+        fn select(
+            &self,
+            _prompt: &str,
+            _items: &[String],
+            _default: usize,
+        ) -> Result<usize, dialoguer::Error> {
+            Ok(self.select_answers.borrow_mut().remove(0))
+        }
+        fn input(&self, _prompt: &str, _allow_empty: bool) -> Result<String, dialoguer::Error> {
+            Ok(self.input_answers.borrow_mut().remove(0))
+        }
+        fn password(&self, _prompt: &str) -> Result<String, dialoguer::Error> {
+            Ok(self.password_answers.borrow_mut().remove(0))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_cancel() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 2]), // Lang, Provider, Model, Cancel
+            input_answers: std::cell::RefCell::new(vec![
+                "my_custom_model".to_string(),
+                abs_path_str,
+                "output_dir".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["test_key".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_headless_invalid_input() {
+        let args = Args::try_parse_from(["mc_translator_cli", "-i", "non_existent_file_path_123"])
+            .unwrap();
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![]),
+            input_answers: std::cell::RefCell::new(vec![]),
+            password_answers: std::cell::RefCell::new(vec![]),
+        };
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_back_navigation() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_back.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 0, 2]), // Lang, Provider, Provider(again), Model, Cancel
+            input_answers: std::cell::RefCell::new(vec![
+                "my_custom_model".to_string(),
+                abs_path_str,
+                "output_dir".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec![
+                "<".to_string(),
+                "test_key".to_string(),
+            ]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_headless_valid_input() {
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_headless.json");
+        let _ = std::fs::write(&temp_file, "{}");
+
+        let args = Args::try_parse_from([
+            "mc_translator_cli",
+            "-i",
+            &temp_file.to_string_lossy().to_string(),
+            "-o",
+            "output_dir_test",
+            "-p",
+            "Gemini",
+            "-m",
+            "gemini-1.5-pro",
+            "--api-key",
+            "test_key",
+            "--log-llm",
+            "--batch-size",
+            "100",
+            "--batch-max-chars",
+            "2000",
+            "--timeout",
+            "30",
+            "--glossary-priority",
+            "official",
+            "--source-lang",
+            "en",
+            "--target-lang",
+            "es",
+            "--skip-json",
+            "--skip-js",
+            "--skip-jar",
+            "--skip-book",
+        ])
+        .unwrap();
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![]),
+            input_answers: std::cell::RefCell::new(vec![]),
+            password_answers: std::cell::RefCell::new(vec![]),
+        };
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_ollama() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_ollama.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![0, 4, 0, 2]), // Lang, Ollama, Model(Custom), Cancel
+            input_answers: std::cell::RefCell::new(vec![
+                "llama3".to_string(),
+                abs_path_str,
+                "output_dir".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec![]), // Skipped Step 3
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_google_free() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_google_free.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![0, 6, 2]), // Lang, Google Free, Cancel
+            input_answers: std::cell::RefCell::new(vec![abs_path_str, "output_dir".to_string()]), // Skipped 4 Model, so input starts at Path
+            password_answers: std::cell::RefCell::new(vec![]), // Skipped 3 APIKey
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_backoffs() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_backoff.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // Select Answers Flow:
+            // 1. Lang: 0 (zh_tw) -> Step 2
+            // 2. Provider: 7 (Back) -> Pop -> Step 1 again (line 227 cover)
+            // 3. Lang again: 0 -> Step 2
+            // 4. Provider: 4 (Ollama) -> Step 4 (Key skip)
+            // 5. Model: 1 (Back) -> inside Ollama back to 2 (line 316 cover)
+            // 6. Provider again: 0 (Gemini) -> Step 3
+            // 7. Key: "test_key" -> Step 4
+            // 8. Model: 0 (Custom) -> Input "mod_a" -> Step 5
+            // 9. Path: Input -> Step 6
+            // 10. Output: Input -> Step 7
+            // 11. Confirm: 3 (Back) -> Step 6 (line 400 cover)
+            // 12. Output again: Input -> Step 7
+            // 13. Confirm: 2 (Cancel) -> Exit
+            select_answers: std::cell::RefCell::new(vec![0, 7, 0, 4, 1, 0, 0, 3, 2]),
+            input_answers: std::cell::RefCell::new(vec![
+                "mod_a".to_string(),
+                abs_path_str.clone(),
+                "out".to_string(),
+                "out2".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["test_key".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_advanced() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_adv.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // Select Answers Flow:
+            // 1. Lang: 0 -> Step 2
+            // 2. Provider: 0 (Gemini) -> Step 3
+            // 3. Key: "key" -> Step 4
+            // 4. Model: 0 (Custom) -> Input -> Step 5
+            // 5. Path: abs_path_str -> Step 6
+            // 6. Output: "out" -> Step 7
+            // 7. Confirm: 1 (Advanced) -> triggering loop break (line 407 cover)
+            // 8. Finished Choice: 1 (Cancel/Exit)
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 0, 1, 1]),
+            input_answers: std::cell::RefCell::new(vec![
+                "mod_b".to_string(),
+                abs_path_str.clone(),
+                "out".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["key".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_confirm_success() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_confirm.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // Select Answers Flow:
+            // 1. Lang: 0 -> Step 2
+            // 2. Provider: 0 (Gemini) -> Step 3
+            // 3. Key -> input password -> Step 4
+            // 4. Model: 0 (Custom) -> Input name -> Step 5
+            // 5. Path: Input -> Step 6
+            // 6. Output: Input -> Step 7
+            // 7. Confirm: 0 (Confirm) -> Breaking while loop (line 440 cover)
+            // 8. Finished Choice: 1 (No/Cancel to exit outer loop) (line 452 cover)
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 0, 1]),
+            input_answers: std::cell::RefCell::new(vec![
+                "mod_confirm".to_string(),
+                abs_path_str.clone(),
+                "out_confirm".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["test_key".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_headless_def_output() {
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_headless_def.json");
+        let _ = std::fs::write(&temp_file, "{}");
+
+        // Omit output -o option to trigger defaults line 176
+        let args = Args::try_parse_from([
+            "mc_translator_cli",
+            "-i",
+            &temp_file.to_string_lossy().to_string(),
+            "-p",
+            "Gemini",
+            "-m",
+            "gemini-1.5-pro",
+        ])
+        .unwrap();
+
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![]),
+            input_answers: std::cell::RefCell::new(vec![]),
+            password_answers: std::cell::RefCell::new(vec![]),
+        };
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_step5_back() {
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_step5_back.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // Select Answers Flow:
+            // 1. Lang: 0 -> Step 2
+            // 2. Provider: 0 (Gemini) -> Step 3
+            // 3. Key -> Step 4
+            // 4. Model: 0 (Custom) -> Step 5
+            // 5. Path: "<" (Back) -> Pop -> Back to Step 4 Model
+            // 6. Model again: 0 (Custom) -> Step 5
+            // 7. Path: abs_path_str -> Step 6
+            // 8. Output: "out" -> Step 7
+            // 9. Confirm: 2 (Cancel) -> Exit
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 0, 2]),
+            input_answers: std::cell::RefCell::new(vec![
+                "mod_step5_1".to_string(),
+                "<".to_string(),
+                "mod_step5_2".to_string(),
+                abs_path_str.clone(),
+                "out_dir".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["test_key".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_advanced_branch() {
+        // This test hits start == 1 (Advanced) branch at line 407
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_adv_b.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // 1 Lang -> 2 Provider(Gemini) -> 3 Key -> 4 Model(Custom) -> 5 Path -> 6 Output
+            // -> 7 Confirm:1 (Advanced) -> break -> run_translation -> finished choice: 1 (Exit)
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 1, 1]),
+            input_answers: std::cell::RefCell::new(vec![
+                "m_adv_b".to_string(),
+                abs_path_str.clone(),
+                "out_adv_b".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["key_adv_b".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_new_task_loop() {
+        // This test hits new_task loop (lines 429-440) when Confirm=0 (Start), finished choice=0 (New), then Cancel
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_newloop.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // Round 1:
+            //   1 Lang -> 2 Provider(Gemini) -> 3 Key -> 4 Model(Custom) -> 5 Path -> 6 Output
+            //   -> 7 Confirm:0 (Yes, Start) -> break while -> run_translation
+            //   -> finished choice: 0 (New task) -> next_step=5, initial_history=[1,2,3,4]
+            // Round 2 (next_step=5, initial_history=[1,2,3,4]):
+            //   5 Path -> 6 Output -> 7 Confirm:2 (Cancel) -> Exit
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 0, 0, 2]),
+            input_answers: std::cell::RefCell::new(vec![
+                "m_loop".to_string(),    // Round1: Step4 model custom input
+                abs_path_str.clone(),    // Round1: Step5 path
+                "out_loop".to_string(),  // Round1: Step6 output
+                abs_path_str.clone(),    // Round2: Step5 path
+                "out_loop2".to_string(), // Round2: Step6 output
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["key_loop".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_has_saved_key() {
+        // Test empty password input (hits line 261: !key.trim().is_empty() = false)
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_hskey.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        let mock = MockCliInteract {
+            // 1 Lang -> 2 Provider(Gemini=0) -> 3 Key(empty) -> 4 Model(Custom=0) -> 5 Path -> 6 Out -> 7 Cancel
+            select_answers: std::cell::RefCell::new(vec![0, 0, 0, 2]),
+            input_answers: std::cell::RefCell::new(vec![
+                "m_hskey".to_string(),
+                abs_path_str.clone(),
+                "out_hskey".to_string(),
+            ]),
+            // empty password hits the !key.trim().is_empty() = false branch
+            password_answers: std::cell::RefCell::new(vec!["".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
+    }
+
+    #[tokio::test]
+    async fn test_run_main_interactive_non_custom_model() {
+        // Cover the else branch at line 331: model = items[idx].to_string() when idx != custom
+        let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
+
+        let temp_dir = std::env::temp_dir();
+        let temp_file = temp_dir.join("temp_test_input_noncustom.json");
+        let _ = std::fs::write(&temp_file, "{}");
+        let abs_path_str = temp_file.to_string_lossy().to_string();
+
+        // Use DeepL (provider idx=5) which populates items. idx=0 picks first model (non-custom)
+        // Actually fetch_dynamic_models returns empty for DeepL, so items = [Custom, Back]
+        // To hit non-custom, we need a dynamic model. Since network is unavailable in tests,
+        // items will always be [Custom, Back]. We target DeepL which skips the prompt_text fallback (Ollama/DeepL case)
+        let mock = MockCliInteract {
+            // 1 Lang -> 2 Provider(DeepL=5) -> 3 Key -> 4 Model: 0(Custom) -> 5 Path -> 6 Out -> 7 Cancel
+            select_answers: std::cell::RefCell::new(vec![0, 5, 0, 2]),
+            input_answers: std::cell::RefCell::new(vec![
+                "deepl_mod".to_string(),
+                abs_path_str.clone(),
+                "out_dl".to_string(),
+            ]),
+            password_answers: std::cell::RefCell::new(vec!["key_dl".to_string()]),
+        };
+
+        let res = run_main_with_args(args, &mock).await;
+        assert!(res.is_ok());
+
+        let _ = std::fs::remove_file(&temp_file);
     }
 }

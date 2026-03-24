@@ -516,4 +516,93 @@ mod tests {
         assert_eq!(batches_chars[1], vec![2, 3]);
         assert_eq!(batches_chars[2], vec![4]);
     }
+
+    #[tokio::test]
+    async fn test_run_translation_batch_empty() {
+        let mut items: Vec<GlobalBatchItem> = Vec::new();
+        let config = Arc::new(Mutex::new(JobConfig::default()));
+        let status = Arc::new(Mutex::new(String::new()));
+        let progress = Arc::new(AtomicU32::new(0));
+        let current_batch = Arc::new(AtomicU32::new(0));
+        let total_batches = Arc::new(AtomicU32::new(0));
+        let counter = Arc::new(Mutex::new(0));
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let paused = Arc::new(AtomicBool::new(false));
+        let pause_notifier = Arc::new(tokio::sync::Notify::new());
+        let glossary_automaton = crate::translation::glossary::GlossaryAutomaton::new_simple(
+            &std::collections::HashMap::new(),
+            &std::collections::HashMap::new(),
+        );
+        let i18n = crate::i18n::CommonLabels::default();
+
+        let ctx = RunBatchContext {
+            items: &mut items,
+            config,
+            status,
+            progress,
+            current_batch,
+            total_batches,
+            counter,
+            log,
+            cancelled,
+            paused,
+            pause_notifier,
+            glossary_automaton: &glossary_automaton,
+            i18n: &i18n,
+            file_name: "test.json".to_string(),
+            global_items_offset: 0,
+        };
+
+        let result = run_translation_batch(ctx).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_run_translation_batch_all_done() {
+        let mut item = GlobalBatchItem::new("Apple", 1, "k1");
+        item.translated = Some("蘋果".to_string());
+        let mut items = vec![item];
+
+        let config = Arc::new(Mutex::new(JobConfig::default()));
+        let status = Arc::new(Mutex::new(String::new()));
+        let progress = Arc::new(AtomicU32::new(0));
+        let current_batch = Arc::new(AtomicU32::new(0));
+        let total_batches = Arc::new(AtomicU32::new(0));
+        let counter = Arc::new(Mutex::new(0));
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let paused = Arc::new(AtomicBool::new(false));
+        let pause_notifier = Arc::new(tokio::sync::Notify::new());
+        let glossary_automaton = crate::translation::glossary::GlossaryAutomaton::new_simple(
+            &std::collections::HashMap::new(),
+            &std::collections::HashMap::new(),
+        );
+        let i18n = crate::i18n::CommonLabels::default();
+
+        let ctx = RunBatchContext {
+            items: &mut items,
+            config,
+            status,
+            progress: Arc::clone(&progress),
+            current_batch,
+            total_batches,
+            counter,
+            log,
+            cancelled,
+            paused,
+            pause_notifier,
+            glossary_automaton: &glossary_automaton,
+            i18n: &i18n,
+            file_name: "test.json".to_string(),
+            global_items_offset: 0,
+        };
+
+        let result = run_translation_batch(ctx).await;
+        assert!(result.is_ok());
+
+        // 進度應被記錄為 total_items = 1
+        let val = f32::from_bits(progress.load(Ordering::SeqCst));
+        assert_eq!(val, 1.0);
+    }
 }

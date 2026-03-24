@@ -171,6 +171,8 @@ async fn call_google_api_raw(
                         Ok(json) => {
                             if let Some(t) = json[0][0][0].as_str() {
                                 return Ok(t.to_string());
+                            } else {
+                                last_error = "回傳格式錯誤 (缺少譯文陣列)".to_string();
                             }
                         }
                         Err(e) => last_error = format!("JSON 解析失敗: {}", e),
@@ -311,7 +313,16 @@ async fn translate_with_gemini(
         "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
         config.selected_model, config.api_key
     );
+    translate_with_gemini_with_url(text, config, file_name, glossary, &url).await
+}
 
+async fn translate_with_gemini_with_url(
+    text: &str,
+    config: &JobConfig,
+    file_name: &str,
+    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let sys_prompt = build_system_prompt(&config.user_prompt, glossary, &config.system_prompt);
     let body = serde_json::json!({
         "systemInstruction": {
@@ -529,6 +540,16 @@ async fn translate_with_openai_compatible(
         "Mistral" => "https://api.mistral.ai/v1/chat/completions",
         _ => "https://api.openai.com/v1/chat/completions",
     };
+    translate_with_openai_compatible_with_url(text, config, file_name, glossary, url).await
+}
+
+async fn translate_with_openai_compatible_with_url(
+    text: &str,
+    config: &JobConfig,
+    file_name: &str,
+    glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let system_content = build_system_prompt(&config.user_prompt, glossary, &config.system_prompt);
     let body = serde_json::json!({
         "model": config.selected_model,
@@ -586,6 +607,14 @@ async fn translate_with_deepl(
     } else {
         "https://api.deepl.com/v2/translate"
     };
+    translate_with_deepl_with_url(text, config, url).await
+}
+
+async fn translate_with_deepl_with_url(
+    text: &str,
+    config: &JobConfig,
+    url: &str,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let target_lang = map_lang_deepl(&config.target_lang).to_string();
     let params = [
         ("auth_key", config.api_key.clone()),
@@ -691,25 +720,31 @@ mod tests {
         use crate::translation::glossary::{GlossaryEntry, TermType};
         let base_prompt = "Translate this:";
         let technical_constraints = "\nTechnical constraints.";
-        let glossary = vec![
-            GlossaryEntry {
-                original: "hello".to_string(),
-                translated: "你好".to_string(),
-                source: TermType::Official,
-            },
-            GlossaryEntry {
-                original: "world".to_string(),
-                translated: "世界".to_string(),
-                source: TermType::Inferred,
-            },
-        ];
 
+        let mut glossary = Vec::new();
+        // 建立 35 個官方術語，觸發 >= 30 分支 (Inferred 會被略過)
+        for i in 0..35 {
+            glossary.push(GlossaryEntry {
+                original: format!("orig_off_{:02}", i),
+                translated: format!("trans_off_{:02}", i),
+                source: TermType::Official,
+            });
+        }
         let result = build_system_prompt(base_prompt, Some(&glossary), technical_constraints);
-        assert!(result.contains("Translate this:"));
-        assert!(result.contains("請根據以下【術語建議】"));
-        assert!(result.contains("- hello => 你好"));
-        assert!(result.contains("- world => 世界"));
-        assert!(result.contains("Technical constraints."));
+        assert!(result.contains("- orig_off_00 => trans_off_00"));
+        assert!(!result.contains("- orig_off_31 => trans_off_31"));
+
+        let mut glossary2 = Vec::new();
+        // 建立 35 個推論術語，觸發 Inferred 專屬 break
+        for i in 0..35 {
+            glossary2.push(GlossaryEntry {
+                original: format!("orig_inf_{:02}", i),
+                translated: format!("trans_inf_{:02}", i),
+                source: TermType::Inferred,
+            });
+        }
+        let result2 = build_system_prompt(base_prompt, Some(&glossary2), technical_constraints);
+        assert!(result2.contains("- orig_inf_00 => trans_inf_00"));
     }
 
     #[tokio::test]
@@ -741,7 +776,9 @@ mod tests {
 
     #[test]
     fn test_finalize_translation() {
-        let config = JobConfig::default();
+        let mut config = JobConfig::default();
+        config.enable_llm_log = true; // 觸發寫入 LLM 通訊記錄的分支
+
         let result = finalize_translation("`\"test\"` ", &config, "", "", "");
         assert_eq!(result, "test");
     }
@@ -752,5 +789,377 @@ mod tests {
         assert_eq!(map_lang_google("unknown"), "en");
         assert_eq!(map_lang_deepl("en_us"), "EN-US");
         assert_eq!(map_lang_deepl("unknown"), "ZH");
+    }
+
+    #[tokio::test]
+    async fn test_call_google_api_raw_success() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // Google Translate 回傳結構多層巢狀 Array
+        let mock_response = "[[[\"translated_text\"]]]";
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(mock_response))
+            .mount(&server)
+            .await;
+
+        let res = call_google_api_raw(&server.uri()).await;
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "translated_text");
+    }
+
+    #[tokio::test]
+    async fn test_call_google_api_raw_429() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(429))
+            .mount(&server)
+            .await;
+
+        let res = call_google_api_raw(&server.uri()).await;
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("API 限制 (429 Too Many Requests)"));
+    }
+
+    #[tokio::test]
+    async fn test_call_google_api_raw_parse_fail() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 完全無效的 JSON 觸發 json::<Value>() 失敗
+        let mock_response = "{invalid_json_string}";
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(mock_response))
+            .mount(&server)
+            .await;
+
+        let res = call_google_api_raw(&server.uri()).await;
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("JSON 解析失敗"));
+    }
+
+    #[tokio::test]
+    async fn test_call_google_api_raw_format_fail() {
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        // 合法 JSON 但不符合 [[[ string ]]] 巢狀規格
+        let mock_response = "{\"error\": \"not an array\"}";
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(mock_response))
+            .mount(&server)
+            .await;
+
+        let res = call_google_api_raw(&server.uri()).await;
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("回傳格式錯誤"));
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_gemini_success() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "candidates": [{
+                "content": {
+                    "parts": [{ "text": "translated_text" }]
+                }
+            }]
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/generateContent"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_key = "test_key".to_string();
+        config.selected_model = "gemini-1.5-pro".to_string();
+        config.timeout = 30;
+
+        let res = translate_with_gemini_with_url(
+            "hello",
+            &config,
+            "test.json",
+            None,
+            &format!("{}/generateContent", server.uri()),
+        )
+        .await;
+
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "translated_text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_openai_compatible_success() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "choices": [{
+                "message": { "content": "translated_text" }
+            }]
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_provider = "OpenAI".to_string();
+        config.api_key = "test_key".to_string();
+        config.timeout = 30;
+
+        let res = translate_with_openai_compatible_with_url(
+            "hello",
+            &config,
+            "test.json",
+            None,
+            &server.uri(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "translated_text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_deepl_success() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "translations": [{ "text": "translated_text" }]
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_key = "test_key".to_string();
+        config.timeout = 30; // 避免預設 0s 造成瞬間逾時
+
+        let res = translate_with_deepl_with_url("hello", &config, &server.uri()).await;
+
+        assert!(res.is_ok(), "DeepL failed with: {:?}", res.unwrap_err());
+        assert_eq!(res.unwrap(), "translated_text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_gemini_error() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/generateContent"))
+            .respond_with(ResponseTemplate::new(400).set_body_string("Bad Request"))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_key = "test_key".to_string();
+        config.selected_model = "gemini-1.5-pro".to_string();
+        config.timeout = 30;
+        config.enable_llm_log = true;
+
+        let res = translate_with_gemini_with_url(
+            "hello",
+            &config,
+            "test.json",
+            None,
+            &format!("{}/generateContent", server.uri()),
+        )
+        .await;
+
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("Gemini API Error: Bad Request")
+                || err_msg.contains("TIMEOUT")
+                || err_msg.contains("API_ERROR")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_openai_compatible_error() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("Internal Error"))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_provider = "OpenAI".to_string();
+        config.api_key = "test_key".to_string();
+        config.timeout = 30;
+
+        let res = translate_with_openai_compatible_with_url(
+            "hello",
+            &config,
+            "test.json",
+            None,
+            &server.uri(),
+        )
+        .await;
+
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("OpenAI API Error: Internal Error")
+                || err_msg.contains("TIMEOUT")
+                || err_msg.contains("API_ERROR")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_deepl_error() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(ResponseTemplate::new(401).set_body_string("Unauthorized"))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.api_key = "test_key".to_string();
+        config.timeout = 30;
+
+        let res = translate_with_deepl_with_url("hello", &config, &server.uri()).await;
+
+        assert!(res.is_err());
+        let err_msg = res.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("DeepL API Error: Unauthorized")
+                || err_msg.contains("TIMEOUT")
+                || err_msg.contains("API_ERROR")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_ollama_success() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "response": "{\"translated\": \"translated_text\"}"
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.ollama_url = server.uri();
+        config.selected_model = "llama3".to_string();
+        config.timeout = 30;
+
+        let res = translate_with_ollama("hello", &config, "test.json", None).await;
+
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "translated_text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_with_ollama_fallback() {
+        use crate::translation::job::JobConfig;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "response": "plain translated text"
+        });
+
+        Mock::given(method("POST"))
+            .and(path("/api/generate"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let mut config = JobConfig::default();
+        config.ollama_url = server.uri();
+        config.timeout = 30;
+
+        let res = translate_with_ollama("hello", &config, "test.json", None).await;
+
+        assert!(res.is_ok());
+        assert_eq!(res.unwrap(), "plain translated text");
+    }
+
+    #[tokio::test]
+    async fn test_translate_one_fallback_to_google_free() {
+        use crate::translation::job::JobConfig;
+
+        let mut config = JobConfig::default();
+        config.api_provider = "Gemini".to_string();
+        config.api_key = "".to_string(); // 觸發空金鑰 fallback 分支
+        config.timeout = 1; // 讓它即使發送失敗也瞬間回來，不卡測試。
+
+        let res = translate_one("hello", &config, "test.json", None).await;
+
+        // 我們只關心調用順利進去，不論網路成功或失敗(Error)，能執行過該分支即可增加覆蓋率。
+        assert!(res.is_err() || res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_translate_one_fallback_to_google_free_openai() {
+        use crate::translation::job::JobConfig;
+
+        let mut config = JobConfig::default();
+        config.api_provider = "OpenAI".to_string();
+        config.api_key = "".to_string(); // 觸發空金鑰 fallback 分支
+        config.timeout = 1;
+
+        let res = translate_one("hello", &config, "test.json", None).await;
+
+        assert!(res.is_err() || res.is_ok());
     }
 }

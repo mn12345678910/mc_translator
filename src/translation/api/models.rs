@@ -55,11 +55,16 @@ pub async fn fetch_dynamic_models(
 }
 
 async fn fetch_gemini_models(api_key: &str) -> Vec<String> {
+    fetch_gemini_models_with_url(api_key, "https://generativelanguage.googleapis.com").await
+}
+
+async fn fetch_gemini_models_with_url(api_key: &str, base_url: &str) -> Vec<String> {
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models?key={}",
+        "{}/v1beta/models?key={}",
+        base_url.trim_end_matches('/'),
         api_key
     );
-    if let Ok(resp) = CLIENT.get(url).send().await {
+    if let Ok(resp) = CLIENT.get(&url).send().await {
         if let Ok(json) = resp.json::<serde_json::Value>().await {
             if let Some(models) = json["models"].as_array() {
                 return models
@@ -104,8 +109,15 @@ async fn fetch_openai_compatible_models(api_key: &str, url: &str) -> Vec<String>
 }
 
 pub async fn fetch_mc_versions() -> Vec<(String, u32)> {
-    let url = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
-    if let Ok(resp) = CLIENT.get(url).send().await {
+    fetch_mc_versions_with_url("https://launchermeta.mojang.com").await
+}
+
+pub async fn fetch_mc_versions_with_url(base_url: &str) -> Vec<(String, u32)> {
+    let url = format!(
+        "{}/mc/game/version_manifest_v2.json",
+        base_url.trim_end_matches('/')
+    );
+    if let Ok(resp) = CLIENT.get(&url).send().await {
         if let Ok(json) = resp.json::<serde_json::Value>().await {
             if let Some(versions) = json["versions"].as_array() {
                 let mut results: Vec<(String, u32)> = Vec::new();
@@ -159,4 +171,153 @@ fn get_static_mc_versions() -> Vec<(String, u32)> {
         .into_iter()
         .map(|v| (v.to_string(), version_to_pack_format(v)))
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_fetch_ollama_models_success() {
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "models": [{"name": "llama3"}, {"name": "mistral"}]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/api/tags"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let models = fetch_ollama_models(&server.uri()).await;
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0], "llama3");
+    }
+
+    #[tokio::test]
+    async fn test_fetch_gemini_models_with_url_success() {
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "models": [
+                {
+                    "name": "models/gemini-1.5",
+                    "supportedGenerationMethods": ["generateContent"]
+                },
+                {
+                    "name": "models/gemini-pro",
+                    "supportedGenerationMethods": ["embedContent"]
+                }
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/v1beta/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let models = fetch_gemini_models_with_url("test_key", &server.uri()).await;
+        assert_eq!(models.len(), 1);
+        assert_eq!(models[0], "gemini-1.5");
+    }
+
+    #[tokio::test]
+    async fn test_fetch_openai_compatible_models_success() {
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "data": [{"id": "gpt-4"}, {"id": "gpt-3.5-turbo"}]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/v1/models"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let models =
+            fetch_openai_compatible_models("test_key", &format!("{}/v1/models", server.uri()))
+                .await;
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0], "gpt-4");
+    }
+
+    #[tokio::test]
+    async fn test_fetch_mc_versions_with_url_success() {
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({
+            "versions": [
+                {"type": "release", "id": "1.21.4"},
+                {"type": "snapshot", "id": "1.21.5-pre1"}
+            ]
+        });
+
+        Mock::given(method("GET"))
+            .and(path("/mc/game/version_manifest_v2.json"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let versions = fetch_mc_versions_with_url(&server.uri()).await;
+        assert!(!versions.is_empty());
+        assert_eq!(versions[0].0, "1.21.4");
+        assert_eq!(versions[0].1, 46);
+    }
+
+    #[test]
+    fn test_version_to_pack_format_branches() {
+        assert_eq!(version_to_pack_format("1.21.4"), 46);
+        assert_eq!(version_to_pack_format("1.20.1"), 15);
+        assert_eq!(version_to_pack_format("1.12.2"), 3);
+        assert_eq!(version_to_pack_format("1.9"), 2); // 新增
+        assert_eq!(version_to_pack_format("1.6.1"), 1); // 新增
+        assert_eq!(version_to_pack_format("9.9.9"), 46);
+    }
+
+    #[tokio::test]
+    async fn test_fetch_dynamic_models_all_providers() {
+        let list = fetch_dynamic_models("DeepL", "dummy_key", "")
+            .await
+            .unwrap();
+        assert_eq!(list.len(), 2);
+
+        // 擴充測試其他 Provider 路由
+        let _ = fetch_dynamic_models("OpenAI", "dummy_key", "").await;
+        let _ = fetch_dynamic_models("DeepSeek", "dummy_key", "").await;
+        let _ = fetch_dynamic_models("Mistral", "dummy_key", "").await;
+
+        let list_empty = fetch_dynamic_models("Gemini", "", "").await.unwrap();
+        assert!(list_empty.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_fetch_ollama_models_errors() {
+        // 1. 測網故障 (連接一個不存在的埠口)
+        let models_err = fetch_ollama_models("http://localhost:1").await;
+        assert!(models_err.is_empty());
+
+        // 2. 測解析故障 (JSON 不是陣列)
+        let server = MockServer::start().await;
+        let mock_response = serde_json::json!({ "models": "not_array" });
+        Mock::given(method("GET"))
+            .and(path("/api/tags"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&mock_response))
+            .mount(&server)
+            .await;
+
+        let models_parse = fetch_ollama_models(&server.uri()).await;
+        assert!(models_parse.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_original_wrappers_fallback() {
+        // 原裝 Wrapper 的網路調用覆蓋，呼叫即可（會因為 real key 無效或 network 走入 Err/Empty 分支）
+        let _ = fetch_gemini_models("invalid_key").await;
+
+        // fetch_mc_versions 會打 launchermeta.mojang.com 並返回結果或靜態備份
+        let versions = fetch_mc_versions().await;
+        assert!(!versions.is_empty());
+    }
 }

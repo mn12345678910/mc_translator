@@ -114,4 +114,40 @@ mod tests {
 
         let _ = std::fs::remove_file(path);
     }
+
+    #[test]
+    fn test_dictionary_paths_and_dirs() {
+        let lang = "en_us";
+        let path = get_user_dict_path(lang);
+        assert!(path.to_string_lossy().contains("dicts"));
+        assert!(path.to_string_lossy().contains("user"));
+
+        ensure_dicts_dir();
+        assert!(std::path::Path::new(DICT_DIR).exists());
+    }
+
+    #[test]
+    fn test_load_dict_file_not_found_fallback() {
+        let path = std::path::Path::new("non_existent_file_xyz_123.json");
+        let loaded: HashMap<String, String> = load_dict(&path);
+        assert!(loaded.is_empty()); // Triggers T::default()
+    }
+
+    #[test]
+    fn test_translation_memory_load_save_cycle() {
+        let lang = "test_memory_cycle";
+        let mut memory = HashMap::new();
+        memory.insert("Door".to_string(), "門".to_string());
+
+        // 儲存
+        save_translation_memory(lang, &memory);
+
+        // 載入驗證
+        let loaded = load_translation_memory(lang);
+        assert_eq!(loaded.get("Door").unwrap(), "門");
+
+        // 清理
+        let path = get_user_dict_path(lang);
+        let _ = std::fs::remove_file(path);
+    }
 }
