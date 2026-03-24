@@ -646,7 +646,7 @@ input:checked + .slider:before {
 }
 
 .collapsible-panel.expanded {
-    max-height: 800px; /* 🚨 大約足夠展開的高度 */
+    max-height: 2000px; /* 🚨 大約足夠展開的高度 */
     padding-top: 15px !important;
     padding-bottom: 15px !important;
     margin-bottom: 20px !important;

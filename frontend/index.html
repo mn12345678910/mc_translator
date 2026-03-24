@@ -50,7 +50,7 @@
             </div>
 
             <!-- [NEW] 介面語言與導航列 (100% 復刻) -->
-            <div class="form-group mt-sm">
+            <div class="form-group mt-sm" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
                 <label for="ui-lang" data-i18n="label_ui_lang">:</label>
                 <select id="ui-lang" style="max-width: 150px; padding: 6px">
                     <option value="zh_tw">繁體中文 (zh_tw)</option>
@@ -222,6 +222,27 @@
                         <input type="checkbox" id="chk-llm-log" />
                         <span class="slider round"></span>
                     </label>
+                </div>
+            </div>
+
+            <!-- [NEW] 系統技術指令 (開發人員專用) -->
+            <div style="margin-top: 15px">
+                <div class="form-group" style="margin-top: 10px">
+                    <label for="system-prompt"><span data-i18n="label_system_prompt">📜 系統技術指令</span>:</label>
+                    <textarea
+                        id="system-prompt"
+                        rows="5"
+                        style="
+                            width: 100%;
+                            box-sizing: border-box;
+                            background: var(--input-bg);
+                            color: #fff;
+                            border: 1px solid #333;
+                            border-radius: 4px;
+                            padding: 8px;
+                            margin-top: 4px;
+                        "
+                    ></textarea>
                 </div>
             </div>
         </div>

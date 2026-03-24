@@ -560,6 +560,7 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
         )
         .title("建議詞管理器")
         .inner_size(800.0, 600.0)
+        .min_inner_size(800.0, 600.0)
         .resizable(true)
         .devtools(true)
         .build();
