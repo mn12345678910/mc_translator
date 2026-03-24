@@ -239,3 +239,171 @@ pub async fn output_resource_pack(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::translation::job::JobConfig;
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::Path;
+    use std::sync::{Arc, Mutex};
+
+    fn get_test_temp_dir() -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join("pack_gen_tests");
+        let id = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let unique = dir.join(id.to_string());
+        let _ = fs::create_dir_all(&unique);
+        unique
+    }
+
+    fn make_dummy_config() -> JobConfig {
+        JobConfig {
+            source_lang: "en_us".to_string(),
+            target_lang: "zh_tw".to_string(),
+            output_dir: "".to_string(),
+            pack_format: 15,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn test_write_to_temp_or_output_advanced() {
+        let temp_test_dir = get_test_temp_dir();
+        let mut config = make_dummy_config();
+        config.output_dir = temp_test_dir.to_string_lossy().to_string();
+
+        let mut files = HashMap::new();
+        // 1. [BUNDLE] 不帶目錄
+        files.insert(
+            "[BUNDLE]en_us.json".to_string(),
+            r#"{"key":"val1"}"#.to_string(),
+        );
+
+        // 2. [BUNDLE] 帶單層目錄 -> 改為絕對路徑以觸發 is_absolute (Line 71)
+        let abs_file = temp_test_dir.join("modname").join("en_us.json");
+        files.insert(
+            format!("[BUNDLE]{}", abs_file.to_string_lossy()),
+            r#"{"key":"val2"}"#.to_string(),
+        );
+
+        // 3. Patchouli 格式
+        files.insert(
+            "assets/modname/patchouli_books/book/en_us/book.json".to_string(),
+            r#"{"key":"val3"}"#.to_string(),
+        );
+
+        // 4. [BUNDLE] 絕對路徑 且檔名非 en_us.json (觸發 78)
+        let abs_file2 = temp_test_dir.join("modname2").join("custom.json");
+        files.insert(
+            format!("[BUNDLE]{}", abs_file2.to_string_lossy()),
+            r#"{"key":"val4"}"#.to_string(),
+        );
+
+        let res = write_to_temp_or_output(&config, files);
+        assert!(res.is_ok());
+
+        let output_base = get_output_dir(&config); // output_dir/LLMTranslator
+        let abs_output = to_extended_abs_path(&output_base);
+
+        // 1. 驗證 assets/unknown/lang/zh_tw.json 存在
+        let path1 = abs_output.join("temp_translator/assets/unknown/lang/zh_tw.json");
+        assert!(path1.exists(), "Missing default bundle path");
+
+        // 2. 驗證 assets/modname/lang/zh_tw.json 存在
+        let path2 = abs_output.join("temp_translator/assets/modname/lang/zh_tw.json");
+        assert!(path2.exists(), "Missing modname bundle path");
+
+        // 3. 驗證 patchouli_books 的 替換
+        let path3 =
+            abs_output.join("temp_translator/assets/modname/patchouli_books/book/zh_tw/book.json");
+        assert!(path3.exists(), "Missing patchouli book path");
+
+        // 4. 驗證 custom.json 被覆寫為 zh_tw.json (觸發 78 與 111)
+        let path4 = abs_output.join("temp_translator/assets/modname2/lang/zh_tw.json");
+        assert!(path4.exists(), "Missing custom bundle path");
+
+        let _ = fs::remove_dir_all(&temp_test_dir);
+    }
+
+    #[tokio::test]
+    async fn test_output_resource_pack_success() {
+        let temp_test_dir = get_test_temp_dir();
+        let mut config = make_dummy_config();
+        config.output_dir = temp_test_dir.to_string_lossy().to_string();
+
+        let output_base = get_output_dir(&config);
+        let abs_output = to_extended_abs_path(&output_base);
+        let temp_translator = abs_output.join("temp_translator");
+
+        // 預先鋪設 zip 檔案覆蓋 exists 分支 (198-202)
+        fs::create_dir_all(&abs_output).unwrap();
+        fs::write(abs_output.join("LLMTranslator.zip"), b"old zip").unwrap();
+
+        // 手動鋪設暫存檔案
+        fs::create_dir_all(temp_translator.join("assets/minecraft/lang")).unwrap();
+        fs::write(
+            temp_translator.join("assets/minecraft/lang/zh_tw.json"),
+            r#"{"key":"val"}"#,
+        )
+        .unwrap();
+
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let mut i18n = crate::i18n::CommonLabels::default();
+        i18n.log_generating_pack = "Generating...".to_string();
+        i18n.log_pack_gen_finished = "Finished.".to_string();
+        i18n.log_pack_item_exists_warn = "Warn: {}".to_string();
+
+        let res = output_resource_pack(
+            Path::new("."),
+            HashMap::new(),
+            config.clone(),
+            log.clone(),
+            i18n,
+        )
+        .await;
+
+        assert!(res.is_ok());
+        assert!(
+            abs_output.join("LLMTranslator.zip").exists(),
+            "Zip not generated"
+        );
+        assert!(!temp_translator.exists(), "Temp dir not cleaned up");
+
+        let _ = fs::remove_dir_all(&temp_test_dir);
+    }
+
+    #[tokio::test]
+    async fn test_output_resource_pack_empty_dir() {
+        let temp_test_dir = get_test_temp_dir();
+        let mut config = make_dummy_config();
+        config.output_dir = temp_test_dir.to_string_lossy().to_string();
+
+        let output_base = get_output_dir(&config);
+        let abs_output = to_extended_abs_path(&output_base);
+        let temp_translator = abs_output.join("temp_translator");
+
+        // 建立目錄不放檔案 (觸發 !has_files Line 172)
+        fs::create_dir_all(temp_translator.join("assets/minecraft/lang")).unwrap();
+
+        let log = Arc::new(Mutex::new(Vec::new()));
+        let i18n = crate::i18n::CommonLabels::default();
+
+        let res = output_resource_pack(
+            Path::new("."),
+            HashMap::new(),
+            config.clone(),
+            log.clone(),
+            i18n,
+        )
+        .await;
+
+        assert!(res.is_ok());
+        assert!(!temp_translator.exists()); // 應該被清理
+
+        let _ = fs::remove_dir_all(&temp_test_dir);
+    }
+}

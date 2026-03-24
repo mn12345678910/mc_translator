@@ -40,18 +40,17 @@ jobs:
       run: cargo check --manifest-path src-tauri/Cargo.toml
     - name: Run Tests GUI
       run: cargo test --manifest-path src-tauri/Cargo.toml
-    - name: Install Tarpaulin (Coverage Tool)
+    - name: Install llvm-cov (Coverage Tool)
       uses: taiki-e/install-action@v2
       with:
-        tool: cargo-tarpaulin
-
+        tool: cargo-llvm-cov
 
     - name: Run Coverage
-      run: cargo tarpaulin --workspace --out Xml --output-dir .
+      run: cargo llvm-cov --all-targets --lcov --output-path lcov.info
     - name: Upload to Codecov
       uses: codecov/codecov-action@v5
       with:
-        files: ./cobertura.xml
+        files: ./lcov.info
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
     - name: Upload Rust Coverage

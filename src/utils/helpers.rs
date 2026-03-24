@@ -140,4 +140,34 @@ mod tests {
         let entries_after_clear = hashmap_to_entries(&map);
         assert_eq!(entries_after_clear[0].original, "Apple"); // 照長度排序
     }
+
+    #[test]
+    fn test_add_log_edge_cases() {
+        let log = Arc::new(Mutex::new(Vec::new()));
+        // 測試空語言與空檔名
+        add_log(&log, "Message 1", "", "", "");
+        let guard = log.lock().unwrap();
+        assert_eq!(guard.len(), 1);
+        assert!(guard[0].contains("Message 1"));
+        assert!(!guard[0].contains("<")); // 不包含語言標籤
+    }
+
+    #[test]
+    fn test_add_log_empty_lines() {
+        let log = Arc::new(Mutex::new(Vec::new()));
+        add_log(&log, "Line1\n\nLine3", "en", "zh", "test.json");
+        let guard = log.lock().unwrap();
+        assert_eq!(guard.len(), 3); // Line1, "", Line3
+        assert_eq!(guard[1], ""); // 驗證空行確實是空字串
+    }
+
+    #[test]
+    fn test_format_log_message_standard() {
+        let msg = "Hello\n\nWorld";
+        let logs = format_log_message(msg);
+        assert_eq!(logs.len(), 3);
+        assert!(logs[0].contains("Hello"));
+        assert_eq!(logs[1], "");
+        assert!(logs[2].contains("World"));
+    }
 }

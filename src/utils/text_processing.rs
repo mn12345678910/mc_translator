@@ -381,4 +381,68 @@ mod tests {
         assert!(synced.contains(r#""項目一""#));
         assert!(synced.contains(r#""項目二""#));
     }
+
+    /// 6. 進階解析與降級測試
+    #[test]
+    fn test_cleanup_advanced_vectors() {
+        // Markdown 標題覆蓋 (text, javascript, js)
+        assert_eq!(validate_and_cleanup("```text\nTarget\n```"), "Target");
+        assert_eq!(validate_and_cleanup("```javascript\nTarget\n```"), "Target");
+        assert_eq!(validate_and_cleanup("```js\nTarget\n```"), "Target");
+
+        // Markdown 未知標題降級 (rust) (Line 27)
+        assert_eq!(
+            validate_and_cleanup("```rust\nlet x = 1;\n```"),
+            "rust\nlet x = 1;"
+        );
+
+        // 英文前綴及冒號 (包含中繼換行以防 trim)
+        assert_eq!(
+            validate_and_cleanup("Line1\nResult: \"Success\""),
+            "Success"
+        );
+
+        // 中文前綴及全形冒號
+        assert_eq!(validate_and_cleanup("Line1\n翻譯：『成功』 "), "成功");
+    }
+
+    #[test]
+    fn test_cleanup_json_array_fallback() {
+        // Array 單一元素降級
+        assert_eq!(
+            validate_and_cleanup("[ \"Array Element\" ]"),
+            "Array Element"
+        );
+
+        // 空 Array 等等 (觸發 96 和 159)
+        assert_eq!(validate_and_cleanup("[]"), "");
+        assert_eq!(validate_and_cleanup("{ }"), "");
+        assert_eq!(validate_and_cleanup("[ ]"), "");
+
+        // 雜訊過濾
+        assert_eq!(
+            validate_and_cleanup("我們已將該段文字翻譯如下：\n翻譯完成"),
+            "翻譯完成"
+        );
+    }
+
+    #[test]
+    fn test_sync_formatting_exhaustion() {
+        let original = r#"{
+    "key1": "Value1",
+    "key2": "Value2"
+}"#;
+        let mut translations = HashMap::new();
+        translations.insert("key1".to_string(), vec!["新值1".to_string()]); // key2 為 None 觸發 271
+
+        let synced = sync_formatting(original, &translations);
+        assert!(synced.contains(r#""key1" : "新值1""#));
+        assert!(synced.contains(r#""key2": "Value2""#));
+    }
+
+    #[test]
+    fn test_detect_loop_edge_lengths() {
+        assert!(!detect_loop("abc")); // < 10 (Line 173)
+        assert!(!detect_loop("abcdef12")); // Chunk size continue (Line 179)
+    }
 }

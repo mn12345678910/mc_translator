@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
 
 /// Minecraft 官方語言檔案集合 (動態快取)
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -24,7 +23,24 @@ pub async fn load_mc_dicts(
     (McLangFiles, HashMap<String, String>, Vec<(String, String)>),
     Box<dyn std::error::Error + Send + Sync>,
 > {
-    let dict_dir = Path::new("dicts");
+    load_mc_dicts_with_args(
+        source_lang,
+        target_lang,
+        "https://api.github.com/repos/SkyEye-FAST/mc_lang/contents/valid",
+        std::path::Path::new("dicts"),
+    )
+    .await
+}
+
+pub async fn load_mc_dicts_with_args(
+    source_lang: &str,
+    target_lang: &str,
+    api_url: &str,
+    dict_dir: &std::path::Path,
+) -> Result<
+    (McLangFiles, HashMap<String, String>, Vec<(String, String)>),
+    Box<dyn std::error::Error + Send + Sync>,
+> {
     if !dict_dir.exists() {
         let _ = fs::create_dir_all(dict_dir);
     }
@@ -37,7 +53,6 @@ pub async fn load_mc_dicts(
         .build()?;
 
     // 1. 取得目錄下的檔案清單 (優先透過 API 獲取所有官方支援字典)
-    let api_url = "https://api.github.com/repos/SkyEye-FAST/mc_lang/contents/valid";
     let mut available_langs = Vec::new();
 
     if let Ok(resp) = client.get(api_url).send().await {
@@ -114,4 +129,92 @@ pub async fn load_mc_dicts(
     }
 
     Ok((files, exact, unfiltered_diffs))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[tokio::test]
+    async fn test_load_mc_dicts_local_fallback() {
+        let temp_dir = std::env::temp_dir().join("mc_lang_test_local");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // 1. 寫入本地 dummy data
+        fs::write(
+            temp_dir.join("en_us.json"),
+            r#"{"item.apple": "Apple", "item.potato": "Potato"}"#,
+        )
+        .unwrap();
+        fs::write(
+            temp_dir.join("zh_tw.json"),
+            r#"{"item.apple": "蘋果", "item.potato": "洋芋"}"#,
+        )
+        .unwrap();
+        fs::write(
+            temp_dir.join("zh_cn.json"),
+            r#"{"item.apple": "苹果", "item.potato": "马铃薯"}"#,
+        )
+        .unwrap();
+
+        // 2. 測試讀取 (en_us -> zh_tw)
+        let (files, exact, unfiltered) = load_mc_dicts_with_args(
+            "en_us",
+            "zh_tw",
+            "http://invalid_url_xyz", // 促使網路失敗 fallback
+            &temp_dir,
+        )
+        .await
+        .unwrap();
+
+        assert!(!files.langs.is_empty());
+        assert_eq!(exact.get("apple").unwrap(), "蘋果");
+        assert!(!unfiltered.is_empty());
+
+        // 清理
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_load_mc_dicts_network_success_mock() {
+        let mock_server = MockServer::start().await;
+
+        let temp_dir = std::env::temp_dir().join("mc_lang_test_net");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // Mock 1: Github Contents valid API
+        let api_response = r#"[{"name": "en_us.json", "download_url": "PLACEHOLDER"}]"#;
+        let api_response =
+            api_response.replace("PLACEHOLDER", &format!("{}/en_us.json", mock_server.uri()));
+
+        Mock::given(method("GET"))
+            .and(path("/contents/valid"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(api_response))
+            .mount(&mock_server)
+            .await;
+
+        // Mock 2: Download link
+        Mock::given(method("GET"))
+            .and(path("/en_us.json"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(r#"{"item.bed": "Bed"}"#))
+            .mount(&mock_server)
+            .await;
+
+        let api_url = format!("{}/contents/valid", mock_server.uri());
+
+        let (files, _, _) = load_mc_dicts_with_args("en_us", "zh_tw", &api_url, &temp_dir)
+            .await
+            .unwrap();
+
+        // 驗證網路下載覆寫成功，本地快取建立
+        assert!(temp_dir.join("en_us.json").exists());
+        assert!(!files.langs.get("en_us").unwrap().is_empty());
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
 }

@@ -188,17 +188,6 @@ pub async fn collect_jar_tasks(
     Ok((file_tasks, global_items))
 }
 
-/// 已廢棄實體臨時目錄方案，改為純記憶體快取。此函數僅供相容性佔位，稍後將在 pipeline 中移除呼叫。
-#[deprecated(note = "Use memory-based buffering instead")]
-pub fn write_translated_to_temp_fs(
-    _jar_path: &Path,
-    _inner_path: &str,
-    _content: &str,
-    _config: &crate::translation::job::JobConfig,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    Ok(())
-}
-
 pub fn repack_jar(
     source_path: &Path,
     target_path: &Path,
@@ -281,4 +270,189 @@ pub fn repack_jar(
 
     fs::rename(&temp_jar_path, target_path)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::translation::job::{JobConfig, JobSharedState};
+    use std::collections::HashMap;
+    use std::io::Read;
+    use std::sync::atomic::{AtomicBool, AtomicU32};
+    use std::sync::{Arc, Mutex};
+
+    fn create_mock_shared_state() -> JobSharedState {
+        let mut config = JobConfig::default();
+        config.source_lang = "zh_tw".to_string();
+        config.target_lang = "en_us".to_string();
+
+        JobSharedState {
+            log: Arc::new(Mutex::new(Vec::new())),
+            status: Arc::new(Mutex::new(String::new())),
+            progress: Arc::new(AtomicU32::new(0)),
+            progress_total: Arc::new(AtomicU32::new(0)),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
+            translation_memory: Arc::new(Mutex::new(HashMap::new())),
+            global_progress: Arc::new(AtomicU32::new(0)),
+            global_total: Arc::new(AtomicU32::new(0)),
+            current_processing_path: Arc::new(Mutex::new(String::new())),
+            current_batch: Arc::new(AtomicU32::new(0)),
+            total_batches: Arc::new(AtomicU32::new(0)),
+            pause_notifier: Arc::new(tokio::sync::Notify::new()),
+            config: Arc::new(Mutex::new(config)),
+            i18n: crate::i18n::CommonLabels::default(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_jar_tasks_read_fail() {
+        let state = create_mock_shared_state();
+        let non_existent = std::path::PathBuf::from("non_existent_file_xyz.jar");
+        let res = collect_jar_tasks(1, &non_existent, &state).await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_collect_jar_tasks_corrupt_jar() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_jar_test");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("corrupt.jar");
+        std::fs::write(&file_path, b"not a zip file content").unwrap();
+
+        let state = create_mock_shared_state();
+        let res = collect_jar_tasks(1, &file_path, &state).await;
+        assert!(res.is_err());
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_collect_jar_tasks_success() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_jar_test_success");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("test.jar");
+        {
+            let file = std::fs::File::create(&file_path).unwrap();
+            let mut zip = zip::ZipWriter::new(file);
+            let options = zip::write::FileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+
+            zip.start_file("assets/minecraft/lang/en_us.json", options)
+                .unwrap();
+            zip.write_all(r#"{"menu.play": "Play", "menu.options": "Options"}"#.as_bytes())
+                .unwrap();
+
+            // 增加 patchouli_books 測試路徑
+            zip.start_file(
+                "assets/minecraft/patchouli_books/guide/en_us/book.json",
+                options,
+            )
+            .unwrap();
+            zip.write_all(r#"{"name": "Guide"}"#.as_bytes()).unwrap();
+
+            zip.finish().unwrap();
+        }
+
+        let state = create_mock_shared_state();
+        {
+            let mut cfg = state.config.lock().unwrap();
+            cfg.source_lang = "zh_tw".to_string(); // Trigger fallback
+            cfg.target_lang = "en_us".to_string();
+        }
+
+        // 觸發 translation_memory 預填項目 (覆蓋率提升)
+        {
+            let mut tm = state.translation_memory.lock().unwrap();
+            tm.insert("Play".to_string(), "遊玩".to_string());
+        }
+
+        let res = collect_jar_tasks(1, &file_path, &state).await;
+        assert!(res.is_ok());
+        let (tasks, items) = res.unwrap();
+
+        assert!(!tasks.is_empty());
+        assert!(!items.is_empty());
+
+        // 驗證是否包含 patchouli 路徑或標準路徑
+        let has_book = tasks.iter().any(|t| t.rel_path.contains("patchouli_books"));
+        assert!(has_book);
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_repack_jar() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_jar_test_repack");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let source_path = temp_dir.join("source.jar");
+        let target_path = temp_dir.join("target.jar");
+
+        {
+            let file = std::fs::File::create(&source_path).unwrap();
+            let mut zip = zip::ZipWriter::new(file);
+            let options = zip::write::FileOptions::default();
+
+            zip.start_file("assets/minecraft/lang/en_us.json", options)
+                .unwrap();
+            zip.write_all(r#"{"menu.play": "Play"}"#.as_bytes())
+                .unwrap();
+
+            // 增加 patchouli_books
+            zip.start_file(
+                "assets/minecraft/patchouli_books/guide/en_us/book.json",
+                options,
+            )
+            .unwrap();
+            zip.write_all(r#"{"name": "Guide"}"#.as_bytes()).unwrap();
+
+            zip.finish().unwrap();
+        }
+
+        let mut config = JobConfig::default();
+        config.source_lang = "en_us".to_string();
+        config.target_lang = "zh_tw".to_string();
+
+        let mut translated = HashMap::new();
+        translated.insert(
+            "assets/minecraft/lang/en_us.json".to_string(),
+            r#"{"menu.play": "遊玩"}"#.to_string(),
+        );
+        translated.insert(
+            "assets/minecraft/patchouli_books/guide/en_us/book.json".to_string(),
+            r#"{"name": "指南"}"#.to_string(),
+        );
+
+        let res = repack_jar(&source_path, &target_path, &translated, &config);
+        assert!(res.is_ok());
+        assert!(target_path.exists());
+
+        let target_file = std::fs::File::open(&target_path).unwrap();
+        let mut target_zip = zip::ZipArchive::new(target_file).unwrap();
+
+        {
+            let target_entry_name = "assets/minecraft/lang/zh_tw.json";
+            let mut zh_tw_f = target_zip.by_name(target_entry_name).unwrap();
+            let mut content = String::new();
+            zh_tw_f.read_to_string(&mut content).unwrap();
+            assert!(content.contains("遊玩"));
+        }
+
+        // 驗證 patchouli
+        {
+            let book_entry_name = "assets/minecraft/patchouli_books/guide/zh_tw/book.json";
+            let mut book_f = target_zip.by_name(book_entry_name).unwrap();
+            let mut book_content = String::new();
+            book_f.read_to_string(&mut book_content).unwrap();
+            assert!(book_content.contains("指南"));
+        }
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
 }

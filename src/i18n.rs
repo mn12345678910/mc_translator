@@ -548,3 +548,232 @@ impl CliLabels {
         langs_list
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gui_labels_methods() {
+        let _ = GuiLabels::ensure_langs_exists();
+
+        let def = GuiLabels::load_or_default("zh_tw");
+        assert!(!def.common.app_title.is_empty());
+
+        let en_labels = GuiLabels::load_or_default("en_us");
+        assert!(!en_labels.common.app_title.is_empty());
+
+        let bad = GuiLabels::load_or_default("invalid_lang");
+        assert!(!bad.common.app_title.is_empty());
+
+        let langs = GuiLabels::get_available_ui_langs();
+        assert!(!langs.is_empty());
+    }
+
+    #[test]
+    fn test_cli_labels_methods() {
+        let _ = CliLabels::ensure_langs_exists();
+
+        let def = CliLabels::load_or_default("zh_tw");
+        assert!(!def.common.app_title.is_empty());
+
+        let list = CliLabels::get_available_ui_langs();
+        assert!(!list.is_empty());
+    }
+
+    #[test]
+    fn test_common_labels_methods() {
+        // 先確保檔案存在以免並行測試讀取失敗
+        let _ = GuiLabels::ensure_langs_exists();
+
+        let l = CommonLabels::load_or_default("zh_tw");
+        assert!(!l.app_title.is_empty());
+
+        let bad = CommonLabels::load_or_default("invalid");
+        assert!(!bad.app_title.is_empty());
+    }
+
+    #[test]
+    fn debug_common_labels_err() {
+        let _ = GuiLabels::ensure_langs_exists();
+        for lang in ["en_us", "zh_cn", "ja_jp"] {
+            let file_content = fs::read_to_string(format!("langs/gui/{}.json", lang)).unwrap();
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).unwrap();
+            let mut default_json: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap();
+            if let (Some(l_obj), Some(d_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in l_obj {
+                    d_obj.insert(k.clone(), v.clone());
+                }
+            }
+            let res = serde_json::from_value::<CommonLabels>(default_json);
+            if let Err(e) = res {
+                panic!("Deserialization Error for {}: {:?}", lang, e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_get_langs_dir_fallback() {
+        let real_dir = std::path::PathBuf::from("langs");
+        let backup = std::path::PathBuf::from("langs_backup");
+        let exists = real_dir.exists();
+
+        if exists {
+            let _ = fs::rename(&real_dir, &backup);
+        }
+
+        // --- 新增：模擬 exe_langs 存在 ---
+        if let Ok(mut exe_path) = std::env::current_exe() {
+            exe_path.pop();
+            let exe_langs = exe_path.join("langs").join("gui");
+            let _ = fs::create_dir_all(&exe_langs);
+        }
+
+        let dir = get_langs_dir("gui");
+        assert!(dir.to_string_lossy().contains("langs"));
+
+        // --- 新增：測試 get_available_ui_langs() 當目錄為空且 fallback 觸發 ---
+        let gui_langs = GuiLabels::get_available_ui_langs();
+        let cli_langs = CliLabels::get_available_ui_langs();
+        assert!(!gui_langs.is_empty());
+        assert!(!cli_langs.is_empty());
+
+        // --- 恢復與清理 ---
+        if let Ok(mut exe_path) = std::env::current_exe() {
+            exe_path.pop();
+            let exe_langs = exe_path.join("langs");
+            let _ = fs::remove_dir_all(&exe_langs);
+        }
+
+        if exists {
+            let _ = fs::rename(&backup, &real_dir);
+        }
+    }
+
+    #[test]
+    fn test_common_labels_fallbacks() {
+        let _ = GuiLabels::ensure_langs_exists();
+        let path = get_langs_dir("gui").join("en_us.json");
+        let backup = get_langs_dir("gui").join("en_us.json.bak");
+        let exists = path.exists();
+        if exists {
+            let _ = fs::rename(&path, &backup);
+        }
+
+        let l = CommonLabels::load_or_default("en_us");
+        assert!(!l.app_title.is_empty());
+
+        if exists {
+            let _ = fs::rename(&backup, &path);
+        }
+
+        // --- 新增：測最底階 fallback to default_zh_tw ---
+        let zh_path = get_langs_dir("gui").join("zh_tw.json");
+        let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
+        let zh_exists = zh_path.exists();
+        if zh_exists {
+            let _ = fs::rename(&zh_path, &zh_bak);
+        }
+
+        let l_def = CommonLabels::load_or_default("zh_tw");
+        assert!(!l_def.app_title.is_empty());
+
+        if zh_exists {
+            let _ = fs::rename(&zh_bak, &zh_path);
+        }
+    }
+
+    #[test]
+    fn test_gui_labels_fallbacks() {
+        let _ = GuiLabels::ensure_langs_exists();
+        let path = get_langs_dir("gui").join("en_us.json");
+        let backup = get_langs_dir("gui").join("en_us.json.bak");
+        let exists = path.exists();
+        if exists {
+            let _ = fs::rename(&path, &backup);
+        }
+
+        let l = GuiLabels::load_or_default("en_us");
+        assert!(!l.common.app_title.is_empty());
+
+        if exists {
+            let _ = fs::rename(&backup, &path);
+        }
+
+        // Gui extreme fallback
+        let zh_path = get_langs_dir("gui").join("zh_tw.json");
+        let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
+        let zh_exists = zh_path.exists();
+        if zh_exists {
+            let _ = fs::rename(&zh_path, &zh_bak);
+        }
+
+        let l_def = GuiLabels::load_or_default("zh_tw");
+        assert!(!l_def.common.app_title.is_empty());
+
+        if zh_exists {
+            let _ = fs::rename(&zh_bak, &zh_path);
+        }
+    }
+
+    #[test]
+    fn test_cli_labels_fallbacks() {
+        let _ = CliLabels::ensure_langs_exists();
+        let path = get_langs_dir("cli").join("en_us.json");
+        let backup = get_langs_dir("cli").join("en_us.json.bak");
+        let exists = path.exists();
+        if exists {
+            let _ = fs::rename(&path, &backup);
+        }
+
+        let l = CliLabels::load_or_default("en_us");
+        assert!(!l.common.app_title.is_empty());
+
+        if exists {
+            let _ = fs::rename(&backup, &path);
+        }
+
+        // Cli extreme fallback
+        let zh_path = get_langs_dir("cli").join("zh_tw.json");
+        let zh_bak = get_langs_dir("cli").join("zh_tw.json.bak");
+        let zh_exists = zh_path.exists();
+        if zh_exists {
+            let _ = fs::rename(&zh_path, &zh_bak);
+        }
+
+        let l_def = CliLabels::load_or_default("zh_tw");
+        assert!(!l_def.common.app_title.is_empty());
+
+        if zh_exists {
+            let _ = fs::rename(&zh_bak, &zh_path);
+        }
+    }
+
+    #[test]
+    fn test_i18n_corrupt_json_fallback() {
+        // 建立毀損的 JSON 測試反序列化失敗 (ok? fallback)
+        let _ = GuiLabels::ensure_langs_exists();
+        let en_path = get_langs_dir("gui").join("en_us.json");
+        let backup = get_langs_dir("gui").join("en_us.json.bak");
+
+        if en_path.exists() {
+            let _ = fs::rename(&en_path, &backup);
+        }
+
+        // 寫入類型錯誤的 JSON: app_title 預期型別 String，寫入 Number
+        fs::write(&en_path, r#"{"app_title": 12345}"#).unwrap();
+
+        // 測試載入 169 行: if let Ok(labels) = serde_json::from_value::<Self>(default_json) { -> None
+        let res = CommonLabels::load_from_file("en_us");
+        assert!(res.is_none());
+
+        // 清理
+        let _ = fs::remove_file(&en_path);
+        if backup.exists() {
+            let _ = fs::rename(&backup, &en_path);
+        }
+    }
+}

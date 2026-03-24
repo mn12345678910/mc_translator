@@ -2,6 +2,7 @@ use mc_translator::config::AppConfig;
 use mc_translator::translation::pipeline::start_translation_workflow;
 use mc_translator::translation::ACTIVE_JOB;
 use std::fs;
+use std::io::Write;
 use std::sync::atomic::Ordering;
 
 #[tokio::test]
@@ -53,4 +54,84 @@ async fn test_pipeline_workflow_cancellation() {
 
     // 清理
     let _ = fs::remove_dir_all(&temp_dir);
+}
+
+#[tokio::test]
+async fn test_process_all_files_multi_types() {
+    let temp_dir = std::env::temp_dir().join("mc_translator_pipe_multi_test");
+    let _ = std::fs::remove_dir_all(&temp_dir);
+    std::fs::create_dir_all(&temp_dir).unwrap();
+
+    // 1. 建立 .js 檔案
+    let js_path = temp_dir.join("script.js");
+    std::fs::write(&js_path, r#"addItem("item1", Text.of("Hello World"));"#).unwrap();
+
+    // 2. 建立 .jar 檔案
+    let jar_path = temp_dir.join("items.jar");
+    {
+        let file = std::fs::File::create(&jar_path).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::FileOptions::default();
+        zip.start_file("assets/minecraft/lang/en_us.json", options)
+            .unwrap();
+        zip.write_all(r#"{"menu.play": "Play"}"#.as_bytes())
+            .unwrap();
+        zip.finish().unwrap();
+    }
+
+    // 3. 準備 JobSharedState
+    use mc_translator::translation::job::{JobConfig, JobSharedState};
+    use std::collections::HashMap;
+    use std::sync::atomic::{AtomicBool, AtomicU32};
+    use std::sync::{Arc, Mutex};
+
+    let mut config = JobConfig::default();
+    config.source_lang = "en_us".to_string();
+    config.target_lang = "zh_tw".to_string();
+
+    let state = JobSharedState {
+        log: Arc::new(Mutex::new(Vec::new())),
+        status: Arc::new(Mutex::new(String::new())),
+        progress: Arc::new(AtomicU32::new(0)),
+        progress_total: Arc::new(AtomicU32::new(0)),
+        cancelled: Arc::new(AtomicBool::new(false)),
+        paused: Arc::new(AtomicBool::new(false)),
+        translation_memory: Arc::new(Mutex::new(HashMap::new())),
+        global_progress: Arc::new(AtomicU32::new(0)),
+        global_total: Arc::new(AtomicU32::new(0)),
+        current_processing_path: Arc::new(Mutex::new(String::new())),
+        current_batch: Arc::new(AtomicU32::new(0)),
+        total_batches: Arc::new(AtomicU32::new(0)),
+        pause_notifier: Arc::new(tokio::sync::Notify::new()),
+        config: Arc::new(Mutex::new(config)),
+        i18n: mc_translator::i18n::CommonLabels::default(),
+    };
+
+    let paths = vec![
+        (js_path.clone(), "script.js".to_string()),
+        (jar_path.clone(), "items.jar".to_string()),
+    ];
+
+    use mc_translator::file::pipeline::process_all_files;
+    use mc_translator::translation::glossary::mc_lang::McLangFiles;
+
+    let exact_arc = Arc::new(Mutex::new(HashMap::new()));
+    let inferred_arc = Arc::new(Mutex::new(HashMap::new()));
+    let _mc_lang_arc: Arc<Mutex<Option<McLangFiles>>> = Arc::new(Mutex::new(None));
+    let _term_arc = Arc::new(Mutex::new(Vec::new()));
+
+    let res = process_all_files(
+        paths,
+        state,
+        _mc_lang_arc,
+        _term_arc,
+        exact_arc,
+        inferred_arc,
+    )
+    .await;
+
+    assert!(res.is_ok());
+
+    // 清理
+    let _ = std::fs::remove_dir_all(&temp_dir);
 }

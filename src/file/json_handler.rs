@@ -146,3 +146,96 @@ pub async fn apply_json_task(
     tokio::fs::write(&fs_path, &final_content).await?;
     Ok(FileStatus::Completed(final_rel_path))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::file::pipeline::FileTask;
+    use crate::translation::job::JobConfig;
+    use std::sync::atomic::{AtomicBool, AtomicU32};
+
+    fn create_mock_shared_state() -> JobSharedState {
+        let mut config = JobConfig::default();
+        config.target_lang = "zh_tw".to_string();
+
+        JobSharedState {
+            log: Arc::new(Mutex::new(Vec::new())),
+            status: Arc::new(Mutex::new(String::new())),
+            progress: Arc::new(AtomicU32::new(0)),
+            progress_total: Arc::new(AtomicU32::new(0)),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
+            translation_memory: Arc::new(Mutex::new(std::collections::HashMap::new())),
+            global_progress: Arc::new(AtomicU32::new(0)),
+            global_total: Arc::new(AtomicU32::new(0)),
+            current_processing_path: Arc::new(Mutex::new(String::new())),
+            current_batch: Arc::new(AtomicU32::new(0)),
+            total_batches: Arc::new(AtomicU32::new(0)),
+            pause_notifier: Arc::new(tokio::sync::Notify::new()),
+            config: Arc::new(Mutex::new(config)),
+            i18n: crate::i18n::CommonLabels::default(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_json_task_read_fail() {
+        let state = create_mock_shared_state();
+        let non_existent = std::path::PathBuf::from("non_existent_file_xyz.json");
+        let res = collect_json_task(1, &non_existent, "xyz.json".to_string(), &state).await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_collect_json_task_parse_fail() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_json_test");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("broken.json");
+        std::fs::write(&file_path, r#"{ "broken": "#).unwrap();
+
+        let state = create_mock_shared_state();
+        let res = collect_json_task(1, &file_path, "broken.json".to_string(), &state).await;
+        assert!(res.is_err());
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_collect_json_task_empty_pending() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_json_test_empty");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("empty.json");
+        std::fs::write(&file_path, r#"{}"#).unwrap();
+
+        let state = create_mock_shared_state();
+        let res = collect_json_task(1, &file_path, "empty.json".to_string(), &state).await;
+        assert!(res.is_ok());
+        let opt = res.unwrap();
+        assert!(opt.is_none());
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_apply_json_task_skipped() {
+        let task = FileTask::new_json(
+            1,
+            &std::path::PathBuf::from("test.json"),
+            "test.json".to_string(),
+            "{}".to_string(),
+            serde_json::Value::Null,
+            serde_json::Value::Null,
+        );
+
+        let config = Arc::new(Mutex::new(JobConfig::default()));
+        let res = apply_json_task(&task, &[], &config).await;
+        assert!(res.is_ok());
+        match res.unwrap() {
+            FileStatus::Skipped(path) => assert_eq!(path, "test.json"),
+            _ => panic!("Expected Skipped"),
+        }
+    }
+}

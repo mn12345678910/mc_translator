@@ -180,3 +180,146 @@ pub async fn apply_js_task(
     tokio::fs::write(&fs_path, &final_content).await?;
     Ok(FileStatus::Completed(task.rel_path.clone()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::file::pipeline::FileTask;
+    use crate::translation::job::{JobConfig, JobSharedState};
+    use std::sync::atomic::{AtomicBool, AtomicU32};
+    use std::sync::{Arc, Mutex};
+
+    fn create_mock_shared_state() -> JobSharedState {
+        let mut config = JobConfig::default();
+        config.target_lang = "zh_tw".to_string();
+
+        JobSharedState {
+            log: Arc::new(Mutex::new(Vec::new())),
+            status: Arc::new(Mutex::new(String::new())),
+            progress: Arc::new(AtomicU32::new(0)),
+            progress_total: Arc::new(AtomicU32::new(0)),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            paused: Arc::new(AtomicBool::new(false)),
+            translation_memory: Arc::new(Mutex::new(HashMap::new())),
+            global_progress: Arc::new(AtomicU32::new(0)),
+            global_total: Arc::new(AtomicU32::new(0)),
+            current_processing_path: Arc::new(Mutex::new(String::new())),
+            current_batch: Arc::new(AtomicU32::new(0)),
+            total_batches: Arc::new(AtomicU32::new(0)),
+            pause_notifier: Arc::new(tokio::sync::Notify::new()),
+            config: Arc::new(Mutex::new(config)),
+            i18n: crate::i18n::CommonLabels::default(),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_js_task_read_fail() {
+        let state = create_mock_shared_state();
+        let non_existent = std::path::PathBuf::from("non_existent_file_xyz.js");
+        let res = collect_js_task(1, &non_existent, "xyz.js".to_string(), &state).await;
+        assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_collect_js_task_matches() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_js_test");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("test.js");
+        std::fs::write(
+            &file_path,
+            r#"Text.of('你好')
+.title("世界")
+addItem('something', ['新增', '編輯'])"#,
+        )
+        .unwrap();
+
+        let state = create_mock_shared_state();
+        let res = collect_js_task(1, &file_path, "test.js".to_string(), &state).await;
+        assert!(res.is_ok());
+        let opt = res.unwrap();
+        assert!(opt.is_some());
+        let (_task, items) = opt.unwrap();
+        assert_eq!(items.len(), 4);
+        assert_eq!(items[0].preprocessed, "你好");
+        assert_eq!(items[1].preprocessed, "世界");
+        assert_eq!(items[2].preprocessed, "新增");
+        assert_eq!(items[3].preprocessed, "編輯");
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_collect_js_task_no_matches() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_js_test_no_matches");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let file_path = temp_dir.join("empty.js");
+        std::fs::write(&file_path, r#"// no matches here"#).unwrap();
+
+        let state = create_mock_shared_state();
+        let res = collect_js_task(1, &file_path, "empty.js".to_string(), &state).await;
+        assert!(res.is_ok());
+        let opt = res.unwrap();
+        assert!(opt.is_none());
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_apply_js_task() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_js_test_apply");
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let task = FileTask::new_js(
+            1,
+            &std::path::PathBuf::from("test.js"),
+            "test.js".to_string(),
+            r#"Text.of('你好')"#.to_string(),
+            vec![(9, 15, "你好".to_string(), 0)],
+        );
+
+        let mut config = JobConfig::default();
+        config.output_dir = temp_dir.to_string_lossy().to_string();
+        let config_locked = Arc::new(Mutex::new(config));
+
+        let mut item = GlobalBatchItem::new("你好", 1, "js_key_0");
+        item.translated = Some("Hello".to_string());
+
+        let res = apply_js_task(&task, &[item], &config_locked).await;
+        assert!(res.is_ok());
+        match res.unwrap() {
+            FileStatus::Completed(path) => assert_eq!(path, "test.js"),
+            _ => panic!("Expected Completed"),
+        }
+
+        let output_file = temp_dir.join("LLMTranslator").join("test.js");
+        assert!(output_file.exists());
+        let content = std::fs::read_to_string(&output_file).unwrap();
+        assert!(content.contains("Hello"));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[tokio::test]
+    async fn test_apply_js_task_skipped() {
+        let task = FileTask::new_js(
+            1,
+            &std::path::PathBuf::from("test.js"),
+            "test.js".to_string(),
+            r#"Text.of('你好')"#.to_string(),
+            vec![(9, 15, "你好".to_string(), 0)],
+        );
+
+        let config = Arc::new(Mutex::new(JobConfig::default()));
+        let res = apply_js_task(&task, &[], &config).await;
+        assert!(res.is_ok());
+        match res.unwrap() {
+            FileStatus::Skipped(path) => assert_eq!(path, "test.js"),
+            _ => panic!("Expected Skipped"),
+        }
+    }
+}

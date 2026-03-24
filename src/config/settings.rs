@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 
+#[cfg(not(test))]
 use super::encryption::{get_api_key, save_api_key};
 
 pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。";
@@ -276,8 +277,13 @@ impl Default for StyleConfig {
 
 impl StyleConfig {
     pub fn load() -> Self {
-        let _ = fs::create_dir_all("settings");
-        if let Ok(content) = fs::read_to_string("settings/style.cfg") {
+        Self::load_with_path(std::path::Path::new("settings"))
+    }
+
+    pub fn load_with_path(dir: &std::path::Path) -> Self {
+        let _ = fs::create_dir_all(dir);
+        let path = dir.join("style.cfg");
+        if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(config) = serde_json::from_str::<Self>(&content) {
                 return config;
             }
@@ -286,9 +292,14 @@ impl StyleConfig {
     }
 
     pub fn save(&self) {
-        let _ = fs::create_dir_all("settings");
+        self.save_with_path(std::path::Path::new("settings"))
+    }
+
+    pub fn save_with_path(&self, dir: &std::path::Path) {
+        let _ = fs::create_dir_all(dir);
+        let path = dir.join("style.cfg");
         if let Ok(json) = serde_json::to_string_pretty(self) {
-            let _ = fs::write("settings/style.cfg", json);
+            let _ = fs::write(&path, json);
         }
     }
 }
@@ -335,12 +346,19 @@ impl Default for AppConfig {
 impl AppConfig {
     /// 載入設定：從 .env 讀取 API_KEY，其餘從 config.cfg 讀取
     pub fn load() -> Self {
-        let _ = fs::create_dir_all("settings");
-        dotenvy::from_path("settings/.env").ok();
+        Self::load_with_path(std::path::Path::new("settings"))
+    }
 
-        let mut config = Self::load_from_config_cfg();
+    pub fn load_with_path(dir: &std::path::Path) -> Self {
+        let _ = fs::create_dir_all(dir);
+        let env_path = dir.join(".env");
+        dotenvy::from_path(&env_path).ok();
 
-        // 從 Keyring 讀取 API 金鑰
+        #[allow(unused_mut)]
+        let mut config = Self::load_from_config_cfg_path(dir);
+
+        // 避免測試過程中修改真實 Keyring
+        #[cfg(not(test))]
         if let Ok(key) = get_api_key() {
             config.api_key = key;
         }
@@ -348,8 +366,9 @@ impl AppConfig {
         config
     }
 
-    fn load_from_config_cfg() -> Self {
-        if let Ok(content) = fs::read_to_string("settings/config.cfg") {
+    fn load_from_config_cfg_path(dir: &std::path::Path) -> Self {
+        let path = dir.join("config.cfg");
+        if let Ok(content) = fs::read_to_string(&path) {
             if let Ok(config) = serde_json::from_str::<Self>(&content) {
                 return config;
             }
@@ -358,13 +377,19 @@ impl AppConfig {
     }
 
     pub fn save(&self) {
-        let _ = fs::create_dir_all("settings");
-        // 1. 儲存 API_KEY 於 Keyring
+        self.save_with_path(std::path::Path::new("settings"))
+    }
+
+    pub fn save_with_path(&self, dir: &std::path::Path) {
+        let _ = fs::create_dir_all(dir);
+
+        // 避免測試過程中修改真實 Keyring
+        #[cfg(not(test))]
         let _ = save_api_key(&self.api_key);
 
-        // 2. 儲存其餘設定於 config.cfg
+        let path = dir.join("config.cfg");
         if let Ok(json) = serde_json::to_string_pretty(self) {
-            let _ = fs::write("settings/config.cfg", json);
+            let _ = fs::write(&path, json);
         }
     }
 }
@@ -419,5 +444,63 @@ mod tests {
         assert_eq!(config.theme, "dark");
         assert_eq!(config.font_size, 15.0);
         assert_eq!(config.dark_bg, [30, 30, 35]);
+    }
+
+    #[test]
+    fn test_config_load_save_cycles() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_settings_test_cycle");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // 1. StyleConfig
+        let mut style = StyleConfig::default();
+        style.font_size = 20.0;
+        style.save_with_path(&temp_dir);
+
+        let loaded_style = StyleConfig::load_with_path(&temp_dir);
+        assert_eq!(loaded_style.font_size, 20.0);
+
+        // 2. AppConfig
+        let mut app = AppConfig::default();
+        app.batch_size = 300;
+        app.save_with_path(&temp_dir);
+
+        let loaded_app = AppConfig::load_with_path(&temp_dir);
+        assert_eq!(loaded_app.batch_size, 300);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_config_deserialization_defaults() {
+        // AppConfig 缺 ui_lang
+        let app_json = r#"{"api_provider": "Gemini", "model": "m", "ollama_url": "u", "user_prompt": "p", "system_prompt": "s", "batch_size": 1, "batch_max_chars": 1, "timeout": 1, "glossary_priority": "p", "source_lang": "s", "target_lang": "t", "output_dir": "o", "pack_format": 1, "show_api_settings": false, "show_developer_mode": false, "skip_json": false, "skip_js": false, "skip_jar": false, "skip_book": false, "enable_llm_log": false, "main_x": 0.0, "main_y": 0.0, "main_width": 0.0, "main_height": 0.0, "viewer_x": 0.0, "viewer_y": 0.0, "viewer_width": 0.0, "viewer_height": 0.0}"#;
+        let app: AppConfig = serde_json::from_str(app_json).unwrap();
+        assert_eq!(app.ui_lang, "zh_tw");
+
+        // StyleConfig 缺 progress_pulse_enabled 以及其它
+        let style_json = r#"{"theme": "dark", "font_size": 12.0, "dark_bg": [0,0,0], "dark_text":[0,0,0], "light_bg":[0,0,0], "light_text":[0,0,0], "dark_label":[0,0,0], "light_label":[0,0,0], "dark_btn_bg":[0,0,0], "dark_btn_text":[0,0,0], "light_btn_bg":[0,0,0], "light_btn_text":[0,0,0], "dark_input_bg":[0,0,0], "light_input_bg":[0,0,0], "dark_list_bg":[0,0,0], "light_list_bg":[0,0,0], "dark_tab_active":[0,0,0], "dark_tab_inactive":[0,0,0], "light_tab_active":[0,0,0], "light_tab_inactive":[0,0,0], "btn_rounding_enabled": true, "btn_rounding_value": 0.0, "progress_pulse_speed": 0.0, "instance_overrides": {}}"#;
+        let style: StyleConfig = serde_json::from_str(style_json).unwrap();
+        assert!(style.progress_pulse_enabled);
+    }
+
+    #[test]
+    fn test_config_load_invalid_json_fallback() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_settings_test_invalid");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // 1. 寫入損壞 JSON
+        std::fs::write(temp_dir.join("config.cfg"), b"corrupt json").unwrap();
+        std::fs::write(temp_dir.join("style.cfg"), b"corrupt json").unwrap();
+
+        // 2. 驗證會降級到 Default
+        let app = AppConfig::load_with_path(&temp_dir);
+        let style = StyleConfig::load_with_path(&temp_dir);
+
+        assert_eq!(app.batch_size, AppConfig::default().batch_size);
+        assert_eq!(style.font_size, StyleConfig::default().font_size);
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }
