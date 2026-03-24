@@ -24,7 +24,8 @@ async fn test_pipeline_workflow_cancellation() {
 
     let cfg = AppConfig {
         api_provider: "Ollama".to_string(),
-        ollama_url: "http://127.0.0.1:0".to_string(), // 確保不會真實發送
+        ollama_url: "http://127.0.0.1:0".to_string(),
+        api_base_url: "".to_string(), // 確保不會真實發送
         model: "mock-model".to_string(),
         output_dir: temp_dir.join("output").to_string_lossy().to_string(),
         ..Default::default()

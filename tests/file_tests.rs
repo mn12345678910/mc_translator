@@ -13,6 +13,7 @@ fn create_mock_state() -> JobSharedState {
         api_provider: "Gemini".to_string(),
         selected_model: "gemini-1.5-pro".to_string(),
         ollama_url: "".to_string(),
+        api_base_url: "".to_string(),
         user_prompt: "".to_string(),
         system_prompt: "".to_string(),
         timeout: 60,
@@ -28,6 +29,8 @@ fn create_mock_state() -> JobSharedState {
         enable_llm_log: false,
         source_lang: "en_us".to_string(),
         target_lang: "zh_tw".to_string(),
+        cleanup_prefixes: vec![],
+        cleanup_contains: vec![],
     };
 
     JobSharedState {
@@ -155,6 +158,7 @@ async fn test_e2e_translation_workflow() {
     let cfg = mc_translator::config::settings::AppConfig {
         api_provider: "Ollama".to_string(),
         ollama_url: mock_url,
+        api_base_url: "".to_string(),
         model: "mock-model".to_string(),
         output_dir: temp_dir.join("output").to_string_lossy().to_string(),
         ..Default::default()

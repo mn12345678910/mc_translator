@@ -24,6 +24,8 @@ pub struct AppConfig {
     pub model: String,
     #[serde(alias = "Ollama位址")]
     pub ollama_url: String,
+    #[serde(alias = "API基礎網址", default)]
+    pub api_base_url: String,
 
     // --- [Prompt 集] ---
     #[serde(alias = "使用者翻譯提示")]
@@ -417,6 +419,8 @@ impl Default for AppConfig {
             api_provider: "無".to_string(),
             model: String::new(),
             ollama_url: "http://localhost:11434".to_string(),
+            api_base_url: String::new(),
+
             user_prompt: DEFAULT_PROMPT.to_string(),
             system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
 1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\

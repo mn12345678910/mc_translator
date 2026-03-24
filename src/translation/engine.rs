@@ -97,7 +97,11 @@ pub async fn translate_json_recursive(
                         if let Some(translated_p) = map.get(p_input_text) {
                             let orig_text = &texts[p_idx];
                             let restored = postprocess_text(translated_p, &markers_list[p_idx]);
-                            let finalized = validate_and_cleanup(&restored);
+                            let finalized = validate_and_cleanup(
+                                &restored,
+                                &current_batch_config.cleanup_prefixes,
+                                &current_batch_config.cleanup_contains,
+                            );
                             let translated = if current_batch_config.target_lang == "zh_tw" {
                                 hanconv::s2tw(&finalized)
                             } else {
@@ -206,6 +210,8 @@ pub async fn translate_json_recursive(
                     &translated,
                     &markers,
                     &current_single_config.target_lang,
+                    &current_single_config.cleanup_prefixes,
+                    &current_single_config.cleanup_contains,
                 ) {
                     finalized_str = Some(final_str);
                 } else {
@@ -392,9 +398,11 @@ fn finalize_single_translation(
     translated: &str,
     markers: &[String],
     target_lang: &str,
+    prefixes: &[String],
+    contains: &[String],
 ) -> Option<String> {
     let restored = postprocess_text(translated, markers);
-    let cleaned = validate_and_cleanup(&restored);
+    let cleaned = validate_and_cleanup(&restored, prefixes, contains);
 
     if detect_loop(&cleaned) {
         None

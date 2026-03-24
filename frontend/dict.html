@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>建議詞管理器</title>
+        <title>Glossary Manager</title>
         <link rel="stylesheet" href="style.css" />
         <script type="module" src="dict_main.js" defer></script>
         <style>
@@ -50,7 +50,7 @@
         <div class="dialog-header">
             <!-- 術語優先級切換開關 -->
             <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px; display: flex; align-items: center;">
-                <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem;">優先級:</span>
+                <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem;">Priority:</span>
                 <label class="switch" title="切換 官方優先 或 使用者優先">
                     <input type="checkbox" id="chk-glossary-priority" />
                     <span class="slider round"></span>
@@ -62,26 +62,26 @@
             <!-- 分頁與按鈕行 -->
             <div class="tabs flex-between" style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; gap: 10px;">
-                    <button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user">使用者字典</button>
-                    <button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official">官方字典</button>
+                    <button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user">User Glossary</button>
+                    <button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official">Official Glossary</button>
                 </div>
                 <!-- 按鈕群組 -->
                 <div id="dict-user-buttons" class="flex-wrap" style="display: flex; gap: 8px;">
-                    <button id="btn-dict-add" class="action-btn" title="新增條目">➕</button>
-                    <button id="btn-dict-replace" class="action-btn" title="替換已存在">🔄</button>
-                    <button id="btn-dict-import" class="action-btn" title="匯入">📥</button>
-                    <button id="btn-dict-export" class="action-btn" title="匯出">📤</button>
-                    <button id="btn-dict-open-json" class="action-btn" title="開啟所在資料夾">📂 .json</button>
-                    <button id="btn-dict-clear" class="action-btn" title="清空全部">🗑</button>
+                    <button id="btn-dict-add" class="action-btn" title="Add Entry">➕</button>
+                    <button id="btn-dict-replace" class="action-btn" title="Replace Existing">🔄</button>
+                    <button id="btn-dict-import" class="action-btn" title="Import">📥</button>
+                    <button id="btn-dict-export" class="action-btn" title="Export">📤</button>
+                    <button id="btn-dict-open-json" class="action-btn" title="Open Folder">📂 .json</button>
+                    <button id="btn-dict-clear" class="action-btn" title="Clear All">🗑</button>
                 </div>
             </div>
 
             <!-- 輸入與搜尋區 -->
             <div id="dict-user-controls" class="flex-wrap mt-sm" style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="dict-input-key" placeholder="原文 (Key)" style="flex: 1; min-width: 140px; padding: 8px;" />
-                <input type="text" id="dict-input-value" placeholder="翻譯 (Value)" style="flex: 1; min-width: 140px; padding: 8px;" />
+                <input type="text" id="dict-input-key" placeholder="Original (Key)" style="flex: 1; min-width: 140px; padding: 8px;" />
+                <input type="text" id="dict-input-value" placeholder="Translation (Value)" style="flex: 1; min-width: 140px; padding: 8px;" />
                 <div class="search-bar" style="margin-left: auto;">
-                    <input type="text" id="dict-search" placeholder="🔍 搜尋術語..." style="width: 180px; padding: 8px 10px; font-size: 0.9rem;" />
+                    <input type="text" id="dict-search" placeholder="🔍 Search..." style="width: 180px; padding: 8px 10px; font-size: 0.9rem;" />
                 </div>
             </div>
 
@@ -90,9 +90,9 @@
 
         <div class="dialog-footer">
             <div class="pagination" style="display: flex; gap: 10px; align-items: center;">
-                <button id="page-prev" class="page-btn">上一頁</button>
+                <button id="page-prev" class="page-btn">Previous</button>
                 <span id="page-info">1 / 1</span>
-                <button id="page-next" class="page-btn">下一頁</button>
+                <button id="page-next" class="page-btn">Next</button>
             </div>
         </div>
     </body>

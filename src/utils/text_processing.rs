@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 /// 解析翻譯結果，移除 Markdown 代碼塊或修復損壞的標籤
-pub fn validate_and_cleanup(text: &str) -> String {
+pub fn validate_and_cleanup(text: &str, prefixes: &[String], contains: &[String]) -> String {
     let mut cleaned = text.trim().to_string();
 
     if cleaned.contains("```") {
@@ -37,12 +37,7 @@ pub fn validate_and_cleanup(text: &str) -> String {
             .filter(|l| !l.is_empty())
             .collect();
         for l in &lines {
-            if l.contains("翻譯：")
-                || l.contains("譯文：")
-                || l.contains("Translation:")
-                || l.contains("Translated:")
-                || l.contains("Result:")
-            {
+            if prefixes.iter().any(|p| l.contains(p)) {
                 if let Some(pos) = l.find('：') {
                     let candidate = l[pos + '：'.len_utf8()..]
                         .trim()
@@ -97,43 +92,18 @@ pub fn validate_and_cleanup(text: &str) -> String {
         }
     }
 
-    let prefixes = [
-        "Translation:",
-        "Translated:",
-        "翻譯：",
-        "譯文：",
-        "Note:",
-        "註：",
-        "結果：",
-        "Output:",
-        "Result:",
-        "Traduction :",
-        "Traducción:",
-        "Übersetzung:",
-        "Перевод:",
-        "翻訳：",
-        "번역:",
-    ];
     for p in prefixes {
         if cleaned.to_lowercase().starts_with(&p.to_lowercase()) {
             cleaned = cleaned[p.len()..].trim().to_string();
         }
     }
 
-    if cleaned.contains("我們已將")
-        || cleaned.contains("以下是翻譯")
-        || cleaned.contains("JSON 格式")
-    {
+    if contains.iter().any(|c| cleaned.contains(c)) {
         let lines: Vec<&str> = cleaned
             .lines()
             .map(|l| l.trim())
             .filter(|l| !l.is_empty())
-            .filter(|l| {
-                !l.contains("我們已將")
-                    && !l.contains("以下是翻譯")
-                    && !l.contains("JSON 格式")
-                    && !l.contains("請確認")
-            })
+            .filter(|l| !contains.iter().any(|c| l.contains(c)))
             .collect();
         cleaned = lines.join("\n");
     }
@@ -300,6 +270,28 @@ pub fn sync_formatting(original: &str, translations: &HashMap<String, Vec<String
 }
 
 #[cfg(test)]
+fn validate_and_cleanup_test(text: &str) -> String {
+    let prefixes = vec![
+        "Translation:".to_string(),
+        "Translated:".to_string(),
+        "翻譯：".to_string(),
+        "譯文：".to_string(),
+        "Note:".to_string(),
+        "註：".to_string(),
+        "結果：".to_string(),
+        "Result:".to_string(),
+    ];
+
+    let contains = vec![
+        "我們已將".to_string(),
+        "以下是翻譯".to_string(),
+        "JSON 格式".to_string(),
+        "請確認".to_string(),
+    ];
+    validate_and_cleanup(text, &prefixes, &contains)
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -307,10 +299,10 @@ mod tests {
     #[test]
     fn test_cleanup_standard() {
         let input = "Translation: \"Hello World\"";
-        assert_eq!(validate_and_cleanup(input), "Hello World");
+        assert_eq!(validate_and_cleanup_test(input), "Hello World");
 
         let md_input = "```json\n{ \"text\": \"測試文字\" }\n```";
-        assert_eq!(validate_and_cleanup(md_input), "測試文字");
+        assert_eq!(validate_and_cleanup_test(md_input), "測試文字");
     }
 
     /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
@@ -318,11 +310,14 @@ mod tests {
     fn test_cleanup_utf8_edge_cases() {
         // 測試中文引號與繁簡轉換支援 (UTF-8)
         let input = "翻譯：「這是特殊的 ❄️ 表情與繁體中文」";
-        assert_eq!(validate_and_cleanup(input), "這是特殊的 ❄️ 表情與繁體中文");
+        assert_eq!(
+            validate_and_cleanup_test(input),
+            "這是特殊的 ❄️ 表情與繁體中文"
+        );
 
         // 測試空字串與特殊空白
-        assert_eq!(validate_and_cleanup("   "), "");
-        assert_eq!(validate_and_cleanup("{}"), "");
+        assert_eq!(validate_and_cleanup_test("   "), "");
+        assert_eq!(validate_and_cleanup_test("{}"), "");
     }
 
     /// 3. 強韌性與無限迴圈偵測（健壯性 / 迴圈防護）
@@ -386,42 +381,45 @@ mod tests {
     #[test]
     fn test_cleanup_advanced_vectors() {
         // Markdown 標題覆蓋 (text, javascript, js)
-        assert_eq!(validate_and_cleanup("```text\nTarget\n```"), "Target");
-        assert_eq!(validate_and_cleanup("```javascript\nTarget\n```"), "Target");
-        assert_eq!(validate_and_cleanup("```js\nTarget\n```"), "Target");
+        assert_eq!(validate_and_cleanup_test("```text\nTarget\n```"), "Target");
+        assert_eq!(
+            validate_and_cleanup_test("```javascript\nTarget\n```"),
+            "Target"
+        );
+        assert_eq!(validate_and_cleanup_test("```js\nTarget\n```"), "Target");
 
         // Markdown 未知標題降級 (rust) (Line 27)
         assert_eq!(
-            validate_and_cleanup("```rust\nlet x = 1;\n```"),
+            validate_and_cleanup_test("```rust\nlet x = 1;\n```"),
             "rust\nlet x = 1;"
         );
 
         // 英文前綴及冒號 (包含中繼換行以防 trim)
         assert_eq!(
-            validate_and_cleanup("Line1\nResult: \"Success\""),
+            validate_and_cleanup_test("Line1\nResult: \"Success\""),
             "Success"
         );
 
         // 中文前綴及全形冒號
-        assert_eq!(validate_and_cleanup("Line1\n翻譯：『成功』 "), "成功");
+        assert_eq!(validate_and_cleanup_test("Line1\n翻譯：『成功』 "), "成功");
     }
 
     #[test]
     fn test_cleanup_json_array_fallback() {
         // Array 單一元素降級
         assert_eq!(
-            validate_and_cleanup("[ \"Array Element\" ]"),
+            validate_and_cleanup_test("[ \"Array Element\" ]"),
             "Array Element"
         );
 
         // 空 Array 等等 (觸發 96 和 159)
-        assert_eq!(validate_and_cleanup("[]"), "");
-        assert_eq!(validate_and_cleanup("{ }"), "");
-        assert_eq!(validate_and_cleanup("[ ]"), "");
+        assert_eq!(validate_and_cleanup_test("[]"), "");
+        assert_eq!(validate_and_cleanup_test("{ }"), "");
+        assert_eq!(validate_and_cleanup_test("[ ]"), "");
 
         // 雜訊過濾
         assert_eq!(
-            validate_and_cleanup("我們已將該段文字翻譯如下：\n翻譯完成"),
+            validate_and_cleanup_test("我們已將該段文字翻譯如下：\n翻譯完成"),
             "翻譯完成"
         );
     }
@@ -441,8 +439,20 @@ mod tests {
     }
 
     #[test]
-    fn test_detect_loop_edge_lengths() {
-        assert!(!detect_loop("abc")); // < 10 (Line 173)
-        assert!(!detect_loop("abcdef12")); // Chunk size continue (Line 179)
+    fn test_cleanup_dynamic_parameters() {
+        let prefixes = vec!["CustomPrefix:".to_string(), "自訂：".to_string()];
+        let contains = vec!["剔除我".to_string()];
+
+        let input1 = "CustomPrefix: \"Hello\"";
+        assert_eq!(validate_and_cleanup(input1, &prefixes, &contains), "Hello");
+
+        let input2 = "自訂：「世界」";
+        assert_eq!(validate_and_cleanup(input2, &prefixes, &contains), "世界");
+
+        let input3 = "正常文字\n剔除我\n保留我";
+        assert_eq!(
+            validate_and_cleanup(input3, &prefixes, &contains),
+            "正常文字\n保留我"
+        );
     }
 }

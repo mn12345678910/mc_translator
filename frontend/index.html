@@ -3,18 +3,18 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Minecraft 模組翻譯工具</title>
+        <title>Minecraft Mod Translator</title>
         <link rel="stylesheet" href="style.css" />
         <script type="module" src="main.js" defer></script>
     </head>
     <body>
         <header class="top-navbar">
             <div class="nav-links" style="margin-left: auto;">
-                <button id="btn-nav-api" class="secondary-btn" title="API 與常數設置" data-i18n-title="btn_nav_settings">⚙️</button>
-                <button id="btn-nav-dict" class="secondary-btn" title="字典管理器" data-i18n-title="btn_nav_dict">📖</button>
-                <button id="btn-nav-palette" class="secondary-btn" title="佈景與色彩管理" data-i18n-title="btn_nav_palette">🎨</button>
-                <button id="btn-nav-theme" class="secondary-btn" title="切換 Light/Dark 主題" data-i18n-title="btn_nav_theme">🌓</button>
-                <button id="btn-nav-dev" class="secondary-btn" title="開發者過濾選項" data-i18n-title="btn_nav_dev">🔧</button>
+                <button id="btn-nav-api" class="secondary-btn" title="API & Settings" data-i18n-title="btn_nav_settings">⚙️</button>
+                <button id="btn-nav-dict" class="secondary-btn" title="Glossary Manager" data-i18n-title="btn_nav_dict">📖</button>
+                <button id="btn-nav-palette" class="secondary-btn" title="Theme & Palette" data-i18n-title="btn_nav_palette">🎨</button>
+                <button id="btn-nav-theme" class="secondary-btn" title="Toggle Light/Dark Theme" data-i18n-title="btn_nav_theme">🌓</button>
+                <button id="btn-nav-dev" class="secondary-btn" title="Developer Options" data-i18n-title="btn_nav_dev">🔧</button>
             </div>
         </header>
 
@@ -24,28 +24,28 @@
                 <div class="label-row">
                     <label for="input-path" data-i18n="label_input_path">:</label>
                     <div class="row-buttons">
-                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂選擇檔案</button>
-                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁選擇資料夾</button>
+                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂Select File</button>
+                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁Select Folder</button>
                     </div>
                 </div>
                 <div class="input-row">
-                    <input type="text" id="input-path" placeholder="輸入或拖放路徑至此..." data-i18n-placeholder="placeholder_input_path" />
-                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('input-path').value=''" data-i18n-title="btn_clear" title="清除">❌</button>
+                    <input type="text" id="input-path" placeholder="Enter or drag path here..." data-i18n-placeholder="placeholder_input_path" />
+                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('input-path').value=''" data-i18n-title="btn_clear" title="Clear">❌</button>
                 </div>
             </div>
 
             <!-- [NEW] 輸出路徑 (100% 復刻) -->
             <div class="form-group mt-sm">
                 <div class="label-row">
-                    <label for="output-dir" data-i18n="label_output_path">输出资料夹路径:</label>
+                    <label for="output-dir" data-i18n="label_output_path">Output Folder Path:</label>
                     <div class="row-buttons">
-                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁選擇資料夾</button>
-                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂打開資料夾</button>
+                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁Select Folder</button>
+                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂Open Folder</button>
                     </div>
                 </div>
                 <div class="input-row">
-                    <input type="text" id="output-dir" placeholder="./LLMTranslator (預設)" data-i18n-placeholder="placeholder_output_path" />
-                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('output-dir').value=''" data-i18n-title="btn_clear" title="清除">❌</button>
+                    <input type="text" id="output-dir" placeholder="./LLMTranslator (Default)" data-i18n-placeholder="placeholder_output_path" />
+                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('output-dir').value=''" data-i18n-title="btn_clear" title="Clear">❌</button>
                 </div>
             </div>
 
@@ -54,8 +54,8 @@
                 <label for="ui-lang" data-i18n="label_ui_lang">:</label>
                 <select id="ui-lang" style="max-width: 150px; padding: 6px">
                     <option value="zh_tw">繁體中文 (zh_tw)</option>
-                    <option value="zh_cn">简体中文 (zh_cn)</option>
-                    <option value="ja_jp">日本語 (ja_jp)</option>
+                    <option value="zh_cn">Simplified Chinese (zh_cn)</option>
+                    <option value="ja_jp">Japanese (ja_jp)</option>
                     <option value="en_us">English (en_us)</option>
                 </select>
             </div>
@@ -65,8 +65,8 @@
                 <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
                 <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶️</button>
                 <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
-                <span id="status-prefix" class="status-label ml-md" style="margin-left: 15px; color: var(--text-muted);" data-i18n="label_current_status">目前狀態: </span>
-                <span id="current-status-label" class="status-label" data-i18n="status_idle" style="color: var(--text-muted);">待命</span>
+                <span id="status-prefix" class="status-label ml-md" style="margin-left: 15px; color: var(--text-muted);" data-i18n="label_current_status">Current Status: </span>
+                <span id="current-status-label" class="status-label" data-i18n="status_idle" style="color: var(--text-muted);">Idle</span>
             </div>
         </div>
 
@@ -82,14 +82,14 @@
                         <option value="DeepSeek">DeepSeek</option>
                         <option value="Mistral">Mistral</option>
                         <option value="DeepL">DeepL</option>
-                        <option value="Ollama">Ollama (本地端)</option>
+                        <option value="Ollama">Ollama (Local)</option>
                         <option value="Google Free">Google Free</option>
-                        <option value="無">無 (None)</option>
+                        <option value="無">None</option>
                     </select>
                 </div>
                 <div class="form-group" id="api-key-group">
 <label for="api-key" data-i18n="label_api_key">API</label>
-                    <input type="password" id="api-key" placeholder="輸入 API Key..." data-i18n-placeholder="placeholder_api_key" />
+                    <input type="password" id="api-key" placeholder="Enter API Key..." data-i18n-placeholder="placeholder_api_key" />
                 </div>
                 <div class="form-group">
 <label for="selected-model" data-i18n="label_model"></label>
@@ -118,18 +118,18 @@
                     <label for="source-lang" id="label-source-lang" data-i18n="label_source_lang"></label>
                     <select id="source-lang">
                         <option value="en_us">English (US)</option>
-                        <option value="zh_tw">繁體中文 (台灣)</option>
-                        <option value="zh_cn">简体中文</option>
-                        <option value="ja_jp">日本語</option>
+                        <option value="zh_tw">Traditional Chinese</option>
+                        <option value="zh_cn">Simplified Chinese</option>
+                        <option value="ja_jp">Japanese</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="target-lang" id="label-target-lang" data-i18n="label_target_lang"></label>
                     <select id="target-lang">
-                        <option value="zh_tw">繁體中文 (台灣)</option>
+                        <option value="zh_tw">Traditional Chinese</option>
                         <option value="en_us">English (US)</option>
-                        <option value="zh_cn">简体中文</option>
-                        <option value="ja_jp">日本語</option>
+                        <option value="zh_cn">Simplified Chinese</option>
+                        <option value="ja_jp">Japanese</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -163,7 +163,7 @@
 
             <div style="display: flex; gap: 10px; margin-top: 15px">
                 <button id="btn-save-config" data-i18n="btn_save_config" style="background-color: var(--accent-color); color: var(--btn-text-dark, #111); flex: 1">
-                    💾 儲存核心參數
+                    💾 Save Settings
                 </button>
                 <button
                     id="btn-restore-config"
@@ -171,7 +171,7 @@
                     data-i18n="btn_restore_defaults"
                     style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
-                    🔄 恢復預設參數
+                    🔄 Restore Defaults
                 </button>
             </div>
         </div>
@@ -219,7 +219,7 @@
             <!-- [NEW] 系統技術指令 (開發人員專用) -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-                    <label for="system-prompt"><span data-i18n="label_system_prompt">📜 系統技術指令</span>:</label>
+                    <label for="system-prompt"><span data-i18n="label_system_prompt">📜 System Instructions</span>:</label>
                     <textarea
                         id="system-prompt"
                         rows="5"
@@ -236,42 +236,42 @@
                 <div class="form-group">
 <label for="palette-target-type" data-i18n="label_palette_target_type"></label>
                     <select id="palette-target-type" style="width: 100%">
-                        <option value="global">全域樣式</option>
-                        <option value="specific">特定元件覆寫</option>
+                        <option value="global">Global Style</option>
+                        <option value="specific">Specific Override</option>
                     </select>
                 </div>
                 <div class="form-group">
 <label for="palette-target-item" data-i18n="label_palette_target_item"></label>
                     <select id="palette-target-item" style="width: 100%">
-                        <!-- 全域類別 -->
-                        <optgroup label="全域類別" id="group-global">
-                            <option value="dark_bg">背景顏色</option>
-                            <option value="dark_text">文字顏色</option>
-                            <option value="dark_label">全部標籤顏色</option>
-                            <option value="dark_btn_bg">按鈕背景</option>
-                            <option value="dark_btn_text">按鈕文字</option>
-                            <option value="dark_input_bg">輸入框背景</option>
-                            <option value="dark_list_bg">日誌與列表背景</option>
-                            <option value="dark_tab_active">分頁背景 (選中)</option>
-                            <option value="dark_tab_inactive">分頁背景 (未選中)</option>
+                        <!-- Global Categories -->
+                        <optgroup label="Global Categories" id="group-global">
+                            <option value="dark_bg">Background Color</option>
+                            <option value="dark_text">Text Color</option>
+                            <option value="dark_label">Label Color</option>
+                            <option value="dark_btn_bg">Button Background</option>
+                            <option value="dark_btn_text">Button Text</option>
+                            <option value="dark_input_bg">Input Background</option>
+                            <option value="dark_list_bg">Log Background</option>
+                            <option value="dark_tab_active">Tab (Active)</option>
+                            <option value="dark_tab_inactive">Tab (Inactive)</option>
                         </optgroup>
-                        <!-- 特定元件 (透過 JS 控制覆寫) -->
-                        <optgroup label="特定元件" id="group-specific" style="display: none">
-                            <option value="btn-translate">🚀 立即翻譯按鈕</option>
-                            <option value="btn-pause">⏸️ 暫停按鈕</option>
-                            <option value="btn-stop">⏹️ 停止按鈕</option>
-                            <option value="btn-browse-file">📁 開啟單檔按鈕</option>
-                            <option value="btn-browse-dir">📁 開啟資料夾按鈕</option>
-                            <option value="btn-browse-output">📁 瀏覽輸出按鈕</option>
-                            <option value="btn-browse-output-open">📂 打開輸出按鈕</option>
-                            <option value="user-prompt">📝 使用者提示詞框</option>
-                            <option value="system-prompt">🔧 系統提示詞框</option>
-                            <option value="input-path">🔗 來源路徑輸入框</option>
-                            <option value="output-dir">🔗 輸出路徑輸入框</option>
-                            <option value="dict-dialog">📖 字典視窗</option>
-                            <option value="log-output">📋 日誌輸出框</option>
-                            <option value="progress-bar">📊 檔案進度條</option>
-                            <option value="batch-progress-bar">📊 條目進度條</option>
+                        <!-- Specific Components (透過 JS 控制覆寫) -->
+                        <optgroup label="Specific Components" id="group-specific" style="display: none">
+                            <option value="btn-translate">🚀 Translate</option>
+                            <option value="btn-pause">⏸️ Pause</option>
+                            <option value="btn-stop">⏹️ Stop</option>
+                            <option value="btn-browse-file">📁 Open File</option>
+                            <option value="btn-browse-dir">📁 Open Folder</option>
+                            <option value="btn-browse-output">📁 Browse Output</option>
+                            <option value="btn-browse-output-open">📂 Open Output</option>
+                            <option value="user-prompt">📝 User Prompt</option>
+                            <option value="system-prompt">🔧 System Prompt</option>
+                            <option value="input-path">🔗 Input Path</option>
+                            <option value="output-dir">🔗 Output Path</option>
+                            <option value="dict-dialog">📖 Glossary</option>
+                            <option value="log-output">📋 Log</option>
+                            <option value="progress-bar">📊 File Progress</option>
+                            <option value="batch-progress-bar">📊 Item Progress</option>
                         </optgroup>
                     </select>
                 </div>
@@ -279,9 +279,9 @@
                 <div class="form-group" id="palette-property-group" style="display: none">
 <label for="palette-property" data-i18n="label_palette_property"></label>
                     <select id="palette-property" style="width: 100%">
-                        <option value="bg">背景顏色</option>
-                        <option value="text">文字顏色</option>
-                        <option value="rounding">圓角大小</option>
+                        <option value="bg">Background Color</option>
+                        <option value="text">Text Color</option>
+                        <option value="rounding">Rounding</option>
                     </select>
                 </div>
                 <div class="form-group" id="palette-color-group">
@@ -303,7 +303,7 @@
                         style="width: 100%"
                     />
                 </div>
-                <!-- [NEW] 特定元件歸零按鈕 -->
+                <!-- [NEW] Specific Components歸零按鈕 -->
                 <div class="form-group" id="palette-clear-group" style="display: none; align-items: flex-end">
                     <button
                         id="btn-palette-clear-item"
@@ -311,7 +311,7 @@
                         data-i18n="btn_palette_clear_item"
                         style="background-color: #aa1111; color: #fff; width: 100%; height: 38px"
                     >
-                        🗑 清除元件覆寫
+                        🗑 Clear Override
                     </button>
                 </div>
             </div>
@@ -361,7 +361,7 @@
                     data-i18n="btn_restore_defaults"
                     style="background-color: var(--btn-bg); flex: 1; color: var(--btn-text); border: 1px solid var(--border-color)"
                 >
-                    🔄 恢復預設樣式
+                    🔄 Restore Defaults
                 </button>
             </div>
         </div>

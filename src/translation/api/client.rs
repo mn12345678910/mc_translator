@@ -219,7 +219,11 @@ pub async fn translate_batch(
         _ => return Err("UNSUPPORTED:批量翻譯不支援免費 Google 翻譯".into()),
     };
 
-    let result = crate::utils::text_processing::validate_and_cleanup(&provider_result);
+    let result = crate::utils::text_processing::validate_and_cleanup(
+        &provider_result,
+        &config.cleanup_prefixes,
+        &config.cleanup_contains,
+    );
     let mut map = HashMap::new();
 
     if config.api_provider == "Ollama" || result.contains('{') {
@@ -229,8 +233,11 @@ pub async fn translate_batch(
                     if let (Ok(idx), Some(trans_s)) = (idx_str.parse::<usize>(), trans_val.as_str())
                     {
                         if idx >= 1 && idx <= texts.len() {
-                            let cleaned =
-                                crate::utils::text_processing::validate_and_cleanup(trans_s);
+                            let cleaned = crate::utils::text_processing::validate_and_cleanup(
+                                trans_s,
+                                &config.cleanup_prefixes,
+                                &config.cleanup_contains,
+                            );
                             if !cleaned.is_empty() && cleaned != "{}" && cleaned != "{ }" {
                                 map.insert(texts[idx - 1].clone(), cleaned);
                             }
@@ -247,8 +254,11 @@ pub async fn translate_batch(
     for cap in BATCH_INDEX_RE.captures_iter(&result) {
         if let (Ok(idx), Some(translated)) = (cap[1].parse::<usize>(), cap.get(2)) {
             if idx >= 1 && idx <= texts.len() {
-                let translated_text =
-                    crate::utils::text_processing::validate_and_cleanup(translated.as_str());
+                let translated_text = crate::utils::text_processing::validate_and_cleanup(
+                    translated.as_str(),
+                    &config.cleanup_prefixes,
+                    &config.cleanup_contains,
+                );
                 map.insert(texts[idx - 1].clone(), translated_text);
             }
         }
@@ -309,10 +319,16 @@ async fn translate_with_gemini(
     file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let base_url = if config.api_base_url.is_empty() {
+        "https://generativelanguage.googleapis.com"
+    } else {
+        config.api_base_url.trim_end_matches('/')
+    };
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-        config.selected_model, config.api_key
+        "{}/v1beta/models/{}:generateContent?key={}",
+        base_url, config.selected_model, config.api_key
     );
+
     translate_with_gemini_with_url(text, config, file_name, glossary, &url).await
 }
 
@@ -535,12 +551,22 @@ async fn translate_with_openai_compatible(
     file_name: &str,
     glossary: Option<&[crate::translation::glossary::GlossaryEntry]>,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let url = match config.api_provider.as_str() {
-        "DeepSeek" => "https://api.deepseek.com/v1/chat/completions",
-        "Mistral" => "https://api.mistral.ai/v1/chat/completions",
-        _ => "https://api.openai.com/v1/chat/completions",
+    let url = if !config.api_base_url.is_empty() {
+        let base = config.api_base_url.trim_end_matches('/');
+        if base.ends_with("/chat/completions") {
+            base.to_string()
+        } else {
+            format!("{}/chat/completions", base)
+        }
+    } else {
+        match config.api_provider.as_str() {
+            "DeepSeek" => "https://api.deepseek.com/v1/chat/completions".to_string(),
+            "Mistral" => "https://api.mistral.ai/v1/chat/completions".to_string(),
+            _ => "https://api.openai.com/v1/chat/completions".to_string(),
+        }
     };
-    translate_with_openai_compatible_with_url(text, config, file_name, glossary, url).await
+
+    translate_with_openai_compatible_with_url(text, config, file_name, glossary, &url).await
 }
 
 async fn translate_with_openai_compatible_with_url(
@@ -602,12 +628,19 @@ async fn translate_with_deepl(
     config: &JobConfig,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let is_free = config.selected_model == "deepl-free";
-    let url = if is_free {
-        "https://api-free.deepl.com/v2/translate"
+    let url = if !config.api_base_url.is_empty() {
+        let base = config.api_base_url.trim_end_matches('/');
+        if base.ends_with("/translate") {
+            base.to_string()
+        } else {
+            format!("{}/v2/translate", base)
+        }
+    } else if is_free {
+        "https://api-free.deepl.com/v2/translate".to_string()
     } else {
-        "https://api.deepl.com/v2/translate"
+        "https://api.deepl.com/v2/translate".to_string()
     };
-    translate_with_deepl_with_url(text, config, url).await
+    translate_with_deepl_with_url(text, config, &url).await
 }
 
 async fn translate_with_deepl_with_url(

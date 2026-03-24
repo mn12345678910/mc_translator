@@ -1,5 +1,19 @@
 use crate::translation::api::client::CLIENT;
 
+fn build_models_url(base_url: &str, default_url: &str) -> String {
+    if base_url.is_empty() {
+        return default_url.to_string();
+    }
+    if base_url.ends_with("/chat/completions") {
+        base_url.replace("/chat/completions", "/models")
+    } else if base_url.ends_with("/v1") || base_url.ends_with("/v1/") {
+        format!("{}/models", base_url.trim_end_matches('/'))
+    } else {
+        // Fallback or generic append
+        format!("{}/v1/models", base_url.trim_end_matches('/'))
+    }
+}
+
 /// 從 Ollama 伺服器取得可用模型列表
 pub async fn fetch_ollama_models(ollama_url: &str) -> Vec<String> {
     let url = format!("{}/api/tags", ollama_url.trim_end_matches('/'));
@@ -32,20 +46,39 @@ pub async fn fetch_dynamic_models(
     provider: &str,
     api_key: &str,
     ollama_url: &str,
+    api_base_url: &str,
 ) -> Result<Vec<String>, String> {
     if api_key.is_empty() && provider != "Ollama" {
         return Ok(Vec::new());
     }
     let res = match provider {
-        "Gemini" => fetch_gemini_models(api_key).await,
+        "Gemini" => {
+            if !api_base_url.is_empty() {
+                fetch_gemini_models_with_url(api_key, api_base_url).await
+            } else {
+                fetch_gemini_models(api_key).await
+            }
+        }
         "OpenAI" => {
-            fetch_openai_compatible_models(api_key, "https://api.openai.com/v1/models").await
+            fetch_openai_compatible_models(
+                api_key,
+                &build_models_url(api_base_url, "https://api.openai.com/v1/models"),
+            )
+            .await
         }
         "DeepSeek" => {
-            fetch_openai_compatible_models(api_key, "https://api.deepseek.com/v1/models").await
+            fetch_openai_compatible_models(
+                api_key,
+                &build_models_url(api_base_url, "https://api.deepseek.com/v1/models"),
+            )
+            .await
         }
         "Mistral" => {
-            fetch_openai_compatible_models(api_key, "https://api.mistral.ai/v1/models").await
+            fetch_openai_compatible_models(
+                api_key,
+                &build_models_url(api_base_url, "https://api.mistral.ai/v1/models"),
+            )
+            .await
         }
         "Ollama" => fetch_ollama_models(ollama_url).await,
         "DeepL" => vec!["deepl-free".to_string(), "deepl-standard".to_string()],
@@ -278,17 +311,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_dynamic_models_all_providers() {
-        let list = fetch_dynamic_models("DeepL", "dummy_key", "")
+        let list = fetch_dynamic_models("DeepL", "dummy_key", "", "")
             .await
             .unwrap();
         assert_eq!(list.len(), 2);
 
         // 擴充測試其他 Provider 路由
-        let _ = fetch_dynamic_models("OpenAI", "dummy_key", "").await;
-        let _ = fetch_dynamic_models("DeepSeek", "dummy_key", "").await;
-        let _ = fetch_dynamic_models("Mistral", "dummy_key", "").await;
+        let _ = fetch_dynamic_models("OpenAI", "dummy_key", "", "").await;
+        let _ = fetch_dynamic_models("DeepSeek", "dummy_key", "", "").await;
+        let _ = fetch_dynamic_models("Mistral", "dummy_key", "", "").await;
 
-        let list_empty = fetch_dynamic_models("Gemini", "", "").await.unwrap();
+        let list_empty = fetch_dynamic_models("Gemini", "", "", "").await.unwrap();
         assert!(list_empty.is_empty());
     }
 

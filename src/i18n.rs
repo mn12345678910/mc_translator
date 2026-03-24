@@ -149,6 +149,10 @@ pub struct CommonLabels {
     pub status_trans_failed_mask: String,
     pub status_progress_mask: String,
     pub status_batch_mask: String,
+    #[serde(default)]
+    pub cleanup_prefixes: Vec<String>,
+    #[serde(default)]
+    pub cleanup_contains: Vec<String>,
 }
 
 impl CommonLabels {

@@ -107,12 +107,17 @@ pub async fn start_translation_workflow(
 
     logger_arc(&i18n.status_analyzing_files);
 
+    let target_i18n = crate::i18n::CommonLabels::load_or_default(&config.target_lang);
+
     // 3. 組裝 JobConfig
     let job_config = Arc::new(Mutex::new(JobConfig::new(
         config.api_key.clone(),
         config.api_provider.clone(),
         config.model.clone(),
         config.ollama_url.clone(),
+        config.api_base_url.clone(),
+        target_i18n.cleanup_prefixes.clone(),
+        target_i18n.cleanup_contains.clone(),
         config.user_prompt.clone(),
         config.system_prompt.clone(),
         config.timeout,

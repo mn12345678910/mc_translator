@@ -300,7 +300,11 @@ pub async fn run_translation_batch(
                 {
                     Ok(translated) => {
                         let restored = postprocess_text(&translated, &item.markers);
-                        let cleaned = validate_and_cleanup(&restored);
+                        let cleaned = validate_and_cleanup(
+                            &restored,
+                            &cfg_snapshot.cleanup_prefixes,
+                            &cfg_snapshot.cleanup_contains,
+                        );
                         let final_trans = if cfg_snapshot.target_lang == "zh_tw" {
                             hanconv::s2tw(&cleaned)
                         } else {
@@ -409,6 +413,8 @@ async fn process_one_global_batch(
                 ctx.batch_indices,
                 &results_map,
                 &cfg.target_lang,
+                &cfg.cleanup_prefixes,
+                &cfg.cleanup_contains,
             );
 
             if resolved_any {
@@ -449,6 +455,8 @@ fn apply_batch_results(
     batch_indices: &[usize],
     results_map: &std::collections::HashMap<String, String>,
     target_lang: &str,
+    prefixes: &[String],
+    contains: &[String],
 ) -> bool {
     let mut resolved_any = false;
     let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
@@ -468,7 +476,7 @@ fn apply_batch_results(
                                 &clean_translated,
                                 &all_items[other_abs_idx].markers,
                             );
-                            let cleaned = validate_and_cleanup(&restored);
+                            let cleaned = validate_and_cleanup(&restored, prefixes, contains);
                             let final_trans = if target_lang == "zh_tw" {
                                 hanconv::s2tw(&cleaned)
                             } else {

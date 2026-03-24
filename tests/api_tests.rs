@@ -70,6 +70,7 @@ fn create_ollama_config(url: String) -> JobConfig {
         api_provider: "Ollama".to_string(),
         selected_model: "mock-model".to_string(),
         ollama_url: url,
+        api_base_url: "".to_string(),
         user_prompt: "".to_string(),
         system_prompt: "".to_string(),
         timeout: 60,
@@ -85,5 +86,7 @@ fn create_ollama_config(url: String) -> JobConfig {
         enable_llm_log: false,
         source_lang: "en_us".to_string(),
         target_lang: "zh_tw".to_string(),
+        cleanup_prefixes: vec![],
+        cleanup_contains: vec![],
     }
 }

@@ -288,6 +288,7 @@ async fn run_main_with_args(
                                 &config.api_provider,
                                 &config.api_key,
                                 &config.ollama_url,
+                                &config.api_base_url,
                             )
                             .await
                             .unwrap_or_else(|_| Vec::new());
