@@ -417,10 +417,7 @@ describe('dictionary.js 字典管理模組', () => {
 
             await btnNavDict.dispatchEvent(new Event('click'));
 
-            expect(dictDialog.showModal).toHaveBeenCalled();
-            expect(mockInvoke).toHaveBeenCalledWith('query_dictionary', expect.objectContaining({
-                 page: 0
-            }));
+            expect(mockInvoke).toHaveBeenCalledWith('open_dict_window');
         });
     });
 });
