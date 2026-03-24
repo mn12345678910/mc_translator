@@ -198,6 +198,7 @@ pub struct GuiLabels {
     pub btn_nav_palette: String,
     pub btn_nav_theme: String,
     pub btn_nav_dev: String,
+    pub btn_clear: String,
     pub btn_select_file: String,
     pub btn_select_folder: String,
     pub btn_output_dir: String,

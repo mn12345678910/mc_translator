@@ -116,6 +116,11 @@ pub struct StyleConfig {
     #[serde(default = "default_light_label")]
     pub light_label: [u8; 3],
 
+    #[serde(default = "default_dark_text_muted")]
+    pub dark_text_muted: [u8; 3],
+    #[serde(default = "default_light_text_muted")]
+    pub light_text_muted: [u8; 3],
+
     #[serde(default = "default_dark_btn_bg")]
     pub dark_btn_bg: [u8; 3],
     #[serde(default = "default_dark_btn_text")]
@@ -143,6 +148,41 @@ pub struct StyleConfig {
     pub light_tab_active: [u8; 3],
     #[serde(default = "default_light_tab_inactive")]
     pub light_tab_inactive: [u8; 3],
+
+    #[serde(default = "default_dark_header_bg")]
+    pub dark_header_bg: [u8; 3],
+    #[serde(default = "default_light_header_bg")]
+    pub light_header_bg: [u8; 3],
+
+    #[serde(default = "default_dark_border_color")]
+    pub dark_border_color: [u8; 3],
+    #[serde(default = "default_light_border_color")]
+    pub light_border_color: [u8; 3],
+
+    #[serde(default = "default_dark_hover_bg")]
+    pub dark_hover_bg: [u8; 3],
+    #[serde(default = "default_light_hover_bg")]
+    pub light_hover_bg: [u8; 3],
+
+    #[serde(default = "default_dark_slider_bg")]
+    pub dark_slider_bg: [u8; 3],
+    #[serde(default = "default_light_slider_bg")]
+    pub light_slider_bg: [u8; 3],
+
+    #[serde(default = "default_dark_slider_thumb")]
+    pub dark_slider_thumb: [u8; 3],
+    #[serde(default = "default_light_slider_thumb")]
+    pub light_slider_thumb: [u8; 3],
+
+    #[serde(default = "default_dark_switch_bg")]
+    pub dark_switch_bg: [u8; 3],
+    #[serde(default = "default_light_switch_bg")]
+    pub light_switch_bg: [u8; 3],
+
+    #[serde(default = "default_dark_progress_bg")]
+    pub dark_progress_bg: [u8; 3],
+    #[serde(default = "default_light_progress_bg")]
+    pub light_progress_bg: [u8; 3],
 
     // --- [造型與動畫] ---
     #[serde(default)]
@@ -190,6 +230,13 @@ fn default_light_label() -> [u8; 3] {
     [34, 34, 34]
 }
 
+fn default_dark_text_muted() -> [u8; 3] {
+    [170, 170, 170]
+}
+fn default_light_text_muted() -> [u8; 3] {
+    [102, 102, 102]
+}
+
 fn default_dark_btn_bg() -> [u8; 3] {
     [45, 45, 50]
 }
@@ -230,6 +277,49 @@ fn default_light_tab_inactive() -> [u8; 3] {
     [245, 245, 240]
 }
 
+fn default_dark_header_bg() -> [u8; 3] {
+    [37, 37, 43]
+}
+fn default_light_header_bg() -> [u8; 3] {
+    [245, 245, 235]
+}
+fn default_dark_border_color() -> [u8; 3] {
+    [60, 60, 66]
+}
+fn default_light_border_color() -> [u8; 3] {
+    [210, 210, 200]
+}
+fn default_dark_hover_bg() -> [u8; 3] {
+    [56, 56, 64]
+}
+fn default_light_hover_bg() -> [u8; 3] {
+    [230, 230, 220]
+}
+fn default_dark_slider_bg() -> [u8; 3] {
+    [42, 42, 48]
+}
+fn default_light_slider_bg() -> [u8; 3] {
+    [220, 220, 210]
+}
+fn default_dark_slider_thumb() -> [u8; 3] {
+    [224, 224, 224]
+}
+fn default_light_slider_thumb() -> [u8; 3] {
+    [80, 80, 80]
+}
+fn default_dark_switch_bg() -> [u8; 3] {
+    [26, 26, 31]
+}
+fn default_light_switch_bg() -> [u8; 3] {
+    [230, 230, 220]
+}
+fn default_dark_progress_bg() -> [u8; 3] {
+    [51, 51, 51]
+}
+fn default_light_progress_bg() -> [u8; 3] {
+    [240, 240, 230]
+}
+
 fn default_rounding() -> f32 {
     4.0
 }
@@ -254,6 +344,8 @@ impl Default for StyleConfig {
             light_text: default_light_text(),
             dark_label: default_dark_label(),
             light_label: default_light_label(),
+            dark_text_muted: default_dark_text_muted(),
+            light_text_muted: default_light_text_muted(),
             dark_btn_bg: default_dark_btn_bg(),
             dark_btn_text: default_dark_btn_text(),
             light_btn_bg: default_light_btn_bg(),
@@ -266,6 +358,20 @@ impl Default for StyleConfig {
             dark_tab_inactive: default_dark_tab_inactive(),
             light_tab_active: default_light_tab_active(),
             light_tab_inactive: default_light_tab_inactive(),
+            dark_header_bg: default_dark_header_bg(),
+            light_header_bg: default_light_header_bg(),
+            dark_border_color: default_dark_border_color(),
+            light_border_color: default_light_border_color(),
+            dark_hover_bg: default_dark_hover_bg(),
+            light_hover_bg: default_light_hover_bg(),
+            dark_slider_bg: default_dark_slider_bg(),
+            light_slider_bg: default_light_slider_bg(),
+            dark_slider_thumb: default_dark_slider_thumb(),
+            light_slider_thumb: default_light_slider_thumb(),
+            dark_switch_bg: default_dark_switch_bg(),
+            light_switch_bg: default_light_switch_bg(),
+            dark_progress_bg: default_dark_progress_bg(),
+            light_progress_bg: default_light_progress_bg(),
             btn_rounding_enabled: true,
             btn_rounding_value: default_rounding(),
             progress_pulse_enabled: true,

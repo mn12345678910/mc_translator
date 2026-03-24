@@ -96,6 +96,16 @@ export function applyColors(style) {
     const activeTabBg = isDark ? style.dark_tab_active : style.light_tab_active;
     const inactiveTabBg = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
     const labelColor = isDark ? style.dark_label : style.light_label;
+    const textMuted = isDark ? style.dark_text_muted : style.light_text_muted;
+    
+    // [NEW] 擴充細部變數
+    const headerBg = isDark ? style.dark_header_bg : style.light_header_bg;
+    const borderColor = isDark ? style.dark_border_color : style.light_border_color;
+    const hoverBg = isDark ? style.dark_hover_bg : style.light_hover_bg;
+    const sliderBg = isDark ? style.dark_slider_bg : style.light_slider_bg;
+    const sliderThumb = isDark ? style.dark_slider_thumb : style.light_slider_thumb;
+    const switchBg = isDark ? style.dark_switch_bg : style.light_switch_bg;
+    const progressBg = isDark ? style.dark_progress_bg : style.light_progress_bg;
 
     if (backgroundColor) document.documentElement.style.setProperty('--bg-color', `rgb(${backgroundColor[0]},${backgroundColor[1]},${backgroundColor[2]})`);
     if (textColor) document.documentElement.style.setProperty('--text-color', `rgb(${textColor[0]},${textColor[1]},${textColor[2]})`);
@@ -119,6 +129,21 @@ export function applyColors(style) {
             '--label-color',
             `rgb(${labelColor[0]},${labelColor[1]},${labelColor[2]})`
         );
+    
+    if (textMuted)
+        document.documentElement.style.setProperty(
+            '--text-muted',
+            `rgb(${textMuted[0]},${textMuted[1]},${textMuted[2]})`
+        );
+
+    // [NEW] 套用細部變數
+    if (headerBg) document.documentElement.style.setProperty('--header-bg', `rgb(${headerBg[0]},${headerBg[1]},${headerBg[2]})`);
+    if (borderColor) document.documentElement.style.setProperty('--border-color', `rgb(${borderColor[0]},${borderColor[1]},${borderColor[2]})`);
+    if (hoverBg) document.documentElement.style.setProperty('--hover-bg', `rgb(${hoverBg[0]},${hoverBg[1]},${hoverBg[2]})`);
+    if (sliderBg) document.documentElement.style.setProperty('--slider-bg', `rgb(${sliderBg[0]},${sliderBg[1]},${sliderBg[2]})`);
+    if (sliderThumb) document.documentElement.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
+    if (switchBg) document.documentElement.style.setProperty('--switch-bg', `rgb(${switchBg[0]},${switchBg[1]},${switchBg[2]})`);
+    if (progressBg) document.documentElement.style.setProperty('--progress-bg', `rgb(${progressBg[0]},${progressBg[1]},${progressBg[2]})`);
 
     if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
 

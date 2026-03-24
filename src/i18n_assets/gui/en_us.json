@@ -147,6 +147,7 @@
     "btn_nav_palette": "🎨 Custom Palette",
     "btn_nav_theme": "🌓 Toggle Theme",
     "btn_nav_dev": "🔧 Developer Mode",
+    "btn_clear": "Clear",
     "btn_select_file": "📁 Select File",
     "btn_select_folder": "📂 Select Folder",
     "btn_output_dir": "📤 Output Directory",

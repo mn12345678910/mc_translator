@@ -147,6 +147,7 @@
     "btn_nav_palette": "🎨 カスタムパレット",
     "btn_nav_theme": "🌓 テーマ切替",
     "btn_nav_dev": "🔧 開発者モード",
+    "btn_clear": "クリア",
     "btn_select_file": "📁 ファイルを選択",
     "btn_select_folder": "📂 フォルダを選択",
     "btn_output_dir": "📤 出力フォルダ",
