@@ -80,15 +80,12 @@ pub async fn process_all_files(
     inferred_arc: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let job_config = state.config.clone();
-    let status_arc = state.status.clone();
-    let progress_arc = state.progress.clone();
     let cancelled_arc = state.cancelled.clone();
-    let paused_arc = state.paused.clone();
     let log = state.log.clone();
 
     // --- 階段一：掃描與條目收集 ---
     {
-        let mut status = status_arc.lock().unwrap();
+        let mut status = state.status.lock().unwrap();
         *status = state.i18n.status_scanning_files.clone();
     }
 
@@ -288,18 +285,20 @@ pub async fn process_all_files(
         translate_global_batches(
             items_in_source,
             job_config.clone(),
-            status_arc.clone(),
-            progress_arc.clone(),
+            state.status.clone(),
+            state.progress.clone(),
             state.current_batch.clone(),
             state.total_batches.clone(),
             cancelled_arc.clone(),
-            paused_arc.clone(),
+            state.paused.clone(),
             log.clone(),
             state.pause_notifier.clone(),
             &glossary_automaton,
             &state.i18n,
             &log_file_name,
-            global_items_offset, // 新增：傳入全域偏移
+            &group_key.to_string_lossy(),
+            group_file_count as usize,
+            global_items_offset,
         )
         .await?;
 

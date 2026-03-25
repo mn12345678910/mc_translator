@@ -51,6 +51,8 @@ pub async fn translate_global_batches(
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
     i18n: &crate::i18n::CommonLabels,
     file_name: &str,
+    group_dir: &str,
+    group_file_count: usize,
     global_items_offset: usize, // 新增：全域 offset
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     run_translation_batch(RunBatchContext {
@@ -68,6 +70,8 @@ pub async fn translate_global_batches(
         glossary_automaton,
         i18n,
         file_name: file_name.to_string(),
+        group_dir: group_dir.to_string(),
+        group_file_count,
         global_items_offset, // 傳遞 offset
     })
     .await
@@ -88,6 +92,8 @@ pub struct RunBatchContext<'a> {
     pub glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     pub i18n: &'a crate::i18n::CommonLabels,
     pub file_name: String,
+    pub group_dir: String,
+    pub group_file_count: usize,
     pub global_items_offset: usize, // 新增
 }
 
@@ -172,6 +178,8 @@ pub async fn run_translation_batch(
             glossary_automaton,
             i18n,
             file_name: &ctx.file_name,
+            group_dir: &ctx.group_dir,
+            group_file_count: ctx.group_file_count,
             batch_idx,
             total_batches: initial_batches.len(),
         })
@@ -246,6 +254,8 @@ pub async fn run_translation_batch(
                 glossary_automaton,
                 i18n,
                 file_name: &ctx.file_name,
+                group_dir: &ctx.group_dir,
+                group_file_count: ctx.group_file_count,
                 batch_idx: 0,
                 total_batches: retry_batches.len(),
             })
@@ -382,6 +392,8 @@ struct BatchContext<'a> {
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
+    group_dir: &'a str,
+    group_file_count: usize,
     batch_idx: usize,
     total_batches: usize,
 }
@@ -400,24 +412,14 @@ async fn process_one_global_batch(
     // 3. 呼叫翻譯服務
     let cfg = ctx.config.lock().unwrap().clone();
 
-    // [新增] 檔名與詳細路徑輸出至日誌區
+    // [優化] 顯示彙總資訊至日誌區
     crate::utils::add_log(
         ctx._log,
-        &format!("正在翻譯檔案: {}", ctx.file_name),
+        &format!("共 {} 個檔案: {}", ctx.group_file_count, ctx.group_dir),
         &cfg.source_lang,
         &cfg.target_lang,
         "",
     );
-    if !ctx.batch_indices.is_empty() {
-        let first_idx = ctx.batch_indices[0];
-        crate::utils::add_log(
-            ctx._log,
-            &format!("詳細路徑: {}", ctx.all_items[first_idx].key),
-            &cfg.source_lang,
-            &cfg.target_lang,
-            "",
-        );
-    }
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
     let (tagged_texts, texts_to_translate) =
@@ -583,6 +585,8 @@ mod tests {
             glossary_automaton: &glossary_automaton,
             i18n: &i18n,
             file_name: "test.json".to_string(),
+            group_dir: "assets/lang/".to_string(),
+            group_file_count: 1,
             global_items_offset: 0,
         };
 
@@ -627,6 +631,8 @@ mod tests {
             glossary_automaton: &glossary_automaton,
             i18n: &i18n,
             file_name: "test.json".to_string(),
+            group_dir: "assets/lang/".to_string(),
+            group_file_count: 1,
             global_items_offset: 0,
         };
 
