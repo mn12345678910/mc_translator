@@ -213,21 +213,24 @@ pub async fn start_translation(
     )
     .await;
 
-    // 發送完成與狀態更新
-    let status_msg = match &res {
-        Ok(_) => "status_finished", // 🔴 傳回狀態 Key，前端將根據其顯示對應語系
-        Err(e) => return Err(e.to_string()),
+    let success = res.is_ok();
+    let status_key = if success {
+        "status_finished"
+    } else {
+        "status_failed_or_cancelled"
     };
-    let _ = handle.emit("translation-status", status_msg.to_string());
+
+    // 發送完成與狀態更新
+    let _ = handle.emit("translation-status", status_key.to_string());
 
     // 補發 translation-finished 連通前端
     let finish_payload = serde_json::json!({
-        "success": res.is_ok(),
-        "msg": if res.is_ok() { "翻譯已完成" } else { "翻譯發生錯誤" }
+        "success": success,
+        "msg": if success { "翻譯已完成" } else { "翻譯發生錯誤" }
     });
     let _ = handle.emit("translation-finished", finish_payload);
 
-    Ok(())
+    res.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

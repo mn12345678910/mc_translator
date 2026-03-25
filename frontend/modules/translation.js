@@ -54,24 +54,20 @@ export function initTranslation() {
                 let outDir = outputDir ? outputDir.value.trim() : '';
                 state.currentConfig.output_dir = outDir;
 
-
-                await invoke('start_translation', { 
-                    config: state.currentConfig,
-                    inputPaths: [state.currentConfig.path] 
-                });
                 setRunningState(true);
                 if (progressBar) {
                     progressBar.style.width = '0%';
-                }
-                const batchContainer = document.getElementById('batch-progress-container');
-                if (batchContainer) {
-                    batchContainer.style.display = 'block'; // 啟動時直接展開
                 }
                 const batchProgress = document.getElementById('batch-progress-bar');
                 if (batchProgress) {
                     batchProgress.style.width = '0%';
                 }
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
+
+                await invoke('start_translation', { 
+                    config: state.currentConfig,
+                    inputPaths: [state.currentConfig.path] 
+                });
             } catch (e) {
                 appendLog(state.currentLabels.status_trans_failed_mask.replace('{}', e));
                 setRunningState(false);
@@ -138,17 +134,25 @@ export function initTranslation() {
                     ? state.currentLabels.status_finished
                     : state.currentLabels.status_failed_or_cancelled;
             appendLog(data.msg);
+
+            // 同時更新 batch bar 為 100%
+            const batchProgress = document.getElementById('batch-progress-bar');
+            if (batchProgress) batchProgress.style.width = '100%';
+        });
+
+        listen('translation-status', (event) => {
+            const statusKey = event.payload; // "status_finished" 等
+            const currentStatusLabel = document.getElementById('current-status-label');
+            if (currentStatusLabel && state.currentLabels[statusKey]) {
+                currentStatusLabel.textContent = state.currentLabels[statusKey];
+            }
         });
 
         listen('translation-batch-update', (event) => {
             const data = event.payload; // { batch_index: x, total_batches: y, text: "..." }
             const batchProgress = document.getElementById('batch-progress-bar');
             const batchText = document.getElementById('batch-progress-text');
-            const batchContainer = document.getElementById('batch-progress-container');
-
-            if (batchContainer && data.total_batches > 0) {
-                batchContainer.style.display = 'block'; // 啟動時展開
-            }
+            // 始終顯示，不再動態切換 display
             if (batchProgress && data.total_batches > 0) {
                 const pct = (data.batch_index / data.total_batches) * 100;
                 batchProgress.style.width = `${pct}%`;
