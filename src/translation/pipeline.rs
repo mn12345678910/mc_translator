@@ -222,9 +222,7 @@ pub async fn start_translation_workflow(
     monitor_abort.store(true, Ordering::SeqCst);
     let _ = monitor_handle.await;
 
-    // 單純推上最後一筆狀態
-    let status_str = status_monitor.lock().unwrap().clone();
-    logger_arc(&status_str);
+    // 最終完成訊息由 commands.rs 的 translation-finished 事件負責，不再推送狀態字串到日誌
 
     // 翻譯結束或出錯，釋放全域指針
     if let Ok(mut active) = super::ACTIVE_JOB.lock() {

@@ -124,7 +124,7 @@ export function initTranslation() {
                     .replace('{}', data.total)
                     .replace('{}', data.msg);
             }
-            if (data.msg) appendLog(data.msg);
+            // 狀態訊息僅顯示在狀態列，不寫入日誌區域
         });
 
         listen('translation-finished', (event) => {

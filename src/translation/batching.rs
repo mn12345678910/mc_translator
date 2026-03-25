@@ -171,6 +171,8 @@ pub async fn run_translation_batch(
             is_retry: false,
             i18n,
             file_name: &ctx.file_name,
+            batch_idx,
+            total_batches: initial_batches.len(),
         })
         .await;
 
@@ -244,6 +246,8 @@ pub async fn run_translation_batch(
                 is_retry: true,
                 i18n,
                 file_name: &ctx.file_name,
+                batch_idx: 0,
+                total_batches: retry_batches.len(),
             })
             .await;
 
@@ -379,19 +383,21 @@ struct BatchContext<'a> {
     is_retry: bool,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
+    batch_idx: usize,
+    total_batches: usize,
 }
 
 /// 執行單一批次的 LLM 翻譯請求
 async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mode_str = if ctx.is_retry {
-        &ctx.i18n.status_retry
-    } else {
-        &ctx.i18n.status_translating
-    };
-
-    *ctx.status_arc.lock().unwrap() = format!("{}...", mode_str);
+    // 格式化狀態字串，顯示批次進度與檔案名稱至狀態列（非日誌）
+    *ctx.status_arc.lock().unwrap() = ctx
+        .i18n
+        .status_processing_batch
+        .replacen("{}", &(ctx.batch_idx + 1).to_string(), 1)
+        .replacen("{}", &ctx.total_batches.to_string(), 1)
+        .replacen("{}", ctx.file_name, 1);
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
     let (tagged_texts, texts_to_translate) =
