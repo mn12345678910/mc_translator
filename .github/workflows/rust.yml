@@ -58,7 +58,7 @@ jobs:
 
       with:
         name: rust-coverage
-        path: cobertura.xml
+        path: lcov.info
 
 
   build-cli:
@@ -149,16 +149,18 @@ jobs:
       uses: actions/download-artifact@v8
       with:
         name: mc_translator_cli
+        path: .
     - name: Download GUI Artifact
       uses: actions/download-artifact@v8
       with:
         name: mc_translator_gui
+        path: .
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
           mc_translator_cli.exe
-          *.exe
+          mc_translator_gui.exe
 
         generate_release_notes: true
 

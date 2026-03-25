@@ -18,3 +18,11 @@ node_modules/
 
 # 歷史過時歸檔 (Outdated Archives)
 docs/outdated/
+
+# 冗餘日誌與備份 (Redundant Logs and Backups)
+llm_communication.log
+coverage/
+langs_backup/
+*.log
+*.bak
+*.tmp
