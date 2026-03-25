@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_load_dict_file_not_found_fallback() {
         let path = std::path::Path::new("non_existent_file_xyz_123.json");
-        let loaded: HashMap<String, String> = load_dict(&path);
+        let loaded: HashMap<String, String> = load_dict(path);
         assert!(loaded.is_empty()); // Triggers T::default()
     }
 
