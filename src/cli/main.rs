@@ -611,12 +611,14 @@ mod tests {
     }
 
     impl CliInteract for MockCliInteract {
-        fn select(
-            &self,
-            _prompt: &str,
-            _items: &[String],
-            _default: usize,
-        ) -> Result<usize, dialoguer::Error> {
+        fn select(&self, prompt: &str, items: &[String], _default: usize) -> Result<usize, dialoguer::Error> {
+            if prompt.contains("Model") || prompt.contains("模型") {
+                let ans = self.select_answers.borrow_mut().remove(0);
+                if ans == 1 {
+                    return Ok(items.len() - 1);
+                }
+                return Ok(ans);
+            }
             Ok(self.select_answers.borrow_mut().remove(0))
         }
         fn input(&self, _prompt: &str, _allow_empty: bool) -> Result<String, dialoguer::Error> {
