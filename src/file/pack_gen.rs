@@ -6,9 +6,14 @@ use std::sync::{Arc, Mutex};
 
 pub fn get_output_dir(config: &JobConfig) -> std::path::PathBuf {
     let base = if config.output_dir.is_empty() {
-        Path::new(".")
+        let cur = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+        if cur.ends_with("src-tauri") && std::env::var("CARGO_MANIFEST_DIR").is_ok() {
+            std::path::PathBuf::from("..")
+        } else {
+            std::path::PathBuf::new()
+        }
     } else {
-        Path::new(&config.output_dir)
+        std::path::PathBuf::from(&config.output_dir)
     };
     base.join("LLMTranslator")
 }
@@ -38,7 +43,7 @@ pub fn write_to_temp_or_output(
     let output_path = to_extended_abs_path(&get_output_dir(config));
 
     if !output_path.exists() {
-        fs::create_dir_all(&output_path).unwrap_or(());
+        fs::create_dir_all(&output_path)?;
     }
 
     let temp_dir = output_path.join("temp_translator");

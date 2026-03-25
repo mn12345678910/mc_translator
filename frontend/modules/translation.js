@@ -52,10 +52,8 @@ export function initTranslation() {
                 state.currentConfig.path = inputPath ? inputPath.value : '';
                 
                 let outDir = outputDir ? outputDir.value.trim() : '';
-                if (outDir === '') {
-                    outDir = './LLMTranslator'; // 預設使用 ./LLMTranslator
-                }
                 state.currentConfig.output_dir = outDir;
+
 
                 await invoke('start_translation', { 
                     config: state.currentConfig,

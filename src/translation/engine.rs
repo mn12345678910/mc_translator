@@ -77,7 +77,7 @@ pub async fn translate_json_recursive(
             *ctx.status.lock().unwrap() = ctx
                 .i18n
                 .status_processing_batch
-                .replace("{}", &(i + 1).to_string())
+                .replacen("{}", &(i + 1).to_string(), 1)
                 .replacen("{}", &chunks.len().to_string(), 1)
                 .replacen("{}", &ctx.filename, 1);
 
@@ -145,8 +145,8 @@ pub async fn translate_json_recursive(
                         .store((current as f32).to_bits(), Ordering::SeqCst);
                     *ctx.status.lock().unwrap() = ctx
                         .i18n
-                        .status_processing_batch
-                        .replace("{}", &ctx.filename)
+                        .status_processing_item
+                        .replacen("{}", &ctx.filename, 1)
                         .replacen("{}", &current.to_string(), 1)
                         .replacen("{}", &total_unique_to_translate.to_string(), 1);
                 }
@@ -263,7 +263,7 @@ pub async fn translate_json_recursive(
         *ctx.status.lock().unwrap() = ctx
             .i18n
             .status_processing_item
-            .replace("{}", &ctx.filename)
+            .replacen("{}", &ctx.filename, 1)
             .replacen("{}", &current.to_string(), 1)
             .replacen("{}", &total_unique_to_translate.to_string(), 1);
 

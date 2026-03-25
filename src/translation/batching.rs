@@ -195,7 +195,7 @@ pub async fn run_translation_batch(
                     &log,
                     &i18n
                         .log_batch_failed_retry
-                        .replace("{}", &(batch_idx + 1).to_string())
+                        .replacen("{}", &(batch_idx + 1).to_string(), 1)
                         .replacen("{}", &initial_batches.len().to_string(), 1)
                         .replacen("{}", &err_msg, 1),
                     &cfg.source_lang,

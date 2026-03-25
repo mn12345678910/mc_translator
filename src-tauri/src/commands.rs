@@ -406,11 +406,21 @@ pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
 
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<(), String> {
-    let os_path = std::path::Path::new(&path);
+    let mut os_path = std::path::PathBuf::from(&path);
 
-    // 如果資料夾不存在，自動產出來（支援相對路徑與 LLMTranslator）
+    // 如果是預設值或空值，根據開發與生產環境重新定錨（同步 pack_gen 邏輯）
+    if path.is_empty() || path == "./LLMTranslator" {
+        let cur = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+        if cur.ends_with("src-tauri") && std::env::var("CARGO_MANIFEST_DIR").is_ok() {
+            os_path = std::path::PathBuf::from("../LLMTranslator");
+        } else {
+            os_path = std::path::PathBuf::from("LLMTranslator");
+        }
+    }
+
+    // 如果資料夾不存在，自動產出來
     if !os_path.exists() {
-        std::fs::create_dir_all(os_path).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(&os_path).map_err(|e| e.to_string())?;
     }
 
     #[cfg(target_os = "windows")]
