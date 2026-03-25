@@ -272,3 +272,43 @@ export function updatePaletteValue() {
         }
     }
 }
+export async function restoreDefaultStyle() {
+    try {
+        const defaultStyle = await invoke('get_default_style_config');
+        
+        // 僅更新樣式相關欄位
+        state.currentStyle = {
+            ...defaultStyle,
+            show_palette_settings: state.currentStyle.show_palette_settings // 保持面板展開狀態
+        };
+
+        // 重新套用並儲存
+        applyColors(state.currentStyle);
+        await invoke('save_style_config', { config: state.currentStyle });
+        
+        // 更新 UI 控制項數值
+        const fontSize = document.getElementById('font-size');
+        const chkBtnRounding = document.getElementById('chk-btn-rounding');
+        const btnRoundingValue = document.getElementById('btn-rounding-value');
+        const chkPulse = document.getElementById('chk-pulse');
+        const pulseSpeed = document.getElementById('pulse-speed');
+        const progressStyle = document.getElementById('progress-style');
+
+        if (fontSize) fontSize.value = state.currentStyle.font_size;
+        if (chkBtnRounding) chkBtnRounding.checked = state.currentStyle.btn_rounding_enabled;
+        if (btnRoundingValue) btnRoundingValue.value = state.currentStyle.btn_rounding_value;
+        if (chkPulse) chkPulse.checked = state.currentStyle.progress_pulse_enabled;
+        if (pulseSpeed) pulseSpeed.value = state.currentStyle.progress_pulse_speed;
+        if (progressStyle) progressStyle.value = state.currentStyle.progress_style || 'default';
+
+        // 更新調色盤選擇器的數值顯示 (如果有打開的話)
+        if (typeof updatePaletteValue === 'function') {
+            updatePaletteValue();
+        }
+
+        const msg = state.currentLabels.status_style_restored || '介面樣式已恢復預設';
+        console.log(msg);
+    } catch (e) {
+        console.error('恢復樣式預設失敗:', e);
+    }
+}

@@ -180,3 +180,54 @@ export function validateCanTranslate() {
             !selectedModel.value && apiProvider.value !== 'Google Free' && apiProvider.value !== 'Ollama';
     }
 }
+export async function restoreDefaultConfig() {
+    try {
+        const defaultConfig = await invoke('get_default_config');
+        
+        // 僅更新與「API 與翻譯設定」相關的欄位
+        state.currentConfig.api_provider = defaultConfig.api_provider;
+        state.currentConfig.model = defaultConfig.model;
+        state.currentConfig.ollama_url = defaultConfig.ollama_url;
+        state.currentConfig.api_base_url = defaultConfig.api_base_url;
+        state.currentConfig.batch_size = defaultConfig.batch_size;
+        state.currentConfig.batch_max_chars = defaultConfig.batch_max_chars;
+        state.currentConfig.timeout = defaultConfig.timeout;
+        state.currentConfig.glossary_priority = defaultConfig.glossary_priority;
+        state.currentConfig.system_prompt = defaultConfig.system_prompt;
+        state.currentConfig.user_prompt = defaultConfig.user_prompt;
+
+        // 金鑰重置為空 (比照預設值)
+        await invoke('save_api_key_cmd', { key: '' });
+        
+        // 重新載入 UI
+        const apiProvider = document.getElementById('api-provider');
+        const apiKey = document.getElementById('api-key');
+        const ollamaUrl = document.getElementById('ollama-url');
+        const batchSize = document.getElementById('batch-size');
+        const batchMaxChars = document.getElementById('batch-max-chars');
+        const timeoutSec = document.getElementById('timeout-sec');
+        const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
+        const systemPrompt = document.getElementById('system-prompt');
+        const userPrompt = document.getElementById('user-prompt');
+
+        if (apiProvider) apiProvider.value = state.currentConfig.api_provider;
+        if (apiKey) apiKey.value = '';
+        if (ollamaUrl) ollamaUrl.value = state.currentConfig.ollama_url;
+        if (batchSize) batchSize.value = state.currentConfig.batch_size;
+        if (batchMaxChars) batchMaxChars.value = state.currentConfig.batch_max_chars;
+        if (timeoutSec) timeoutSec.value = state.currentConfig.timeout;
+        if (chkGlossaryPriority) chkGlossaryPriority.checked = state.currentConfig.glossary_priority === 'user';
+        if (systemPrompt) systemPrompt.value = state.currentConfig.system_prompt;
+        if (userPrompt) userPrompt.value = state.currentConfig.user_prompt;
+
+        toggleOllamaGroup();
+        toggleApiKeyVisibility();
+        await loadModels();
+        
+        // 自動儲存變更
+        await invoke('save_config', { config: state.currentConfig });
+        appendLog(state.currentLabels.status_config_restored || 'API 設定已恢復預設');
+    } catch (e) {
+        console.error('恢復 API 預設失敗:', e);
+    }
+}

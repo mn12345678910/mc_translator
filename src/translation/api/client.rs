@@ -928,10 +928,12 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_key = "test_key".to_string();
-        config.selected_model = "gemini-1.5-pro".to_string();
-        config.timeout = 30;
+        let config = JobConfig {
+            api_key: "test_key".to_string(),
+            selected_model: "gemini-1.5-pro".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_gemini_with_url(
             "hello",
@@ -965,10 +967,12 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_provider = "OpenAI".to_string();
-        config.api_key = "test_key".to_string();
-        config.timeout = 30;
+        let config = JobConfig {
+            api_provider: "OpenAI".to_string(),
+            api_key: "test_key".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_openai_compatible_with_url(
             "hello",
@@ -1000,9 +1004,11 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_key = "test_key".to_string();
-        config.timeout = 30; // 避免預設 0s 造成瞬間逾時
+        let config = JobConfig {
+            api_key: "test_key".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_deepl_with_url("hello", &config, &server.uri()).await;
 
@@ -1024,11 +1030,13 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_key = "test_key".to_string();
-        config.selected_model = "gemini-1.5-pro".to_string();
-        config.timeout = 30;
-        config.enable_llm_log = true;
+        let config = JobConfig {
+            api_key: "test_key".to_string(),
+            selected_model: "gemini-1.5-pro".to_string(),
+            timeout: 30,
+            enable_llm_log: true,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_gemini_with_url(
             "hello",
@@ -1062,10 +1070,12 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_provider = "OpenAI".to_string();
-        config.api_key = "test_key".to_string();
-        config.timeout = 30;
+        let config = JobConfig {
+            api_provider: "OpenAI".to_string(),
+            api_key: "test_key".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_openai_compatible_with_url(
             "hello",
@@ -1099,9 +1109,11 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.api_key = "test_key".to_string();
-        config.timeout = 30;
+        let config = JobConfig {
+            api_key: "test_key".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_deepl_with_url("hello", &config, &server.uri()).await;
 
@@ -1131,10 +1143,12 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.ollama_url = server.uri();
-        config.selected_model = "llama3".to_string();
-        config.timeout = 30;
+        let config = JobConfig {
+            ollama_url: server.uri(),
+            selected_model: "llama3".to_string(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_ollama("hello", &config, "test.json", None).await;
 
@@ -1159,9 +1173,11 @@ mod tests {
             .mount(&server)
             .await;
 
-        let mut config = JobConfig::default();
-        config.ollama_url = server.uri();
-        config.timeout = 30;
+        let config = JobConfig {
+            ollama_url: server.uri(),
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let res = translate_with_ollama("hello", &config, "test.json", None).await;
 
@@ -1173,10 +1189,12 @@ mod tests {
     async fn test_translate_one_fallback_to_google_free() {
         use crate::translation::job::JobConfig;
 
-        let mut config = JobConfig::default();
-        config.api_provider = "Gemini".to_string();
-        config.api_key = "".to_string(); // 觸發空金鑰 fallback 分支
-        config.timeout = 1; // 讓它即使發送失敗也瞬間回來，不卡測試。
+        let config = JobConfig {
+            api_provider: "Gemini".to_string(),
+            api_key: "".to_string(),
+            timeout: 1,
+            ..JobConfig::default()
+        };
 
         let res = translate_one("hello", &config, "test.json", None).await;
 
@@ -1188,10 +1206,12 @@ mod tests {
     async fn test_translate_one_fallback_to_google_free_openai() {
         use crate::translation::job::JobConfig;
 
-        let mut config = JobConfig::default();
-        config.api_provider = "OpenAI".to_string();
-        config.api_key = "".to_string(); // 觸發空金鑰 fallback 分支
-        config.timeout = 1;
+        let config = JobConfig {
+            api_provider: "OpenAI".to_string(),
+            api_key: "".to_string(),
+            timeout: 1,
+            ..JobConfig::default()
+        };
 
         let res = translate_one("hello", &config, "test.json", None).await;
 

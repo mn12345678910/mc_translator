@@ -282,9 +282,11 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     fn create_mock_shared_state() -> JobSharedState {
-        let mut config = JobConfig::default();
-        config.source_lang = "zh_tw".to_string();
-        config.target_lang = "en_us".to_string();
+        let config = JobConfig {
+            source_lang: "zh_tw".to_string(),
+            target_lang: "en_us".to_string(),
+            ..JobConfig::default()
+        };
 
         JobSharedState {
             log: Arc::new(Mutex::new(Vec::new())),
@@ -415,9 +417,11 @@ mod tests {
             zip.finish().unwrap();
         }
 
-        let mut config = JobConfig::default();
-        config.source_lang = "en_us".to_string();
-        config.target_lang = "zh_tw".to_string();
+        let config = JobConfig {
+            source_lang: "en_us".to_string(),
+            target_lang: "zh_tw".to_string(),
+            ..JobConfig::default()
+        };
 
         let mut translated = HashMap::new();
         translated.insert(

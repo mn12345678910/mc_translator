@@ -190,8 +190,10 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     fn create_mock_shared_state() -> JobSharedState {
-        let mut config = JobConfig::default();
-        config.target_lang = "zh_tw".to_string();
+        let config = JobConfig {
+            target_lang: "zh_tw".to_string(),
+            ..JobConfig::default()
+        };
 
         JobSharedState {
             log: Arc::new(Mutex::new(Vec::new())),
@@ -282,8 +284,10 @@ addItem('something', ['新增', '編輯'])"#,
             vec![(9, 15, "你好".to_string(), 0)],
         );
 
-        let mut config = JobConfig::default();
-        config.output_dir = temp_dir.to_string_lossy().to_string();
+        let config = JobConfig {
+            output_dir: temp_dir.to_string_lossy().to_string(),
+            ..JobConfig::default()
+        };
         let config_locked = Arc::new(Mutex::new(config));
 
         let mut item = GlobalBatchItem::new("你好", 1, "js_key_0");

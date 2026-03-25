@@ -5,11 +5,12 @@ import { loadUiLangs, updateUiLanguage, updateToggleStateLabel } from './modules
 import {
     loadConfig,
     saveConfig,
+    restoreDefaultConfig,
     toggleOllamaGroup,
     toggleApiKeyVisibility,
     validateCanTranslate,
 } from './modules/config.js';
-import { loadStyle, saveStyle, applyColors, updatePaletteValue } from './modules/style.js';
+import { loadStyle, saveStyle, restoreDefaultStyle, applyColors, updatePaletteValue } from './modules/style.js';
 import { initDictionary, loadDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
 
@@ -316,4 +317,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 7. 初始化面板展開狀態 (解決初次點擊無反應或誤開啟問題)
     updatePanelVisibility();
+
+    const btnRestoreApi = document.getElementById('btn-restore-api');
+    if (btnRestoreApi) {
+        btnRestoreApi.addEventListener('click', restoreDefaultConfig);
+    }
+    const btnRestorePalette = document.getElementById('btn-restore-palette');
+    if (btnRestorePalette) {
+        btnRestorePalette.addEventListener('click', restoreDefaultStyle);
+    }
 });

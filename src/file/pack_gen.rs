@@ -357,10 +357,12 @@ mod tests {
         .unwrap();
 
         let log = Arc::new(Mutex::new(Vec::new()));
-        let mut i18n = crate::i18n::CommonLabels::default();
-        i18n.log_generating_pack = "Generating...".to_string();
-        i18n.log_pack_gen_finished = "Finished.".to_string();
-        i18n.log_pack_item_exists_warn = "Warn: {}".to_string();
+        let i18n = crate::i18n::CommonLabels {
+            log_generating_pack: "Generating...".to_string(),
+            log_pack_gen_finished: "Finished.".to_string(),
+            log_pack_item_exists_warn: "Warn: {}".to_string(),
+            ..crate::i18n::CommonLabels::default()
+        };
 
         let res = output_resource_pack(
             Path::new("."),

@@ -602,16 +602,20 @@ mod tests {
         fs::create_dir_all(&temp_dir).unwrap();
 
         // 1. StyleConfig
-        let mut style = StyleConfig::default();
-        style.font_size = 20.0;
+        let mut style = StyleConfig {
+            font_size: 20.0,
+            ..StyleConfig::default()
+        };
         style.save_with_path(&temp_dir);
 
         let loaded_style = StyleConfig::load_with_path(&temp_dir);
         assert_eq!(loaded_style.font_size, 20.0);
 
         // 2. AppConfig
-        let mut app = AppConfig::default();
-        app.batch_size = 300;
+        let mut app = AppConfig {
+            batch_size: 300,
+            ..AppConfig::default()
+        };
         app.save_with_path(&temp_dir);
 
         let loaded_app = AppConfig::load_with_path(&temp_dir);

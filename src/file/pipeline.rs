@@ -410,7 +410,7 @@ pub fn shorten_rel_paths(paths: &[String]) -> String {
 
     for (i, p) in paths.iter().enumerate() {
         let current_parts: Vec<String> = p
-            .split(|c| c == '/' || c == '\\')
+            .split(['/', '\\'])
             .map(|s| s.to_string())
             .collect();
         if i == 0 {

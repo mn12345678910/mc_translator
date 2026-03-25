@@ -130,6 +130,8 @@ pub async fn run_translation_batch(
     );
 
     if pending_indices.is_empty() {
+        total_batches.store(1, Ordering::SeqCst); // 確保顯示 1/1 而非 0/0
+        current_batch.store(1, Ordering::SeqCst);
         progress.store(
             ((ctx.global_items_offset + total_items) as f32).to_bits(),
             Ordering::SeqCst,
@@ -168,7 +170,6 @@ pub async fn run_translation_batch(
             status_arc: &status,
             _log: &log,
             glossary_automaton,
-            is_retry: false,
             i18n,
             file_name: &ctx.file_name,
             batch_idx,
@@ -243,7 +244,6 @@ pub async fn run_translation_batch(
                 status_arc: &status,
                 _log: &log,
                 glossary_automaton,
-                is_retry: true,
                 i18n,
                 file_name: &ctx.file_name,
                 batch_idx: 0,
@@ -380,7 +380,6 @@ struct BatchContext<'a> {
     status_arc: &'a Arc<Mutex<String>>,
     _log: &'a Arc<Mutex<Vec<String>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
-    is_retry: bool,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
     batch_idx: usize,
@@ -391,13 +390,34 @@ struct BatchContext<'a> {
 async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // 格式化狀態字串，顯示批次進度與檔案名稱至狀態列（非日誌）
-    *ctx.status_arc.lock().unwrap() = ctx
-        .i18n
-        .status_processing_batch
-        .replacen("{}", &(ctx.batch_idx + 1).to_string(), 1)
-        .replacen("{}", &ctx.total_batches.to_string(), 1)
-        .replacen("{}", ctx.file_name, 1);
+    // 格式化狀態字串，僅顯示批次進度至狀態列
+    *ctx.status_arc.lock().unwrap() = format!(
+        "正在翻譯：批次 ({}/{})",
+        ctx.batch_idx + 1,
+        ctx.total_batches
+    );
+
+    // 3. 呼叫翻譯服務
+    let cfg = ctx.config.lock().unwrap().clone();
+
+    // [新增] 檔名與詳細路徑輸出至日誌區
+    crate::utils::add_log(
+        ctx._log,
+        &format!("正在翻譯檔案: {}", ctx.file_name),
+        &cfg.source_lang,
+        &cfg.target_lang,
+        "",
+    );
+    if !ctx.batch_indices.is_empty() {
+        let first_idx = ctx.batch_indices[0];
+        crate::utils::add_log(
+            ctx._log,
+            &format!("詳細路徑: {}", ctx.all_items[first_idx].key),
+            &cfg.source_lang,
+            &cfg.target_lang,
+            "",
+        );
+    }
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
     let (tagged_texts, texts_to_translate) =
@@ -409,8 +429,6 @@ async fn process_one_global_batch(
         .extract(texts_to_translate.as_slice());
     let entries = crate::utils::hashmap_to_entries(&glossary);
 
-    // 3. 呼叫翻譯服務
-    let cfg = ctx.config.lock().unwrap().clone();
     match api::translate_batch(&tagged_texts, &cfg, ctx.file_name, Some(&entries)).await {
         Ok(results_map) => {
             // 4. 解析結果 (優化：使用正則表達式更靈活地從結果地圖中提取)

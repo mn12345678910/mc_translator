@@ -619,13 +619,15 @@ mod tests {
         let inferred = HashMap::new();
         let terms = Vec::new();
 
-        let mut config = JobConfig::default();
-        config.api_provider = "Ollama".to_string();
-        config.ollama_url = server.uri();
-        config.selected_model = "llama3".to_string();
-        config.batch_size = 5; // 大於 1
-        config.timeout = 30;
-        config.target_lang = "zh_tw".to_string(); // 觸發 hanconv::s2tw
+        let config = JobConfig {
+            api_provider: "Ollama".to_string(),
+            ollama_url: server.uri(),
+            selected_model: "llama3".to_string(),
+            batch_size: 5,
+            timeout: 30,
+            target_lang: "zh_tw".to_string(),
+            ..JobConfig::default()
+        };
 
         let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
 
@@ -814,12 +816,14 @@ mod tests {
         let inferred = HashMap::new();
         let terms = Vec::new();
 
-        let mut config = JobConfig::default();
-        config.api_provider = "Ollama".to_string();
-        config.ollama_url = server.uri();
-        config.selected_model = "llama3".to_string();
-        config.batch_size = 5;
-        config.timeout = 30;
+        let config = JobConfig {
+            api_provider: "Ollama".to_string(),
+            ollama_url: server.uri(),
+            selected_model: "llama3".to_string(),
+            batch_size: 5,
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
 
@@ -865,12 +869,14 @@ mod tests {
         let inferred = HashMap::new();
         let terms = Vec::new();
 
-        let mut config = JobConfig::default();
-        config.api_provider = "Ollama".to_string();
-        config.ollama_url = server.uri();
-        config.selected_model = "llama3".to_string();
-        config.batch_size = 1; // 單筆
-        config.timeout = 30;
+        let config = JobConfig {
+            api_provider: "Ollama".to_string(),
+            ollama_url: server.uri(),
+            selected_model: "llama3".to_string(),
+            batch_size: 1,
+            timeout: 30,
+            ..JobConfig::default()
+        };
 
         let mut ctx = setup_test_context(config, &glossary, &i18n, &inferred, &terms);
 

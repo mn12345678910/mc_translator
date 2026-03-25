@@ -155,8 +155,10 @@ mod tests {
     use std::sync::atomic::{AtomicBool, AtomicU32};
 
     fn create_mock_shared_state() -> JobSharedState {
-        let mut config = JobConfig::default();
-        config.target_lang = "zh_tw".to_string();
+        let config = JobConfig {
+            target_lang: "zh_tw".to_string(),
+            ..JobConfig::default()
+        };
 
         JobSharedState {
             log: Arc::new(Mutex::new(Vec::new())),
