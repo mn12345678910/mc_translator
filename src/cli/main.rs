@@ -634,6 +634,25 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_mock_cli_interact_select_coverage() {
+        let mock = MockCliInteract {
+            select_answers: std::cell::RefCell::new(vec![1, 2, 3]),
+            input_answers: std::cell::RefCell::new(vec![]),
+            password_answers: std::cell::RefCell::new(vec![]),
+        };
+        let items = vec!["A".to_string(), "B".to_string(), "Back".to_string()];
+        
+        // 1. Model & ans = 1 -> items.len() - 1 = 2
+        assert_eq!(mock.select("Select Model", &items, 0).unwrap(), 2);
+        
+        // 2. Model & ans = 2 -> 2
+        assert_eq!(mock.select("Select Model", &items, 0).unwrap(), 2);
+        
+        // 3. Other & ans = 3 -> 3
+        assert_eq!(mock.select("Something Else", &items, 0).unwrap(), 3);
+    }
+
     #[tokio::test]
     async fn test_run_main_interactive_cancel() {
         let args = Args::try_parse_from(["mc_translator_cli"]).unwrap();
