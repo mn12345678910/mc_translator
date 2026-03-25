@@ -351,6 +351,14 @@
                         />
                     </div>
                 </div>
+                <div class="form-group">
+                    <label for="progress-style" data-i18n="label_progress_style">Bar Style:</label>
+                    <select id="progress-style" style="width: 100%">
+                        <option value="default" data-i18n="style_default">Default</option>
+                        <option value="aurora" data-i18n="style_aurora">Aurora</option>
+                        <option value="neon" data-i18n="style_neon">Neon</option>
+                    </select>
+                </div>
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px">
@@ -374,11 +382,9 @@
             </div>
             <div
                 id="batch-progress-container"
-                style="display: none;"
             >
                 <div
                     id="batch-progress-bar"
-                    style="background-color: var(--accent-color); width: 0%; height: 100%; transition: width 0.2s"
                 ></div>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px">

@@ -12,7 +12,7 @@ export function setRunningState(isRunning) {
     const btnStop = document.getElementById('btn-stop');
 
     const inputs = document.querySelectorAll(
-        '.control-panel input:not(#input-path), .control-panel select, .control-panel textarea'
+        '.control-panel:not(.theme-settings) input:not(#input-path), .control-panel:not(.theme-settings) select, .control-panel:not(.theme-settings) textarea'
     );
     inputs.forEach((el) => (el.disabled = isRunning));
 
@@ -46,22 +46,32 @@ export function initTranslation() {
             if (inputPath && inputPath.value.trim() === '') {
                 return alert(state.currentLabels.status_input_path_empty);
             }
-            if (outputDir && outputDir.value.trim() === '') {
-                return alert(state.currentLabels.status_output_dir_empty);
-            }
+            // 移除強制選擇「輸出資料夾」的驗證
             try {
                 // 確保從 DOM 取出最新狀態
                 state.currentConfig.path = inputPath ? inputPath.value : '';
-                state.currentConfig.output_dir = outputDir ? outputDir.value : '';
+                
+                let outDir = outputDir ? outputDir.value.trim() : '';
+                if (outDir === '') {
+                    outDir = './LLMTranslator'; // 預設使用 ./LLMTranslator
+                }
+                state.currentConfig.output_dir = outDir;
 
                 await invoke('start_translation', { 
                     config: state.currentConfig,
-                    input_paths: [state.currentConfig.path] 
+                    inputPaths: [state.currentConfig.path] 
                 });
                 setRunningState(true);
                 if (progressBar) {
                     progressBar.style.width = '0%';
-                    progressBar.style.display = 'block';
+                }
+                const batchContainer = document.getElementById('batch-progress-container');
+                if (batchContainer) {
+                    batchContainer.style.display = 'block'; // 啟動時直接展開
+                }
+                const batchProgress = document.getElementById('batch-progress-bar');
+                if (batchProgress) {
+                    batchProgress.style.width = '0%';
                 }
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
             } catch (e) {
@@ -123,6 +133,8 @@ export function initTranslation() {
             const data = event.payload; // { success: bool, msg: "..." }
             setRunningState(false);
             if (progressBar) progressBar.style.width = '100%';
+            
+            // 結束時保持顯示，讓狀態維持 100% 完成
             if (statusText)
                 statusText.textContent = data.success
                     ? state.currentLabels.status_finished
@@ -134,6 +146,11 @@ export function initTranslation() {
             const data = event.payload; // { batch_index: x, total_batches: y, text: "..." }
             const batchProgress = document.getElementById('batch-progress-bar');
             const batchText = document.getElementById('batch-progress-text');
+            const batchContainer = document.getElementById('batch-progress-container');
+
+            if (batchContainer && data.total_batches > 0) {
+                batchContainer.style.display = 'block'; // 啟動時展開
+            }
             if (batchProgress && data.total_batches > 0) {
                 const pct = (data.batch_index / data.total_batches) * 100;
                 batchProgress.style.width = `${pct}%`;

@@ -180,9 +180,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelTheme = document.querySelector('.theme-settings');
 
     function updatePanelVisibility() {
-        if (panelApi) panelApi.classList.toggle('expanded', state.currentConfig.show_api_settings);
-        if (panelDev) panelDev.classList.toggle('expanded', state.currentConfig.show_developer_mode);
-        if (panelTheme) panelTheme.classList.toggle('expanded', state.currentStyle.show_palette_settings);
+        if (panelApi) panelApi.classList.toggle('expanded', !!state.currentConfig.show_api_settings);
+        if (panelDev) panelDev.classList.toggle('expanded', !!state.currentConfig.show_developer_mode);
+        if (panelTheme) panelTheme.classList.toggle('expanded', !!state.currentStyle.show_palette_settings);
     }
 
     if (btnNavApi) {
@@ -352,4 +352,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    // 7. 初始化面板展開狀態 (解決初次點擊無反應或誤開啟問題)
+    updatePanelVisibility();
 });

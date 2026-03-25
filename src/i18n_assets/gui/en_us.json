@@ -282,6 +282,10 @@
   "label_fps_preset_vsync": "(Default:vsync)",
   "btn_dict_open_json": "Open tab file and folder",
   "btn_palette_clear_item": "🗑 Clear Overrides",
+  "label_progress_style": "Progress Bar Style",
+  "style_default": "Default",
+  "style_aurora": "Aurora Gradient",
+  "style_neon": "Glassy Neon",
   "cleanup_prefixes": [
     "Translation:",
     "Translated:",

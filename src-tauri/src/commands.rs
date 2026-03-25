@@ -407,7 +407,12 @@ pub fn open_path_dialog(diag_type: String) -> Result<Option<String>, String> {
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<(), String> {
     let os_path = std::path::Path::new(&path);
-    // 即使路徑不存在也嘗試開啟上一層或直接讓系統報錯
+    
+    // 如果資料夾不存在，自動產出來（支援相對路徑與 LLMTranslator）
+    if !os_path.exists() {
+        std::fs::create_dir_all(os_path).map_err(|e| e.to_string())?;
+    }
+
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("explorer")

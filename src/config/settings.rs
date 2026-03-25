@@ -197,6 +197,9 @@ pub struct StyleConfig {
     #[serde(default = "default_pulse_speed")]
     pub progress_pulse_speed: f32,
 
+    #[serde(default = "default_progress_style")]
+    pub progress_style: String,
+
     // --- [特定元件覆寫] ---
     #[serde(default)]
     pub instance_overrides: HashMap<String, ComponentStyle>,
@@ -328,6 +331,9 @@ fn default_rounding() -> f32 {
 fn default_pulse_speed() -> f32 {
     1.0
 }
+fn default_progress_style() -> String {
+    "default".to_string()
+}
 fn default_true() -> bool {
     true
 }
@@ -378,6 +384,7 @@ impl Default for StyleConfig {
             btn_rounding_value: default_rounding(),
             progress_pulse_enabled: true,
             progress_pulse_speed: default_pulse_speed(),
+            progress_style: default_progress_style(),
             instance_overrides: HashMap::new(),
         }
     }

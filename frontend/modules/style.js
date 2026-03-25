@@ -34,6 +34,20 @@ export async function loadStyle() {
         if (chkPulse) chkPulse.checked = style.progress_pulse_enabled ?? true;
         if (pulseSpeed) pulseSpeed.value = style.progress_pulse_speed ?? 1.0;
 
+        const progressStyle = document.getElementById('progress-style');
+        if (progressStyle) {
+            progressStyle.value = style.progress_style || 'default';
+            if (!progressStyle.dataset.listenerAdded) {
+                progressStyle.addEventListener('change', (e) => {
+                    if (state.currentStyle) {
+                        state.currentStyle.progress_style = e.target.value;
+                        applyColors(state.currentStyle);
+                    }
+                });
+                progressStyle.dataset.listenerAdded = 'true';
+            }
+        }
+
         applyColors(style);
     } catch (e) {
         console.error(e);
@@ -46,8 +60,10 @@ export async function saveStyle() {
     const chkPulse = document.getElementById('chk-pulse');
     const pulseSpeed = document.getElementById('pulse-speed');
     const fsInput = document.getElementById('font-size');
+    const progressStyle = document.getElementById('progress-style');
 
     if (!state.currentStyle) return;
+    if (progressStyle) state.currentStyle.progress_style = progressStyle.value;
     if (chkBtnRounding) state.currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
     if (btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(btnRoundingValue.value) || 4.0;
     if (chkPulse) state.currentStyle.progress_pulse_enabled = chkPulse.checked;
@@ -86,6 +102,7 @@ export function applyColors(style) {
     }
 
     const progressBar = document.getElementById('progress-bar');
+    const batchProgressBar = document.getElementById('batch-progress-bar');
     const isDark = style.theme !== 'light';
     const backgroundColor = isDark ? style.dark_bg : style.light_bg;
     const textColor = isDark ? style.dark_text : style.light_text;
@@ -159,6 +176,19 @@ export function applyColors(style) {
     } else if (progressBar) {
         progressBar.style.animation = 'none';
     }
+
+    /* --- [進度條樣式套用] --- */
+    const bars = [progressBar, batchProgressBar];
+    bars.forEach((bar) => {
+        if (!bar) return;
+        bar.classList.remove('style-aurora', 'style-neon');
+        if (style.progress_style && style.progress_style !== 'default') {
+            bar.classList.add(`style-${style.progress_style}`);
+        }
+        if (bar.id === 'batch-progress-bar') {
+            bar.style.backgroundColor = ''; // 移除 inline 色彩覆蓋
+        }
+    });
 
     if (style.instance_overrides) {
         for (const [id, override] of Object.entries(style.instance_overrides)) {

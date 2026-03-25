@@ -282,6 +282,10 @@
   "label_fps_preset_vsync": "(デフォルト:vsync)",
   "btn_dict_open_json": "現在のページファイルとその親フォルダを開く",
   "btn_palette_clear_item": "🗑 上書きをクリア",
+  "label_progress_style": "プログレスバースタイル",
+  "style_default": "デフォルト",
+  "style_aurora": "オーロラグラデーション",
+  "style_neon": "ガラスネオン",
   "cleanup_prefixes": [
     "翻訳：",
     "訳文：",

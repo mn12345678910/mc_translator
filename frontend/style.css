@@ -306,7 +306,8 @@ input[type='color'] {
     overflow: hidden;
 }
 
-#progress-bar {
+#progress-bar,
+#batch-progress-bar {
     background-color: var(--accent-color);
     width: 0%;
     height: 100%;
@@ -329,6 +330,33 @@ input[type='color'] {
         opacity: 0.8;
         box-shadow: 0 0 5px var(--accent-color);
     }
+}
+
+/* --- [進度條樣式擴充] --- */
+#progress-bar.style-aurora,
+#batch-progress-bar.style-aurora {
+    background: linear-gradient(90deg, #ff007f, #7f00ff, #00ffff) !important;
+    background-size: 200% auto !important;
+    animation: aurora 3s linear infinite !important;
+}
+
+@keyframes aurora {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+#progress-bar.style-neon,
+#batch-progress-bar.style-neon {
+    background: #00ffcc !important;
+    box-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc !important;
+    background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent) !important;
+    background-size: 1rem 1rem !important;
+    animation: stripe 1s linear infinite !important;
+}
+
+@keyframes stripe {
+    0% { background-position: 0 0; }
+    100% { background-position: 2rem 0; }
 }
 
 #log-output {
@@ -677,10 +705,7 @@ input:checked + .slider:before {
     word-break: break-all;
 }
 
-#batch-progress-container {
-    height: 6px;
-    margin-bottom: 8px;
-}
+
 
 #label-files, #status-text {
     color: var(--text-muted, #ddd);

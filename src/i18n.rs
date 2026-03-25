@@ -162,7 +162,7 @@ impl CommonLabels {
         if let Ok(file_content) = fs::read_to_string(&lang_path) {
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
             let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
+                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
             if let (Some(lang_obj), Some(default_obj)) =
                 (lang_json.as_object(), default_json.as_object_mut())
             {
@@ -180,9 +180,9 @@ impl CommonLabels {
         if let Some(l) = Self::load_from_file(lang) {
             return l;
         }
-        if lang != "zh_tw" {
-            if let Some(z) = Self::load_from_file("zh_tw") {
-                return z;
+        if lang != "en_us" {
+            if let Some(e) = Self::load_from_file("en_us") {
+                return e;
             }
         }
         Self::default_zh_tw()
@@ -337,6 +337,10 @@ pub struct GuiLabels {
     pub label_fps_preset_vsync: String,
     pub btn_dict_open_json: String,
     pub btn_palette_clear_item: String,
+    pub label_progress_style: String,
+    pub style_default: String,
+    pub style_aurora: String,
+    pub style_neon: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -420,7 +424,7 @@ impl GuiLabels {
         if let Ok(file_content) = fs::read_to_string(&lang_path) {
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
             let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).ok()?;
+                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
             if let (Some(lang_obj), Some(default_obj)) =
                 (lang_json.as_object(), default_json.as_object_mut())
             {
@@ -438,9 +442,9 @@ impl GuiLabels {
         if let Some(l) = Self::load_from_file(lang) {
             return l;
         }
-        if lang != "zh_tw" {
-            if let Some(z) = Self::load_from_file("zh_tw") {
-                return z;
+        if lang != "en_us" {
+            if let Some(e) = Self::load_from_file("en_us") {
+                return e;
             }
         }
         Self::default_zh_tw()
@@ -507,7 +511,7 @@ impl CliLabels {
         if let Ok(file_content) = fs::read_to_string(&lang_path) {
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
             let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).ok()?;
+                serde_json::from_str(include_str!("i18n_assets/cli/en_us.json")).ok()?;
             if let (Some(lang_obj), Some(default_obj)) =
                 (lang_json.as_object(), default_json.as_object_mut())
             {
@@ -525,9 +529,9 @@ impl CliLabels {
         if let Some(l) = Self::load_from_file(lang) {
             return l;
         }
-        if lang != "zh_tw" {
-            if let Some(z) = Self::load_from_file("zh_tw") {
-                return z;
+        if lang != "en_us" {
+            if let Some(e) = Self::load_from_file("en_us") {
+                return e;
             }
         }
         Self::default_zh_tw()
