@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const loadModelsModule = await import('./modules/config.js').then((m) => m.loadModels);
             await loadModelsModule();
             validateCanTranslate();
+            debouncedSaveConfig();
         });
     }
 
@@ -93,13 +94,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
     configInputs.forEach((id) => {
         const inputEl = document.getElementById(id);
-        if (inputEl) inputEl.addEventListener('input', debouncedSaveConfig);
+        if (inputEl) {
+            inputEl.addEventListener('input', debouncedSaveConfig);
+            inputEl.addEventListener('blur', () => saveConfig()); // 立即儲存
+        }
     });
 
     const styleInputs = ['font-size', 'btn-rounding-value', 'pulse-speed'];
     styleInputs.forEach((id) => {
         const inputEl = document.getElementById(id);
-        if (inputEl) inputEl.addEventListener('input', debouncedSaveStyle);
+        if (inputEl) {
+            inputEl.addEventListener('input', debouncedSaveStyle);
+            inputEl.addEventListener('blur', () => saveStyle()); // 立即儲存
+        }
     });
 
     const configSelects = [
@@ -110,6 +117,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'chk-skip-jar',
         'chk-skip-book',
         'chk-llm-log',
+        'source-lang',
+        'selected-model',
     ];
     configSelects.forEach((id) => {
         const selectEl = document.getElementById(id);
@@ -123,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    const styleSelects = ['chk-btn-rounding', 'chk-pulse'];
+    const styleSelects = ['chk-btn-rounding', 'chk-pulse', 'progress-style'];
     styleSelects.forEach((id) => {
         const selectEl = document.getElementById(id);
         if (selectEl) selectEl.addEventListener('change', debouncedSaveStyle);
@@ -278,46 +287,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 6. 恢復預設值與清除覆寫事件
-    const btnRestoreConfig = document.getElementById('btn-restore-config');
-    const btnRestoreStyle = document.getElementById('btn-restore-style');
+    // 6. 清除覆寫事件
     const btnPaletteClearItem = document.getElementById('btn-palette-clear-item');
-
-    if (btnRestoreConfig) {
-        btnRestoreConfig.addEventListener('click', async () => {
-            const confirmMsg = state.currentLabels.confirm_restore_text;
-            if (confirm(confirmMsg)) {
-                try {
-                    const defaultConfig = await invoke('get_default_config');
-                    await invoke('save_config', { config: defaultConfig });
-                    await loadConfig();
-                    appendLog(state.currentLabels.status_restore_config_success);
-                } catch (e) {
-                    appendLog(
-                        (state.currentLabels.status_restore_config_failed).replace('{}', e)
-                    );
-                }
-            }
-        });
-    }
-
-    if (btnRestoreStyle) {
-        btnRestoreStyle.addEventListener('click', async () => {
-            const confirmMsg = state.currentLabels.confirm_restore_text;
-            if (confirm(confirmMsg)) {
-                try {
-                    const defaultStyle = await invoke('get_default_style_config');
-                    await invoke('save_style_config', { config: defaultStyle });
-                    await loadStyle();
-                    appendLog(state.currentLabels.status_restore_style_success);
-                } catch (e) {
-                    appendLog(
-                        (state.currentLabels.status_restore_style_failed).replace('{}', e)
-                    );
-                }
-            }
-        });
-    }
 
     if (btnPaletteClearItem) {
         btnPaletteClearItem.addEventListener('click', async () => {
