@@ -213,54 +213,6 @@ pub async fn process_all_files(
         &job_config.lock().unwrap().glossary_priority,
     );
 
-    // --- [新增] 全域文本預先去重翻譯 (Global Deduplication) ---
-    let mut unique_map: HashMap<String, Vec<usize>> = HashMap::new();
-    for (idx, item) in global_items.iter().enumerate() {
-        unique_map
-            .entry(item.preprocessed.clone())
-            .or_default()
-            .push(idx);
-    }
-
-    let mut unique_items: Vec<GlobalBatchItem> = Vec::new();
-    for indices in unique_map.values() {
-        if let Some(&first_idx) = indices.first() {
-            unique_items.push(global_items[first_idx].clone());
-        }
-    }
-
-    if !unique_items.is_empty() {
-        // 使用獨一無二的列表進行批次翻譯
-        translate_global_batches(
-            &mut unique_items,
-            job_config.clone(),
-            status_arc.clone(),
-            progress_arc.clone(),
-            state.current_batch.clone(),
-            state.total_batches.clone(),
-            cancelled_arc.clone(),
-            paused_arc.clone(),
-            log.clone(),
-            state.pause_notifier.clone(),
-            &glossary_automaton,
-            &state.i18n,
-            "全域去重緩衝",
-            0,
-        )
-        .await?;
-
-        // 廣播回填
-        for u_item in unique_items {
-            if let Some(ref trans) = u_item.translated {
-                if let Some(indices) = unique_map.get(&u_item.preprocessed) {
-                    for &i in indices {
-                        global_items[i].translated = Some(trans.clone());
-                    }
-                }
-            }
-        }
-    }
-    // ------------------------------------------------------------
 
     // --- 階段三：窗口式跨檔案翻譯迴圈 ---
     let mut task_ptr = 0;
