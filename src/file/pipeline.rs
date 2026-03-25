@@ -282,11 +282,8 @@ pub async fn process_all_files(
             *p = display_name.clone();
         }
 
-        let log_file_name = group_tasks
-            .iter()
-            .map(|t| t.rel_path.clone())
-            .collect::<Vec<String>>()
-            .join(", ");
+        let rel_paths: Vec<String> = group_tasks.iter().map(|t| t.rel_path.clone()).collect();
+        let log_file_name = shorten_rel_paths(&rel_paths);
 
         translate_global_batches(
             items_in_source,
@@ -398,4 +395,43 @@ fn get_translated_content_for_task(task: &FileTask, items: &[GlobalBatchItem]) -
         }
         content
     }
+}
+
+pub fn shorten_rel_paths(paths: &[String]) -> String {
+    if paths.is_empty() {
+        return String::new();
+    }
+    if paths.len() == 1 {
+        return paths[0].clone();
+    }
+
+    let mut result = Vec::new();
+    let mut last_parts: Vec<String> = Vec::new();
+
+    for (i, p) in paths.iter().enumerate() {
+        let current_parts: Vec<String> = p
+            .split(|c| c == '/' || c == '\\')
+            .map(|s| s.to_string())
+            .collect();
+        if i == 0 {
+            result.push(p.clone());
+        } else {
+            let mut common_idx = 0;
+            while common_idx < current_parts.len()
+                && common_idx < last_parts.len()
+                && current_parts[common_idx] == last_parts[common_idx]
+            {
+                common_idx += 1;
+            }
+
+            if common_idx > 0 && common_idx < current_parts.len() {
+                let shortened = current_parts[common_idx..].join("/");
+                result.push(shortened);
+            } else {
+                result.push(p.clone());
+            }
+        }
+        last_parts = current_parts;
+    }
+    result.join(", ")
 }

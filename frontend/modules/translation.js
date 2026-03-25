@@ -117,12 +117,12 @@ export function initTranslation() {
                 const pct = (data.current / data.total) * 100;
                 progressBar.style.width = `${pct}%`;
             }
-            if (statusText) {
-                const mask = state.currentLabels.status_progress_mask;
-                statusText.textContent = mask
-                    .replace('{}', data.current)
-                    .replace('{}', data.total)
-                    .replace('{}', data.msg);
+            const currentStatusLabel = document.getElementById('current-status-label');
+            if (currentStatusLabel && data.msg) {
+                currentStatusLabel.textContent = data.msg;
+            }
+            if (statusText && data.total > 0) {
+                statusText.textContent = `${Math.round((data.current / data.total) * 100)}%`;
             }
             // 狀態訊息僅顯示在狀態列，不寫入日誌區域
         });
