@@ -611,7 +611,12 @@ mod tests {
     }
 
     impl CliInteract for MockCliInteract {
-        fn select(&self, prompt: &str, items: &[String], _default: usize) -> Result<usize, dialoguer::Error> {
+        fn select(
+            &self,
+            prompt: &str,
+            items: &[String],
+            _default: usize,
+        ) -> Result<usize, dialoguer::Error> {
             if prompt.contains("Model") || prompt.contains("模型") {
                 let ans = self.select_answers.borrow_mut().remove(0);
                 if ans == 1 {
@@ -704,7 +709,7 @@ mod tests {
         let args = Args::try_parse_from([
             "mc_translator_cli",
             "-i",
-            &temp_file.to_string_lossy().to_string(),
+            temp_file.to_string_lossy().as_ref(),
             "-o",
             "output_dir_test",
             "-p",
@@ -907,7 +912,7 @@ mod tests {
         let args = Args::try_parse_from([
             "mc_translator_cli",
             "-i",
-            &temp_file.to_string_lossy().to_string(),
+            temp_file.to_string_lossy().as_ref(),
             "-p",
             "Gemini",
             "-m",

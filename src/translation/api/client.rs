@@ -809,8 +809,10 @@ mod tests {
 
     #[test]
     fn test_finalize_translation() {
-        let mut config = JobConfig::default();
-        config.enable_llm_log = true; // 觸發寫入 LLM 通訊記錄的分支
+        let config = JobConfig {
+            enable_llm_log: true, // 觸發寫入 LLM 通訊記錄的分支
+            ..Default::default()
+        };
 
         let result = finalize_translation("`\"test\"` ", &config, "", "", "");
         assert_eq!(result, "test");

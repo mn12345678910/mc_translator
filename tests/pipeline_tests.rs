@@ -86,9 +86,11 @@ async fn test_process_all_files_multi_types() {
     use std::sync::atomic::{AtomicBool, AtomicU32};
     use std::sync::{Arc, Mutex};
 
-    let mut config = JobConfig::default();
-    config.source_lang = "en_us".to_string();
-    config.target_lang = "zh_tw".to_string();
+    let config = JobConfig {
+        source_lang: "en_us".to_string(),
+        target_lang: "zh_tw".to_string(),
+        ..JobConfig::default()
+    };
 
     let state = JobSharedState {
         log: Arc::new(Mutex::new(Vec::new())),
