@@ -411,10 +411,18 @@ impl StyleConfig {
     }
 
     pub fn validate(&mut self) {
-        if self.font_size <= 0.0 { self.font_size = 15.0; }
-        if self.btn_rounding_value < 0.0 { self.btn_rounding_value = 0.0; }
-        if self.progress_pulse_speed < 0.1 { self.progress_pulse_speed = 1.0; }
-        if self.progress_style.is_empty() { self.progress_style = "default".to_string(); }
+        if self.font_size <= 0.0 {
+            self.font_size = 15.0;
+        }
+        if self.btn_rounding_value < 0.0 {
+            self.btn_rounding_value = 0.0;
+        }
+        if self.progress_pulse_speed < 0.1 {
+            self.progress_pulse_speed = 1.0;
+        }
+        if self.progress_style.is_empty() {
+            self.progress_style = "default".to_string();
+        }
     }
 
     pub fn save_with_path(&mut self, dir: &std::path::Path) {
@@ -506,10 +514,18 @@ impl AppConfig {
     }
 
     pub fn validate(&mut self) {
-        if self.batch_size == 0 { self.batch_size = 150; }
-        if self.batch_max_chars == 0 { self.batch_max_chars = 3500; }
-        if self.timeout == 0 { self.timeout = 60; }
-        if self.pack_format == 0 { self.pack_format = 15; }
+        if self.batch_size == 0 {
+            self.batch_size = 150;
+        }
+        if self.batch_max_chars == 0 {
+            self.batch_max_chars = 3500;
+        }
+        if self.timeout == 0 {
+            self.timeout = 60;
+        }
+        if self.pack_format == 0 {
+            self.pack_format = 15;
+        }
     }
 
     pub fn save_with_path(&mut self, dir: &std::path::Path) {
