@@ -409,10 +409,7 @@ pub fn shorten_rel_paths(paths: &[String]) -> String {
     let mut last_parts: Vec<String> = Vec::new();
 
     for (i, p) in paths.iter().enumerate() {
-        let current_parts: Vec<String> = p
-            .split(['/', '\\'])
-            .map(|s| s.to_string())
-            .collect();
+        let current_parts: Vec<String> = p.split(['/', '\\']).map(|s| s.to_string()).collect();
         if i == 0 {
             result.push(p.clone());
         } else {
