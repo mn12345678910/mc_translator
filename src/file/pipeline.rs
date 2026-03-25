@@ -213,7 +213,6 @@ pub async fn process_all_files(
         &job_config.lock().unwrap().glossary_priority,
     );
 
-
     // --- 階段三：窗口式跨檔案翻譯迴圈 ---
     let mut task_ptr = 0;
     let mut item_ptr = 0;
