@@ -29,10 +29,10 @@ export async function loadStyle() {
             fontSize.value = style.font_size;
             document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
         }
-        if (chkBtnRounding) chkBtnRounding.checked = style.btn_rounding_enabled ?? true;
-        if (btnRoundingValue) btnRoundingValue.value = style.btn_rounding_value ?? 4.0;
-        if (chkPulse) chkPulse.checked = style.progress_pulse_enabled ?? true;
-        if (pulseSpeed) pulseSpeed.value = style.progress_pulse_speed ?? 1.0;
+        if (chkBtnRounding) chkBtnRounding.checked = style.btn_rounding_enabled;
+        if (btnRoundingValue) btnRoundingValue.value = style.btn_rounding_value;
+        if (chkPulse) chkPulse.checked = style.progress_pulse_enabled;
+        if (pulseSpeed) pulseSpeed.value = style.progress_pulse_speed;
 
         const progressStyle = document.getElementById('progress-style');
         if (progressStyle) {
@@ -62,13 +62,15 @@ export async function saveStyle() {
     const fsInput = document.getElementById('font-size');
     const progressStyle = document.getElementById('progress-style');
 
-    if (!state.currentStyle) return;
+    const old = state.currentStyle;
+    const parseSafeFloat = (v, f) => { let p = parseFloat(v); return isNaN(p) ? f : p; };
+
     if (progressStyle) state.currentStyle.progress_style = progressStyle.value;
     if (chkBtnRounding) state.currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
-    if (btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(btnRoundingValue.value) || 4.0;
+    if (btnRoundingValue) state.currentStyle.btn_rounding_value = btnRoundingValue ? parseSafeFloat(btnRoundingValue.value, old.btn_rounding_value || 0.0) : 0.0;
     if (chkPulse) state.currentStyle.progress_pulse_enabled = chkPulse.checked;
-    if (pulseSpeed) state.currentStyle.progress_pulse_speed = parseFloat(pulseSpeed.value) || 1.0;
-    if (fsInput) state.currentStyle.font_size = parseFloat(fsInput.value) || 15;
+    if (pulseSpeed) state.currentStyle.progress_pulse_speed = pulseSpeed ? parseSafeFloat(pulseSpeed.value, old.progress_pulse_speed || 1.0) : 1.0;
+    if (fsInput) state.currentStyle.font_size = fsInput ? parseSafeFloat(fsInput.value, old.font_size || 15) : 15;
 
     await invoke('save_style_config', { config: state.currentStyle });
     applyColors(state.currentStyle);
@@ -165,13 +167,13 @@ export function applyColors(style) {
     if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
 
     if (style.btn_rounding_enabled !== false) {
-        document.documentElement.style.setProperty('--border-radius', `${style.btn_rounding_value ?? 4.0}px`);
+        document.documentElement.style.setProperty('--border-radius', `${style.btn_rounding_value}px`);
     } else {
         document.documentElement.style.setProperty('--border-radius', '0px');
     }
 
     if (style.progress_pulse_enabled && progressBar) {
-        const speed = style.progress_pulse_speed ?? 1.0;
+        const speed = style.progress_pulse_speed;
         progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, speed)}s infinite`;
     } else if (progressBar) {
         progressBar.style.animation = 'none';

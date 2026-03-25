@@ -136,7 +136,7 @@ pub fn get_config() -> AppConfig {
 }
 
 #[tauri::command]
-pub fn save_config(config: AppConfig) -> Result<(), String> {
+pub fn save_config(mut config: AppConfig) -> Result<(), String> {
     config.save();
     Ok(())
 }
@@ -236,7 +236,7 @@ pub fn get_style_config() -> StyleConfig {
 }
 
 #[tauri::command]
-pub fn save_style_config(config: StyleConfig) -> Result<(), String> {
+pub fn save_style_config(mut config: StyleConfig) -> Result<(), String> {
     config.save();
     Ok(())
 }

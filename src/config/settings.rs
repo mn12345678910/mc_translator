@@ -406,11 +406,19 @@ impl StyleConfig {
         Self::default()
     }
 
-    pub fn save(&self) {
+    pub fn save(&mut self) {
         self.save_with_path(std::path::Path::new("settings"))
     }
 
-    pub fn save_with_path(&self, dir: &std::path::Path) {
+    pub fn validate(&mut self) {
+        if self.font_size <= 0.0 { self.font_size = 15.0; }
+        if self.btn_rounding_value < 0.0 { self.btn_rounding_value = 0.0; }
+        if self.progress_pulse_speed < 0.1 { self.progress_pulse_speed = 1.0; }
+        if self.progress_style.is_empty() { self.progress_style = "default".to_string(); }
+    }
+
+    pub fn save_with_path(&mut self, dir: &std::path::Path) {
+        self.validate();
         let _ = fs::create_dir_all(dir);
         let path = dir.join("style.cfg");
         if let Ok(json) = serde_json::to_string_pretty(self) {
@@ -493,11 +501,19 @@ impl AppConfig {
         Self::default()
     }
 
-    pub fn save(&self) {
+    pub fn save(&mut self) {
         self.save_with_path(std::path::Path::new("settings"))
     }
 
-    pub fn save_with_path(&self, dir: &std::path::Path) {
+    pub fn validate(&mut self) {
+        if self.batch_size == 0 { self.batch_size = 150; }
+        if self.batch_max_chars == 0 { self.batch_max_chars = 3500; }
+        if self.timeout == 0 { self.timeout = 60; }
+        if self.pack_format == 0 { self.pack_format = 15; }
+    }
+
+    pub fn save_with_path(&mut self, dir: &std::path::Path) {
+        self.validate();
         let _ = fs::create_dir_all(dir);
 
         // 避免測試過程中修改真實 Keyring
@@ -611,13 +627,16 @@ mod tests {
         std::fs::write(temp_dir.join("config.cfg"), b"corrupt json").unwrap();
         std::fs::write(temp_dir.join("style.cfg"), b"corrupt json").unwrap();
 
-        // 2. 驗證會降級到 Default
-        let app = AppConfig::load_with_path(&temp_dir);
-        let style = StyleConfig::load_with_path(&temp_dir);
+        // 3. 驗證讀回
+        let mut app = AppConfig::load_with_path(&temp_dir);
+        let mut style = StyleConfig::load_with_path(&temp_dir);
+        assert_eq!(app.batch_size, 150);
+        assert_eq!(style.font_size, 15.0);
 
-        assert_eq!(app.batch_size, AppConfig::default().batch_size);
-        assert_eq!(style.font_size, StyleConfig::default().font_size);
-
-        let _ = fs::remove_dir_all(&temp_dir);
+        // 4. 修改後儲存
+        app.batch_size = 500;
+        style.font_size = 25.0;
+        app.save_with_path(&temp_dir);
+        style.save_with_path(&temp_dir);
     }
 }

@@ -22,16 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStyle();
     await loadDictionary();
 
-    // 🟠 補齊空白 Prompts 的預設值 (避免載入空字串)
-    const userPrompt = document.getElementById('user-prompt');
-    const systemPrompt = document.getElementById('system-prompt');
-    if (userPrompt && !userPrompt.value.trim() && state.currentLabels?.default_user_prompt) {
-        userPrompt.value = state.currentLabels.default_user_prompt;
-    }
-    if (systemPrompt && !systemPrompt.value.trim() && state.currentLabels?.default_system_prompt) {
-        systemPrompt.value = state.currentLabels.default_system_prompt;
-    }
-
     if (window.__TAURI__) {
         invoke('show_window');
     }
@@ -64,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnBrowseOutputOpen) {
         btnBrowseOutputOpen.addEventListener('click', async () => {
-            const target = outputDir ? outputDir.value.trim() : './LLMTranslator';
+            const target = outputDir ? outputDir.value.trim() : '';
             try {
                 await invoke('open_folder', { path: target });
             } catch (e) {

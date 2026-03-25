@@ -40,18 +40,18 @@ export async function loadConfig() {
         if (inputPath) inputPath.value = config.path || '';
 
         if (ollamaUrl) ollamaUrl.value = config.ollama_url;
-        if (batchSize) batchSize.value = config.batch_size || 150;
-        if (batchMaxChars) batchMaxChars.value = config.batch_max_chars || 3500;
-        if (timeoutSec) timeoutSec.value = config.timeout || 60;
+        if (batchSize) batchSize.value = config.batch_size;
+        if (batchMaxChars) batchMaxChars.value = config.batch_max_chars;
+        if (timeoutSec) timeoutSec.value = config.timeout;
         if (packFormat) packFormat.value = config.pack_format ? config.pack_format.toString() : '15';
         if (chkGlossaryPriority) chkGlossaryPriority.checked = config.glossary_priority === 'user';
         if (uiLang) uiLang.value = config.ui_lang;
-        if (sourceLang) sourceLang.value = config.source_lang || 'en_us';
-        if (targetLang) targetLang.value = config.target_lang || 'zh_tw';
-        if (outputDir) outputDir.value = config.output_dir || '';
+        if (sourceLang) sourceLang.value = config.source_lang;
+        if (targetLang) targetLang.value = config.target_lang;
+        if (outputDir) outputDir.value = config.output_dir;
 
-        if (systemPrompt) systemPrompt.value = config.system_prompt || '';
-        if (userPrompt) userPrompt.value = config.user_prompt || '';
+        if (systemPrompt) systemPrompt.value = config.system_prompt;
+        if (userPrompt) userPrompt.value = config.user_prompt;
 
         if (chkSkipJson) chkSkipJson.checked = config.skip_json || false;
         if (chkSkipJs) chkSkipJs.checked = config.skip_js || false;
@@ -100,16 +100,19 @@ export async function saveConfig() {
         state.currentConfig.api_provider = apiProvider ? apiProvider.value : '';
         await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
         state.currentConfig.model = selectedModel ? selectedModel.value : '';
-        state.currentConfig.ollama_url = ollamaUrl ? ollamaUrl.value : 'http://localhost:11434';
-        state.currentConfig.batch_size = batchSize ? parseInt(batchSize.value) : 150;
-        state.currentConfig.batch_max_chars = batchMaxChars ? parseInt(batchMaxChars.value) : 3500;
-        state.currentConfig.timeout = timeoutSec ? parseInt(timeoutSec.value) : 60;
+        const old = state.currentConfig;
+        const parseSafeInt = (v, f) => { let p = parseInt(v); return isNaN(p) ? f : p; };
+
+        state.currentConfig.ollama_url = ollamaUrl ? ollamaUrl.value : '';
+        state.currentConfig.batch_size = batchSize ? parseSafeInt(batchSize.value, old.batch_size || 150) : 150;
+        state.currentConfig.batch_max_chars = batchMaxChars ? parseSafeInt(batchMaxChars.value, old.batch_max_chars || 3500) : 3500;
+        state.currentConfig.timeout = timeoutSec ? parseSafeInt(timeoutSec.value, old.timeout || 60) : 60;
         if (uiLang) state.currentConfig.ui_lang = uiLang.value;
         if (sourceLang) state.currentConfig.source_lang = sourceLang.value;
         if (targetLang) state.currentConfig.target_lang = targetLang.value;
-        state.currentConfig.pack_format = packFormat ? parseInt(packFormat.value) : 15;
+        state.currentConfig.pack_format = packFormat ? parseSafeInt(packFormat.value, old.pack_format || 15) : 15;
         state.currentConfig.glossary_priority = chkGlossaryPriority && chkGlossaryPriority.checked ? 'user' : 'official';
-        state.currentConfig.ui_lang = uiLang ? uiLang.value : 'zh_tw';
+        state.currentConfig.ui_lang = uiLang ? uiLang.value : (state.currentConfig.ui_lang || 'zh_tw');
         state.currentConfig.output_dir = outputDir ? outputDir.value : '';
         state.currentConfig.path = inputPath ? inputPath.value : '';
 
