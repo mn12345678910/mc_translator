@@ -6,15 +6,15 @@ describe('style.js 樣式與主題管理模組', () => {
     let stateModule;
 
     beforeAll(async () => {
-        // 1. Mock Tauri API
+        vi.resetModules();
         mockInvoke = vi.fn();
+        globalThis.mockInvoke = mockInvoke; // 對接 tauri_mock.js
         globalThis.window = {
             __TAURI__: {
-                core: { invoke: mockInvoke }
+                core: { invoke: mockInvoke },
+                event: { listen: vi.fn(() => Promise.resolve(() => {})) }
             }
         };
-
-        // 2. 動態載入
         styleModule = await import('../../frontend/modules/style.js');
         stateModule = await import('../../frontend/modules/state.js');
     });
@@ -24,13 +24,14 @@ describe('style.js 樣式與主題管理模組', () => {
         document.body.innerHTML = `
             <input id="color-bg" />
             <input id="color-text" />
-            <input id="color-btn-bg" />
-            <input id="color-btn-text" />
+            <input id="color-accent" />
+            <input id="color-danger" />
             <input id="font-size" />
             <input id="chk-btn-rounding" type="checkbox" />
             <input id="btn-rounding-value" />
             <input id="chk-pulse" type="checkbox" />
             <input id="pulse-speed" />
+            <select id="progress-style"></select>
 
             <!-- Palette 控制組 -->
             <select id="palette-target-type">
@@ -49,9 +50,9 @@ describe('style.js 樣式與主題管理模組', () => {
             <div id="palette-clear-group"></div>
             <div id="palette-property-group"></div>
             <div id="palette-color-group"></div>
-            <div id="palette-rounding-group"></div>
+            <div id="palette-number-group"></div>
             <input id="palette-color" />
-            <input id="palette-rounding" />
+            <input id="palette-number" />
 
             <button id="btn-translate"></button>
             <div id="progress-bar"></div>
@@ -179,9 +180,9 @@ describe('style.js 樣式與主題管理模組', () => {
 
             styleModule.updatePaletteValue();
 
-            expect(document.getElementById('palette-rounding-group').style.display).toBe('block');
+            expect(document.getElementById('palette-number-group').style.display).toBe('block');
             expect(document.getElementById('palette-color-group').style.display).toBe('none');
-            expect(document.getElementById('palette-rounding').value).toBe('12');
+            expect(document.getElementById('palette-number').value).toBe('12');
         });
 
         it('進度條元件應該隱藏文字選項', () => {

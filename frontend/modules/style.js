@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/tauri';
-import { state } from '../main.js';
+import { state } from './state.js';
 
 // 輔助函數：RGB 轉 Hex
 function rgbToHexStr(arr) {
@@ -201,6 +201,90 @@ export function updatePaletteValue() {
                 if (hidden && paletteProperty.value === 'text') paletteProperty.value = 'bg';
             }
         });
+    }
+}
+
+export async function loadStyle() {
+    try {
+        const style = await invoke('get_style_config');
+        state.currentStyle = style;
+        applyColors(style);
+
+        // --- 同步常規控制項 ---
+        const controls = {
+            'font-size': style.font_size,
+            'btn-rounding-value': style.btn_rounding_value,
+            'pulse-speed': style.progress_pulse_speed,
+            'progress-style': style.progress_style || 'default',
+        };
+        for (const [id, val] of Object.entries(controls)) {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        }
+
+        const checks = {
+            'chk-btn-rounding': style.btn_rounding_enabled,
+            'chk-pulse': style.progress_pulse_enabled,
+        };
+        for (const [id, val] of Object.entries(checks)) {
+            const el = document.getElementById(id);
+            if (el) el.checked = !!val;
+        }
+
+        // --- 同步顏色選擇器 (支援 Legacy IDs) ---
+        const colorMaps = {
+            'color-bg': style.dark_bg,
+            'color-text': style.dark_text,
+            'color-accent': style.dark_accent,
+            'color-danger': style.dark_danger,
+        };
+        for (const [id, val] of Object.entries(colorMaps)) {
+            const el = document.getElementById(id);
+            if (el && val) el.value = rgbToHexStr(val);
+        }
+
+        if (typeof updatePaletteValue === 'function') {
+            updatePaletteValue();
+        }
+    } catch (e) {
+        console.error('載入樣式配置失敗:', e);
+    }
+}
+
+export async function saveStyle() {
+    try {
+        const fontSize = document.getElementById('font-size');
+        const chkBtnRounding = document.getElementById('chk-btn-rounding');
+        const btnRoundingValue = document.getElementById('btn-rounding-value');
+        const chkPulse = document.getElementById('chk-pulse');
+        const pulseSpeed = document.getElementById('pulse-speed');
+        const progressStyle = document.getElementById('progress-style');
+
+        if (fontSize) state.currentStyle.font_size = parseInt(fontSize.value) || 16;
+        if (chkBtnRounding) state.currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
+        if (btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(btnRoundingValue.value) || 4.0;
+        if (chkPulse) state.currentStyle.progress_pulse_enabled = chkPulse.checked;
+        if (pulseSpeed) state.currentStyle.progress_pulse_speed = parseFloat(pulseSpeed.value) || 1.0;
+        if (progressStyle) state.currentStyle.progress_style = progressStyle.value || 'default';
+
+        // --- 讀取 Legacy 顏色 (僅當存在時) ---
+        const colorMaps = {
+            'color-bg': 'dark_bg',
+            'color-text': 'dark_text',
+            'color-accent': 'dark_accent',
+            'color-danger': 'dark_danger',
+        };
+        for (const [id, key] of Object.entries(colorMaps)) {
+            const el = document.getElementById(id);
+            if (el && el.value) {
+                state.currentStyle[key] = hexToRgbArr(el.value);
+            }
+        }
+
+        applyColors(state.currentStyle);
+        await invoke('save_style_config', { config: state.currentStyle });
+    } catch (e) {
+        console.error('儲存樣式配置失敗:', e);
     }
 }
 

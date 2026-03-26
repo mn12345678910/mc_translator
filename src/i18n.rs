@@ -6,7 +6,6 @@ pub const DEFAULT_LANG: &str = "zh_tw";
 
 // --- 重構後之共通結構體 ---
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(deny_unknown_fields)]
 pub struct CommonLabels {
     pub app_title: String,
     pub label_output_path: String,
@@ -652,10 +651,10 @@ mod tests {
     }
 
     #[test]
-    fn debug_common_labels_err() {
+    fn debug_gui_labels_err() {
         let _ = GuiLabels::ensure_langs_exists();
         for lang in ["en_us", "zh_cn", "ja_jp"] {
-            let file_content = fs::read_to_string(format!("langs/gui/{}.json", lang)).unwrap();
+            let file_content = fs::read_to_string(get_langs_dir("gui").join(format!("{}.json", lang))).unwrap();
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).unwrap();
             let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap();
@@ -666,7 +665,7 @@ mod tests {
                     d_obj.insert(k.clone(), v.clone());
                 }
             }
-            let res = serde_json::from_value::<CommonLabels>(default_json);
+            let res = serde_json::from_value::<GuiLabels>(default_json);
             if let Err(e) = res {
                 panic!("Deserialization Error for {}: {:?}", lang, e);
             }

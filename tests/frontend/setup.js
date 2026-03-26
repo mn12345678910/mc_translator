@@ -1,14 +1,25 @@
 import { vi, beforeAll, beforeEach } from 'vitest';
 
+// 1. 全域 Mock Tauri API 模組 (ESM)
+vi.mock('@tauri-apps/api/tauri', () => ({
+    invoke: vi.fn((cmd, args) => {
+        if (globalThis.mockInvoke) return globalThis.mockInvoke(cmd, args);
+        return Promise.resolve();
+    }),
+}));
+
 beforeAll(() => {
     // 1. 全域 Mock Tauri API
     const mockInvoke = vi.fn();
+    const mockListen = vi.fn(() => Promise.resolve(() => {}));
     globalThis.window = {
         __TAURI__: {
-            core: { invoke: mockInvoke }
+            core: { invoke: mockInvoke },
+            event: { listen: mockListen }
         }
     };
-    globalThis.mockInvoke = mockInvoke; // 便於測驗內部引用驗證
+    globalThis.mockInvoke = mockInvoke;
+    globalThis.mockListen = mockListen;
 
     // 2. 模擬視窗原生對話框
     window.confirm = vi.fn();
