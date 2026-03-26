@@ -12,7 +12,8 @@
     "test:frontend": "vitest run",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
-    "lint": "eslint \"frontend/**/*.js\""
+    "lint": "eslint \"frontend/**/*.js\"",
+    "check-tauri": "node tool/check_tauri_sync.js"
   },
   "repository": {
     "type": "git",
