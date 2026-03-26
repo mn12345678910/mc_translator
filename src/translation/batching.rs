@@ -152,6 +152,7 @@ pub async fn run_translation_batch(
         cfg.batch_max_chars,
     );
     total_batches.store(initial_batches.len() as u32, Ordering::SeqCst);
+    current_batch.store(0, Ordering::SeqCst); // 確保重新開始時標籤為 0/N
 
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
         if cancelled.load(Ordering::SeqCst) {

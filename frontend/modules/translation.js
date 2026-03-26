@@ -151,7 +151,7 @@ export function initTranslation() {
         listen('translation-batch-update', (event) => {
             const data = event.payload; // { batch_index: x, total_batches: y, text: "..." }
             const batchProgress = document.getElementById('batch-progress-bar');
-            const batchText = document.getElementById('batch-progress-text');
+            const batchText = document.getElementById('batch-status-text');
             // 始終顯示，不再動態切換 display
             if (batchProgress && data.total_batches > 0) {
                 const pct = (data.batch_index / data.total_batches) * 100;

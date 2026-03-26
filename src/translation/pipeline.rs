@@ -198,7 +198,7 @@ pub async fn start_translation_workflow(
             let total_g = f32::from_bits(global_total_monitor_c.load(Ordering::SeqCst));
             let current_b = batch_current_monitor_c.load(Ordering::SeqCst) as f32;
             let total_b = batch_total_monitor_c.load(Ordering::SeqCst) as f32;
-            if total_g > 0.0 {
+            if total_g >= 0.0 {
                 let status_str = status_monitor_c.lock().unwrap().clone();
                 progress_clone(current_g, total_g, current_b, total_b, &status_str);
             }
