@@ -127,6 +127,7 @@ pub fn run() {
             commands::pause_translation,
             commands::resume_translation,
             commands::stop_translation,
+            commands::update_active_job_config,
             commands::open_path_dialog,
             commands::open_folder,
             commands::get_available_langs,

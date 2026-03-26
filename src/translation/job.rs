@@ -7,6 +7,17 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
 
+use serde::{Deserialize, Serialize};
+
+/// 翻譯任務的狀態枚舉
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum JobStatus {
+    Idle,
+    Running,
+    Paused,
+}
+
 /// 翻譯任務的靜態設定參數
 #[derive(Clone, Default)]
 pub struct JobConfig {
@@ -41,6 +52,7 @@ pub struct JobConfig {
 pub struct JobSharedState {
     pub log: Arc<Mutex<Vec<LogEntry>>>,
     pub status: Arc<Mutex<String>>,
+    pub current_state: Arc<Mutex<JobStatus>>,
     pub progress: Arc<AtomicU32>,
     pub progress_total: Arc<AtomicU32>,
     pub cancelled: Arc<AtomicBool>,

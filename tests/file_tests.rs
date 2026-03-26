@@ -37,6 +37,7 @@ fn create_mock_state() -> JobSharedState {
     JobSharedState {
         log: Arc::new(Mutex::new(Vec::new())),
         status: Arc::new(Mutex::new(String::new())),
+        current_state: Arc::new(Mutex::new(mc_translator::translation::job::JobStatus::Idle)),
         progress: Arc::new(AtomicU32::new(0)),
         progress_total: Arc::new(AtomicU32::new(0)),
         cancelled: Arc::new(AtomicBool::new(false)),

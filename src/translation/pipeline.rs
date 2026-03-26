@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::config::AppConfig;
 use crate::i18n::CommonLabels;
-use crate::translation::job::{JobConfig, JobSharedState};
+use crate::translation::job::{JobConfig, JobSharedState, JobStatus};
 use crate::translation::{LogEntry, LogLevel};
 use crate::utils;
 use crate::utils::helpers::add_log_event;
@@ -161,6 +161,7 @@ pub async fn start_translation_workflow(
     let job_state = JobSharedState {
         log: log_arc.clone(),
         status: status_arc.clone(),
+        current_state: Arc::new(Mutex::new(JobStatus::Running)),
         progress: Arc::new(std::sync::atomic::AtomicU32::new(0)),
         progress_total: Arc::new(std::sync::atomic::AtomicU32::new(0)),
         cancelled: Arc::new(std::sync::atomic::AtomicBool::new(false)),

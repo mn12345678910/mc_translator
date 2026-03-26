@@ -2,6 +2,7 @@ use mc_translator::config::dictionary::{
     get_official_dict_path, get_user_dict_path, load_dict, save_dict,
 };
 use mc_translator::config::{settings::StyleConfig, AppConfig};
+use mc_translator::translation::job::JobStatus;
 use mc_translator::translation::{LogEntry, LogLevel};
 use mc_translator::utils::helpers::add_log_event;
 use std::collections::HashMap;
@@ -206,6 +207,9 @@ pub async fn start_translation(
             let _ = handle_progress.emit("translation-batch-update", batch_payload);
         };
 
+    // 📢 發送初始運行狀態
+    let _ = handle.emit("job-state-changed", JobStatus::Running);
+
     // 啟動工作流
     let res = mc_translator::translation::pipeline::start_translation_workflow(
         config,
@@ -214,6 +218,9 @@ pub async fn start_translation(
         progress_updater,
     )
     .await;
+
+    // 📢 結束後歸位為 Idle
+    let _ = handle.emit("job-state-changed", JobStatus::Idle);
 
     let success = res.is_ok();
     let status_key = if success {
@@ -406,6 +413,12 @@ pub fn pause_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 config_shared.enable_debug_log,
             );
 
+            // 更新狀態並通知前端
+            if let Ok(mut status) = job.current_state.lock() {
+                *status = JobStatus::Paused;
+            }
+            let _ = handle.emit("job-state-changed", JobStatus::Paused);
+
             // 同步廣發至前端
             let entry = LogEntry {
                 level: LogLevel::Warn,
@@ -438,6 +451,12 @@ pub fn resume_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 "",
                 config_shared.enable_debug_log,
             );
+
+            // 更新狀態並通知前端
+            if let Ok(mut status) = job.current_state.lock() {
+                *status = JobStatus::Running;
+            }
+            let _ = handle.emit("job-state-changed", JobStatus::Running);
 
             let _ = handle.emit(
                 "translation-log",
@@ -473,6 +492,12 @@ pub fn stop_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 "",
                 config_shared.enable_debug_log,
             );
+
+            // 更新狀態並通知前端
+            if let Ok(mut status) = job.current_state.lock() {
+                *status = JobStatus::Idle;
+            }
+            let _ = handle.emit("job-state-changed", JobStatus::Idle);
 
             // 同步廣發至前端
             let entry = LogEntry {
@@ -691,6 +716,54 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
     });
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn update_active_job_config(config: AppConfig) -> Result<(), String> {
+    if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
+        if let Some(job) = active.as_ref() {
+            if let Ok(mut job_cfg) = job.config.lock() {
+                job_cfg.api_key =
+                    mc_translator::config::encryption::get_api_key().unwrap_or_default();
+                job_cfg.api_provider = config.api_provider;
+                job_cfg.selected_model = config.model;
+                job_cfg.ollama_url = config.ollama_url;
+                job_cfg.api_base_url = config.api_base_url;
+                job_cfg.user_prompt = config.user_prompt;
+                job_cfg.system_prompt = config.system_prompt;
+                job_cfg.timeout = config.timeout as u64;
+                job_cfg.batch_size = config.batch_size;
+                job_cfg.batch_max_chars = config.batch_max_chars;
+                job_cfg.output_dir = config.output_dir;
+                job_cfg.pack_format = config.pack_format;
+                job_cfg.glossary_priority = config.glossary_priority;
+                job_cfg.skip_json = config.skip_json;
+                job_cfg.skip_js = config.skip_js;
+                job_cfg.skip_jar = config.skip_jar;
+                job_cfg.skip_book = config.skip_book;
+                job_cfg.enable_llm_log = config.enable_llm_log;
+                job_cfg.source_lang = config.source_lang;
+
+                // 如果目標語言改變，需要同步更新遺留的前綴與包含規則
+                if job_cfg.target_lang != config.target_lang {
+                    job_cfg.target_lang = config.target_lang;
+                    let target_i18n =
+                        mc_translator::i18n::CommonLabels::load_or_default(&job_cfg.target_lang);
+                    job_cfg.cleanup_prefixes = target_i18n.cleanup_prefixes;
+                    job_cfg.cleanup_contains = target_i18n.cleanup_contains;
+
+                    // 同步清空翻譯記憶，防止舊語言殘留干擾新語言
+                    if let Ok(mut tm) = job.translation_memory.lock() {
+                        tm.clear();
+                    }
+                }
+
+                job_cfg.enable_debug_log = config.enable_debug_log;
+                return Ok(());
+            }
+        }
+    }
+    Err("err_no_active_job".to_string())
 }
 
 #[tauri::command]
