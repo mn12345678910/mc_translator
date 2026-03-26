@@ -29,5 +29,5 @@ tauri = { version = "2.10.3", features = [] }
 tauri-plugin-log = "2"
 rfd = "0.15"
 mc_translator = { path = ".." }
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 chrono = "0.4"
