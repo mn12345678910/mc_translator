@@ -1,0 +1,21 @@
+name: Miri Analysis
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # 每週日凌晨執行一次
+  workflow_dispatch:
+
+jobs:
+  miri:
+    name: Miri Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rust (Nightly)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - name: Run Miri
+        run: cargo miri test --workspace
+        env:
+          MIRIFLAGS: "-Zmiri-disable-isolation"

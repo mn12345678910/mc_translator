@@ -32,13 +32,32 @@ jobs:
         sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
     - name: Check Formatting
       run: cargo fmt -- --check
+    - name: Clippy (Linter)
+      run: cargo clippy --workspace --all-targets -- -D warnings
     - name: Check CLI
-      run: cargo check
-    - name: Run Tests CLI
-      run: cargo test
-    - name: Check GUI
-      run: cargo check --manifest-path src-tauri/Cargo.toml
-    - name: Run Tests GUI
+      run: cargo check --workspace
+    - name: Security Audit
+      uses: rustsec/audit-check@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: License & Duplicate Check (Deny)
+      uses: EmbarkStudios/cargo-deny-action@v2
+    - name: Install Nextest & Udeps
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-nextest,cargo-udeps
+    - name: Unused Dependencies (Udeps)
+      run: cargo udeps --workspace --all-targets
+    - name: Run Tests (Nextest)
+      run: cargo nextest run --workspace --all-targets
+    - name: Generate Documentation
+      run: cargo doc --workspace --no-deps
+    - name: Upload Documentation
+      uses: actions/upload-artifact@v7
+      with:
+        name: rustdoc
+        path: target/doc
+    - name: Run Tests GUI (Legacy for Tauri compatibility if needed)
       run: cargo test --manifest-path src-tauri/Cargo.toml
     - name: Install llvm-cov (Coverage Tool)
       uses: taiki-e/install-action@v2
