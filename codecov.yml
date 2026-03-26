@@ -1,0 +1,18 @@
+# Codecov Configuration
+coverage:
+  status:
+    project:
+      default:
+        # 允許覆蓋率有 1% 的波動，超過則 CI 失敗
+        threshold: 1%
+        # 如果 PR 導致覆蓋率下降超過此範圍，會回報失敗
+    patch:
+      default:
+        # 強制 PR 新增的代碼覆蓋率不低於某個百分比 (可選)
+        target: auto
+        threshold: 0%
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false

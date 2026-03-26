@@ -174,14 +174,22 @@ jobs:
       with:
         name: mc_translator_gui
         path: .
+    - name: Generate Changelog
+      uses: orhun/git-cliff-action@v4
+      id: git-cliff
+      with:
+        config: cliff.toml
+        args: --verbose --latest --strip header
+      env:
+        OUTPUT: CHANGELOG.md
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
+        body: ${{ steps.git-cliff.outputs.content }}
         files: |
           mc_translator_cli.exe
           mc_translator_gui.exe
-
-        generate_release_notes: true
+        generate_release_notes: false # 關閉 GitHub 預設日誌，改用 git-cliff
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
