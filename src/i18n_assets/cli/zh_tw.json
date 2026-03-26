@@ -64,6 +64,7 @@
     "status_idle": "待機中",
     "status_scanning_files": "正在掃描檔案...",
     "log_processing_finished": "處理完成並寫入目標。",
+    "log_processing_file_mask": "共 {} 個檔案: {}",
     "log_generating_pack": "正在生成資源包 (LLMTranslator.zip)...",
     "log_pack_item_exists_warn": "警告：已存在相同的資源包檔案 {}，將會被直接覆蓋。",
     "log_pack_gen_finished": "資源包 (LLMTranslator.zip) 生成完成。",

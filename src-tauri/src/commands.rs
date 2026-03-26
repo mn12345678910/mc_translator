@@ -232,6 +232,35 @@ pub async fn start_translation(
     });
     let _ = handle.emit("translation-finished", finish_payload);
 
+    if !success {
+        if let Some(e_val) = res.as_ref().err() {
+            let err_msg = e_val.to_string();
+            // 嚴重錯誤記錄至日誌區
+            if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
+                if let Some(job) = active.as_ref() {
+                    let cfg_shared = job.config.lock().unwrap();
+                    add_log_event(
+                        &job.log,
+                        LogLevel::Error,
+                        &job.i18n.status_trans_error.replace("{}", &err_msg),
+                        "",
+                        "",
+                        "",
+                        cfg_shared.enable_debug_log,
+                    );
+                    
+                    // 同步發送至前端
+                    let entry = LogEntry {
+                        level: LogLevel::Error,
+                        message: job.i18n.status_trans_error.replace("{}", &err_msg),
+                        timestamp: chrono::Local::now().timestamp_millis(),
+                    };
+                    let _ = handle.emit("translation-log", entry);
+                }
+            }
+        }
+    }
+
     res.map_err(|e| e.to_string())
 }
 
@@ -392,11 +421,30 @@ pub fn pause_translation(handle: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn resume_translation() -> Result<(), String> {
+pub fn resume_translation(handle: tauri::AppHandle) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.paused.store(false, std::sync::atomic::Ordering::SeqCst);
             job.pause_notifier.notify_one();
+
+            // 發送恢復日誌
+            let config_shared = job.config.lock().unwrap();
+            add_log_event(
+                &job.log,
+                LogLevel::Info,
+                &job.i18n.log_resuming,
+                "",
+                "",
+                "",
+                config_shared.enable_debug_log,
+            );
+
+            let _ = handle.emit("translation-log", LogEntry {
+                level: LogLevel::Info,
+                message: job.i18n.log_resuming.clone(),
+                timestamp: chrono::Local::now().timestamp_millis(),
+            });
+
             return Ok(());
         }
     }

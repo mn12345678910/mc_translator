@@ -302,7 +302,7 @@ pub async fn process_all_files(
             &glossary_automaton,
             &state.i18n,
             &log_file_name,
-            &group_key.to_string_lossy(),
+            &display_name,
             group_file_count as usize,
             global_items_offset,
         )

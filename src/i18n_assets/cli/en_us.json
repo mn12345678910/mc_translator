@@ -64,6 +64,7 @@
     "status_idle": "Idle",
     "status_scanning_files": "Scanning files...",
     "log_processing_finished": "Processing finished and written to target.",
+    "log_processing_file_mask": "Processing {} file(s) in: {}",
     "log_generating_pack": "Generating resource pack (LLMTranslator.zip)...",
     "log_pack_item_exists_warn": "Warning: An identical resource pack {} already exists and will be overwritten.",
     "log_pack_gen_finished": "Resource pack (LLMTranslator.zip) generation finished.",

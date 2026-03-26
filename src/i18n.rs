@@ -71,6 +71,7 @@ pub struct CommonLabels {
     pub status_idle: String,
     pub status_scanning_files: String,
     pub log_processing_finished: String,
+    pub log_processing_file_mask: String,
     pub log_generating_pack: String,
     pub log_pack_item_exists_warn: String,
     pub log_pack_gen_finished: String,

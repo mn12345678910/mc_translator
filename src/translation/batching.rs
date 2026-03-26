@@ -428,7 +428,10 @@ async fn process_one_global_batch(
     add_log_event(
         ctx._log,
         LogLevel::Info,
-        &format!("共 {} 個檔案: {}", ctx.group_file_count, ctx.group_dir),
+        &ctx.i18n
+            .log_processing_file_mask
+            .replacen("{}", &ctx.group_file_count.to_string(), 1)
+            .replacen("{}", ctx.group_dir, 1),
         &cfg.source_lang,
         &cfg.target_lang,
         "",

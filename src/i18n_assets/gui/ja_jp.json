@@ -64,6 +64,7 @@
   "status_idle": "待機中",
   "status_scanning_files": "ファイルをスキャン中...",
   "log_processing_finished": "処理が完了し、ターゲットに書き込まれました。",
+  "log_processing_file_mask": "計 {} 個のファイルを処理中: {}",
   "log_generating_pack": "リソースパック (LLMTranslator.zip) を生成中...",
   "log_pack_item_exists_warn": "警告：同じリソースパックファイル {} が既に存在します。上書きされます。",
   "log_pack_gen_finished": "リソースパック (LLMTranslator.zip) の生成が完了しました。",

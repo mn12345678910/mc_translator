@@ -27,6 +27,19 @@ export function setRunningState(isRunning) {
             btnPause.style.display = 'none';
             btnResume.style.display = 'none';
             btnStop.style.display = 'none';
+
+            // 停止所有進度條動畫
+            const pulses = document.querySelectorAll('.pulse-glow'); // 假設這是樣式類別
+            pulses.forEach((el) => {
+                el.style.animation = 'none';
+            });
+            // 同時檢查內連樣式
+            const bars = [document.getElementById('progress-bar'), document.getElementById('batch-progress-bar')];
+            bars.forEach(bar => {
+                if (bar && bar.nextElementSibling) {
+                    bar.nextElementSibling.style.animation = 'none';
+                }
+            });
         }
     }
 }
@@ -138,23 +151,34 @@ export function initTranslation() {
         listen('translation-finished', (event) => {
             const data = event.payload; // { success: bool, msg: "..." }
             setRunningState(false);
-            if (progressBar) progressBar.style.width = '100%';
             
-            // 結束時保持顯示，讓狀態維持 100% 完成
+            if (data.success) {
+                if (progressBar) progressBar.style.width = '100%';
+                const batchProgress = document.getElementById('batch-progress-bar');
+                if (batchProgress) batchProgress.style.width = '100%';
+            } else {
+                if (progressBar) progressBar.style.width = '0%';
+                const batchProgress = document.getElementById('batch-progress-bar');
+                if (batchProgress) batchProgress.style.width = '0%';
+            }
+            
+            // 結束時更新狀態
             if (statusText)
                 statusText.textContent = data.success
                     ? state.currentLabels.status_finished
                     : state.currentLabels.status_failed_or_cancelled;
             
+            // 清空批次狀態與當前處理路徑標籤 (避免殘留舊資訊)
+            const batchText = document.getElementById('batch-status-text');
+            if (batchText) batchText.textContent = '';
+            const currentStatusLabel = document.getElementById('current-status-label');
+            if (currentStatusLabel) currentStatusLabel.textContent = '';
+
             appendLog({
                 level: data.success ? 'Success' : 'Error',
                 message: data.msg,
                 timestamp: Date.now()
             });
-
-            // 同時更新 batch bar 為 100%
-            const batchProgress = document.getElementById('batch-progress-bar');
-            if (batchProgress) batchProgress.style.width = '100%';
         });
 
         listen('translation-status', (event) => {
