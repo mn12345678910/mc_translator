@@ -2813,7 +2813,7 @@ name = "mc_translator"
 version = "0.7.3"
 dependencies = [
  "aho-corasick",
- "base64 0.21.7",
+ "base64 0.22.1",
  "bytes",
  "chrono",
  "clap",
