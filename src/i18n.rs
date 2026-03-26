@@ -654,7 +654,8 @@ mod tests {
     fn debug_gui_labels_err() {
         let _ = GuiLabels::ensure_langs_exists();
         for lang in ["en_us", "zh_cn", "ja_jp"] {
-            let file_content = fs::read_to_string(get_langs_dir("gui").join(format!("{}.json", lang))).unwrap();
+            let file_content =
+                fs::read_to_string(get_langs_dir("gui").join(format!("{}.json", lang))).unwrap();
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).unwrap();
             let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap();
