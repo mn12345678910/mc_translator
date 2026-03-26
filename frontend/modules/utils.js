@@ -24,11 +24,16 @@ export function appendLog(entry) {
     if (!logOutput) return;
 
     // 支援舊版字串輸入
-    const data = typeof entry === 'string' ? { 
+    let data = typeof entry === 'string' ? { 
         level: 'Info', 
         message: entry, 
         timestamp: Date.now() 
-    } : entry;
+    } : { ...entry };
+
+    // 額外相容舊版：如果訊息包含 ❌ 或 Error，自動升級為 Error 等級（用於測試相容性與直接字串呼叫）
+    if (typeof entry === 'string' && (entry.includes('❌') || entry.includes('Error'))) {
+        data.level = 'Error';
+    }
 
     const logLine = document.createElement('p');
     const timeStr = new Date(data.timestamp).toLocaleTimeString();
@@ -37,13 +42,13 @@ export function appendLog(entry) {
     // 根據等級上色
     switch (data.level) {
         case 'Success':
-            logLine.style.color = 'var(--success-color, #4caf50)';
+            logLine.style.color = '#4caf50';
             break;
         case 'Warn':
-            logLine.style.color = 'var(--warning-color, #ff9800)';
+            logLine.style.color = '#ff9800';
             break;
         case 'Error':
-            logLine.style.color = 'var(--danger-color, #ff6b6b)';
+            logLine.style.color = '#ff6b6b';
             break;
         default:
             // Info 使用預設文字顏色
@@ -52,7 +57,7 @@ export function appendLog(entry) {
 
     logOutput.appendChild(logLine);
     logOutput.scrollTop = logOutput.scrollHeight;
-    if (logOutput.childNodes.length > 501) {
+    if (logOutput.childNodes.length > 500) {
         logOutput.removeChild(logOutput.firstChild);
     }
 }

@@ -70,7 +70,7 @@ export async function loadConfig() {
         toggleApiKeyVisibility();
         validateCanTranslate();
     } catch (e) {
-        const mask = state.currentLabels.status_load_config_failed;
+        const mask = state.currentLabels.status_load_config_failed || '❌ 載入配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
@@ -97,6 +97,7 @@ export async function saveConfig() {
     const chkSkipJar = document.getElementById('chk-skip-jar');
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
+    const chkDebugLog = document.getElementById('chk-debug-log');
 
     try {
         state.currentConfig.api_provider = apiProvider ? apiProvider.value : '';
@@ -131,7 +132,7 @@ export async function saveConfig() {
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();
     } catch (e) {
-        const mask = state.currentLabels.status_save_config_failed;
+        const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
     }
 }
