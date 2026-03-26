@@ -19,10 +19,10 @@ tokio = { version = "1", features = ["full"] }
 lazy_static = "1.4.0"
 once_cell = "1"
 regex = "1.10"
-reqwest = { version = "0.11", features = ["json", "cookies", "stream"] }
+reqwest = { version = "0.13", features = ["json", "cookies", "stream", "form", "native-tls"] }
 zip = "0.6"
 urlencoding = "2.1"
-hanconv = "0.4"
+hanconv = "0.5"
 dotenvy = "0.15"
 chrono = "0.4"
 base64 = "0.21"
@@ -45,5 +45,5 @@ panic = "abort"
 strip = true
 
 [dev-dependencies]
-wiremock = "0.5"
+wiremock = "0.6"
 # 沿用現有依賴或新增測試與 Mocked 必要項

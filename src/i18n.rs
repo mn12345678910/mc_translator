@@ -1,3 +1,4 @@
+// Recompile trigger 1
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -5,6 +6,7 @@ pub const DEFAULT_LANG: &str = "zh_tw";
 
 // --- 重構後之共通結構體 ---
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
 pub struct CommonLabels {
     pub app_title: String,
     pub label_output_path: String,
@@ -202,6 +204,7 @@ impl CommonLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
 pub struct GuiLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
@@ -351,9 +354,29 @@ pub struct GuiLabels {
     pub style_default: String,
     pub style_aurora: String,
     pub style_neon: String,
+    pub cat_accent_color: String,
+    pub cat_danger_color: String,
+    pub cat_border_color: String,
+    pub cat_hover_bg: String,
+    pub cat_slider_bg: String,
+    pub cat_slider_thumb: String,
+    pub cat_switch_bg: String,
+    pub cat_progress_bg: String,
+    pub group_layout: String,
+    pub label_space_sm: String,
+    pub label_space_md: String,
+    pub label_space_lg: String,
+    pub label_alpha_border: String,
+    pub label_alpha_panel: String,
+    pub label_alpha_backdrop: String,
+    pub palette_label_spacing: String,
+    pub palette_label_alpha: String,
+    pub palette_label_rounding: String,
+    pub status_style_restored: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(deny_unknown_fields)]
 pub struct CliLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
@@ -809,6 +832,35 @@ mod tests {
         let _ = fs::remove_file(&en_path);
         if backup.exists() {
             let _ = fs::rename(&backup, &en_path);
+        }
+    }
+
+    #[test]
+    fn test_ensure_assets_alignment() {
+        // 測試所有資產檔案是否能正確解析為對應結構體，若 JSON 包含結構體未定義的鍵值將觸發失敗
+        // GUI Assets
+        for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
+            let path = format!("src/i18n_assets/gui/{}.json", lang);
+            let content =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
+            let _: GuiLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
+                panic!(
+                    "GUI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
+                    lang
+                )
+            });
+        }
+        // CLI Assets
+        for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
+            let path = format!("src/i18n_assets/cli/{}.json", lang);
+            let content =
+                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
+            let _: CliLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
+                panic!(
+                    "CLI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
+                    lang
+                )
+            });
         }
     }
 }

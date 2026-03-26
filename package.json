@@ -1,7 +1,6 @@
 {
   "name": "mc_translator",
   "version": "0.7.3",
-
   "description": "> [!NOTE] > 安全須知: > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。",
   "main": "index.js",
   "directories": {
@@ -29,10 +28,10 @@
   "homepage": "https://github.com/mn12345678910/mc_translator#readme",
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
-    "@vitest/coverage-v8": "^4.1.0",
-    "eslint": "^9.10.0",
-    "happy-dom": "^20.8.4",
+    "@vitest/coverage-v8": "^4.1.1",
+    "eslint": "^10.1.0",
+    "happy-dom": "^20.8.8",
     "prettier": "^3.3.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.1"
   }
 }

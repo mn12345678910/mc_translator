@@ -1,0 +1,32 @@
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check yaml...........................................(no files to check)Skipped
+check for added large files..............................................Passed
+cargo fmt................................................................Failed
+- hook id: cargo-fmt
+- exit code: 1
+
+Diff in \\?\X:\D\MCTEST\mc_translator_rs\src\i18n.rs:841:
+         // GUI Assets
+         for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
+             let path = format!("src/i18n_assets/gui/{}.json", lang);
+-            let content = fs::read_to_string(&path)
+-                .unwrap_or_else(|_| panic!("Failed to read {}", path));
++            let content =
++                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
+             let _: GuiLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
+                 panic!(
+                     "GUI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
+Diff in \\?\X:\D\MCTEST\mc_translator_rs\src\i18n.rs:853:
+         // CLI Assets
+         for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
+             let path = format!("src/i18n_assets/cli/{}.json", lang);
+-            let content = fs::read_to_string(&path)
+-                .unwrap_or_else(|_| panic!("Failed to read {}", path));
++            let content =
++                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
+             let _: CliLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
+                 panic!(
+                     "CLI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
+
+cargo clippy.............................................................Passed

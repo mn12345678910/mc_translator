@@ -144,22 +144,6 @@
   "status_progress_mask": "⏳ 執行中 ({} / {}) - {}",
   "status_batch_mask": "📦 批次進度 ({} / {})",
   "status_progress_detailed_mask": "({} / {}) ({})",
-  "cleanup_prefixes": [
-    "翻譯：",
-    "譯文：",
-    "註：",
-    "結果：",
-    "Translation:",
-    "Note:",
-    "Result:",
-    "Translated:"
-  ],
-  "cleanup_contains": [
-    "我們已將",
-    "以下是翻譯",
-    "JSON 格式",
-    "請確認"
-  ],
   "error_read_jar_index": "無法讀取 JAR 檔案索引 {}: {}",
   "error_read_jar_file": "無法讀取 JAR 內檔案 {}: {}",
   "error_pipeline_failed": "執行失敗: {}",
@@ -201,13 +185,13 @@
   "label_api_status": "🔍 API 連線狀態:",
   "header_palette": "🎨 調色盤管理",
   "label_edit_mode": "當前編輯模式:",
-  "mode_light": "☀️ 淺色設定",
+  "mode_light": "🔆 淺色設定",
   "mode_dark": "🌙 深色設定",
   "label_edit_target": "選擇編輯目標:",
   "hover_reset_all": "將全程式所有設定、顏色、圓角恢復至預設值",
   "label_style_attr": "調整屬性樣式:",
-  "label_palette_step_1": "【 1. 選擇編輯目標 】",
-  "label_palette_step_2": "【 2. 調整屬性樣式 】",
+  "label_palette_step_1": "[ 1. 選擇編輯目標 ]",
+  "label_palette_step_2": "[ 2. 調整屬性樣式 ]",
   "label_slot_count": "共 {} 個槽位",
   "label_bg_color": "背景顏色",
   "label_text_color": "文字顏色",
@@ -291,12 +275,12 @@
   "label_page_info": "第 {} / {} 頁",
   "label_none_provider": "無",
   "label_glossary_priority": "術語優先級",
-  "label_palette_target_type": "編輯對象",
+  "label_palette_target_type": "編輯對象類型",
   "label_palette_target_item": "選擇對象",
-  "label_palette_property": "設定屬性",
+  "label_palette_property": "屬性特徵",
   "label_palette_color": "調整顏色",
   "label_palette_rounding": "圓角數值",
-  "label_global_rounding": "全局圓角",
+  "label_global_rounding": "全域圓角",
   "label_pulse_speed": "進度條光暈速度",
   "label_items": "條目",
   "label_files": "檔案",
@@ -326,5 +310,21 @@
   "palette_label_spacing": "間距數值 (px)",
   "palette_label_alpha": "透明度 (0.0-1.0)",
   "palette_label_rounding": "圓角數值 (px)",
-  "status_style_restored": "🎨 介面樣式已恢復預設"
+  "status_style_restored": "🎨 介面樣式已恢復預設",
+  "cleanup_prefixes": [
+    "翻譯：",
+    "譯文：",
+    "註：",
+    "結果：",
+    "Translation:",
+    "Note:",
+    "Result:",
+    "Translated:"
+  ],
+  "cleanup_contains": [
+    "我們已將",
+    "以下是翻譯",
+    "JSON 格式",
+    "請確認"
+  ]
 }
