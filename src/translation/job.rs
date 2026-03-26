@@ -2,6 +2,7 @@
 //! 封裝翻譯任務所需的設定參數與跨執行緒共享的狀態物件。
 
 use crate::i18n::CommonLabels;
+use crate::translation::LogEntry;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
@@ -32,12 +33,13 @@ pub struct JobConfig {
     pub enable_llm_log: bool,
     pub source_lang: String,
     pub target_lang: String,
+    pub enable_debug_log: bool,
 }
 
 /// 翻譯任務在執行過程中的共享狀態物件 (Arc<Mutex<...>>)
 #[derive(Clone)]
 pub struct JobSharedState {
-    pub log: Arc<Mutex<Vec<String>>>,
+    pub log: Arc<Mutex<Vec<LogEntry>>>,
     pub status: Arc<Mutex<String>>,
     pub progress: Arc<AtomicU32>,
     pub progress_total: Arc<AtomicU32>,
@@ -81,6 +83,7 @@ impl JobConfig {
         enable_llm_log: bool,
         source_lang: String,
         target_lang: String,
+        enable_debug_log: bool,
     ) -> Self {
         Self {
             api_key,
@@ -106,6 +109,7 @@ impl JobConfig {
             enable_llm_log,
             source_lang,
             target_lang,
+            enable_debug_log,
         }
     }
 }

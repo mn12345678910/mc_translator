@@ -32,7 +32,7 @@ async fn test_pipeline_workflow_cancellation() {
     };
 
     let paths = vec![(lang_file_path.clone(), "en_us.json".to_string())];
-    let logger = |_: &str| {};
+    let logger = |_: mc_translator::translation::LogEntry| {};
 
     // 在進度回調中觸發取消
     let progress_updater =
@@ -89,6 +89,7 @@ async fn test_process_all_files_multi_types() {
     let config = JobConfig {
         source_lang: "en_us".to_string(),
         target_lang: "zh_tw".to_string(),
+        enable_debug_log: false,
         ..JobConfig::default()
     };
 

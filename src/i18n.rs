@@ -276,6 +276,7 @@ pub struct GuiLabels {
     pub label_skip_book: String,
     pub label_no_skip_book: String,
     pub label_enable_log: String,
+    pub label_enable_debug_log: String,
     pub label_llm_log: String,
     pub label_disable_log: String,
     pub label_system_prompt: String,

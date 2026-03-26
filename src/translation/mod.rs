@@ -15,7 +15,23 @@ pub use engine::*;
 
 use crate::translation::job::JobSharedState;
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum LogLevel {
+    Info,
+    Success,
+    Warn,
+    Error,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct LogEntry {
+    pub level: LogLevel,
+    pub message: String,
+    pub timestamp: i64,
+}
 
 lazy_static! {
     /// 當前正在執行的翻譯任務狀態，用於跨指令（如暫停、終止）進行連鎖控制

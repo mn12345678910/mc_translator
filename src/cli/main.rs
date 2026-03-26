@@ -76,6 +76,10 @@ struct Args {
     /// 跳過手冊
     #[arg(long)]
     skip_book: bool,
+
+    /// 啟用偵錯日誌持久化 (debug.log)
+    #[arg(long)]
+    log_debug: bool,
 }
 
 #[tokio::main]
@@ -141,6 +145,9 @@ async fn run_main_with_args(
     }
     if args.log_llm {
         config.enable_llm_log = true;
+    }
+    if args.log_debug {
+        config.enable_debug_log = true;
     }
 
     let is_headless = args.input.is_some();
@@ -488,9 +495,9 @@ async fn run_translation(
     let rel_path = input_path.to_string_lossy().to_string();
     let paths = vec![(input_path, rel_path)];
 
-    let logger = |msg: &str| {
+    let logger = |entry: mc_translator::translation::LogEntry| {
         // 去除換行避免與進度條衝突
-        let clean_msg = msg.replace("\n", " ").trim().to_string();
+        let clean_msg = entry.message.replace("\n", " ").trim().to_string();
         if !clean_msg.is_empty() {
             // 覆蓋當前進度條行並打上日誌
             print!("\r\x1B[K-> {}\n", clean_msg);

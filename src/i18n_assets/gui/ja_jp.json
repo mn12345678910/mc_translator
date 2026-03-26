@@ -217,6 +217,7 @@
   "label_skip_book": "ブックをスキップ",
   "label_no_skip_book": "ブックを処理する",
   "label_enable_log": "ログを有効化",
+  "label_enable_debug_log": "デバッグログの永続化",
   "label_llm_log": "LLM通信ログを記録",
   "label_disable_log": "ログを無効化",
   "label_system_prompt": "📜 システムプロンプト",

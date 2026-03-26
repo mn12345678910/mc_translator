@@ -26,6 +26,7 @@ export async function loadConfig() {
     const chkSkipJar = document.getElementById('chk-skip-jar');
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
+    const chkDebugLog = document.getElementById('chk-debug-log');
     const inputPath = document.getElementById('input-path');
 
     try {
@@ -58,6 +59,7 @@ export async function loadConfig() {
         if (chkSkipJar) chkSkipJar.checked = config.skip_jar || false;
         if (chkSkipBook) chkSkipBook.checked = config.skip_book || false;
         if (chkLlmLog) chkLlmLog.checked = config.enable_llm_log || false;
+        if (chkDebugLog) chkDebugLog.checked = config.enable_debug_log || false;
 
         toggleOllamaGroup();
         await updateUiLanguage();
@@ -124,6 +126,7 @@ export async function saveConfig() {
         state.currentConfig.skip_jar = chkSkipJar ? chkSkipJar.checked : false;
         state.currentConfig.skip_book = chkSkipBook ? chkSkipBook.checked : false;
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
+        state.currentConfig.enable_debug_log = chkDebugLog ? chkDebugLog.checked : false;
 
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();

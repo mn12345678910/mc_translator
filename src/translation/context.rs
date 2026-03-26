@@ -1,4 +1,5 @@
 use crate::translation::job::JobConfig;
+use crate::translation::LogEntry;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
@@ -14,7 +15,7 @@ pub struct TranslationContext<'a> {
     pub total_progress: Arc<AtomicU32>,
     pub cancelled: Arc<AtomicBool>,
     pub paused: Arc<AtomicBool>,
-    pub current_log: Arc<Mutex<Vec<String>>>,
+    pub current_log: Arc<Mutex<Vec<LogEntry>>>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
     pub filename: String,
     pub counter: Arc<Mutex<usize>>,
@@ -36,7 +37,7 @@ pub struct ContextOptions<'a> {
     pub total_progress: Arc<AtomicU32>,
     pub cancelled: Arc<AtomicBool>,
     pub paused: Arc<AtomicBool>,
-    pub current_log: Arc<Mutex<Vec<String>>>,
+    pub current_log: Arc<Mutex<Vec<LogEntry>>>,
     pub filename: String,
     pub translation_memory: Arc<Mutex<HashMap<String, String>>>,
     pub skip_memory: bool,

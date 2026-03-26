@@ -217,6 +217,7 @@
   "label_skip_book": "跳过手册",
   "label_no_skip_book": "不跳过手册",
   "label_enable_log": "开启记录日志",
+  "label_enable_debug_log": "Debug 日志持久化机制",
   "label_llm_log": "记录 LLM 通讯日志",
   "label_disable_log": "关闭记录日志",
   "label_system_prompt": "📜 系统技术指令",

@@ -74,6 +74,8 @@ pub struct AppConfig {
     pub skip_book: bool,
     #[serde(alias = "記錄LLM通訊")]
     pub enable_llm_log: bool,
+    #[serde(alias = "記錄偵錯日誌", default)]
+    pub enable_debug_log: bool,
 
     // --- [視窗幾何資訊] ---
     #[serde(alias = "主視窗X")]
@@ -464,6 +466,7 @@ impl Default for AppConfig {
             skip_jar: false,
             skip_book: false,
             enable_llm_log: false,
+            enable_debug_log: false,
             main_x: 50.0,
             main_y: 50.0,
             main_width: 800.0,

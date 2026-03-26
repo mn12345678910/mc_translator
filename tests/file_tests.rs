@@ -31,6 +31,7 @@ fn create_mock_state() -> JobSharedState {
         target_lang: "zh_tw".to_string(),
         cleanup_prefixes: vec![],
         cleanup_contains: vec![],
+        enable_debug_log: false,
     };
 
     JobSharedState {
@@ -166,7 +167,7 @@ async fn test_e2e_translation_workflow() {
 
     // 4. 觸發 start_translation_workflow
     let paths = vec![(lang_file_path.clone(), "en_us.json".to_string())];
-    let logger = |_: &str| {};
+    let logger = |_: mc_translator::translation::LogEntry| {};
     let progress_updater = |_: f32, _: f32, _: f32, _: f32, _: &str| {};
 
     let res = mc_translator::translation::pipeline::start_translation_workflow(

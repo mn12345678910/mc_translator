@@ -88,5 +88,6 @@ fn create_ollama_config(url: String) -> JobConfig {
         target_lang: "zh_tw".to_string(),
         cleanup_prefixes: vec![],
         cleanup_contains: vec![],
+        enable_debug_log: false,
     }
 }

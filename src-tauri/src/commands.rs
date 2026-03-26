@@ -2,6 +2,8 @@ use mc_translator::config::dictionary::{
     get_official_dict_path, get_user_dict_path, load_dict, save_dict,
 };
 use mc_translator::config::{settings::StyleConfig, AppConfig};
+use mc_translator::translation::{LogEntry, LogLevel};
+use mc_translator::utils::helpers::add_log_event;
 use std::collections::HashMap;
 use tauri::{Emitter, Manager};
 
@@ -178,8 +180,8 @@ pub async fn start_translation(
 
     // 定義日誌 Callback
     let handle_log = handle.clone();
-    let logger = move |msg: &str| {
-        let _ = handle_log.emit("translation-log", msg.to_string());
+    let logger = move |entry: LogEntry| {
+        let _ = handle_log.emit("translation-log", entry);
     };
 
     // 定義進度 Callback
@@ -358,10 +360,31 @@ pub fn edit_dictionary_item(
 }
 
 #[tauri::command]
-pub fn pause_translation() -> Result<(), String> {
+pub fn pause_translation(handle: tauri::AppHandle) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.paused.store(true, std::sync::atomic::Ordering::SeqCst);
+
+            // 發送暫停日誌
+            let config_shared = job.config.lock().unwrap();
+            add_log_event(
+                &job.log,
+                LogLevel::Warn,
+                &job.i18n.log_pause_requested,
+                "",
+                "",
+                "",
+                config_shared.enable_debug_log,
+            );
+
+            // 同步廣發至前端
+            let entry = LogEntry {
+                level: LogLevel::Warn,
+                message: job.i18n.log_pause_requested.clone(),
+                timestamp: chrono::Local::now().timestamp_millis(),
+            };
+            let _ = handle.emit("translation-log", entry);
+
             return Ok(());
         }
     }
@@ -381,12 +404,33 @@ pub fn resume_translation() -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn stop_translation() -> Result<(), String> {
+pub fn stop_translation(handle: tauri::AppHandle) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             job.cancelled
                 .store(true, std::sync::atomic::Ordering::SeqCst);
             job.pause_notifier.notify_one();
+
+            // 發送中止日誌
+            let config_shared = job.config.lock().unwrap();
+            add_log_event(
+                &job.log,
+                LogLevel::Error,
+                &job.i18n.log_stopped,
+                "",
+                "",
+                "",
+                config_shared.enable_debug_log,
+            );
+
+            // 同步廣發至前端
+            let entry = LogEntry {
+                level: LogLevel::Error,
+                message: job.i18n.log_stopped.clone(),
+                timestamp: chrono::Local::now().timestamp_millis(),
+            };
+            let _ = handle.emit("translation-log", entry);
+
             return Ok(());
         }
     }

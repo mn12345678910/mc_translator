@@ -69,7 +69,11 @@ export function initTranslation() {
                     inputPaths: [state.currentConfig.path] 
                 });
             } catch (e) {
-                appendLog(state.currentLabels.status_trans_failed_mask.replace('{}', e));
+                appendLog({
+                    level: 'Error',
+                    message: state.currentLabels.status_trans_failed_mask.replace('{}', e),
+                    timestamp: Date.now()
+                });
                 setRunningState(false);
             }
         });
@@ -141,7 +145,12 @@ export function initTranslation() {
                 statusText.textContent = data.success
                     ? state.currentLabels.status_finished
                     : state.currentLabels.status_failed_or_cancelled;
-            appendLog(data.msg);
+            
+            appendLog({
+                level: data.success ? 'Success' : 'Error',
+                message: data.msg,
+                timestamp: Date.now()
+            });
 
             // 同時更新 batch bar 為 100%
             const batchProgress = document.getElementById('batch-progress-bar');

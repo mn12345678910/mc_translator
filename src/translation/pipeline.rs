@@ -11,7 +11,9 @@ use std::sync::{Arc, Mutex};
 use crate::config::AppConfig;
 use crate::i18n::CommonLabels;
 use crate::translation::job::{JobConfig, JobSharedState};
+use crate::translation::{LogEntry, LogLevel};
 use crate::utils;
+use crate::utils::helpers::add_log_event;
 
 /// 載入並準備字典檔 (McLang 與推論字典)
 pub async fn load_and_prepare_dictionaries(
@@ -64,9 +66,9 @@ pub async fn load_and_prepare_dictionaries(
 
 /// 啟動背景翻譯工作流
 pub async fn start_translation_workflow(
-    config: AppConfig,
+    config: crate::config::AppConfig,
     input_paths: Vec<(PathBuf, String)>,
-    logger: impl Fn(&str) + Send + Sync + 'static,
+    logger: impl Fn(LogEntry) + Send + Sync + 'static,
     progress_updater: impl Fn(f32, f32, f32, f32, &str) + Send + Sync + 'static,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let logger_arc = Arc::new(logger);
@@ -83,16 +85,26 @@ pub async fn start_translation_workflow(
     }
 
     // 1. 初始化空狀態容器 (Pipeline 需要)
+    let i18n = CommonLabels::load_or_default(&config.ui_lang);
+    let log_arc = Arc::new(Mutex::new(Vec::new()));
+    let status_arc = Arc::new(Mutex::new(i18n.status_analyzing_files.clone()));
+
     let mc_lang = Arc::new(Mutex::new(None));
     let exact_match_map = Arc::new(Mutex::new(HashMap::new()));
     let inferred_match_map = Arc::new(Mutex::new(HashMap::new()));
     let term_replacements = Arc::new(Mutex::new(Vec::new()));
     let available_langs = Arc::new(Mutex::new(Vec::new()));
 
-    // 載入 i18n 控制
-    let i18n = CommonLabels::load_or_default(&config.ui_lang);
-
-    logger_arc(&i18n.status_analyzing_dict);
+    // 早期日誌：使用 add_log_event 以確保進入 debug.log (如果開啟)
+    add_log_event(
+        &log_arc,
+        LogLevel::Info,
+        &i18n.status_analyzing_dict,
+        "",
+        "",
+        "",
+        config.enable_debug_log,
+    );
 
     // 2. 準備字典檔
     load_and_prepare_dictionaries(
@@ -105,7 +117,15 @@ pub async fn start_translation_workflow(
     )
     .await?;
 
-    logger_arc(&i18n.status_analyzing_files);
+    add_log_event(
+        &log_arc,
+        LogLevel::Info,
+        &i18n.status_analyzing_files,
+        "",
+        "",
+        "",
+        config.enable_debug_log,
+    );
 
     let target_i18n = crate::i18n::CommonLabels::load_or_default(&config.target_lang);
 
@@ -133,11 +153,10 @@ pub async fn start_translation_workflow(
         config.enable_llm_log,
         config.source_lang.clone(),
         config.target_lang.clone(),
+        config.enable_debug_log,
     )));
 
     // 4. 建立 JobSharedState
-    let log_arc = Arc::new(Mutex::new(Vec::new()));
-    let status_arc = Arc::new(Mutex::new(i18n.status_analyzing_files.clone()));
 
     let job_state = JobSharedState {
         log: log_arc.clone(),
@@ -187,8 +206,8 @@ pub async fn start_translation_workflow(
             {
                 let log = log_monitor_c.lock().unwrap();
                 if log.len() > last_len {
-                    for msg in &log[last_len..] {
-                        logger_clone(msg);
+                    for entry in &log[last_len..] {
+                        logger_clone(entry.clone());
                     }
                     last_len = log.len();
                 }

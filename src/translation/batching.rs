@@ -1,5 +1,7 @@
 use crate::translation::api;
 use crate::translation::job::JobConfig;
+use crate::translation::{LogEntry, LogLevel};
+use crate::utils::helpers::add_log_event;
 use crate::utils::text_processing::{postprocess_text, preprocess_text, validate_and_cleanup};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
@@ -46,7 +48,7 @@ pub async fn translate_global_batches(
     total_batches: Arc<AtomicU32>, // 總批次
     cancelled: Arc<AtomicBool>,
     paused: Arc<AtomicBool>,
-    log: Arc<Mutex<Vec<String>>>,
+    log: Arc<Mutex<Vec<LogEntry>>>,
     pause_notifier: Arc<tokio::sync::Notify>,
     glossary_automaton: &crate::translation::glossary::GlossaryAutomaton,
     i18n: &crate::i18n::CommonLabels,
@@ -85,7 +87,7 @@ pub struct RunBatchContext<'a> {
     pub current_batch: Arc<AtomicU32>,
     pub total_batches: Arc<AtomicU32>,
     pub counter: Arc<Mutex<usize>>,
-    pub log: Arc<Mutex<Vec<String>>>,
+    pub log: Arc<Mutex<Vec<LogEntry>>>,
     pub cancelled: Arc<AtomicBool>,
     pub paused: Arc<AtomicBool>,
     pub pause_notifier: Arc<tokio::sync::Notify>,
@@ -203,8 +205,9 @@ pub async fn run_translation_batch(
             }
             Err(e) => {
                 let err_msg = e.to_string();
-                crate::utils::add_log(
+                add_log_event(
                     &log,
+                    LogLevel::Error,
                     &i18n
                         .log_batch_failed_retry
                         .replacen("{}", &(batch_idx + 1).to_string(), 1)
@@ -213,6 +216,7 @@ pub async fn run_translation_batch(
                     &cfg.source_lang,
                     &cfg.target_lang,
                     &ctx.file_name,
+                    cfg.enable_debug_log,
                 );
                 failed_indices.extend(batch_item_indices.clone());
             }
@@ -221,14 +225,16 @@ pub async fn run_translation_batch(
 
     // 2. 失敗重試階段：收集失敗項目，切割更細批次 (降級：批次與字元上限減半)
     if !failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
-        crate::utils::add_log(
+        add_log_event(
             &log,
+            LogLevel::Warn,
             &i18n
                 .log_retry_start
                 .replace("{}", &failed_indices.len().to_string()),
             &cfg.source_lang,
             &cfg.target_lang,
             &ctx.file_name,
+            cfg.enable_debug_log,
         );
 
         let retry_batch_size = (cfg.batch_size / 2).max(1);
@@ -286,14 +292,16 @@ pub async fn run_translation_batch(
 
         // 3. 最終回退階段：單筆翻譯
         if !second_failed_indices.is_empty() && !cancelled.load(Ordering::SeqCst) {
-            crate::utils::add_log(
+            add_log_event(
                 &log,
+                LogLevel::Warn,
                 &i18n
                     .log_single_retry_start
                     .replace("{}", &second_failed_indices.len().to_string()),
                 &cfg.source_lang,
                 &cfg.target_lang,
                 &ctx.file_name,
+                cfg.enable_debug_log,
             );
             for &idx in &second_failed_indices {
                 if cancelled.load(Ordering::SeqCst) {
@@ -334,12 +342,14 @@ pub async fn run_translation_batch(
                         );
                     }
                     Err(e) => {
-                        crate::utils::add_log(
+                        add_log_event(
                             &log,
+                            LogLevel::Error,
                             &i18n.log_single_final_failed.replace("{}", &e.to_string()),
                             &cfg.source_lang,
                             &cfg.target_lang,
                             &ctx.file_name,
+                            cfg_snapshot.enable_debug_log,
                         );
                     }
                 }
@@ -389,7 +399,7 @@ struct BatchContext<'a> {
     batch_indices: &'a [usize],
     config: &'a Arc<Mutex<JobConfig>>,
     status_arc: &'a Arc<Mutex<String>>,
-    _log: &'a Arc<Mutex<Vec<String>>>,
+    _log: &'a Arc<Mutex<Vec<LogEntry>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
@@ -415,12 +425,14 @@ async fn process_one_global_batch(
     let cfg = ctx.config.lock().unwrap().clone();
 
     // [優化] 顯示彙總資訊至日誌區
-    crate::utils::add_log(
+    add_log_event(
         ctx._log,
+        LogLevel::Info,
         &format!("共 {} 個檔案: {}", ctx.group_file_count, ctx.group_dir),
         &cfg.source_lang,
         &cfg.target_lang,
         "",
+        cfg.enable_debug_log,
     );
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)

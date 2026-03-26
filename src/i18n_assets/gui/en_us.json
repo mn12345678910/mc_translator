@@ -217,6 +217,7 @@
   "label_skip_book": "Skip Book",
   "label_no_skip_book": "Don't Skip Book",
   "label_enable_log": "Enable Log",
+  "label_enable_debug_log": "Persistent Debug Log",
   "label_llm_log": "Log LLM Communications",
   "label_disable_log": "Disable Log",
   "label_system_prompt": "📜 System Prompt",

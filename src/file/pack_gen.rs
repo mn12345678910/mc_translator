@@ -1,4 +1,6 @@
 use crate::translation::job::JobConfig;
+use crate::translation::{LogEntry, LogLevel};
+use crate::utils::helpers::add_log_event;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -154,7 +156,7 @@ pub async fn output_resource_pack(
     _src_path: &Path,
     _translated_files: HashMap<String, String>,
     config: JobConfig,
-    log: Arc<Mutex<Vec<String>>>,
+    log: Arc<Mutex<Vec<LogEntry>>>,
     i18n: crate::i18n::CommonLabels,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::task::spawn_blocking(
@@ -178,12 +180,14 @@ pub async fn output_resource_pack(
                 return Ok(());
             }
 
-            crate::utils::add_log(
+            add_log_event(
                 &log,
+                LogLevel::Info,
                 &i18n.log_generating_pack,
                 &config.source_lang,
                 &config.target_lang,
                 "",
+                config.enable_debug_log,
             );
 
             let pack_mcmeta = serde_json::json!({
@@ -201,9 +205,15 @@ pub async fn output_resource_pack(
             let zip_path = output_path.join(zip_filename);
 
             if zip_path.exists() {
-                log.lock()
-                    .unwrap()
-                    .push(i18n.log_pack_item_exists_warn.replace("{}", zip_filename));
+                add_log_event(
+                    &log,
+                    LogLevel::Warn,
+                    &i18n.log_pack_item_exists_warn.replace("{}", zip_filename),
+                    &config.source_lang,
+                    &config.target_lang,
+                    "",
+                    config.enable_debug_log,
+                );
             }
 
             let zip_file = fs::File::create(&zip_path)?;
@@ -229,12 +239,14 @@ pub async fn output_resource_pack(
 
             let _ = fs::remove_dir_all(&temp_dir);
 
-            crate::utils::add_log(
+            add_log_event(
                 &log,
+                LogLevel::Success,
                 &i18n.log_pack_gen_finished,
                 &config.source_lang,
                 &config.target_lang,
                 "",
+                config.enable_debug_log,
             );
 
             Ok(())

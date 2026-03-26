@@ -1,7 +1,11 @@
 //! # 輔助函式
 //! 包含日誌、路徑顯示等通用工具函式。
 
-use std::path::Path;
+use crate::translation::{LogEntry, LogLevel};
+use chrono::Local;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use super::{GlossaryEntry, TermType};
@@ -22,6 +26,78 @@ pub fn extract_display_path(path: &Path) -> String {
         .unwrap_or_default()
         .to_string_lossy()
         .to_string()
+}
+
+pub fn get_log_dir() -> PathBuf {
+    let mut path = std::env::current_exe()
+        .unwrap_or_else(|_| PathBuf::from("."))
+        .parent()
+        .unwrap_or(Path::new("."))
+        .to_path_buf();
+
+    // 如果是在開發環境 (Cargo run)，嘗試退回專案根目錄
+    if path.ends_with("target\\debug") || path.ends_with("target\\release") {
+        if let Some(parent) = path.parent().and_then(|p| p.parent()) {
+            path = parent.to_path_buf();
+        }
+    } else if path.ends_with("src-tauri") {
+        if let Some(parent) = path.parent() {
+            path = parent.to_path_buf();
+        }
+    }
+
+    path.join("logs")
+}
+
+pub fn add_log_event(
+    log_arc: &Arc<Mutex<Vec<LogEntry>>>,
+    level: LogLevel,
+    msg: &str,
+    source_lang: &str,
+    target_lang: &str,
+    file_name: &str,
+    enable_persistence: bool,
+) {
+    let now = Local::now();
+    let timestamp_ms = now.timestamp_millis();
+    let timestamp_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let lang_info = if source_lang.is_empty() && target_lang.is_empty() {
+        String::new()
+    } else {
+        format!("<{}->{}> ", source_lang, target_lang)
+    };
+
+    let file_info = if file_name.is_empty() {
+        String::new()
+    } else {
+        format!("[{}] ", file_name)
+    };
+
+    let mut log = log_arc.lock().unwrap();
+    let full_msg = format!("{}{}{}", lang_info, file_info, msg);
+
+    log.push(LogEntry {
+        level: level.clone(),
+        message: full_msg.clone(),
+        timestamp: timestamp_ms,
+    });
+
+    if enable_persistence {
+        let log_dir = get_log_dir();
+        if fs::create_dir_all(&log_dir).is_ok() {
+            let log_file = log_dir.join("debug.log");
+            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_file) {
+                let level_str = match level {
+                    LogLevel::Info => "INFO",
+                    LogLevel::Success => "SUCCESS",
+                    LogLevel::Warn => "WARN",
+                    LogLevel::Error => "ERROR",
+                };
+                let _ = writeln!(file, "[{}] [{}] {}", timestamp_str, level_str, full_msg);
+            }
+        }
+    }
 }
 
 pub fn add_log(

@@ -19,23 +19,40 @@ export function hexToRgb(hex) {
     return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
 }
 
-export function appendLog(text) {
+export function appendLog(entry) {
     const logOutput = document.getElementById('log-output');
     if (!logOutput) return;
 
+    // 支援舊版字串輸入
+    const data = typeof entry === 'string' ? { 
+        level: 'Info', 
+        message: entry, 
+        timestamp: Date.now() 
+    } : entry;
+
     const logLine = document.createElement('p');
-    logLine.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
-    if (
-        String(text).includes('❌') ||
-        String(text).includes('⚠️') ||
-        String(text).includes('Error') ||
-        String(text).includes('⚠')
-    ) {
-        logLine.style.color = '#ff6b6b';
+    const timeStr = new Date(data.timestamp).toLocaleTimeString();
+    logLine.textContent = `[${timeStr}] ${data.message}`;
+
+    // 根據等級上色
+    switch (data.level) {
+        case 'Success':
+            logLine.style.color = 'var(--success-color, #4caf50)';
+            break;
+        case 'Warn':
+            logLine.style.color = 'var(--warning-color, #ff9800)';
+            break;
+        case 'Error':
+            logLine.style.color = 'var(--danger-color, #ff6b6b)';
+            break;
+        default:
+            // Info 使用預設文字顏色
+            break;
     }
+
     logOutput.appendChild(logLine);
     logOutput.scrollTop = logOutput.scrollHeight;
-    if (logOutput.childNodes.length > 500) {
+    if (logOutput.childNodes.length > 501) {
         logOutput.removeChild(logOutput.firstChild);
     }
 }

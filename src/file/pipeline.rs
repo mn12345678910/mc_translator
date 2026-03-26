@@ -6,6 +6,8 @@ use crate::translation::batching::{translate_global_batches, GlobalBatchItem};
 use crate::translation::glossary::mc_lang::McLangFiles;
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::translation::job::JobSharedState;
+use crate::translation::LogLevel;
+use crate::utils::helpers::add_log_event;
 use crate::utils::text_processing::sync_formatting;
 use std::collections::HashMap;
 use std::path::Path;
@@ -334,12 +336,14 @@ pub async fn process_all_files(
 
         // [新增] 補齊檔案處理完成日誌
         let cfg = job_config.lock().unwrap().clone();
-        crate::utils::add_log(
+        add_log_event(
             &log,
+            LogLevel::Success,
             &state.i18n.log_processing_finished,
             &cfg.source_lang,
             &cfg.target_lang,
             &display_name,
+            cfg.enable_debug_log,
         );
 
         let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));

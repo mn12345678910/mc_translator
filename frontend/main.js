@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'chk-skip-jar',
         'chk-skip-book',
         'chk-llm-log',
+        'chk-debug-log',
         'source-lang',
         'selected-model',
     ];

@@ -1,5 +1,6 @@
 use crate::translation::api;
 use crate::translation::context::TranslationContext;
+use crate::translation::LogLevel;
 use crate::utils::skip_rules::{should_skip_key, should_skip_value};
 use crate::utils::text_processing::{
     detect_loop, postprocess_text, preprocess_text, sync_formatting, validate_and_cleanup,
@@ -160,10 +161,16 @@ pub async fn translate_json_recursive(
                     {
                         return Err(e);
                     }
-                    ctx.current_log
-                        .lock()
-                        .unwrap()
-                        .push(ctx.i18n.log_batch_error.replace("{}", &err_msg));
+                    let config_locked = ctx.config.lock().unwrap();
+                    crate::utils::helpers::add_log_event(
+                        &ctx.current_log,
+                        LogLevel::Error,
+                        &ctx.i18n.log_batch_error.replace("{}", &err_msg),
+                        &config_locked.source_lang,
+                        &config_locked.target_lang,
+                        &ctx.filename,
+                        config_locked.enable_debug_log,
+                    );
                 }
             }
 
@@ -215,10 +222,16 @@ pub async fn translate_json_recursive(
                 ) {
                     finalized_str = Some(final_str);
                 } else {
-                    ctx.current_log
-                        .lock()
-                        .unwrap()
-                        .push(ctx.i18n.log_loop_detected.replace("{}", &ctx.filename));
+                    let config_locked = ctx.config.lock().unwrap();
+                    crate::utils::helpers::add_log_event(
+                        &ctx.current_log,
+                        LogLevel::Warn,
+                        &ctx.i18n.log_loop_detected.replace("{}", &ctx.filename),
+                        &config_locked.source_lang,
+                        &config_locked.target_lang,
+                        &ctx.filename,
+                        config_locked.enable_debug_log,
+                    );
                     finalized_str = None;
                 }
             }
@@ -227,10 +240,16 @@ pub async fn translate_json_recursive(
                 if err_msg.starts_with("TIMEOUT:") {
                     return Err(e);
                 }
-                ctx.current_log
-                    .lock()
-                    .unwrap()
-                    .push(ctx.i18n.log_single_failed.replace("{}", &err_msg));
+                let config_locked = ctx.config.lock().unwrap();
+                crate::utils::helpers::add_log_event(
+                    &ctx.current_log,
+                    LogLevel::Error,
+                    &ctx.i18n.log_single_failed.replace("{}", &err_msg),
+                    &config_locked.source_lang,
+                    &config_locked.target_lang,
+                    &ctx.filename,
+                    config_locked.enable_debug_log,
+                );
             }
         }
 
