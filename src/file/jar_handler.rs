@@ -25,8 +25,10 @@ pub async fn collect_jar_tasks(
     };
 
     type JarTaskData = (String, serde_json::Value, String, serde_json::Value);
+    let state_clone = state.clone();
     let tasks_data = tokio::task::spawn_blocking(
         move || -> Result<Vec<JarTaskData>, Box<dyn std::error::Error + Send + Sync>> {
+            let state = state_clone;
             let file = fs::File::open(&path_clone)?;
             let mut archive = zip::ZipArchive::new(file)?;
             let mut entries = Vec::new();
@@ -48,10 +50,13 @@ pub async fn collect_jar_tasks(
                         Ok(e) => e,
                         Err(e) => {
                             eprintln!(
-                                "\x1b[31m[{}] [錯誤] 無法讀取 JAR 檔案索引 {}: {}\x1b[0m",
+                                "\x1b[31m[{}] [ERROR] {}\x1b[0m",
                                 chrono::Local::now().format("%H:%M:%S"),
-                                i,
-                                e
+                                state
+                                    .i18n
+                                    .error_read_jar_index
+                                    .replace("{}", &i.to_string())
+                                    .replace("{}", &e.to_string())
                             );
                             continue;
                         }
@@ -86,10 +91,13 @@ pub async fn collect_jar_tasks(
                     if is_target {
                         if let Err(e) = zip_entry.read_to_string(&mut content) {
                             eprintln!(
-                                "\x1b[31m[{}] [錯誤] 無法讀取 JAR 內檔案 {}: {}\x1b[0m",
+                                "\x1b[31m[{}] [ERROR] {}\x1b[0m",
                                 chrono::Local::now().format("%H:%M:%S"),
-                                name,
-                                e
+                                state
+                                    .i18n
+                                    .error_read_jar_file
+                                    .replace("{}", &name)
+                                    .replace("{}", &e.to_string())
                             );
                         }
                     }

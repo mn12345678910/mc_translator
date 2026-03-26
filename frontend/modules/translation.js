@@ -118,7 +118,15 @@ export function initTranslation() {
                 currentStatusLabel.textContent = data.msg;
             }
             if (statusText && data.total > 0) {
-                statusText.textContent = `${Math.round((data.current / data.total) * 100)}%`;
+                const pct = (data.current / data.total) * 100;
+                let progressText = `${Math.round(pct)}%`;
+                if (state.currentLabels.status_progress_detailed_mask) {
+                    progressText = state.currentLabels.status_progress_detailed_mask
+                        .replace('{}', data.current)
+                        .replace('{}', data.total)
+                        .replace('{}', `${Math.round(pct)}%`);
+                }
+                statusText.textContent = progressText;
             }
             // 狀態訊息僅顯示在狀態列，不寫入日誌區域
         });

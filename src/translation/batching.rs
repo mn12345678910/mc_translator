@@ -404,11 +404,12 @@ async fn process_one_global_batch(
     ctx: BatchContext<'_>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 格式化狀態字串，僅顯示批次進度至狀態列
-    *ctx.status_arc.lock().unwrap() = format!(
-        "正在翻譯：批次 ({}/{})",
-        ctx.batch_idx + 1,
-        ctx.total_batches
-    );
+    *ctx.status_arc.lock().unwrap() = ctx
+        .i18n
+        .status_translating_batch
+        .replacen("{}", &ctx.i18n.status_translating, 1)
+        .replacen("{}", &(ctx.batch_idx + 1).to_string(), 1)
+        .replacen("{}", &ctx.total_batches.to_string(), 1);
 
     // 3. 呼叫翻譯服務
     let cfg = ctx.config.lock().unwrap().clone();

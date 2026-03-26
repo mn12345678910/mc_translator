@@ -151,22 +151,39 @@ async fn run_main_with_args(
         let input_path = PathBuf::from(&input_path_str);
 
         if !input_path.exists() {
-            println!("❌ 錯誤: 輸入路徑不存在 ({})", input_path_str);
+            println!(
+                "{}",
+                i18n.cli_error_input_not_exist
+                    .replace("{}", &input_path_str)
+            );
             return Ok(());
         }
 
         // 參數已於全域套用
 
-        println!("-> 偵測到指令參數，進入靜態 Headless 模式...");
-        println!("   提供商: {}", config.api_provider);
-        println!("   模型: {}", config.model);
-        println!("   輸入: {}", input_path_str);
+        println!("{}", i18n.cli_detect_headless);
         println!(
-            "   輸出: {}",
+            "   {}: {}",
+            i18n.cli_label_provider.replace(": {}", ""),
+            config.api_provider
+        );
+        println!(
+            "   {}: {}",
+            i18n.cli_label_model.replace(": {}", ""),
+            config.model
+        );
+        println!(
+            "   {}: {}",
+            i18n.cli_label_input.replace(": {}", ""),
+            input_path_str
+        );
+        println!(
+            "   {}: {}",
+            i18n.cli_label_output.replace(": {}", ""),
             if config.output_dir.is_empty() {
-                "LLMTranslator/ (預設)"
+                format!("LLMTranslator/ ({})", i18n.cli_label_default)
             } else {
-                &config.output_dir
+                config.output_dir.clone()
             }
         );
         println!();
@@ -250,11 +267,14 @@ async fn run_main_with_args(
                         let has_saved_key = !config.api_key.is_empty();
                         let key_prompt = if has_saved_key {
                             format!(
-                                "{} (鍵入 '<' 或 Enter 代表跳過使用舊金鑰)",
-                                i18n.common.label_api_key
+                                "{} ({})",
+                                i18n.common.label_api_key, i18n.cli_api_key_old_hint
                             )
                         } else {
-                            format!("{} (鍵入 '<' 回到上一步)", i18n.common.label_api_key)
+                            format!(
+                                "{} ({})",
+                                i18n.common.label_api_key, i18n.label_back_to_prev_cli
+                            )
                         };
 
                         let key = interact.password(&key_prompt)?;

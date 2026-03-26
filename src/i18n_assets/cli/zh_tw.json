@@ -158,6 +158,7 @@
     "cli_fetching_models": "-> 正在獲取 {} 模型列表...",
     "cli_model_fetch_failed": " (⚠️ 無法動態獲取清單，請確認連線/APIKey)",
     "cli_custom_model_prompt": "請輸入自訂模型名稱 (鍵入 '<' 為返回選單)",
+    "cli_api_key_old_hint": "鍵入 '<' 以使用舊金鑰 / 返回",
     "cli_input_path_prompt": "請選取要翻譯的檔案/資料夾路徑 (鍵入 '<' 回上一步)",
     "cli_error_path_not_exist": "❌ 錯誤: 輸入路徑不存在！",
     "cli_output_path_prompt": "{} [預設: {}] (鍵入 '<' 回上一步)",
@@ -166,5 +167,12 @@
     "cli_starting_pipeline": "\n-> 正在啟動翻譯管線...\n",
     "cli_pipeline_ended": "\n\n-> 管線運作結束。",
     "cli_pipeline_success": "✅ 恭喜！所有翻譯任務已成功完成。",
-    "cli_pipeline_failed": "❌ 失敗退出: {}"
+    "cli_pipeline_failed": "❌ 失敗退出: {}",
+    "cli_error_input_not_exist": "❌ 錯誤: 輸入路徑不存在 ({})",
+    "cli_detect_headless": "-> 偵測到指令參數，進入靜態 Headless 模式...",
+    "cli_label_provider": "提供商: {}",
+    "cli_label_model": "模型: {}",
+    "cli_label_input": "輸入: {}",
+    "cli_label_output": "輸出: {}",
+    "cli_label_default": "預設"
 }

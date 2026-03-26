@@ -158,6 +158,7 @@
     "cli_fetching_models": "-> Fetching {} model list...",
     "cli_model_fetch_failed": " (⚠️ Unable to fetch list dynamically, please check connection/APIKey)",
     "cli_custom_model_prompt": "Please enter custom model name (type '<' to return to menu)",
+    "cli_api_key_old_hint": "type '<' to use old key / go back",
     "cli_input_path_prompt": "Please select the file/folder path to translate (type '<' to go back)",
     "cli_error_path_not_exist": "❌ Error: Input path does not exist!",
     "cli_output_path_prompt": "{} [Default: {}] (type '<' to go back)",
@@ -166,5 +167,12 @@
     "cli_starting_pipeline": "\n-> Starting translation pipeline...\n",
     "cli_pipeline_ended": "\n\n-> Pipeline operation ended.",
     "cli_pipeline_success": "✅ Congratulations! All translation tasks completed successfully.",
-    "cli_pipeline_failed": "❌ Failed with error: {}"
+    "cli_pipeline_failed": "❌ Failed with error: {}",
+    "cli_error_input_not_exist": "❌ Error: Input path does not exist ({})",
+    "cli_detect_headless": "-> Command line arguments detected, entering static Headless mode...",
+    "cli_label_provider": "Provider: {}",
+    "cli_label_model": "Model: {}",
+    "cli_label_input": "Input: {}",
+    "cli_label_output": "Output: {}",
+    "cli_label_default": "Default"
 }

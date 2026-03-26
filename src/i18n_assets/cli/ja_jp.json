@@ -158,6 +158,7 @@
     "cli_fetching_models": "-> {} のモデル一覧を取得中...",
     "cli_model_fetch_failed": " (⚠️ 一覧を動的に取得できません。接続/APIKey を確認してください)",
     "cli_custom_model_prompt": "カスタムモデル名を入力してください ('<' でメニューに戻る)",
+    "cli_api_key_old_hint": "'<' で既存のキーを使用 / 戻る",
     "cli_input_path_prompt": "翻訳するパス（ファイル/フォルダ）を選択してください ('<' で戻る)",
     "cli_error_path_not_exist": "❌ エラー: 指定されたパスが存在しません！",
     "cli_output_path_prompt": "{} [デフォルト: {}] ('<' で戻る)",
@@ -166,5 +167,12 @@
     "cli_starting_pipeline": "\n-> 翻訳パイプラインを起動しています...\n",
     "cli_pipeline_ended": "\n\n-> パイプラインが終了しました。",
     "cli_pipeline_success": "✅ おめでとうございます！すべての翻訳タスクが正常に完了しました。",
-    "cli_pipeline_failed": "❌ エラーで終了: {}"
+    "cli_pipeline_failed": "❌ エラーで終了: {}",
+    "cli_error_input_not_exist": "❌ エラー: 指定されたパスが存在しません ({})",
+    "cli_detect_headless": "-> 引数を検出。スタティック Headless モードに入ります...",
+    "cli_label_provider": "プロバイダー: {}",
+    "cli_label_model": "モデル: {}",
+    "cli_label_input": "入力: {}",
+    "cli_label_output": "出力: {}",
+    "cli_label_default": "デフォルト"
 }

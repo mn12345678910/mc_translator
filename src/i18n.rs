@@ -150,9 +150,17 @@ pub struct CommonLabels {
     pub status_progress_mask: String,
     pub status_batch_mask: String,
     #[serde(default)]
+    pub status_progress_detailed_mask: String,
+    #[serde(default)]
     pub cleanup_prefixes: Vec<String>,
     #[serde(default)]
     pub cleanup_contains: Vec<String>,
+    #[serde(default)]
+    pub error_read_jar_index: String,
+    #[serde(default)]
+    pub error_read_jar_file: String,
+    #[serde(default)]
+    pub error_pipeline_failed: String,
 }
 
 impl CommonLabels {
@@ -364,6 +372,8 @@ pub struct CliLabels {
     pub cli_fetching_models: String,
     pub cli_model_fetch_failed: String,
     pub cli_custom_model_prompt: String,
+    #[serde(default)]
+    pub cli_api_key_old_hint: String,
     pub cli_input_path_prompt: String,
     pub cli_error_path_not_exist: String,
     pub cli_output_path_prompt: String,
@@ -373,6 +383,20 @@ pub struct CliLabels {
     pub cli_pipeline_ended: String,
     pub cli_pipeline_success: String,
     pub cli_pipeline_failed: String,
+    #[serde(default)]
+    pub cli_error_input_not_exist: String,
+    #[serde(default)]
+    pub cli_detect_headless: String,
+    #[serde(default)]
+    pub cli_label_provider: String,
+    #[serde(default)]
+    pub cli_label_model: String,
+    #[serde(default)]
+    pub cli_label_input: String,
+    #[serde(default)]
+    pub cli_label_output: String,
+    #[serde(default)]
+    pub cli_label_default: String,
 }
 
 // --- 輔助載入規劃 ---
