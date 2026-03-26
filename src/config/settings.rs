@@ -188,6 +188,32 @@ pub struct StyleConfig {
     #[serde(default = "default_light_progress_bg")]
     pub light_progress_bg: [u8; 3],
 
+    // --- [強調色與警告色] ---
+    #[serde(default = "default_dark_accent")]
+    pub dark_accent: [u8; 3],
+    #[serde(default = "default_light_accent")]
+    pub light_accent: [u8; 3],
+    #[serde(default = "default_dark_danger")]
+    pub dark_danger: [u8; 3],
+    #[serde(default = "default_light_danger")]
+    pub light_danger: [u8; 3],
+
+    // --- [透明度設定 (0.0 - 1.0)] ---
+    #[serde(default = "default_alpha_border")]
+    pub border_alpha: f32,
+    #[serde(default = "default_alpha_panel")]
+    pub panel_alpha: f32,
+    #[serde(default = "default_alpha_backdrop")]
+    pub backdrop_alpha: f32,
+
+    // --- [佈局間距] ---
+    #[serde(default = "default_space_sm")]
+    pub space_sm: f32,
+    #[serde(default = "default_space_md")]
+    pub space_md: f32,
+    #[serde(default = "default_space_lg")]
+    pub space_lg: f32,
+
     // --- [造型與動畫] ---
     #[serde(default)]
     pub btn_rounding_enabled: bool,
@@ -327,6 +353,39 @@ fn default_light_progress_bg() -> [u8; 3] {
     [240, 240, 230]
 }
 
+fn default_dark_accent() -> [u8; 3] {
+    [212, 175, 55]
+}
+fn default_light_accent() -> [u8; 3] {
+    [212, 175, 55]
+}
+fn default_dark_danger() -> [u8; 3] {
+    [170, 17, 17]
+}
+fn default_light_danger() -> [u8; 3] {
+    [170, 17, 17]
+}
+
+fn default_alpha_border() -> f32 {
+    0.15
+}
+fn default_alpha_panel() -> f32 {
+    0.03
+}
+fn default_alpha_backdrop() -> f32 {
+    0.6
+}
+
+fn default_space_sm() -> f32 {
+    10.0
+}
+fn default_space_md() -> f32 {
+    15.0
+}
+fn default_space_lg() -> f32 {
+    20.0
+}
+
 fn default_rounding() -> f32 {
     4.0
 }
@@ -382,6 +441,16 @@ impl Default for StyleConfig {
             light_switch_bg: default_light_switch_bg(),
             dark_progress_bg: default_dark_progress_bg(),
             light_progress_bg: default_light_progress_bg(),
+            dark_accent: default_dark_accent(),
+            light_accent: default_light_accent(),
+            dark_danger: default_dark_danger(),
+            light_danger: default_light_danger(),
+            border_alpha: default_alpha_border(),
+            panel_alpha: default_alpha_panel(),
+            backdrop_alpha: default_alpha_backdrop(),
+            space_sm: default_space_sm(),
+            space_md: default_space_md(),
+            space_lg: default_space_lg(),
             btn_rounding_enabled: true,
             btn_rounding_value: default_rounding(),
             progress_pulse_enabled: true,
@@ -424,6 +493,21 @@ impl StyleConfig {
         }
         if self.progress_style.is_empty() {
             self.progress_style = "default".to_string();
+        }
+
+        // --- [新增欄位驗證] ---
+        self.border_alpha = self.border_alpha.clamp(0.0, 1.0);
+        self.panel_alpha = self.panel_alpha.clamp(0.0, 1.0);
+        self.backdrop_alpha = self.backdrop_alpha.clamp(0.0, 1.0);
+
+        if self.space_sm < 0.0 {
+            self.space_sm = 10.0;
+        }
+        if self.space_md < 0.0 {
+            self.space_md = 15.0;
+        }
+        if self.space_lg < 0.0 {
+            self.space_lg = 20.0;
         }
     }
 

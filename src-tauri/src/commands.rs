@@ -248,7 +248,7 @@ pub async fn start_translation(
                         "",
                         cfg_shared.enable_debug_log,
                     );
-                    
+
                     // 同步發送至前端
                     let entry = LogEntry {
                         level: LogLevel::Error,
@@ -439,11 +439,14 @@ pub fn resume_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 config_shared.enable_debug_log,
             );
 
-            let _ = handle.emit("translation-log", LogEntry {
-                level: LogLevel::Info,
-                message: job.i18n.log_resuming.clone(),
-                timestamp: chrono::Local::now().timestamp_millis(),
-            });
+            let _ = handle.emit(
+                "translation-log",
+                LogEntry {
+                    level: LogLevel::Info,
+                    message: job.i18n.log_resuming.clone(),
+                    timestamp: chrono::Local::now().timestamp_millis(),
+                },
+            );
 
             return Ok(());
         }

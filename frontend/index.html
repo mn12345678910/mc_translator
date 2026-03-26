@@ -232,42 +232,62 @@
                 <div class="form-group">
 <label for="palette-target-type" data-i18n="label_palette_target_type"></label>
                     <select id="palette-target-type" style="width: 100%">
-                        <option value="global">Global Style</option>
-                        <option value="specific">Specific Override</option>
+                        <option value="global" data-i18n="group_batch"></option>
+                        <option value="specific" data-i18n="group_specific"></option>
                     </select>
                 </div>
                 <div class="form-group">
 <label for="palette-target-item" data-i18n="label_palette_target_item"></label>
                     <select id="palette-target-item" style="width: 100%">
                         <!-- Global Categories -->
-                        <optgroup label="Global Categories" id="group-global">
-                            <option value="dark_bg">Background Color</option>
-                            <option value="dark_text">Text Color</option>
-                            <option value="dark_label">Label Color</option>
-                            <option value="dark_btn_bg">Button Background</option>
-                            <option value="dark_btn_text">Button Text</option>
-                            <option value="dark_input_bg">Input Background</option>
-                            <option value="dark_list_bg">Log Background</option>
-                            <option value="dark_tab_active">Tab (Active)</option>
-                            <option value="dark_tab_inactive">Tab (Inactive)</option>
+                        <optgroup data-i18n-label="group_batch" id="group-global">
+                            <option value="dark_bg" data-i18n="cat_all_bg"></option>
+                            <option value="dark_text" data-i18n="cat_all_text"></option>
+                            <option value="dark_accent" data-i18n="cat_accent_color"></option>
+                            <option value="dark_danger" data-i18n="cat_danger_color"></option>
+                            <option value="dark_label" data-i18n="cat_all_labels"></option>
+                            <option value="dark_text_muted" data-i18n="cat_text_muted"></option>
+                            <option value="dark_header_bg" data-i18n="cat_header_bg"></option>
+                            <option value="dark_btn_bg" data-i18n="cat_all_buttons"></option>
+                            <option value="dark_btn_text" data-i18n="cat_all_btn_text"></option>
+                            <option value="dark_input_bg" data-i18n="cat_all_inputs"></option>
+                            <option value="dark_list_bg" data-i18n="cat_all_logs"></option>
+                            <option value="dark_tab_active" data-i18n="cat_all_tab_active"></option>
+                            <option value="dark_tab_inactive" data-i18n="cat_all_tab_inactive"></option>
+                            <option value="dark_border_color" data-i18n="cat_border_color"></option>
+                            <option value="dark_hover_bg" data-i18n="cat_hover_bg"></option>
+                            <option value="dark_slider_bg" data-i18n="cat_slider_bg"></option>
+                            <option value="dark_slider_thumb" data-i18n="cat_slider_thumb"></option>
+                            <option value="dark_switch_bg" data-i18n="cat_switch_bg"></option>
+                            <option value="dark_progress_bg" data-i18n="cat_progress_bg"></option>
                         </optgroup>
-                        <!-- Specific Components (透過 JS 控制覆寫) -->
-                        <optgroup label="Specific Components" id="group-specific" style="display: none">
-                            <option value="btn-translate">🚀 Translate</option>
-                            <option value="btn-pause">⏸️ Pause</option>
-                            <option value="btn-stop">⏹️ Stop</option>
-                            <option value="btn-browse-file">📁 Open File</option>
-                            <option value="btn-browse-dir">📁 Open Folder</option>
-                            <option value="btn-browse-output">📁 Browse Output</option>
-                            <option value="btn-browse-output-open">📂 Open Output</option>
-                            <option value="user-prompt">📝 User Prompt</option>
-                            <option value="system-prompt">🔧 System Prompt</option>
-                            <option value="input-path">🔗 Input Path</option>
-                            <option value="output-dir">🔗 Output Path</option>
-                            <option value="dict-dialog">📖 Glossary</option>
-                            <option value="log-output">📋 Log</option>
-                            <option value="progress-bar">📊 File Progress</option>
-                            <option value="batch-progress-bar">📊 Item Progress</option>
+                        <!-- Layout & Params -->
+                        <optgroup data-i18n-label="group_layout" id="group-layout">
+                            <option value="space_sm" data-i18n="label_space_sm"></option>
+                            <option value="space_md" data-i18n="label_space_md"></option>
+                            <option value="space_lg" data-i18n="label_space_lg"></option>
+                            <option value="border_alpha" data-i18n="label_alpha_border"></option>
+                            <option value="panel_alpha" data-i18n="label_alpha_panel"></option>
+                            <option value="backdrop_alpha" data-i18n="label_alpha_backdrop"></option>
+                            <option value="font_size" data-i18n="label_font_size"></option>
+                        </optgroup>
+                        <!-- Specific Components -->
+                        <optgroup data-i18n-label="group_specific" id="group-specific" style="display: none">
+                            <option value="btn-translate" data-i18n="spec_btn_run_trans"></option>
+                            <option value="btn-pause" data-i18n="spec_btn_pause"></option>
+                            <option value="btn-stop" data-i18n="spec_btn_stop"></option>
+                            <option value="btn-browse-file" data-i18n="spec_btn_select_file"></option>
+                            <option value="btn-browse-dir" data-i18n="spec_btn_select_folder"></option>
+                            <option value="btn-browse-output" data-i18n="spec_btn_output_dir"></option>
+                            <option value="btn-browse-output-open" data-i18n="spec_btn_open_output"></option>
+                            <option value="user-prompt" data-i18n="label_user_prompt"></option>
+                            <option value="system-prompt" data-i18n="label_system_prompt"></option>
+                            <option value="input-path" data-i18n="label_input_path"></option>
+                            <option value="output-dir" data-i18n="spec_label_output"></option>
+                            <option value="dict-dialog" data-i18n="spec_area_dict"></option>
+                            <option value="log-output" data-i18n="label_log_area"></option>
+                            <option value="progress-bar" data-i18n="spec_progress_current"></option>
+                            <option value="batch-progress-bar" data-i18n="spec_progress_total"></option>
                         </optgroup>
                     </select>
                 </div>
@@ -275,9 +295,9 @@
                 <div class="form-group" id="palette-property-group" style="display: none">
 <label for="palette-property" data-i18n="label_palette_property"></label>
                     <select id="palette-property" style="width: 100%">
-                        <option value="bg">Background Color</option>
-                        <option value="text">Text Color</option>
-                        <option value="rounding">Rounding</option>
+                        <option value="bg" data-i18n="label_bg_color">Background Color</option>
+                        <option value="text" data-i18n="label_text_color">Text Color</option>
+                        <option value="rounding" data-i18n="label_custom_rounding">Rounding</option>
                     </select>
                 </div>
                 <div class="form-group" id="palette-color-group">
@@ -287,14 +307,12 @@
                         id="palette-color"
                     />
                 </div>
-                <div class="form-group" id="palette-rounding-group" style="display: none">
-<label for="palette-rounding" data-i18n="label_palette_rounding"></label>
+                <div class="form-group" id="palette-number-group" style="display: none">
+<label for="palette-number" id="label-palette-number" data-i18n="label_palette_rounding">Value</label>
                     <input
                         type="number"
-                        id="palette-rounding"
+                        id="palette-number"
                         value="4"
-                        min="0"
-                        max="20"
                         step="1"
                         style="width: 100%"
                     />

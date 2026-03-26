@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const paletteTargetType = document.getElementById('palette-target-type');
     const paletteTargetItem = document.getElementById('palette-target-item');
     const paletteProperty = document.getElementById('palette-property');
-    const paletteRounding = document.getElementById('palette-rounding');
+    const paletteNumber = document.getElementById('palette-number');
     const paletteColor = document.getElementById('palette-color');
 
     if (paletteTargetType) {
@@ -274,15 +274,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if (paletteRounding) {
-        paletteRounding.addEventListener('input', () => {
+    if (paletteNumber) {
+        paletteNumber.addEventListener('input', () => {
             const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
-            const target = paletteTargetItem ? paletteTargetItem.value : 'btn-translate';
-            const val = parseFloat(paletteRounding.value) || 0;
+            const target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
+            const val = parseFloat(paletteNumber.value) || 0;
             if (isSpecific) {
                 if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
                 if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
                 state.currentStyle.instance_overrides[target].rounding = val;
+            } else {
+                // 如果是全域類別（例如 layout 分組中的屬性）
+                state.currentStyle[target] = val;
             }
             applyColors(state.currentStyle);
             debouncedSavePalette();

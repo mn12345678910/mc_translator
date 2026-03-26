@@ -55,73 +55,34 @@ export async function updateUiLanguage() {
 
         const titleNode = document.querySelector('h1 span') || document.querySelector('h1');
         if (titleNode && labels.app_title) titleNode.textContent = labels.app_title;
-
-        // 🟡 舊有 Mapping 映射已移除，全面採用 data-i18n 驅動
-
-        // 🟢 1. 執行屬性驅動的通用映射 (data-i18n)
+        // 🟡 舊有 Mapping 映射已移除，全面採用屬性驅動
+        
+        // 🟢 1. 執行屬性驅動的通用映射 (textContent)
         document.querySelectorAll('[data-i18n]').forEach((el) => {
             const key = el.getAttribute('data-i18n');
             if (labels[key]) el.textContent = labels[key];
         });
 
-        // 🟢 2. 執行屬性驅動的 Placeholder 映射 (data-i18n-placeholder)
+        // 🟢 2. 執行標籤映射 (data-i18n-label for optgroup)
+        document.querySelectorAll('[data-i18n-label]').forEach((el) => {
+            const key = el.getAttribute('data-i18n-label');
+            if (labels[key]) el.label = labels[key];
+        });
+
+        // 🟢 3. 執行 Placeholder 映射 (data-i18n-placeholder)
         document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
             const key = el.getAttribute('data-i18n-placeholder');
             if (labels[key]) el.placeholder = labels[key];
         });
 
-        // 🟢 3. 執行屬性驅動的 Title 懸停提示映射 (data-i18n-title)
+        // 🟢 4. 執行 Title 懸停提示映射 (data-i18n-title)
         document.querySelectorAll('[data-i18n-title]').forEach((el) => {
             const key = el.getAttribute('data-i18n-title');
             if (labels[key]) el.title = labels[key];
         });
 
+        // 移除原有的手動 optionMapping 循環
 
-        const optionMapping = {
-            'palette-target-type': { global: labels.group_batch, specific: labels.group_specific },
-            'api-provider': { Ollama: 'Ollama', 無: labels.label_provider_none },
-            'palette-target-item': {
-                dark_bg: labels.cat_all_bg,
-                dark_label: labels.cat_all_labels,
-                dark_text: labels.cat_all_text || labels.label_text_color,
-                dark_btn_bg: labels.cat_all_buttons,
-                dark_btn_text: labels.cat_all_btn_text,
-                dark_input_bg: labels.cat_all_inputs,
-                dark_list_bg: labels.cat_all_logs,
-                dark_tab_active: labels.cat_all_tab_active,
-                dark_tab_inactive: labels.cat_all_tab_inactive,
-                'btn-translate': labels.spec_btn_run_trans,
-                'btn-pause': labels.spec_btn_pause,
-                'btn-stop': labels.spec_btn_stop,
-                'btn-browse-file': labels.spec_btn_select_file,
-                'btn-browse-dir': labels.spec_btn_select_folder,
-                'btn-browse-output': labels.spec_btn_output_dir,
-                'btn-browse-output-open': labels.spec_btn_open_output,
-                'user-prompt': labels.label_user_prompt,
-                'system-prompt': labels.label_system_prompt,
-                'input-path': labels.label_input_path,
-                'output-dir': labels.spec_label_output,
-                'dict-dialog': labels.spec_area_dict,
-                'log-output': labels.label_log_area,
-                'progress-bar': labels.spec_progress_current,
-                'batch-progress-bar': labels.spec_progress_total,
-            },
-            'palette-property': {
-                bg: labels.label_bg_color,
-                text: labels.label_text_color,
-                rounding: labels.label_custom_rounding,
-            },
-        };
-
-        for (const [selectId, optionsDict] of Object.entries(optionMapping)) {
-            const selectEl = document.getElementById(selectId);
-            if (!selectEl) continue;
-            for (const [val, txt] of Object.entries(optionsDict)) {
-                if (!txt) continue;
-                const opt = selectEl.querySelector(`option[value="${val}"]`);
-                if (opt) opt.textContent = txt;
-            }
-        }
 
         // 已在函式開頭宣告過，直接使用
 

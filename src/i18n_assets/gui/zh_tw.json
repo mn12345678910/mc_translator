@@ -144,6 +144,22 @@
   "status_progress_mask": "⏳ 執行中 ({} / {}) - {}",
   "status_batch_mask": "📦 批次進度 ({} / {})",
   "status_progress_detailed_mask": "({} / {}) ({})",
+  "cleanup_prefixes": [
+    "翻譯：",
+    "譯文：",
+    "註：",
+    "結果：",
+    "Translation:",
+    "Note:",
+    "Result:",
+    "Translated:"
+  ],
+  "cleanup_contains": [
+    "我們已將",
+    "以下是翻譯",
+    "JSON 格式",
+    "請確認"
+  ],
   "error_read_jar_index": "無法讀取 JAR 檔案索引 {}: {}",
   "error_read_jar_file": "無法讀取 JAR 內檔案 {}: {}",
   "error_pipeline_failed": "執行失敗: {}",
@@ -292,20 +308,24 @@
   "style_default": "預設",
   "style_aurora": "極光漸層",
   "style_neon": "玻璃霓虹",
-  "cleanup_prefixes": [
-    "翻譯：",
-    "譯文：",
-    "註：",
-    "結果：",
-    "Translation:",
-    "Note:",
-    "Result:",
-    "Translated:"
-  ],
-  "cleanup_contains": [
-    "我們已將",
-    "以下是翻譯",
-    "JSON 格式",
-    "請確認"
-  ]
+  "cat_accent_color": "強調色 (Accent)",
+  "cat_danger_color": "警告色 (Danger)",
+  "cat_border_color": "邊框顏色",
+  "cat_hover_bg": "懸停背景",
+  "cat_slider_bg": "滾軸背景",
+  "cat_slider_thumb": "滾軸滑塊",
+  "cat_switch_bg": "開關背景",
+  "cat_progress_bg": "進度條背景",
+  "group_layout": "佈局與參數",
+  "label_space_sm": "佈局：小間距",
+  "label_space_md": "佈局：中間距",
+  "label_space_lg": "佈局：大間距",
+  "label_alpha_border": "參數：邊框透明度",
+  "label_alpha_panel": "參數：面板透明度",
+  "label_alpha_backdrop": "參數：遮罩透明度",
+  "palette_label_spacing": "間距數值 (px)",
+  "palette_label_alpha": "透明度 (0.0-1.0)",
+  "palette_label_rounding": "圓角數值 (px)",
+  "status_style_restored": "🎨 介面樣式已恢復預設"
 }
+```

@@ -1,123 +1,50 @@
-// frontend/modules/style.js
-import { state } from './state.js';
-import { rgbToHex } from './utils.js';
+import { invoke } from '@tauri-apps/api/tauri';
+import { state } from '../main.js';
 
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
-
-export async function loadStyle() {
-    const colorBg = document.getElementById('color-bg');
-    const colorText = document.getElementById('color-text');
-    const colorBtnBg = document.getElementById('color-btn-bg');
-    const colorBtnText = document.getElementById('color-btn-text');
-    const fontSize = document.getElementById('font-size');
-    const chkBtnRounding = document.getElementById('chk-btn-rounding');
-    const btnRoundingValue = document.getElementById('btn-rounding-value');
-    const chkPulse = document.getElementById('chk-pulse');
-    const pulseSpeed = document.getElementById('pulse-speed');
-
-    try {
-        const style = await invoke('get_style_config');
-        state.currentStyle = style;
-
-        const isDark = style.theme !== 'light';
-        if (colorBg) colorBg.value = rgbToHex(isDark ? style.dark_bg : style.light_bg);
-        if (colorText) colorText.value = rgbToHex(isDark ? style.dark_text : style.light_text);
-        if (colorBtnBg) colorBtnBg.value = rgbToHex(isDark ? style.dark_btn_bg : style.light_btn_bg);
-        if (colorBtnText) colorBtnText.value = rgbToHex(isDark ? style.dark_btn_text : style.light_btn_text);
-
-        if (style.font_size && fontSize) {
-            fontSize.value = style.font_size;
-            document.documentElement.style.setProperty('--font-size', style.font_size + 'px');
-        }
-        if (chkBtnRounding) chkBtnRounding.checked = style.btn_rounding_enabled;
-        if (btnRoundingValue) btnRoundingValue.value = style.btn_rounding_value;
-        if (chkPulse) chkPulse.checked = style.progress_pulse_enabled;
-        if (pulseSpeed) pulseSpeed.value = style.progress_pulse_speed;
-
-        const progressStyle = document.getElementById('progress-style');
-        if (progressStyle) {
-            progressStyle.value = style.progress_style || 'default';
-            if (!progressStyle.dataset.listenerAdded) {
-                progressStyle.addEventListener('change', (e) => {
-                    if (state.currentStyle) {
-                        state.currentStyle.progress_style = e.target.value;
-                        applyColors(state.currentStyle);
-                    }
-                });
-                progressStyle.dataset.listenerAdded = 'true';
-            }
-        }
-
-        applyColors(style);
-    } catch (e) {
-        console.error(e);
-    }
+// 輔助函數：RGB 轉 Hex
+function rgbToHexStr(arr) {
+    if (!arr || arr.length < 3) return '#1e1e23';
+    return '#' + arr.map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-export async function saveStyle() {
-    const chkBtnRounding = document.getElementById('chk-btn-rounding');
-    const btnRoundingValue = document.getElementById('btn-rounding-value');
-    const chkPulse = document.getElementById('chk-pulse');
-    const pulseSpeed = document.getElementById('pulse-speed');
-    const fsInput = document.getElementById('font-size');
-    const progressStyle = document.getElementById('progress-style');
-
-    const old = state.currentStyle;
-    const parseSafeFloat = (v, f) => { let p = parseFloat(v); return isNaN(p) ? f : p; };
-
-    if (progressStyle) state.currentStyle.progress_style = progressStyle.value;
-    if (chkBtnRounding) state.currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
-    if (btnRoundingValue) state.currentStyle.btn_rounding_value = btnRoundingValue ? parseSafeFloat(btnRoundingValue.value, old.btn_rounding_value || 0.0) : 0.0;
-    if (chkPulse) state.currentStyle.progress_pulse_enabled = chkPulse.checked;
-    if (pulseSpeed) state.currentStyle.progress_pulse_speed = pulseSpeed ? parseSafeFloat(pulseSpeed.value, old.progress_pulse_speed || 1.0) : 1.0;
-    if (fsInput) state.currentStyle.font_size = fsInput ? parseSafeFloat(fsInput.value, old.font_size || 15) : 15;
-
-    await invoke('save_style_config', { config: state.currentStyle });
-    applyColors(state.currentStyle);
+// 輔助函數：Hex 轉 RGB Array
+export function hexToRgbArr(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
 }
 
 export function applyColors(style) {
-    const overrideableIds = [
-        'btn-translate',
-        'btn-pause',
-        'btn-stop',
-        'btn-browse-file',
-        'btn-browse-dir',
-        'btn-browse-output',
-        'btn-browse-output-open',
-        'user-prompt',
-        'system-prompt',
-        'input-path',
-        'output-dir',
-        'dict-dialog',
-        'log-output',
-        'progress-bar',
-        'batch-progress-bar',
-    ];
-    for (const id of overrideableIds) {
-        const targetEl = document.getElementById(id);
-        if (targetEl) {
-            targetEl.style.backgroundColor = '';
-            targetEl.style.color = '';
-            targetEl.style.borderRadius = '';
-        }
-    }
-
-    const progressBar = document.getElementById('progress-bar');
-    const batchProgressBar = document.getElementById('batch-progress-bar');
+    if (!style) return;
+    const root = document.documentElement;
     const isDark = style.theme !== 'light';
-    const backgroundColor = isDark ? style.dark_bg : style.light_bg;
-    const textColor = isDark ? style.dark_text : style.light_text;
-    const buttonBgColor = isDark ? style.dark_btn_bg : style.light_btn_bg;
-    const buttonTextColor = isDark ? style.dark_btn_text : style.light_btn_text;
-    const inputBgColor = isDark ? style.dark_input_bg : style.light_input_bg;
-    const listBgColor = isDark ? style.dark_list_bg : style.light_list_bg;
-    const activeTabBg = isDark ? style.dark_tab_active : style.light_tab_active;
-    const inactiveTabBg = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
-    const labelColor = isDark ? style.dark_label : style.light_label;
+
+    // --- [基礎與強調顏色] ---
+    const bg = isDark ? style.dark_bg : style.light_bg;
+    const text = isDark ? style.dark_text : style.light_text;
+    const accent = isDark ? style.dark_accent : style.light_accent;
+    const danger = isDark ? style.dark_danger : style.light_danger;
+
+    if (bg) root.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
+    if (text) root.style.setProperty('--text-color', `rgb(${text[0]},${text[1]},${text[2]})`);
+    if (accent) root.style.setProperty('--accent-color', `rgb(${accent[0]},${accent[1]},${accent[2]})`);
+    if (danger) root.style.setProperty('--danger-color', `rgb(${danger[0]},${danger[1]},${danger[2]})`);
+
+    // --- [間距系統] ---
+    if (style.space_sm !== undefined) root.style.setProperty('--space-sm', `${style.space_sm}px`);
+    if (style.space_md !== undefined) root.style.setProperty('--space-md', `${style.space_md}px`);
+    if (style.space_lg !== undefined) root.style.setProperty('--space-lg', `${style.space_lg}px`);
+
+    // --- [細部元件] ---
+    const label = isDark ? style.dark_label : style.light_label;
     const textMuted = isDark ? style.dark_text_muted : style.light_text_muted;
-    
-    // [NEW] 擴充細部變數
+    const btnBg = isDark ? style.dark_btn_bg : style.light_btn_bg;
+    const btnText = isDark ? style.dark_btn_text : style.light_btn_text;
+    const inputBg = isDark ? style.dark_input_bg : style.light_input_bg;
+    const listBg = isDark ? style.dark_list_bg : style.light_list_bg;
+    const tabActive = isDark ? style.dark_tab_active : style.light_tab_active;
+    const tabInactive = isDark ? style.dark_tab_inactive : style.light_tab_inactive;
     const headerBg = isDark ? style.dark_header_bg : style.light_header_bg;
     const borderColor = isDark ? style.dark_border_color : style.light_border_color;
     const hoverBg = isDark ? style.dark_hover_bg : style.light_hover_bg;
@@ -126,81 +53,67 @@ export function applyColors(style) {
     const switchBg = isDark ? style.dark_switch_bg : style.light_switch_bg;
     const progressBg = isDark ? style.dark_progress_bg : style.light_progress_bg;
 
-    if (backgroundColor) document.documentElement.style.setProperty('--bg-color', `rgb(${backgroundColor[0]},${backgroundColor[1]},${backgroundColor[2]})`);
-    if (textColor) document.documentElement.style.setProperty('--text-color', `rgb(${textColor[0]},${textColor[1]},${textColor[2]})`);
-    if (buttonBgColor) document.documentElement.style.setProperty('--btn-bg', `rgb(${buttonBgColor[0]},${buttonBgColor[1]},${buttonBgColor[2]})`);
-    if (buttonTextColor) document.documentElement.style.setProperty('--btn-text', `rgb(${buttonTextColor[0]},${buttonTextColor[1]},${buttonTextColor[2]})`);
-    if (inputBgColor)
-        document.documentElement.style.setProperty('--input-bg', `rgb(${inputBgColor[0]},${inputBgColor[1]},${inputBgColor[2]})`);
-    if (listBgColor) document.documentElement.style.setProperty('--list-bg', `rgb(${listBgColor[0]},${listBgColor[1]},${listBgColor[2]})`);
-    if (activeTabBg)
-        document.documentElement.style.setProperty(
-            '--tab-active-bg',
-            `rgb(${activeTabBg[0]},${activeTabBg[1]},${activeTabBg[2]})`
-        );
-    if (inactiveTabBg)
-        document.documentElement.style.setProperty(
-            '--tab-inactive-bg',
-            `rgb(${inactiveTabBg[0]},${inactiveTabBg[1]},${inactiveTabBg[2]})`
-        );
-    if (labelColor)
-        document.documentElement.style.setProperty(
-            '--label-color',
-            `rgb(${labelColor[0]},${labelColor[1]},${labelColor[2]})`
-        );
-    
-    if (textMuted)
-        document.documentElement.style.setProperty(
-            '--text-muted',
-            `rgb(${textMuted[0]},${textMuted[1]},${textMuted[2]})`
-        );
+    if (label) root.style.setProperty('--label-color', `rgb(${label[0]},${label[1]},${label[2]})`);
+    if (textMuted) root.style.setProperty('--text-muted', `rgb(${textMuted[0]},${textMuted[1]},${textMuted[2]})`);
+    if (btnBg) root.style.setProperty('--btn-bg', `rgb(${btnBg[0]},${btnBg[1]},${btnBg[2]})`);
+    if (btnText) root.style.setProperty('--btn-text', `rgb(${btnText[0]},${btnText[1]},${btnText[2]})`);
+    if (inputBg) root.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
+    if (listBg) root.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
+    if (tabActive) root.style.setProperty('--tab-active-bg', `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`);
+    if (tabInactive) root.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
+    if (headerBg) root.style.setProperty('--header-bg', `rgb(${headerBg[0]},${headerBg[1]},${headerBg[2]})`);
+    if (borderColor) {
+        root.style.setProperty('--border-color', `rgb(${borderColor[0]},${borderColor[1]},${borderColor[2]})`);
+        const alpha = style.border_alpha !== undefined ? style.border_alpha : 0.15;
+        root.style.setProperty('--border-light', `rgba(${borderColor[0]},${borderColor[1]},${borderColor[2]},${alpha})`);
+    }
+    if (hoverBg) root.style.setProperty('--hover-bg', `rgb(${hoverBg[0]},${hoverBg[1]},${hoverBg[2]})`);
+    if (sliderBg) root.style.setProperty('--slider-bg', `rgb(${sliderBg[0]},${sliderBg[1]},${sliderBg[2]})`);
+    if (sliderThumb) root.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
+    if (switchBg) root.style.setProperty('--switch-bg', `rgb(${switchBg[0]},${switchBg[1]},${switchBg[2]})`);
+    if (progressBg) root.style.setProperty('--progress-bg', `rgb(${progressBg[0]},${progressBg[1]},${progressBg[2]})`);
 
-    // [NEW] 套用細部變數
-    if (headerBg) document.documentElement.style.setProperty('--header-bg', `rgb(${headerBg[0]},${headerBg[1]},${headerBg[2]})`);
-    if (borderColor) document.documentElement.style.setProperty('--border-color', `rgb(${borderColor[0]},${borderColor[1]},${borderColor[2]})`);
-    if (hoverBg) document.documentElement.style.setProperty('--hover-bg', `rgb(${hoverBg[0]},${hoverBg[1]},${hoverBg[2]})`);
-    if (sliderBg) document.documentElement.style.setProperty('--slider-bg', `rgb(${sliderBg[0]},${sliderBg[1]},${sliderBg[2]})`);
-    if (sliderThumb) document.documentElement.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
-    if (switchBg) document.documentElement.style.setProperty('--switch-bg', `rgb(${switchBg[0]},${switchBg[1]},${switchBg[2]})`);
-    if (progressBg) document.documentElement.style.setProperty('--progress-bg', `rgb(${progressBg[0]},${progressBg[1]},${progressBg[2]})`);
-
-    if (style.font_size) document.documentElement.style.setProperty('--font-size', `${style.font_size}px`);
-
-    if (style.btn_rounding_enabled !== false) {
-        document.documentElement.style.setProperty('--border-radius', `${style.btn_rounding_value}px`);
-    } else {
-        document.documentElement.style.setProperty('--border-radius', '0px');
+    // --- [面板與背景透明度] ---
+    if (bg) {
+        const pAlpha = style.panel_alpha !== undefined ? style.panel_alpha : 0.03;
+        const bAlpha = style.backdrop_alpha !== undefined ? style.backdrop_alpha : 0.6;
+        root.style.setProperty('--panel-bg', `rgba(${bg[0]},${bg[1]},${bg[2]},${pAlpha})`);
+        root.style.setProperty('--backdrop-bg', `rgba(${bg[0]},${bg[1]},${bg[2]},${bAlpha})`);
     }
 
+    // --- [佈局基礎設定] ---
+    if (style.font_size) root.style.setProperty('--font-size', `${style.font_size}px`);
+    if (style.btn_rounding_enabled !== false) {
+        root.style.setProperty('--border-radius', `${style.btn_rounding_value}px`);
+    } else {
+        root.style.setProperty('--border-radius', '0px');
+    }
+
+    // --- [動畫與進度條] ---
+    const progressBar = document.getElementById('progress-bar');
+    const batchProgressBar = document.getElementById('batch-progress-bar');
     if (style.progress_pulse_enabled && progressBar) {
-        const speed = style.progress_pulse_speed;
-        progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, speed)}s infinite`;
+        progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, style.progress_pulse_speed)}s infinite`;
     } else if (progressBar) {
         progressBar.style.animation = 'none';
     }
 
-    /* --- [進度條樣式套用] --- */
     const bars = [progressBar, batchProgressBar];
-    bars.forEach((bar) => {
+    bars.forEach(bar => {
         if (!bar) return;
-        bar.classList.remove('style-aurora', 'style-neon');
-        if (style.progress_style && style.progress_style !== 'default') {
-            bar.classList.add(`style-${style.progress_style}`);
-        }
-        if (bar.id === 'batch-progress-bar') {
-            bar.style.backgroundColor = ''; // 移除 inline 色彩覆蓋
-        }
+        bar.classList.remove('aurora', 'neon');
+        if (style.progress_style === 'aurora') bar.classList.add('aurora');
+        if (style.progress_style === 'neon') bar.classList.add('neon');
     });
 
+    // --- [實例覆寫] ---
     if (style.instance_overrides) {
-        for (const [id, override] of Object.entries(style.instance_overrides)) {
-            const targetEl = document.getElementById(id);
-            if (targetEl) {
-                if (override.bg)
-                    targetEl.style.backgroundColor = `rgb(${override.bg[0]},${override.bg[1]},${override.bg[2]})`;
-                if (override.text) targetEl.style.color = `rgb(${override.text[0]},${override.text[1]},${override.text[2]})`;
-                if (override.rounding !== undefined) targetEl.style.borderRadius = `${override.rounding}px`;
-            }
+        for (const [id, overrides] of Object.entries(style.instance_overrides)) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            if (overrides.bg) el.style.backgroundColor = `rgb(${overrides.bg[0]},${overrides.bg[1]},${overrides.bg[2]})`;
+            if (overrides.text) el.style.color = `rgb(${overrides.text[0]},${overrides.text[1]},${overrides.text[2]})`;
+            if (overrides.rounding !== undefined) el.style.borderRadius = `${overrides.rounding}px`;
         }
     }
 }
@@ -209,84 +122,100 @@ export function updatePaletteValue() {
     const paletteTargetType = document.getElementById('palette-target-type');
     const paletteTargetItem = document.getElementById('palette-target-item');
     const paletteProperty = document.getElementById('palette-property');
-    const paletteClearGroup = document.getElementById('palette-clear-group');
     const palettePropertyGroup = document.getElementById('palette-property-group');
     const paletteColorGroup = document.getElementById('palette-color-group');
-    const paletteRoundingGroup = document.getElementById('palette-rounding-group');
+    const paletteNumberGroup = document.getElementById('palette-number-group');
+    const paletteClearGroup = document.getElementById('palette-clear-group');
+    const paletteNumber = document.getElementById('palette-number');
     const paletteColor = document.getElementById('palette-color');
-    const paletteRounding = document.getElementById('palette-rounding');
+    const labelPaletteNumber = document.getElementById('label-palette-number');
     const labelPaletteColor = document.getElementById('label-palette-color');
 
-    if (!paletteTargetType || !paletteTargetItem) return;
+    if (!paletteTargetType || !paletteTargetItem || !paletteProperty) return;
 
     const isSpecific = paletteTargetType.value === 'specific';
     const target = paletteTargetItem.value;
+    const prop = paletteProperty.value;
 
+    // 更新群組顯示狀態
+    if (paletteClearGroup) paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
+    if (palettePropertyGroup) palettePropertyGroup.style.display = isSpecific ? 'block' : 'none';
+
+    // 判斷是否為數值型項目
+    const isNumberItem = target.startsWith('space_') || target.endsWith('_alpha') || target === 'font_size' || (isSpecific && prop === 'rounding');
+
+    if (paletteColorGroup) paletteColorGroup.style.display = isNumberItem ? 'none' : 'block';
+    if (paletteNumberGroup) paletteNumberGroup.style.display = isNumberItem ? 'block' : 'none';
+
+    if (isNumberItem) {
+        // 設定 Label 與數值
+        if (labelPaletteNumber) {
+            if (target.startsWith('space_')) {
+                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_spacing) ? state.currentLabels.palette_label_spacing : 'Spacing (px)';
+            } else if (target.endsWith('_alpha')) {
+                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_alpha) ? state.currentLabels.palette_label_alpha : 'Alpha (0.0-1.0)';
+            } else if (target === 'font_size') {
+                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.label_font_size) ? state.currentLabels.label_font_size : 'Font Size (px)';
+            } else {
+                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_rounding) ? state.currentLabels.palette_label_rounding : 'Rounding (px)';
+            }
+        }
+        
+        let val = 0;
+        if (isSpecific) {
+            const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
+            val = ov ? (ov.rounding || 4) : 4;
+        } else {
+            val = state.currentStyle[target] || 0;
+        }
+        if (paletteNumber) {
+            paletteNumber.value = val;
+            paletteNumber.step = target.endsWith('_alpha') ? '0.01' : '1';
+        }
+    } else {
+        // 設定顏色預覽
+        if (labelPaletteColor) {
+            labelPaletteColor.textContent = prop === 'bg' 
+                ? ((state.currentLabels && state.currentLabels.label_bg_color) ? state.currentLabels.label_bg_color : 'Background') 
+                : ((state.currentLabels && state.currentLabels.label_text_color) ? state.currentLabels.label_text_color : 'Text');
+        }
+
+        let color = null;
+        if (isSpecific) {
+            const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
+            color = ov ? (prop === 'bg' ? ov.bg : ov.text) : null;
+        } else {
+            color = state.currentStyle[target];
+        }
+        if (paletteColor) paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';
+    }
+
+    // 處理特定元件的文字選項隱藏
     const noTextItems = ['progress-bar', 'batch-progress-bar'];
-    if (isSpecific && paletteProperty) {
+    if (isSpecific) {
         Array.from(paletteProperty.options).forEach((opt) => {
             if (opt.value === 'text') {
-                opt.style.display = noTextItems.includes(target) ? 'none' : 'block';
-                opt.disabled = noTextItems.includes(target);
-                if (noTextItems.includes(target) && paletteProperty.value === 'text') {
-                    paletteProperty.value = 'bg';
-                }
+                const hidden = noTextItems.includes(target);
+                opt.style.display = hidden ? 'none' : 'block';
+                opt.disabled = hidden;
+                if (hidden && paletteProperty.value === 'text') paletteProperty.value = 'bg';
             }
         });
     }
-
-    const prop = paletteProperty ? paletteProperty.value : 'bg';
-
-    if (paletteClearGroup) paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
-
-    function rgbToHexStr(arr) {
-        if (!arr || arr.length < 3) return '#1e1e23';
-        return '#' + arr.map((x) => x.toString(16).padStart(2, '0')).join('');
-    }
-
-    if (!isSpecific) {
-        if (palettePropertyGroup) palettePropertyGroup.style.display = 'none';
-        if (paletteColorGroup) paletteColorGroup.style.display = 'block';
-        if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'none';
-
-        const color = state.currentStyle[target];
-        if (color && paletteColor) paletteColor.value = rgbToHexStr(color);
-    } else {
-        if (palettePropertyGroup) palettePropertyGroup.style.display = 'block';
-        const override = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
-
-        if (prop === 'rounding') {
-            if (paletteColorGroup) paletteColorGroup.style.display = 'none';
-            if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'block';
-            if (paletteRounding)
-                paletteRounding.value = override && override.rounding !== undefined ? override.rounding : 4;
-        } else {
-            if (paletteColorGroup) paletteColorGroup.style.display = 'block';
-            if (paletteRoundingGroup) paletteRoundingGroup.style.display = 'none';
-            if (labelPaletteColor)
-                labelPaletteColor.textContent =
-                    prop === 'bg' ? state.currentLabels.label_bg_color : state.currentLabels.label_text_color;
-
-            let color = override ? (prop === 'bg' ? override.bg : override.text) : null;
-            if (paletteColor) paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';
-        }
-    }
 }
+
 export async function restoreDefaultStyle() {
     try {
         const defaultStyle = await invoke('get_default_style_config');
         
-        // 僅更新樣式相關欄位
         state.currentStyle = {
             ...defaultStyle,
-            show_palette_settings: state.currentStyle.show_palette_settings // 保持面板展開狀態
+            show_palette_settings: state.currentStyle.show_palette_settings
         };
 
-        // 重新套用並儲存
         applyColors(state.currentStyle);
         await invoke('save_style_config', { config: state.currentStyle });
         
-        // 更新 UI 控制項數值
         const fontSize = document.getElementById('font-size');
         const chkBtnRounding = document.getElementById('chk-btn-rounding');
         const btnRoundingValue = document.getElementById('btn-rounding-value');
@@ -301,12 +230,11 @@ export async function restoreDefaultStyle() {
         if (pulseSpeed) pulseSpeed.value = state.currentStyle.progress_pulse_speed;
         if (progressStyle) progressStyle.value = state.currentStyle.progress_style || 'default';
 
-        // 更新調色盤選擇器的數值顯示 (如果有打開的話)
         if (typeof updatePaletteValue === 'function') {
             updatePaletteValue();
         }
 
-        const msg = state.currentLabels.status_style_restored || '介面樣式已恢復預設';
+        const msg = (state.currentLabels && state.currentLabels.status_style_restored) ? state.currentLabels.status_style_restored : '介面樣式已恢復預設';
         console.log(msg);
     } catch (e) {
         console.error('恢復樣式預設失敗:', e);
