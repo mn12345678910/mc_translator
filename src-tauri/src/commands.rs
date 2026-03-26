@@ -2,6 +2,7 @@ use mc_translator::config::dictionary::{
     get_official_dict_path, get_user_dict_path, load_dict, save_dict,
 };
 use mc_translator::config::{settings::StyleConfig, AppConfig};
+use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::job::JobStatus;
 use mc_translator::translation::{LogEntry, LogLevel};
 use mc_translator::utils::helpers::add_log_event;
@@ -747,8 +748,7 @@ pub fn update_active_job_config(config: AppConfig) -> Result<(), String> {
                 // 如果目標語言改變，需要同步更新遺留的前綴與包含規則
                 if job_cfg.target_lang != config.target_lang {
                     job_cfg.target_lang = config.target_lang;
-                    let target_i18n =
-                        mc_translator::i18n::CommonLabels::load_or_default(&job_cfg.target_lang);
+                    let target_i18n = CommonLabels::load_or_default(&job_cfg.target_lang);
                     job_cfg.cleanup_prefixes = target_i18n.cleanup_prefixes;
                     job_cfg.cleanup_contains = target_i18n.cleanup_contains;
 
