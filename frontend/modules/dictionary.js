@@ -130,7 +130,7 @@ export function initDictionary() {
             if (tabOfficial) tabOfficial.classList.remove('active');
             dictPage = 0;
             loadDictionary();
-            
+
             // 顯示使用者編輯元件
             if (dictUserControls) dictUserControls.classList.toggle('hidden', false);
         });

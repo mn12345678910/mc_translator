@@ -144,7 +144,7 @@ describe('style.js 樣式與主題管理模組', () => {
             // 驗證區塊開關
             expect(document.getElementById('palette-property-group').style.display).toBe('none');
             expect(document.getElementById('palette-color-group').style.display).toBe('block');
-            
+
             // 驗證色值帶入
             expect(document.getElementById('palette-color').value).toBe('#0f0f14');
         });
@@ -192,7 +192,7 @@ describe('style.js 樣式與主題管理模組', () => {
 
             const targetType = document.getElementById('palette-target-type');
             const property = document.getElementById('palette-property');
-            
+
             targetType.value = 'specific';
             targetItem.value = 'progress-bar';
 
@@ -206,14 +206,14 @@ describe('style.js 樣式與主題管理模組', () => {
             const targetType = document.getElementById('palette-target-type');
             const targetItem = document.getElementById('palette-target-item');
             const property = document.getElementById('palette-property');
-            
+
             targetType.value = 'specific';
             // 手動加入進度條選項
             const opt = document.createElement('option');
             opt.value = 'progress-bar';
             targetItem.appendChild(opt);
             targetItem.value = 'progress-bar';
-            
+
             property.value = 'text';
 
             styleModule.updatePaletteValue();
@@ -237,5 +237,3 @@ describe('style.js 樣式與主題管理模組', () => {
         });
     });
 });
-
-

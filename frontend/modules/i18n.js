@@ -24,7 +24,7 @@ export async function loadUiLangs() {
                           : l;
             uiLang.appendChild(opt);
         });
-        
+
         if (uiLang && state.currentConfig && state.currentConfig.ui_lang) {
             uiLang.value = state.currentConfig.ui_lang;
         }
@@ -56,7 +56,7 @@ export async function updateUiLanguage() {
         const titleNode = document.querySelector('h1 span') || document.querySelector('h1');
         if (titleNode && labels.app_title) titleNode.textContent = labels.app_title;
         // 🟡 舊有 Mapping 映射已移除，全面採用屬性驅動
-        
+
         // 🟢 1. 執行屬性驅動的通用映射 (textContent)
         document.querySelectorAll('[data-i18n]').forEach((el) => {
             const key = el.getAttribute('data-i18n');
@@ -191,8 +191,8 @@ export function updateToggleStateLabel(id, checked) {
             ? (labels.glossary_priority_user)
             : (labels.glossary_priority_official);
     } else if (id === 'chk-llm-log') {
-        labelEl.textContent = checked 
-            ? (labels.label_enable_log) 
+        labelEl.textContent = checked
+            ? (labels.label_enable_log)
             : (labels.label_disable_log);
     } else if (id === 'chk-skip-json') {
         labelEl.textContent = checked ? (labels.label_skip_json) : (labels.label_no_skip_json);

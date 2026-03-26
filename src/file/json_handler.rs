@@ -20,7 +20,7 @@ pub async fn collect_json_task(
         let content = match fs::read_to_string(&path_clone) {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m", 
+                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m",
                     chrono::Local::now().format("%H:%M:%S"), path_clone, e);
                 return Err(e.into());
             }
@@ -28,7 +28,7 @@ pub async fn collect_json_task(
         let source_value: serde_json::Value = match serde_json::from_str(&content) {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m", 
+                eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m",
                     chrono::Local::now().format("%H:%M:%S"), path_clone, e);
                 return Err(e.into());
             }

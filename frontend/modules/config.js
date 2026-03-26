@@ -187,7 +187,7 @@ export function validateCanTranslate() {
 export async function restoreDefaultConfig() {
     try {
         const defaultConfig = await invoke('get_default_config');
-        
+
         // 僅更新與「API 與翻譯設定」相關的欄位
         state.currentConfig.api_provider = defaultConfig.api_provider;
         state.currentConfig.model = defaultConfig.model;
@@ -202,7 +202,7 @@ export async function restoreDefaultConfig() {
 
         // 金鑰重置為空 (比照預設值)
         await invoke('save_api_key_cmd', { key: '' });
-        
+
         // 重新載入 UI
         const apiProvider = document.getElementById('api-provider');
         const apiKey = document.getElementById('api-key');
@@ -227,7 +227,7 @@ export async function restoreDefaultConfig() {
         toggleOllamaGroup();
         toggleApiKeyVisibility();
         await loadModels();
-        
+
         // 自動儲存變更
         await invoke('save_config', { config: state.currentConfig });
         appendLog(state.currentLabels.status_config_restored || 'API 設定已恢復預設');

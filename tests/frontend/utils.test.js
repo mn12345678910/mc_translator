@@ -6,7 +6,7 @@ describe('utils.js 工具模組', () => {
     beforeAll(async () => {
         // 動態載入
         utilsModule = await import('../../frontend/modules/utils.js');
-        
+
         // 模擬視窗定時器，用於測試 debounce
         vi.useFakeTimers();
     });
@@ -70,7 +70,7 @@ describe('utils.js 工具模組', () => {
 
             const logOutput = document.getElementById('log-output');
             expect(logOutput.childNodes.length).toBe(1);
-            
+
             const logLine = logOutput.querySelector('p');
             expect(logLine.textContent).toContain('測試一則訊息');
         });
@@ -86,14 +86,14 @@ describe('utils.js 工具模組', () => {
 
         it('當日誌數量超過 500，應刪除最舊的項目', () => {
             const logOutput = document.getElementById('log-output');
-            
+
             // 灌入 505 筆
             for(let i=1; i<=505; i++) {
                 utilsModule.appendLog(`訊息 ${i}`);
             }
 
             expect(logOutput.childNodes.length).toBe(500);
-            
+
             // 最舊的應該已經被刪除，第一個節點應該不會是 "訊息 1"
             expect(logOutput.firstChild.textContent).not.toContain('訊息 1');
             expect(logOutput.lastChild.textContent).toContain('訊息 505');
@@ -112,4 +112,3 @@ describe('utils.js 工具模組', () => {
         });
     });
 });
-

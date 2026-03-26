@@ -24,10 +24,10 @@ export function appendLog(entry) {
     if (!logOutput) return;
 
     // 支援舊版字串輸入
-    let data = typeof entry === 'string' ? { 
-        level: 'Info', 
-        message: entry, 
-        timestamp: Date.now() 
+    let data = typeof entry === 'string' ? {
+        level: 'Info',
+        message: entry,
+        timestamp: Date.now()
     } : { ...entry };
 
     // 額外相容舊版：如果訊息包含 ❌ 或 Error，自動升級為 Error 等級（用於測試相容性與直接字串呼叫）

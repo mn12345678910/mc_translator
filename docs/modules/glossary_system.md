@@ -38,14 +38,14 @@
 graph TD
     Start([啟動 / 設定切換]) --> Load[載入字典]
     Load --> CheckPriority{"優先級設定 (glossary_priority)"}
-    
+
     CheckPriority -- 1. 官方優先 --> OfficialFirst["1. 優先載入 官方/推論 詞庫"] --> FillUser["2. 常規填入 使用者詞庫<br/>不覆蓋已存在 Key"]
     CheckPriority -- 2. 使用者優先 --> UserFirst["1. 優先載入 使用者 詞庫"] --> FillOfficial["2. 常規填入 官方/推論 詞庫<br/>不覆蓋已存在 Key"]
 
-    
+
     FillUser --> BuildAho[建立 Aho-Corasick 自動機]
     FillOfficial --> BuildAho
-    
+
     BuildAho --> End([術語系統 Ready])
 ```
 
@@ -57,16 +57,15 @@ graph TD
 graph TD
     Start([掃描原文文本]) --> MatchNode{"找到符合的術語 Key?"}
     MatchNode -- 否 --> Skip[跳過]
-    
+
     MatchNode -- 是 --> CheckCase{"大小寫是否不敏感相符?"}
     CheckCase -- 否 --> Skip
-    
+
     CheckCase -- 是 --> CheckBoundary{"是否在英文字體邊界?<br/>(避免單字內匹配)"}
     CheckBoundary -- 否 --> Skip
-    
+
     CheckBoundary -- 是 --> CheckLongest{"當前是否為「最長匹配」?<br/>(LeftmostLongest)"}
     CheckLongest -- 否 --> Skip
-    
+
     CheckLongest -- 是 --> Valid[標記為有效術語建議] --> AppendPrompt[注入翻譯提示詞]
 ```
-

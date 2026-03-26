@@ -23,4 +23,3 @@
 - 先寫入 `LLMTranslator/temp_translator` 作為資源包暫存
 - 窗口完成後立即輸出鏡像檔案
 - 全部完成後產出 `LLMTranslator.zip`
-

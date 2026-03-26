@@ -30,7 +30,7 @@ describe('i18n.js 介面語言模組', () => {
             </select>
             <button id="btn-translate"></button>
         `;
-        
+
         // 重設 Mock 控制器
         mockInvoke.mockReset();
         stateModule.state.currentLabels = {}; // 清空 State
@@ -38,7 +38,7 @@ describe('i18n.js 介面語言模組', () => {
 
     it('loadUiLangs 應該填入所有基本語言選單', async () => {
         mockInvoke.mockResolvedValue(['en_us']); // 後端僅支援 en_us
-        
+
         await i18nModule.loadUiLangs();
 
         const select = document.getElementById('ui-lang');
@@ -97,18 +97,18 @@ describe('i18n.js 介面語言模組', () => {
     it('updateUiLanguage 應該在 labels 缺失時支援 Fallback 備援', async () => {
         const mockLabels = {
             app_title: 'MCTitle',
-            label_provider: 'Provider', 
+            label_provider: 'Provider',
         };
         mockInvoke.mockResolvedValue(mockLabels);
 
         const labelEl = document.createElement('label');
-        labelEl.setAttribute('for', 'api-provider'); 
-        labelEl.setAttribute('data-i18n', 'label_provider'); 
+        labelEl.setAttribute('for', 'api-provider');
+        labelEl.setAttribute('data-i18n', 'label_provider');
         document.body.appendChild(labelEl);
 
         await i18nModule.updateUiLanguage();
 
-        expect(labelEl.textContent).toBe('Provider'); 
+        expect(labelEl.textContent).toBe('Provider');
     });
 
     it('updateToggleStateLabel 應該正確更新所有開關文字', () => {
@@ -214,7 +214,7 @@ describe('i18n.js 介面語言模組', () => {
             <button id="btn-translate" data-i18n="btn_run_trans"></button>
             <button id="btn-save-config" data-i18n="btn_save_config"></button>
             <button id="header-api-settings" data-i18n="header_api_settings"></button>
-            
+
             <!-- label[for] -->
             <label for="api-provider" data-i18n="label_provider"></label>
             <label for="selected-model" data-i18n="label_model"></label>
@@ -304,7 +304,3 @@ describe('i18n.js 介面語言模組', () => {
         });
     });
 });
-
-
-
-

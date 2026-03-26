@@ -112,7 +112,7 @@ describe('config.js 設定管理模組', () => {
         expect(document.getElementById('output-dir').value).toBe('/test/output');
         expect(document.getElementById('system-prompt').value).toBe('System rule');
         expect(document.getElementById('user-prompt').value).toBe('User prompt');
-        
+
         expect(document.getElementById('chk-skip-json').checked).toBe(true);
         expect(document.getElementById('chk-skip-js').checked).toBe(true);
         expect(document.getElementById('chk-skip-jar').checked).toBe(false);
@@ -202,4 +202,3 @@ describe('config.js 設定管理模組', () => {
         });
     });
 });
-

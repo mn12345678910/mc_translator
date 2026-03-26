@@ -63,7 +63,7 @@ export function initTranslation() {
             try {
                 // 確保從 DOM 取出最新狀態
                 state.currentConfig.path = inputPath ? inputPath.value : '';
-                
+
                 let outDir = outputDir ? outputDir.value.trim() : '';
                 state.currentConfig.output_dir = outDir;
 
@@ -77,9 +77,9 @@ export function initTranslation() {
                 }
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
 
-                await invoke('start_translation', { 
+                await invoke('start_translation', {
                     config: state.currentConfig,
-                    inputPaths: [state.currentConfig.path] 
+                    inputPaths: [state.currentConfig.path]
                 });
             } catch (e) {
                 appendLog({
@@ -151,7 +151,7 @@ export function initTranslation() {
         listen('translation-finished', (event) => {
             const data = event.payload; // { success: bool, msg: "..." }
             setRunningState(false);
-            
+
             if (data.success) {
                 if (progressBar) progressBar.style.width = '100%';
                 const batchProgress = document.getElementById('batch-progress-bar');
@@ -161,13 +161,13 @@ export function initTranslation() {
                 const batchProgress = document.getElementById('batch-progress-bar');
                 if (batchProgress) batchProgress.style.width = '0%';
             }
-            
+
             // 結束時更新狀態
             if (statusText)
                 statusText.textContent = data.success
                     ? state.currentLabels.status_finished
                     : state.currentLabels.status_failed_or_cancelled;
-            
+
             // 清空批次狀態與當前處理路徑標籤 (避免殘留舊資訊)
             const batchText = document.getElementById('batch-status-text');
             if (batchText) batchText.textContent = '';

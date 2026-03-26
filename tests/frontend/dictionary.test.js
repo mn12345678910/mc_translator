@@ -92,7 +92,7 @@ describe('dictionary.js 字典管理模組', () => {
     it('loadDictionary 應該獲取字典條目並渲染成 HTML 表格', async () => {
         // 模擬 Query 回傳：[ items, totalPages ]
         mockInvoke.mockResolvedValue([
-            [['apple', '蘋果'], ['banana', '香蕉']], 
+            [['apple', '蘋果'], ['banana', '香蕉']],
             2 // 總頁數
         ]);
 
@@ -165,13 +165,13 @@ describe('dictionary.js 字典管理模組', () => {
     it('點擊表格內的刪除按鈕，點按確認後應調用刪除 API', async () => {
         stateModule.state.currentLabels.status_dict_item_delete_confirm = '刪除 {}?';
         mockInvoke.mockResolvedValue([[['apple', '蘋果']], 1]);
-        globalThis.confirm.mockReturnValue(true); 
+        globalThis.confirm.mockReturnValue(true);
 
         await dictionaryModule.loadDictionary();
 
         const container = document.getElementById('dict-table-container');
         const deleteBtn = container.querySelector('.delete-item');
-        
+
         await deleteBtn.dispatchEvent(new Event('click'));
 
         expect(mockInvoke).toHaveBeenCalledWith('edit_dictionary_item', {
@@ -185,7 +185,7 @@ describe('dictionary.js 字典管理模組', () => {
         stateModule.state.currentLabels.status_dict_key_empty = 'Key cannot be empty';
         dictionaryModule.initDictionary();
 
-        document.getElementById('dict-input-key').value = ''; 
+        document.getElementById('dict-input-key').value = '';
         document.getElementById('dict-input-value').value = '貓咪';
 
         const addBtn = document.getElementById('btn-dict-add');
@@ -195,7 +195,7 @@ describe('dictionary.js 字典管理模組', () => {
     });
 
     it('點擊匯入按鈕應開啟路徑選擇並觸發 import', async () => {
-        mockInvoke.mockResolvedValue('C:/test.json'); 
+        mockInvoke.mockResolvedValue('C:/test.json');
         dictionaryModule.initDictionary();
 
         const importBtn = document.getElementById('btn-dict-import');
@@ -267,18 +267,18 @@ describe('dictionary.js 字典管理模組', () => {
         it('點擊分頁上一頁應遞減頁碼並加載字典', async () => {
              // 假設當前在第二頁 (page 1)
              // 為了設定 page，我們先模擬 next 的點擊
-             mockInvoke.mockResolvedValue([[['A', 'B']], 3]); 
-             
-             await dictionaryModule.loadDictionary(); 
-             
+             mockInvoke.mockResolvedValue([[['A', 'B']], 3]);
+
+             await dictionaryModule.loadDictionary();
+
              dictionaryModule.initDictionary();
              const nextBtn = document.getElementById('page-next');
              await nextBtn.dispatchEvent(new Event('click')); // 點擊下一頁，此時 page = 1
-             
+
              const prevBtn = document.getElementById('page-prev');
              // 模擬 page-prev 的 EventListener 運作
-             await prevBtn.dispatchEvent(new Event('click')); 
-             
+             await prevBtn.dispatchEvent(new Event('click'));
+
              expect(mockInvoke).toHaveBeenLastCalledWith('query_dictionary', expect.objectContaining({
                   page: 0
              }));
@@ -303,7 +303,7 @@ describe('dictionary.js 字典管理模組', () => {
                   if (cmd === 'query_dictionary') return [[], 1]; // 避免 loadDictionary 拋出 TypeError
                   return null;
              });
-             
+
              dictionaryModule.initDictionary();
 
              const tabUser = document.getElementById('tab-user');
@@ -324,7 +324,7 @@ describe('dictionary.js 字典管理模組', () => {
                   if (cmd === 'query_dictionary') return [[], 1]; // 預留 fallback
                   return null;
              });
-             
+
              dictionaryModule.initDictionary();
 
              const exportBtn = document.getElementById('btn-dict-export');
@@ -399,13 +399,13 @@ describe('dictionary.js 字典管理模組', () => {
         });
 
         it('當 label_page_info 格式不符合預期應採取 fallback 行為', async () => {
-            stateModule.state.currentLabels.label_page_info = '第 {} 頁'; 
+            stateModule.state.currentLabels.label_page_info = '第 {} 頁';
             mockInvoke.mockResolvedValue([[['apple', '蘋果']], 2]);
 
             await dictionaryModule.loadDictionary();
 
             const pageInfo = document.getElementById('page-info');
-            expect(pageInfo.textContent).toBe('第 1 頁'); 
+            expect(pageInfo.textContent).toBe('第 1 頁');
         });
 
         it('點擊導航欄字典按鈕應開啟 Dialog 並加載字典', async () => {
@@ -421,8 +421,3 @@ describe('dictionary.js 字典管理模組', () => {
         });
     });
 });
-
-
-
-
-

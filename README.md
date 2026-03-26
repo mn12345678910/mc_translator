@@ -160,4 +160,3 @@ cargo build --release --bin mc_translator_cli
 - 測試策略：`docs/guides/testing_strategy.md`
 - 維護日誌：`docs/guides/MAINTENANCE_LOG.md`
 - Git 指南：`docs/guides/GIT_GITHUB_GUIDE.md`
-

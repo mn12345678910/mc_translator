@@ -27,17 +27,17 @@
 graph TD
     Main["主畫面 (Main Window)"] --> ToggleSettings["點擊 ⚙"]
     ToggleSettings --> SettingsPanel["API 設定面板 (控制區域展開)"]
-    
+
     Main --> ToggleDict["點擊 📖"]
     ToggleDict --> DictManager["字典管理器 <dialog> 彈窗"]
     subgraph DictManager_In ["字典管理器分頁"]
         UserTab["分頁 1：使用者詞庫"]
         OfficialTab["分頁 2：官方推論詞庫"]
     end
-    
+
     Main --> TogglePalette["點擊 🎨"]
     TogglePalette --> PalettePanel[調色盤面板]
-    
+
     OfficialTab --> Edit[編輯條目] --> SaveToUser["轉存至 使用者詞庫"]
 ```
 

@@ -160,7 +160,7 @@ export function updatePaletteValue() {
                 labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_rounding) ? state.currentLabels.palette_label_rounding : 'Rounding (px)';
             }
         }
-        
+
         let val = 0;
         if (isSpecific) {
             const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
@@ -175,8 +175,8 @@ export function updatePaletteValue() {
     } else {
         // 設定顏色預覽
         if (labelPaletteColor) {
-            labelPaletteColor.textContent = prop === 'bg' 
-                ? ((state.currentLabels && state.currentLabels.label_bg_color) ? state.currentLabels.label_bg_color : 'Background') 
+            labelPaletteColor.textContent = prop === 'bg'
+                ? ((state.currentLabels && state.currentLabels.label_bg_color) ? state.currentLabels.label_bg_color : 'Background')
                 : ((state.currentLabels && state.currentLabels.label_text_color) ? state.currentLabels.label_text_color : 'Text');
         }
 
@@ -207,7 +207,7 @@ export function updatePaletteValue() {
 export async function restoreDefaultStyle() {
     try {
         const defaultStyle = await invoke('get_default_style_config');
-        
+
         state.currentStyle = {
             ...defaultStyle,
             show_palette_settings: state.currentStyle.show_palette_settings
@@ -215,7 +215,7 @@ export async function restoreDefaultStyle() {
 
         applyColors(state.currentStyle);
         await invoke('save_style_config', { config: state.currentStyle });
-        
+
         const fontSize = document.getElementById('font-size');
         const chkBtnRounding = document.getElementById('chk-btn-rounding');
         const btnRoundingValue = document.getElementById('btn-rounding-value');

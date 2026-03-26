@@ -47,4 +47,3 @@ strip = true
 [dev-dependencies]
 wiremock = "0.5"
 # 沿用現有依賴或新增測試與 Mocked 必要項
-
