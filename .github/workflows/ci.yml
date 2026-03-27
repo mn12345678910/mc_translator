@@ -13,6 +13,9 @@ env:
   RUSTC_WRAPPER: sccache
   SCCACHE_GHA_ENABLED: "true"
 
+permissions:
+  contents: write
+
 jobs:
   # 1. Fast Checks (Lint, Formatting, Security Audit)
   lint-and-audit:
