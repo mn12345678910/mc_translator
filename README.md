@@ -4,13 +4,14 @@
 
 > [!NOTE]
 > 安全須知:
-> 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。
+> 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存。
+> 但本工具100%由AI撰寫，請自行評估風險，如有疑慮請使用Ollama本地模型等不需要API Key的翻譯服務。
 
 > [!IMPORTANT]
 > 翻譯品質須知:
 > 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請"不要"將輸出內容直接提交給模組作者。
 
-`mc_translator` 是一款為 Minecraft 整合包與模組本地化設計的工具，支援 **Windows GUI** 與 **純命令列 CLI** 兩種操作模式。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
+`mc_translator` 是一款為 Minecraft 整合包與模組本地化設計的工具，支援 **GUI** 與 **純命令列 CLI** 兩種操作模式。它能掃描 JAR、JSON、JS，將可翻譯字串交由 LLM 或第三方翻譯服務處理，並輸出為資源包或原路徑鏡像檔案。
 
 **支援的翻譯服務**
 - Gemini
@@ -48,7 +49,7 @@
 **5) 進度與控制**
 - 條目進度、檔案進度、批次進度
 - 支援暫停、繼續、停止
-- 🟢 [NEW] **實時組態更新**：翻譯過程中可隨時調整模型參數或 Prompt，恢復後立即生效
+- 實時組態更新：翻譯過程中可隨時調整模型參數或 Prompt，恢復後立即生效
 
 **6) 樣式同步與 UI 自訂 (Style Sync)**
 - 支援即時預覽深色/淺色主題
@@ -127,30 +128,6 @@
 | `--ollama-url <URL>` | 自訂 Ollama API 位址 |
 | `--enable-debug-log` | 啟用開發者偵錯日誌 (.log) |
 | `-h, --help` | 列出幫助說明 |
-
-## 打包發布 (從原始碼)
-
-**1) GUI 單一執行檔編譯 (Tauri)**
-在專案根目錄下運行：
-```powershell
-npx @tauri-apps/cli build
-```
-產出的「純免安裝 `.exe`」通常位於根目錄 `target/release/mc_translator.exe`。
-*(註：Tauri 預設也會在 `src-tauri/target/release/bundle/nsis/` 產生安裝包。)*
-
-**2) CLI 單檔編譯**
-```powershell
-cargo build --release --bin mc_translator_cli
-```
-
-## 開發與測試
-
-**1) 前端測試 (Vitest)**
-- 首次使用需安裝依賴：`npm install`
-- 執行測試：`npm run test:frontend`
-
-**2) 後端與整合測試 (Cargo)**
-- 執行本機單元、參數與 E2E 整合測試：`cargo test --all-targets`
 
 ---
 
