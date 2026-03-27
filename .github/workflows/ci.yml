@@ -179,10 +179,7 @@ jobs:
           # Generating changelog via git-cliff in a step before or using the integrated body?
           # We'll use git-cliff to generate a body first.
           includeFiles: |
-            target/release/mc_translator_gui_win_x64.exe
-            target/release/mc_translator_cli_win_x64.exe
-            target/release/mc_translator_gui_linux_x64
-            target/release/mc_translator_cli_linux_x64
+            target/release/mc_translator_*
 
       - name: Generate Changelog (git-cliff)
         if: matrix.platform == 'windows-latest' # Generate only once
