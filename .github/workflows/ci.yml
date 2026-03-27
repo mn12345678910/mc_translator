@@ -1,0 +1,162 @@
+name: Unified CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+  RUSTC_WRAPPER: sccache
+  SCCACHE_GHA_ENABLED: "true"
+
+jobs:
+  # 1. Fast Checks (Lint, Formatting, Security Audit)
+  lint-and-audit:
+    name: Lint & Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Install Sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+      - name: Run Clippy (Linter)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Security Audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: License & Duplicate Check (Deny)
+        uses: EmbarkStudios/cargo-deny-action@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          cache: 'npm'
+      - name: Frontend Lint
+        run: |
+          npm ci
+          npm run lint
+
+  # 2. Multi-platform Core Testing
+  test:
+    name: Test on ${{ matrix.os }}
+    needs: lint-and-audit
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install Sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+      - name: Setup Node.js (for frontend tests if needed)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          cache: 'npm'
+      - name: Install Node Dependencies
+        run: npm ci
+      - name: Install Nextest
+        uses: taiki-e/install-action@nextest
+      - name: Run Rust Tests (Nextest)
+        run: cargo nextest run --workspace --all-targets
+      - name: Run Frontend Tests (Vitest)
+        if: matrix.os == 'ubuntu-latest'
+        run: npx vitest run --coverage
+
+  # 3. Scheduled Miri Analysis (Weekly)
+  miri:
+    name: Miri Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install Rust (Nightly)
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - name: Run Miri
+        run: cargo miri test --workspace
+        env:
+          MIRIFLAGS: "-Zmiri-disable-isolation"
+
+  # 4. Multi-platform Build & Release
+  build-and-release:
+    name: Build & Release on ${{ matrix.platform }}
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'ubuntu-22.04'
+          - platform: 'windows-latest'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # git-cliff needs full history
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          cache: 'npm'
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      - name: Install Sccache
+        uses: mozilla-actions/sccache-action@v0.0.6
+      - name: Install Frontend Dependencies
+        run: npm ci
+      - name: Build CLI & GUI with Tauri Action
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "mc_translator ${{ github.ref_name }}"
+          # Generating changelog via git-cliff in a step before or using the integrated body?
+          # We'll use git-cliff to generate a body first.
+
+      - name: Generate Changelog (git-cliff)
+        if: matrix.platform == 'windows-latest' # Generate only once
+        uses: orhun/git-cliff-action@v4
+        id: git-cliff
+        with:
+          config: cliff.toml
+          args: --verbose --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - name: Update GitHub Release with Changelog
+        if: matrix.platform == 'windows-latest'
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.git-cliff.outputs.content }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

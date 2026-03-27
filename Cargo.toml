@@ -1,6 +1,6 @@
 [package]
 name = "mc_translator"
-version = "0.7.3"
+version = "0.7.4"
 license = "MIT"
 edition = "2021"
 default-run = "mc_translator_cli"
