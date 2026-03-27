@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/tauri';
+const { invoke } = window.__TAURI__.core;
 import { state } from './state.js';
 
 // 輔助函數：RGB 轉 Hex
