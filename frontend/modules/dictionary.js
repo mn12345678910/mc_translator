@@ -61,7 +61,7 @@ export async function loadDictionary() {
         if (dictTableContainer) dictTableContainer.innerHTML = html;
 
         document.querySelectorAll('.dict-input').forEach((dictInputEl) => {
-            dictInputEl.addEventListener('change', async (event) => {
+            dictInputEl.addEventListener('change', async () => {
                 const dictKey = dictInputEl.getAttribute('data-key');
                 const dictValue = dictInputEl.value;
                 await invoke('edit_dictionary_item', { key: dictKey, value: dictValue, delete: false });
@@ -89,7 +89,6 @@ export async function loadDictionary() {
 
 export function initDictionary() {
     const btnNavDict = document.getElementById('btn-nav-dict');
-    const dictDialog = document.getElementById('dict-dialog');
     const tabUser = document.getElementById('tab-user');
     const tabOfficial = document.getElementById('tab-official');
     const dictSearch = document.getElementById('dict-search');
