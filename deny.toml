@@ -4,7 +4,7 @@
 [advisories]
 # v2 中 vulnerability/unsound/notice 等欄位已移除，違規 advisory 一律報錯
 # unmaintained 的值為範圍: all | workspace | transitive | none
-unmaintained = "warn"
+unmaintained = "all"
 # yanked: deny | warn | allow
 yanked = "deny"
 ignore = [
