@@ -6,12 +6,13 @@
 
 ## 核心模組
 
-- `src-tauri/`：Tauri 後端與前端互動
-- `src/cli/`：CLI 介面與互動選單設計 (dialoguer, clap)
-- `src/translation/`：共享狀態控制 (`job.rs`)、LLM 介接、術語提示，以及共通管線控制 (`pipeline.rs`)
-- `src/file/`：檔案掃描、JAR/JSON/JS 處理、輸出封裝
-- `src/config/`：設定檔與字典存取
-- `src/utils/`：文字處理、跳過規則、日誌輔助
+- `src-tauri/`：Tauri 後端與前端互動指令 (`commands.rs`)、視窗狀態管理
+- `src/cli/`：CLI 介面、互動式選單與全參數靜態執行模式
+- `src/translation/`：共享狀態控制 (`job.rs`)、LLM 介介 (`pipeline.rs`, `batching.rs`)、翻譯記憶體與術語注入
+- `src/file/`：檔案掃描、JAR/JSON/JS/手冊處理、資源包 (pack_gen) 輸出
+- `src/config/`：提供 `AppConfig` 與 `StyleConfig` 標準化、字典 (`dictionary.rs`) 快取機制
+- `src/i18n.rs`：Backend-to-Frontend 統一國際化結構定義
+- `src/utils/`：文字脫敏、跳過規則、日誌輔助工具
 
 ## 執行流程
 

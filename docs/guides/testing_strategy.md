@@ -24,6 +24,7 @@
 
 - 單元測試放在各檔案 `mod tests` 內
 - 整合測試放在 `tests/`
+- **國際化一致性**: `tests/i18n_consistency.rs` 確保所有語言資產 (JSON) 的鍵值與後端 `CommonLabels` 結構完全契合。
 
 ## 注意事項
 

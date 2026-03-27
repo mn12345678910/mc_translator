@@ -63,8 +63,9 @@ graph TD
 
 - `settings/config.cfg` 儲存主要設定。
 - 通過系統憑證鏈 (Keyring) 儲存 `API_KEY`。
-- `settings/style.cfg` 儲存外觀樣式設定。
+- `settings/style.cfg` 儲存外觀樣式、調色盤、圓角與動畫設定。
 - 主視窗與字典管理器視窗會在幾何變動時即時同步並儲存。
+- **動態更新**：`update_active_job_config` 指令允許在不中止任務的情況下更新執行中的任務組態。
 - `on_exit` 會觸發保存，避免異常關閉時遺失設定。
 
 ## 模型與啟動檢查
