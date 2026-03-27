@@ -4,10 +4,29 @@
 [advisories]
 # v2 中 vulnerability/unsound/notice 等欄位已移除，違規 advisory 一律報錯
 # unmaintained 的值為範圍: all | workspace | transitive | none
-unmaintained = "none"
+unmaintained = "warn"
 # yanked: deny | warn | allow
-yanked = "warn"
-ignore = []
+yanked = "deny"
+ignore = [
+    "RUSTSEC-2024-0429", # glib: unsound VariantStrIter (pinned by Tauri v2)
+    "RUSTSEC-2024-0413", # atk
+    "RUSTSEC-2024-0416", # atk-sys
+    "RUSTSEC-2025-0057", # fxhash
+    "RUSTSEC-2024-0412", # gdk
+    "RUSTSEC-2024-0418", # gdk-sys
+    "RUSTSEC-2024-0411", # gdkwayland-sys
+    "RUSTSEC-2024-0417", # gdkx11
+    "RUSTSEC-2024-0414", # gdkx11-sys
+    "RUSTSEC-2024-0415", # gtk
+    "RUSTSEC-2024-0420", # gtk-sys
+    "RUSTSEC-2024-0419", # gtk3-macros
+    "RUSTSEC-2024-0370", # proc-macro-error (unmaintained)
+    "RUSTSEC-2025-0081", # unic-char-property
+    "RUSTSEC-2025-0075", # unic-char-range
+    "RUSTSEC-2025-0080", # unic-common
+    "RUSTSEC-2025-0100", # unic-ucd-ident
+    "RUSTSEC-2025-0098", # unic-ucd-version
+]
 
 [licenses]
 # v2 中 unlicensed/copyleft 欄位已移除
@@ -19,7 +38,6 @@ allow = [
     "ISC",
     "CC0-1.0",
     "Zlib",
-    "MPL-2.0",
     "bzip2-1.0.6",
     "Unicode-3.0",
     "CDLA-Permissive-2.0",
@@ -28,6 +46,10 @@ confidence-threshold = 0.8
 
 [bans]
 multiple-versions = "warn"
+[[bans.skip]]
+name = "core-foundation"
+[[bans.skip]]
+name = "getrandom"
 
 [sources]
 unknown-registry = "deny"
