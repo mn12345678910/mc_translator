@@ -20,6 +20,7 @@ allow = [
     "CC0-1.0",
     "Zlib",
     "MPL-2.0",
+    "bzip2-1.0.6",
     "Unicode-3.0",
     "CDLA-Permissive-2.0",
 ]

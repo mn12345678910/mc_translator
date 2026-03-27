@@ -72,8 +72,8 @@ async fn test_process_all_files_multi_types() {
     {
         let file = std::fs::File::create(&jar_path).unwrap();
         let mut zip = zip::ZipWriter::new(file);
-        let options = zip::write::FileOptions::default();
-        zip.start_file("assets/minecraft/lang/en_us.json", options)
+        let options = zip::write::FileOptions::<()>::default();
+        zip.start_file::<_, ()>("assets/minecraft/lang/en_us.json", options)
             .unwrap();
         zip.write_all(r#"{"menu.play": "Play"}"#.as_bytes())
             .unwrap();

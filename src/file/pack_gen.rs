@@ -218,7 +218,7 @@ pub async fn output_resource_pack(
 
             let zip_file = fs::File::create(&zip_path)?;
             let mut zip_out = zip::ZipWriter::new(zip_file);
-            let options = zip::write::FileOptions::default()
+            let options = zip::write::FileOptions::<()>::default()
                 .compression_method(zip::CompressionMethod::Deflated);
 
             for dir_entry in walkdir::WalkDir::new(&temp_dir) {
@@ -230,7 +230,7 @@ pub async fn output_resource_pack(
                         .unwrap()
                         .to_string_lossy()
                         .replace('\\', "/");
-                    zip_out.start_file(relative_path, options)?;
+                    zip_out.start_file::<_, ()>(relative_path, options)?;
                     let mut file = fs::File::open(path)?;
                     std::io::copy(&mut file, &mut zip_out)?;
                 }
