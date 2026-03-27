@@ -145,7 +145,6 @@ impl CommonLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(deny_unknown_fields)]
 pub struct GuiLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
@@ -261,7 +260,6 @@ pub struct GuiLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(deny_unknown_fields)]
 pub struct CliLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
