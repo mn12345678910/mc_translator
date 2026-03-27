@@ -51,8 +51,8 @@ jobs:
           cache: 'npm'
       - name: Frontend Lint
         run: |
-          npm ci
-          npm run lint
+          pnpm install --frozen-lockfile
+          pnpm lint
 
   # 2. Multi-platform Core Testing
   test:
@@ -74,20 +74,24 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
       - name: Install Sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
       - name: Setup Node.js (for frontend tests if needed)
         uses: actions/setup-node@v4
         with:
           node-version: 'latest'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install Node Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Install Nextest
         uses: taiki-e/install-action@nextest
       - name: Run Rust Tests (Nextest)
         run: cargo nextest run --workspace --all-targets
       - name: Run Frontend Tests (Vitest)
         if: matrix.os == 'ubuntu-latest'
-        run: npx vitest run --coverage
+        run: pnpm vitest run --coverage
 
   # 3. Scheduled Miri Analysis (Weekly)
   miri:
@@ -136,7 +140,7 @@ jobs:
       - name: Install Sccache
         uses: mozilla-actions/sccache-action@v0.0.9
       - name: Install Frontend Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build CLI & GUI with Tauri Action
         uses: tauri-apps/tauri-action@v2
         env:
