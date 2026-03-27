@@ -26,6 +26,9 @@ jobs:
     - name: Lint Frontend
       run: npm run lint
 
+    - name: Check Tauri API Sync
+      run: npm run check-tauri
+
     - name: Run Tests with Coverage
       run: npx vitest run --coverage
 
