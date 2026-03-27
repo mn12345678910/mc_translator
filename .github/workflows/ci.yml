@@ -155,18 +155,20 @@ jobs:
       - name: Install Frontend Dependencies
         run: pnpm install --frozen-lockfile
       - name: Build CLI & GUI
-        run: pnpm tauri build --no-bundle
+        run: |
+          pnpm tauri build --no-bundle
+          cargo build --release --bin mc_translator_cli
       - name: Rename Binaries (Windows)
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          mv target/release/app.exe target/release/mc_translator_gui_win_x64.exe
-          mv target/release/mc_translator_cli.exe target/release/mc_translator_cli_win_x64.exe
+          if (Test-Path target/release/app.exe) { mv target/release/app.exe target/release/mc_translator_gui_win_x64.exe }
+          if (Test-Path target/release/mc_translator_cli.exe) { mv target/release/mc_translator_cli.exe target/release/mc_translator_cli_win_x64.exe }
       - name: Rename Binaries (Linux)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          mv target/release/app target/release/mc_translator_gui_linux_x64
-          mv target/release/mc_translator_cli target/release/mc_translator_cli_linux_x64
+          [ -f target/release/app ] && mv target/release/app target/release/mc_translator_gui_linux_x64 || echo "GUI not found"
+          [ -f target/release/mc_translator_cli ] && mv target/release/mc_translator_cli target/release/mc_translator_cli_linux_x64 || echo "CLI not found"
       - name: Release Standalone Binaries
         uses: tauri-apps/tauri-action@v0
         env:
