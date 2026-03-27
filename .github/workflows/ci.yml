@@ -169,20 +169,8 @@ jobs:
         run: |
           [ -f target/release/app ] && mv target/release/app target/release/mc_translator_gui_linux_x64 || echo "GUI not found"
           [ -f target/release/mc_translator_cli ] && mv target/release/mc_translator_cli target/release/mc_translator_cli_linux_x64 || echo "CLI not found"
-      - name: Release Standalone Binaries
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "mc_translator ${{ github.ref_name }}"
-          # Generating changelog via git-cliff in a step before or using the integrated body?
-          # We'll use git-cliff to generate a body first.
-          includeFiles: |
-            target/release/mc_translator_*
-
       - name: Generate Changelog (git-cliff)
-        if: matrix.platform == 'windows-latest' # Generate only once
+        if: matrix.platform == 'windows-latest'
         uses: orhun/git-cliff-action@v4
         id: git-cliff
         with:
@@ -191,11 +179,15 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
-      - name: Update GitHub Release with Changelog
-        if: matrix.platform == 'windows-latest'
+      - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.git-cliff.outputs.content }}
           tag_name: ${{ github.ref_name }}
+          name: "mc_translator ${{ github.ref_name }}"
+          body: ${{ steps.git-cliff.outputs.content || 'Release standalone binaries' }}
+          files: |
+            target/release/mc_translator_*
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
