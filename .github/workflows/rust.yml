@@ -50,6 +50,8 @@ jobs:
       with:
         tool: cargo-nextest,cargo-udeps
     - name: Unused Dependencies (Udeps)
+      env:
+        RUSTC_BOOTSTRAP: 1
       run: cargo udeps --workspace --all-targets
     - name: Run Tests (Nextest)
       run: cargo nextest run --workspace --all-targets
