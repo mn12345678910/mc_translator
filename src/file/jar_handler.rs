@@ -250,10 +250,10 @@ pub fn repack_jar(
             let mut buffer = Vec::new();
             entry.read_to_end(&mut buffer)?;
 
-            let options = zip::write::FileOptions::default()
+            let options = zip::write::FileOptions::<()>::default()
                 .compression_method(zip::CompressionMethod::Deflated);
 
-            zip_out.start_file(name, options)?;
+            zip_out.start_file::<_, ()>(name, options)?;
             zip_out.write_all(&buffer)?;
         }
 
@@ -266,9 +266,9 @@ pub fn repack_jar(
             } else {
                 name.clone()
             };
-            zip_out.start_file(
+            zip_out.start_file::<_, ()>(
                 actual_name,
-                zip::write::FileOptions::default()
+                zip::write::FileOptions::<()>::default()
                     .compression_method(zip::CompressionMethod::Deflated),
             )?;
             zip_out.write_all(content.as_bytes())?;
@@ -350,16 +350,16 @@ mod tests {
         {
             let file = std::fs::File::create(&file_path).unwrap();
             let mut zip = zip::ZipWriter::new(file);
-            let options = zip::write::FileOptions::default()
+            let options = zip::write::FileOptions::<()>::default()
                 .compression_method(zip::CompressionMethod::Stored);
 
-            zip.start_file("assets/minecraft/lang/en_us.json", options)
+            zip.start_file::<_, ()>("assets/minecraft/lang/en_us.json", options)
                 .unwrap();
             zip.write_all(r#"{"menu.play": "Play", "menu.options": "Options"}"#.as_bytes())
                 .unwrap();
 
             // 增加 patchouli_books 測試路徑
-            zip.start_file(
+            zip.start_file::<_, ()>(
                 "assets/minecraft/patchouli_books/guide/en_us/book.json",
                 options,
             )
@@ -408,15 +408,15 @@ mod tests {
         {
             let file = std::fs::File::create(&source_path).unwrap();
             let mut zip = zip::ZipWriter::new(file);
-            let options = zip::write::FileOptions::default();
+            let options = zip::write::FileOptions::<()>::default();
 
-            zip.start_file("assets/minecraft/lang/en_us.json", options)
+            zip.start_file::<_, ()>("assets/minecraft/lang/en_us.json", options)
                 .unwrap();
             zip.write_all(r#"{"menu.play": "Play"}"#.as_bytes())
                 .unwrap();
 
             // 增加 patchouli_books
-            zip.start_file(
+            zip.start_file::<_, ()>(
                 "assets/minecraft/patchouli_books/guide/en_us/book.json",
                 options,
             )
