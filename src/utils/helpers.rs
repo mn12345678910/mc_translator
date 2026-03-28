@@ -11,21 +11,37 @@ use std::sync::{Arc, Mutex};
 use super::{GlossaryEntry, TermType};
 
 pub fn extract_display_path(path: &Path) -> String {
-    let path_str = path.to_string_lossy();
-    if let Some(pos) = path_str.find("assets") {
+    let path_str = path.to_string_lossy().replace('\\', "/");
+    let filename = path.file_name().unwrap_or_default().to_string_lossy();
+
+    // 1. 嘗試搜尋 assets/<modid>/
+    if let Some(pos) = path_str.find("assets/") {
         let after_assets = &path_str[pos + 7..];
-        let parts: Vec<&str> = after_assets
-            .split(['/', '\\'])
-            .filter(|s| !s.is_empty())
-            .collect();
-        if parts.len() >= 2 {
-            return format!("{}/{}", parts[0], parts.last().unwrap_or(&"en_us.json"));
+        let mut parts = after_assets.split('/');
+        if let Some(modid) = parts.next() {
+            if !modid.is_empty() {
+                return format!("[{}] {}", modid, filename);
+            }
         }
     }
-    path.file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string()
+
+    // 2. 嘗試搜尋 data/<modid>/ (常用於 Patchouli 或系統資源)
+    if let Some(pos) = path_str.find("data/") {
+        let after_data = &path_str[pos + 5..];
+        let mut parts = after_data.split('/');
+        if let Some(modid) = parts.next() {
+            if !modid.is_empty() {
+                return format!("[{}] {}", modid, filename);
+            }
+        }
+    }
+
+    // 3. Fallback: 使用父目錄名稱
+    if let Some(parent) = path.parent().and_then(|p| p.file_name()) {
+        format!("[{}] {}", parent.to_string_lossy(), filename)
+    } else {
+        filename.to_string()
+    }
 }
 
 pub fn get_log_dir() -> PathBuf {
@@ -173,23 +189,30 @@ mod tests {
     #[test]
     fn test_extract_display_path_standard() {
         let path = std::path::Path::new("some/assets/minecraft/lang/en_us.json");
-        assert_eq!(extract_display_path(path), "minecraft/en_us.json");
+        assert_eq!(extract_display_path(path), "[minecraft] en_us.json");
+    }
+
+    #[test]
+    fn test_extract_display_path_data() {
+        let path =
+            std::path::Path::new("data/botania/patchouli_books/lexicon/en_us/entries/test.json");
+        assert_eq!(extract_display_path(path), "[botania] test.json");
     }
 
     /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_extract_display_path_utf8_edge() {
         // 包含中文字元與空白
-        let path = std::path::Path::new("assets/範例 目錄/en_us.json");
-        assert_eq!(extract_display_path(path), "範例 目錄/en_us.json");
+        let path = std::path::Path::new("assets/範例 目錄/lang/zh_tw.json");
+        assert_eq!(extract_display_path(path), "[範例 目錄] zh_tw.json");
     }
 
     /// 3. 強韌性與異常處理（健壯性 / 負向案例）
     #[test]
     fn test_extract_display_path_fallback() {
-        // 沒有 assets 的路徑，應直接顯示檔名
+        // 沒有 assets 的路徑，應顯示 [父目錄] 檔案名
         let path = std::path::Path::new("usr/local/bin/lang.json");
-        assert_eq!(extract_display_path(path), "lang.json");
+        assert_eq!(extract_display_path(path), "[bin] lang.json");
     }
 
     #[test]

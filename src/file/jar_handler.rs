@@ -167,7 +167,7 @@ pub async fn collect_jar_tasks(
             skip_memory: false,
             pause_notifier: state.pause_notifier.clone(),
             i18n: &state.i18n,
-            filename: name.clone(),
+            filename: crate::utils::helpers::extract_display_path(Path::new(&name)),
         });
 
         engine::collect_translatable_strings(&source_value, &target_base, None, &mut pending, &ctx);

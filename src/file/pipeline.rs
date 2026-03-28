@@ -264,21 +264,13 @@ pub async fn process_all_files(
             .unwrap_or("")
             .eq_ignore_ascii_case("jar")
         {
-            let jar_name = source_path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy();
             let first_rel = group_tasks
                 .first()
                 .map(|t| t.rel_path.as_str())
                 .unwrap_or("");
-            format!("{} -> {}", jar_name, first_rel)
+            crate::utils::helpers::extract_display_path(Path::new(first_rel))
         } else {
-            let parent = source_path.parent().unwrap_or(&source_path);
-            format!(
-                "{}/",
-                parent.file_name().unwrap_or_default().to_string_lossy()
-            )
+            crate::utils::helpers::extract_display_path(&source_path)
         };
 
         if let Ok(mut p) = state.current_processing_path.lock() {

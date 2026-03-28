@@ -62,7 +62,7 @@ pub async fn collect_json_task(
         cancelled: state.cancelled.clone(),
         paused: state.paused.clone(),
         current_log: state.log.clone(),
-        filename: rel_path.clone(),
+        filename: crate::utils::helpers::extract_display_path(path),
         translation_memory: state.translation_memory.clone(),
         skip_memory: false,
         pause_notifier: state.pause_notifier.clone(),
