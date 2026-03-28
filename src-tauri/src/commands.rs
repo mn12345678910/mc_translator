@@ -420,14 +420,6 @@ pub fn pause_translation(handle: tauri::AppHandle) -> Result<(), String> {
             }
             let _ = handle.emit("job-state-changed", JobStatus::Paused);
 
-            // 同步廣發至前端
-            let entry = LogEntry {
-                level: LogLevel::Warn,
-                message: job.i18n.log_pause_requested.clone(),
-                timestamp: chrono::Local::now().timestamp_millis(),
-            };
-            let _ = handle.emit("translation-log", entry);
-
             return Ok(());
         }
     }
@@ -458,15 +450,6 @@ pub fn resume_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 *status = JobStatus::Running;
             }
             let _ = handle.emit("job-state-changed", JobStatus::Running);
-
-            let _ = handle.emit(
-                "translation-log",
-                LogEntry {
-                    level: LogLevel::Info,
-                    message: job.i18n.log_resuming.clone(),
-                    timestamp: chrono::Local::now().timestamp_millis(),
-                },
-            );
 
             return Ok(());
         }
@@ -499,14 +482,6 @@ pub fn stop_translation(handle: tauri::AppHandle) -> Result<(), String> {
                 *status = JobStatus::Idle;
             }
             let _ = handle.emit("job-state-changed", JobStatus::Idle);
-
-            // 同步廣發至前端
-            let entry = LogEntry {
-                level: LogLevel::Error,
-                message: job.i18n.log_stopped.clone(),
-                timestamp: chrono::Local::now().timestamp_millis(),
-            };
-            let _ = handle.emit("translation-log", entry);
 
             return Ok(());
         }

@@ -14,7 +14,7 @@ Remove-Item -Path "LLMTranslator" -Recurse -Force -ErrorAction SilentlyContinue
 
 # 2. Rust 代碼品質檢查
 // turbo
-2. 執行格式檢查與靜態分析：
+2. 執行格式檢查與靜態分析（若格式檢查失敗，請執行 `cargo fmt --all`）：
 ```pwsh
 cargo fmt --all --check
 cargo clippy --all-targets --all-features -- -D warnings
@@ -22,9 +22,9 @@ cargo clippy --all-targets --all-features -- -D warnings
 
 # 3. 安全性與授權審核
 // turbo
-3. 檢查依賴項安全性與授權合規性：
+3. 檢查依賴項安全性與授權合規性（`cargo-audit` 若未安裝可選）：
 ```pwsh
-cargo audit
+if (Get-Command cargo-audit -ErrorAction SilentlyContinue) { cargo audit } else { Write-Host "Skipping cargo audit (tool not installed)" }
 cargo deny check
 ```
 

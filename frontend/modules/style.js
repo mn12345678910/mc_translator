@@ -101,9 +101,9 @@ export function applyColors(style) {
     const bars = [progressBar, batchProgressBar];
     bars.forEach(bar => {
         if (!bar) return;
-        bar.classList.remove('aurora', 'neon');
-        if (style.progress_style === 'aurora') bar.classList.add('aurora');
-        if (style.progress_style === 'neon') bar.classList.add('neon');
+        bar.classList.remove('style-aurora', 'style-neon');
+        if (style.progress_style === 'aurora') bar.classList.add('style-aurora');
+        if (style.progress_style === 'neon') bar.classList.add('style-neon');
     });
 
     // --- [實例覆寫] ---

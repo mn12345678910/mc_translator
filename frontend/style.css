@@ -695,6 +695,7 @@ input:checked + .slider:before {
     flex: 1 !important;
     overflow-y: auto !important;
     min-height: 150px;
+    max-height: 40vh;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background-color: var(--input-bg);

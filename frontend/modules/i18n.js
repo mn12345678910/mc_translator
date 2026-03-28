@@ -165,7 +165,7 @@ export async function updateUiLanguage() {
         }
 
         // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
-        const allSwitches = ['chk-glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log'];
+        const allSwitches = ['chk-glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log', 'chk-debug-log'];
         allSwitches.forEach(id => {
             const toggleEl = document.getElementById(id);
             if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
@@ -202,5 +202,7 @@ export function updateToggleStateLabel(id, checked) {
         labelEl.textContent = checked ? (labels.label_skip_jar) : (labels.label_no_skip_jar);
     } else if (id === 'chk-skip-book') {
         labelEl.textContent = checked ? (labels.label_skip_book) : (labels.label_no_skip_book);
+    } else if (id === 'chk-debug-log') {
+        labelEl.textContent = checked ? (labels.label_enable_debug_log) : (labels.label_disable_debug_log);
     }
 }
