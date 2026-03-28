@@ -6,6 +6,7 @@ pub const DEFAULT_LANG: &str = "zh_tw";
 
 // --- 重構後之共通結構體 ---
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct CommonLabels {
     pub app_title: String,
     pub label_output_path: String,
@@ -145,6 +146,7 @@ impl CommonLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct GuiLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
@@ -260,6 +262,7 @@ pub struct GuiLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
 pub struct CliLabels {
     #[serde(flatten)]
     pub common: CommonLabels,

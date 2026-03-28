@@ -17,6 +17,7 @@ const UI_STATUS = {
  */
 function getFormConfig() {
     return {
+        ...state.currentConfig,
         api_provider: document.getElementById('api-provider')?.value || '無',
         api_base_url: document.getElementById('api-base-url')?.value || '',
         ollama_url: document.getElementById('ollama-url')?.value || 'http://localhost:11434',

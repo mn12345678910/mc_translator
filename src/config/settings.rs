@@ -12,6 +12,7 @@ pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯�
 
 /// 核心功能設定檔 (config.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct AppConfig {
     /// API 金鑰（Gemini / OpenAI）
     #[serde(skip)]
@@ -98,6 +99,7 @@ pub struct AppConfig {
 
 /// 外觀與視覺設定檔 (style.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default)]
 pub struct StyleConfig {
     #[serde(alias = "主題顏色")]
     pub theme: String,
