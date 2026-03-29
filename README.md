@@ -2,7 +2,7 @@
 
 [![codecov](https://codecov.io/gh/mn12345678910/mc_translator/graph/badge.svg)](https://codecov.io/gh/mn12345678910/mc_translator)
 
-> [!WARN]
+> [!WARNING]
 > 安全須知:
 > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存。
 > 但本工具 100% 由 AI 撰寫，請自行評估風險，如有疑慮請使用 Ollama 本地模型等不需要 API Key 的翻譯服務。
