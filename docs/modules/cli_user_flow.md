@@ -1,44 +1,31 @@
-# CLI 使用者操作流程 (User Flow)
+# CLI 運作流程
 
-本文件展現 `mc_translator_cli` 的互動式操作生命週期與導覽支援。
+CLI 提供兩種模式: headless 參數模式與互動式導覽。
 
-## 流程圖
+## Headless 參數模式
 
-```mermaid
-graph TD
-    Start([1. 啟動 mc_translator_cli]) --> Step1[2. 選擇介面語言 Select UI Language]
-    Step1 --> Step2[3. 選擇 API 提供商 Provider]
+- 當使用 `-i/--input` 時即進入 headless 模式
+- 以參數覆蓋設定檔值
+- 直接啟動翻譯流程
 
-    Step2 -- 按上一步 --> Step1
-    Step2 --> CondKey{4. 是否需 API Key?}
+## 互動式導覽流程
 
-    CondKey -- 是 (Gemini/OpenAI...) --> Step3[5. 輸入 API Key]
-    CondKey -- 否 (Ollama/Google Free) --> Step4
+步驟概覽:
 
-    Step3 -- 按上一步 --> Step2
-    Step3 --> Step4[6. 選擇模型 Model]
+1. 選擇介面語言
+2. 選擇 API 服務商
+3. 輸入 API Key (Ollama 與 Google Free 會跳過)
+4. 選擇模型 (支援動態拉取或自訂輸入)
+5. 選擇輸入路徑
+6. 選擇輸出資料夾
+7. 確認與開始
 
-    Step4 -- 按上一步 --> Step3
-    Step4 --> Step5[7. 輸入待翻譯檔案/資料夾路徑]
+## 重要行為
 
-    Step5 -- 按上一步 --> Step4
-    Step5 --> Step6[8. 確認輸出資料夾]
+- 介面語言與設定會即時寫入 `settings/config.cfg`
+- 取消可回到前一步
+- 翻譯完成後可選擇進行新任務
 
-    Step6 -- 按上一步 --> Step5
-    Step6 --> Step7[9. 確認開始 / 進階設定]
+## 相關檔案
 
-    Step7 -- 按上一步 --> Step6
-    Step7 --> Run([10. 呼叫底層 Pipeline 執行翻譯])
-
-    Run --> Finish{11. 翻譯完成，是否開啟新任務?}
-
-    Finish -- 否 (離開) --> End([程式結束])
-    Finish -- 是 (開啟新任務) --> LoopBack[12. 循環回歸]
-
-    LoopBack --> Step5
-```
-
-> [!TIP]
-> **導覽連動規則**：
-> - 在各步驟按下 **上一步** 會穩定依照歷史歷程退至前一個實質節點（絕不重複來回）。
-> - 開啟新任務時，會保留前置 Provider/Model 狀態，直接從 **Step 5 (輸入檔案)** 恢復詢問。若在此時退回，將順暢連接至 **Step 4 (模型)**。
+- [src/cli/main.rs](/src/cli/main.rs)

@@ -1,6 +1,6 @@
 # 測試策略
 
-本專案以單元測試為主，重點放在純函式與邏輯模組。
+本專案以單元測試與輕量整合測試為主，重點在純函式、流程邏輯與前端互動。
 
 ## 三向測試原則
 
@@ -8,25 +8,30 @@
 2. 邊界與 UTF-8
 3. 異常與防呆 (Robustness)
 
-## 建議覆蓋範圍
+## 測試覆蓋範圍
 
-- `utils/text_processing.rs`：前後處理、循環偵測
-- `utils/skip_rules.rs`：跳過規則
-- `translation/glossary/automaton.rs`：術語匹配
-- `translation/api/client.rs`：JSON 抽取與容錯
+- [src/utils/text_processing.rs](/src/utils/text_processing.rs): 前後處理、格式保護、無限循環偵測
+- [src/utils/skip_rules.rs](/src/utils/skip_rules.rs): 跳過規則判斷
+- [src/translation/glossary/automaton.rs](/src/translation/glossary/automaton.rs): 術語匹配與優先序
+- [src/translation/api/client.rs](/src/translation/api/client.rs): 回應解析與容錯
+- [src/file/*](/src/file/*): JSON/JS/JAR 解析與輸出
+- [src/translation/*](/src/translation/*): 批次翻譯與降級重試
+- [tests/](/tests/): 整合測試與流程測試
+- [tests/frontend/](/tests/frontend/): 前端 DOM 與 Tauri invoke 行為
 
 ## 測試工具鏈
 
-- **後端 (Rust)**: 使用標準 `cargo test`。E2E 整合測試會自動啟動本地 `TcpListener` 模擬 API 連線與回應。
-- **前端 (JavaScript)**: 使用 `Vitest` + `Happy DOM` 環境。設定位於 `vitest.config.js`，主要藉由 Mocking 隔離 Tauri `invoke` 等 API 進行 DOM 交互渲染驗證。
+- Rust: `cargo test`
+- Frontend: `vitest run` (設定在 `vitest.config.js`)
 
 ## 測試位置
 
-- 單元測試放在各檔案 `mod tests` 內
-- 整合測試放在 `tests/`
-- **國際化一致性**: `tests/i18n_consistency.rs` 確保所有語言資產 (JSON) 的鍵值與後端 `CommonLabels` 結構完全契合。
+- 單元測試在各模組 `mod tests` 內
+- 整合測試在 `tests/` 目錄
+- 前端測試在 [tests/frontend/](/tests/frontend/)
 
 ## 注意事項
 
-- 網路與 API 相關測試建議以 `#[ignore]` 控制
-- 需要檔案 I/O 的測試請使用臨時目錄
+- 需網路的測試應避免依賴真實服務，使用 mock server
+- 需檔案 I/O 的測試請使用臨時目錄
+- i18n 一致性由 [tests/i18n_consistency.rs](/tests/i18n_consistency.rs) 驗證

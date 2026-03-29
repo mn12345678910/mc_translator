@@ -1,74 +1,50 @@
 # 狀態管理
 
-## AppState 結構
+本專案以 `JobSharedState` 作為翻譯流程的共享狀態容器，並由 GUI/CLI 共同使用。
 
-`AppState` 是 UI 與背景任務的核心狀態容器，保存翻譯流程、UI 控制、設定與字典管理器狀態。
+## JobStatus
 
-**主要狀態來源**
-- 原子狀態：`is_processing`、`is_paused`、`is_cancelled`、進度數值
-- 互斥狀態：日誌、狀態文字、目前處理路徑
-- 設定鏡像：API 參數、批次參數、主題、視窗位置、以及 `ui_lang` (介面語系)
+- `Idle`: 待機
+- `Running`: 翻譯進行中
+- `Paused`: 已暫停
 
-## 任務狀態流程
+## 共享狀態組成
 
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Scanning: 開始翻譯
-    Scanning --> Running: 建立批次完成
-    Running --> Paused: 使用者暫停
-    Paused --> Running: 使用者繼續
-    Running --> Finished: 全部完成
-    Running --> Cancelled: 使用者停止
-    Paused --> Cancelled: 使用者停止
-    Finished --> Idle
-    Cancelled --> Idle
-```
+- 進度: `progress`, `progress_total`, `global_progress`, `global_total`
+- 控制: `cancelled`, `paused`, `pause_notifier`
+- 當前狀態: `current_state`, `current_processing_path`
+- 日誌: `log`
+- 翻譯記憶體: `translation_memory` (執行期用)
+- 設定快照: `config`
+- i18n: `CommonLabels`
 
-## 執行緒同步與資料流模型
+## GUI 狀態同步
 
-以下說明「Tauri 前端 (HTML/JS)」與「後端背景任務執行緒」如何透過 **IPC (Invoke)** 與 **事件 (Events)** 安全地同步狀態。
+GUI 透過 Tauri 事件與 command 呼叫同步狀態。
 
-```mermaid
-graph TD
-    subgraph UI_Frontend ["Tauri 前端 (HTML/JS)"]
-        A[JS Render Loop] --> B{觸發 Invoke}
-        B --> C["發送 start_translation, save_config"]
-        D[監聽 Emitter] <-- "接收 translation-log / progress" --- E[Event Listener]
-    end
+- [job-state-changed](job-state-changed): `Idle` / `Running` / `Paused`
+- [translation-progress](translation-progress): 進度條與狀態訊息
+- [translation-batch-update](translation-batch-update): 批次進度
+- [translation-log](translation-log): 日誌事件
+- [translation-finished](translation-finished): 完成/失敗通知
 
-    subgraph Backend_Thread ["背景任務執行緒 (Tauri/Tokio)"]
-        F[Tauri Command] --> G[Pipeline 執行範疇]
-        G --> H["使用 Arc<Mutex> / Atomic 控制共用狀態 (JobSharedState)"]
-        H --> I["發送 app.emit() 即時更新給前端"]
-        G --> J["監聽 取消/暫停 信號"]
-    end
+## 暫停與繼續
 
-    C -- "tauri::invoke" --> F
-    I -.-> D
+- `pause_translation`: 將 `paused` 設為 true 並送出警告日誌
+- `resume_translation`: 更新 config 快照後解除暫停
+- 暫停中允許修改設定，下一批次會生效
 
-    style UI_Frontend fill:#e6f3ff,stroke:#333,stroke-width:1px
-    style Backend_Thread fill:#fff2e6,stroke:#333,stroke-width:1px
-```
+## 停止
 
+- `stop_translation`: 將 `cancelled` 設為 true
+- pipeline 會在安全點停止並回到 `Idle`
 
-## 同步與併發
+## CLI 狀態呈現
 
-- `AtomicBool/AtomicU32` 供 UI 即時讀取。
-- `Arc<Mutex<...>>` 用於跨執行緒共享字串與日誌。
-- 任務透過 `runtime.spawn` 執行，避免阻塞 UI。
-- I/O 與重度工作使用 `spawn_blocking` 包裹。
+CLI 以標準輸出顯示:
 
-## 持久化策略
+- 進度條與百分比
+- 批次條目數
+- 狀態文字
 
-- `settings/config.cfg` 儲存主要設定。
-- 通過系統憑證鏈 (Keyring) 儲存 `API_KEY`。
-- `settings/style.cfg` 儲存外觀樣式、調色盤、圓角與動畫設定。
-- 主視窗與字典管理器視窗會在幾何變動時即時同步並儲存。
-- **動態更新**：`update_active_job_config` 指令允許在不中止任務的情況下更新執行中的任務組態。
-- `on_exit` 會觸發保存，避免異常關閉時遺失設定。
-
-## 模型與啟動檢查
-
-- 除 `Google Free` 外，未選模型會阻止啟動並寫入日誌。
-- 服務商切換時會清空目前模型並重新載入清單。
+CLI 不使用 GUI 事件機制，而是直接在 `start_translation_workflow` 注入回呼。

@@ -1,17 +1,26 @@
 # 翻譯記憶體與使用者詞庫
 
-## 檔案位置
+本文件說明目前的翻譯記憶體與使用者詞庫行為。
 
-- 使用者詞庫：`dicts/user/{ui_lang}.json`
-- 推論詞庫：`dicts/official/{ui_lang}.json`
+## 使用者詞庫
 
-## 使用方式
+- 路徑: `dicts/user/{ui_lang}.json`
+- 由 GUI 建議詞管理器維護
+- 支援新增、編輯、刪除、匯入、匯出
+- 變更會立即寫回檔案
 
-- 使用者詞庫由字典管理器維護
-- 支援新增、編輯、刪除、匯入、匯出、批次取代
-- 變更會立即寫回 `dicts/user/{ui_lang}.json`
+## 推論詞庫
 
-## 在翻譯流程中的角色
+- 路徑: `dicts/official/{ui_lang}.json`
+- 由官方詞庫推論後生成
 
-- 使用者詞庫會參與 Glossary 建議
-- 只作提示，不會直接替換原文
+## 翻譯記憶體 (執行期)
+
+- `translation_memory` 目前為執行期記憶體結構
+- 未做持久化或自動學習
+- 主要用於 Glossary 提示流程中的參考資料
+
+## 相關連結
+
+- [術語系統](glossary_system.md)
+- [UI 交互](../ui/interactions.md)

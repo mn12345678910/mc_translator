@@ -1,33 +1,53 @@
 # 單元測試對照表
 
-本文件根據「三向測試原則」整理目前建議的單元測試對象。
+本文件整理目前程式碼中可對應的測試範圍與重點。
 
 ## utils/text_processing.rs
 
-- Happy Path：`preprocess_text` / `postprocess_text` 正常配對
-- Edge：UTF-8 字元、空白、特殊符號
-- Robustness：`detect_loop` 對重複字串
+- `preprocess_text` / `postprocess_text` 格式標記保護
+- `validate_and_cleanup` 清理與輸出規範
+- `detect_loop` 無限迴圈偵測
+- `sync_formatting` JSON 內容更新
 
 ## utils/skip_rules.rs
 
-- Happy Path：一般文字不被跳過
-- Edge：snake_case、命名空間 ID
-- Robustness：空字串與純數字
+- `should_skip_key` 跳過鍵名
+- `should_skip_value` 跳過值規則
 
 ## translation/glossary/automaton.rs
 
-- Happy Path：大小寫不敏感匹配
-- Edge：表情符號與複合 UTF-8
-- Robustness：循環定義不影響匹配
+- 術語匹配與邊界判斷
+- 優先序合併 (official/user)
 
-## translation/api/client.rs
+## translation/api/models.rs
 
-- Happy Path：`extract_json_from_text` 解析完整 JSON
-- Edge：Markdown code block 內 JSON
-- Robustness：缺尾括號自我修復
+- 動態模型列表拉取與 fallback
+- Minecraft 版本對應 pack_format
 
-## file/scanner.rs
+## file/json_handler.rs
 
-- Happy Path：目錄遞迴收集 `.jar`/`.json`/`.js`
-- Edge：Windows 路徑大小寫差異
-- Robustness：`strip_prefix` 失敗回退
+- JSON 解析與目標語言檔讀取
+- 預填翻譯項目流程
+
+## file/js_handler.rs
+
+- JS 文本規則匹配
+- 字串替換與輸出
+
+## file/jar_handler.rs
+
+- JAR 內 JSON 解析
+- Patchouli 路徑處理
+- repack_jar 流程
+
+## translation/batching.rs
+
+- 批次分割
+- 降級重試邏輯
+
+## tests/ 目錄
+
+- [tests/pipeline_tests.rs](/tests/pipeline_tests.rs): pipeline 集成流程
+- [tests/file_tests.rs](/tests/file_tests.rs): 檔案處理與輸出行為
+- [tests/i18n_consistency.rs](/tests/i18n_consistency.rs): i18n keys 一致性
+- [tests/frontend/*](/tests/frontend/*): GUI DOM 與 invoke 行為

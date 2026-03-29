@@ -1,20 +1,26 @@
-# Git 與 GitHub 使用指南
+# Git / GitHub 指南
 
-## 基本流程
+本文件提供專案內部的協作約定，請依團隊流程調整。
 
-1. 修改檔案
-2. `git add .`
-3. `git commit -m "<繁體中文訊息>"`
-4. `git push`
+## 分支命名
 
-## 專案慣例
+- 建議使用 `feature/`、`fix/`、`chore/` 前綴
+- 例: `feature/dictionary-ui`, `fix/zip-output`
 
-- 分支名稱請使用 `codex/` 前綴
-- Commit 訊息請使用繁體中文
-- `docs/guides/MAINTENANCE_LOG.md` 新增紀錄須置頂
+## Commit 規範
 
-## 常用指令
+- 建議使用繁體中文描述
+- 一次 commit 只處理一組相關變更
 
-- 查看狀態：`git status`
-- 查看歷史：`git log --oneline`
-- 還原未提交變更：`git restore .`
+## PR 建議
+
+- 標題清楚描述變更目的
+- 提供重現步驟或驗證方式
+- 明確標註破壞性變更
+
+## 工具與檢查
+
+- 前端格式化: `pnpm format`
+- 前端 lint: `pnpm lint`
+- 前端測試: `pnpm test`
+- Tauri 同步檢查: `pnpm check-tauri`

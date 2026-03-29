@@ -1,25 +1,50 @@
-# 檔案處理流水線
+# 檔案流水線
+
+本文件描述檔案掃描、分組與輸出行為。
 
 ## 掃描與收集
 
-- `scanner::scan_files_recursive` 遞迴掃描 `.jar`、`.json`、`.js`。
-- `collect_json_task` 解析 JSON 並建立翻譯項目（詳見 [語言檔案比對機制](translation_comparison.md)）。
-- `collect_js_task` 依規則擷取可翻譯字串。
-- `collect_jar_tasks` 讀取 JAR 內 `en_us.json` 與 Patchouli 手冊。
+- 支援 `.jar` / `.json` / `.js`
+- 由 `file/scanner.rs` 遞迴掃描資料夾
+- 由 `file/*_handler.rs` 建立 `FileTask` 與 `GlobalBatchItem`
 
-## 分組與排序
+## 分組策略
 
-- JAR 以檔案本身為分組鍵
-- 非 JAR 以父資料夾為分組鍵
-- 重新排序 `global_items`，確保順序與 `file_tasks` 一致
+- JAR: 以檔案本身為群組
+- JSON/JS: 以父資料夾為群組
 
-## 跨檔案窗口翻譯
+## JSON 處理
 
-- 以分組為單位建立「跨檔案窗口」批次
-- `translate_global_batches` 會在窗口內進行批次、降級、重試
+- 讀取來源檔案與目標語言檔案
+- 依 `should_skip_key` 與 `should_skip_value` 過濾
+- 若目標欄位已翻譯，會預填並跳過翻譯
 
-## 輸出與封裝
+## JS 處理
 
-- 先寫入 `LLMTranslator/temp_translator` 作為資源包暫存
-- 窗口完成後立即輸出鏡像檔案
-- 全部完成後產出 `LLMTranslator.zip`
+- 以正則規則擷取常見的文字片段
+- 避免翻譯技術值或純數字內容
+
+## JAR 處理
+
+- 掃描 JAR 內 JSON
+- 支援 Patchouli 手冊語言路徑轉換
+- 若來源語言檔不存在，會以 `en_us` 作為 fallback
+
+## 輸出分流
+
+- 只有 JAR 來源或原資源結構 JSON 進入 `temp_translator`
+- 其他 JSON/JS 直接鏡像輸出
+- `output_resource_pack` 會產出 `LLMTranslator.zip`
+
+## 相關檔案
+
+- [src/file/pipeline.rs](/src/file/pipeline.rs)
+- [src/file/json_handler.rs](/src/file/json_handler.rs)
+- [src/file/js_handler.rs](/src/file/js_handler.rs)
+- [src/file/jar_handler.rs](/src/file/jar_handler.rs)
+- [src/file/pack_gen.rs](/src/file/pack_gen.rs)
+
+## 相關連結
+
+- [翻譯核心](translation_core.md)
+- [增量比對策略](translation_comparison.md)

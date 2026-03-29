@@ -1,48 +1,74 @@
-# UI 交互與觸發 (Tauri 原生)
+# UI 交互行為
 
-## 核心流程
+## 啟動與載入
 
-1. 選擇檔案或資料夾
-2. 設定服務商與模型
-3. 點擊開始翻譯
-4. 翻譯中可暫停、繼續或停止
+- 啟動時載入 config、i18n、style、字典
+- Tauri ready 後顯示主視窗
 
-## 主要按鈕行為
+## 翻譯流程
 
-- `⚙`：切換 API 設定面板架構。
-- `📖`：開啟建議詞管理器 (獨立視窗 `WebviewWindow`)。
-- `🎨`：切換調色盤與樣式同步面板。
-- `🌓`：切換深色/淺色主題。
-- `🔧`：切換開發者模式。
+1. 使用者選擇輸入路徑與輸出路徑
+2. 按下開始後，UI 進入 Running 狀態
+3. 狀態列顯示進度與批次進度
+4. 完成後恢復為 Idle 並顯示結果
 
-## 字典管理器
+## 暫停與繼續
 
-- **兩個分頁**：使用者詞庫、官方推論詞庫。
-- 支援搜尋、分頁、匯入、匯出。
-- **官方轉存**：官方分頁的編輯會轉存到使用者詞庫保存。
+- 暫停後允許修改設定
+- 繼續時會先更新後端設定快照，再恢復翻譯
 
-## UI 面板導航與狀態切換
+## 停止
+
+- 停止會要求使用者確認
+- 停止後狀態回到 Idle
+
+## 狀態與元件行為對照表
+
+| 元件/行為 | 待機 (Idle) | 進行中 (Running) | 暫停 (Paused) |
+| --- | --- | --- | --- |
+| 輸入路徑 | 可編輯 | 鎖定 | 可編輯 |
+| 輸出路徑 | 可編輯 | 鎖定 | 可編輯 |
+| API 設定區 | 可編輯 | 鎖定 | 可編輯 |
+| 翻譯參數區 | 可編輯 | 鎖定 | 可編輯 |
+| 開發者設定 | 可編輯 | 鎖定 | 可編輯 |
+| User/System Prompt | 可編輯 | 鎖定 | 可編輯 |
+| 開始按鈕 | 顯示 | 隱藏 | 隱藏 |
+| 暫停按鈕 | 隱藏 | 顯示 | 隱藏 |
+| 繼續按鈕 | 隱藏 | 隱藏 | 顯示 |
+| 停止按鈕 | 隱藏 | 隱藏 | 顯示 |
+| 暫停提示 | 隱藏 | 隱藏 | 顯示 |
+
+## 事件與狀態同步
+
+- `job-state-changed`: 切換 Idle/Running/Paused
+- `translation-progress`: 更新進度條與狀態文字
+- `translation-batch-update`: 更新批次進度
+- `translation-log`: 日誌輸出
+- `translation-finished`: 顯示完成或失敗
+
+## UI 事件流 (總覽)
 
 ```mermaid
-graph TD
-    Main["主畫面 (Main Window)"] --> ToggleSettings["點擊 ⚙"]
-    ToggleSettings --> SettingsPanel["API 設定面板 (控制區域展開)"]
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend
+    participant BE as Tauri Backend
 
-    Main --> ToggleDict["點擊 📖"]
-    ToggleDict --> DictManager["字典管理器 <dialog> 彈窗"]
-    subgraph DictManager_In ["字典管理器分頁"]
-        UserTab["分頁 1：使用者詞庫"]
-        OfficialTab["分頁 2：官方推論詞庫"]
-    end
-
-    Main --> TogglePalette["點擊 🎨"]
-    TogglePalette --> PalettePanel[調色盤面板]
-
-    OfficialTab --> Edit[編輯條目] --> SaveToUser["轉存至 使用者詞庫"]
+    U->>FE: 點擊開始
+    FE->>BE: start_translation
+    BE-->>FE: job-state-changed (RUNNING)
+    BE-->>FE: translation-progress
+    BE-->>FE: translation-batch-update
+    BE-->>FE: translation-log
+    BE-->>FE: translation-finished
+    BE-->>FE: job-state-changed (IDLE)
 ```
+## 建議詞管理器
 
-## 狀態鎖定規則
+- 開啟後為獨立視窗
+- 修改字典會廣播 `dictionary-changed` 事件
 
-- 翻譯中且未暫停時，設定面板多數欄位會鎖定。
-- 暫停時會解除鎖定，可修改設定繼續使用。
-- 主題、調色盤、字典管理器不受處理狀態影響。
+## 輸出資料夾開啟
+
+- 使用者可透過 UI 直接開啟輸出資料夾
+- 若未設定輸出路徑則使用 `LLMTranslator/`

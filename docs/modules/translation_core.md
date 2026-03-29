@@ -1,52 +1,50 @@
 # 翻譯核心
 
-## 翻譯流程摘要
+本文件描述翻譯核心流程與批次邏輯。
 
-1. 收集可翻譯字串並去重
-2. 依批次大小與字元上限切分
-3. 呼叫翻譯服務
-4. 清理與格式同步
-5. 回寫至全域批次結果
+## 核心流程
 
-## 服務商路由
+- 由 `translation/pipeline.rs` 組裝 `JobConfig` 與 `JobSharedState`
+- 初始化字典與術語資料
+- 交由 `file/pipeline.rs` 分組並進行全域批次翻譯
 
-- Gemini：`generateContent`
-- OpenAI / DeepSeek / Mistral：OpenAI 相容 Chat Completions
-- Ollama：本機 `/api/generate`
-- DeepL：`api-free` 或 `api` 端點
-- Google Free：`translate.googleapis.com`
+## 批次翻譯
 
-## 批次與降級
+- 批次條件: `batch_size` 與 `batch_max_chars`
+- 預處理: `preprocess_text` 將格式標記轉為佔位符
+- 結果清理: `validate_and_cleanup` 移除多餘回應內容
+- 失敗降級: 批次 -> 半批次 -> 單筆
 
-- 批次限制為「條目數」與「字元上限」雙重限制
-- 失敗時依序降級為半批次與單筆
-- `GlobalBatchItem` 會保留預處理標記，以確保格式還原
+## 預填翻譯
 
-## 批次優化 (Batch Optimizations)
+- 若目標語言欄位已存在且與原文不同，會視為已翻譯並預填
+- 預填項目仍會參與進度統計
 
-- **相對標籤優化 (Relative Tagging)**：
-  發送給 LLM 的標籤自代碼（如 `[i10000]`）改為僅在批次內自增的 **相對索引**（如 `[i0]`, `[i1]`），有效縮減大型模組大檔案的 Token 消耗、穩定上下文。
-- **批次內去重 (Intra-batch Deduplication)**：
-  在單一批次（如 50 筆）中：
-  - **發送端**：使用快取判定，相同原文只附帶 1 個標籤送出。
-- 接收端：LLM 回傳後，會遍歷當前批次內所有條目。只要原文相同，**一併同步套用譯文**，保證對 API 呼交只送 1 次。
+## 格式保護
 
-## 狀態控制與動態更新
+支援保護的格式標記:
 
-- **實時組態同步 (`update_active_job_config`)**：
-  啟動翻譯後，後端 `ACTIVE_JOB` 會持有 `JobConfig` 的鎖。使用者在 UI 修改 API Key 或 Prompt 後，可透過此指令在「暫停」或「執行」狀態下即時同步配置，下一個切換的批次將自動套用新參數。
-- **字典快取 (`DictCache`)**：
-  `query_dictionary` 指令採用 `OnceLock` 管理的全域快取，避免在大容量字典（如數萬條詞目）的分頁查詢中重複讀取磁碟。
+- `§`、`&` 色碼
+- `#RRGGBB`
+- `%s`、`%1$s`
+- `{0}`
+- `\\n`
 
-## 文本處理
+## 進度與狀態
 
-- `preprocess_text`：保護格式字元與佔位符
-- `postprocess_text`：還原格式
-- `validate_and_cleanup`：清理空白與雜訊
-- `detect_loop`：偵測翻譯循環輸出
+- 全域進度: 檔案數量為基準
+- 條目進度: 全域翻譯項目數量
+- 批次進度: `current_batch` / `total_batches`
 
-## Glossary 注入
+## 相關檔案
 
-- Glossary 以提示詞方式注入，不做硬替換
-- 由官方詞庫、推論詞庫、使用者詞庫組合
-- 每次最多注入 30 條術語建議
+- [src/translation/pipeline.rs](/src/translation/pipeline.rs)
+- [src/translation/batching.rs](/src/translation/batching.rs)
+- [src/translation/engine.rs](/src/translation/engine.rs)
+- [src/utils/text_processing.rs](/src/utils/text_processing.rs)
+
+## 相關連結
+
+- [檔案流水線](file_pipeline.md)
+- [術語系統](glossary_system.md)
+- [翻譯記憶體](translation_memory.md)

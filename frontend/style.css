@@ -394,7 +394,7 @@ input[type='color'] {
     height: 16px;
 }
 
-/* 📖 字典管理器彈窗 原生 Dialog */
+/* 📖 建議詞管理器彈窗 原生 Dialog */
 .styled-dialog {
     width: 90%;
     max-width: 800px;
