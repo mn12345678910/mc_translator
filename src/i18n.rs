@@ -571,7 +571,7 @@ mod tests {
             let _ = fs::rename(&real_dir, &backup);
         }
 
-        // --- 新增：模擬 exe_langs 存在 ---
+        // --- 測試：模擬 exe_langs 存在 ---
         if let Ok(mut exe_path) = std::env::current_exe() {
             exe_path.pop();
             let exe_langs = exe_path.join("langs").join("gui");
@@ -581,7 +581,7 @@ mod tests {
         let dir = get_langs_dir("gui");
         assert!(dir.to_string_lossy().contains("langs"));
 
-        // --- 新增：測試 get_available_ui_langs() 當目錄為空且 fallback 觸發 ---
+        // --- 測試：get_available_ui_langs() 目錄為空時的 fallback ---
         let gui_langs = GuiLabels::get_available_ui_langs();
         let cli_langs = CliLabels::get_available_ui_langs();
         assert!(!gui_langs.is_empty());
@@ -616,7 +616,7 @@ mod tests {
             let _ = fs::rename(&backup, &path);
         }
 
-        // --- 新增：測最底階 fallback to default_zh_tw ---
+        // --- 測試：最底層 fallback 至 default_zh_tw ---
         let zh_path = get_langs_dir("gui").join("zh_tw.json");
         let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
         let zh_exists = zh_path.exists();

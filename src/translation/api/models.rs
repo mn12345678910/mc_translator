@@ -304,8 +304,8 @@ mod tests {
         assert_eq!(version_to_pack_format("1.21.4"), 46);
         assert_eq!(version_to_pack_format("1.20.1"), 15);
         assert_eq!(version_to_pack_format("1.12.2"), 3);
-        assert_eq!(version_to_pack_format("1.9"), 2); // 新增
-        assert_eq!(version_to_pack_format("1.6.1"), 1); // 新增
+        assert_eq!(version_to_pack_format("1.9"), 2); // 補充覆蓋
+        assert_eq!(version_to_pack_format("1.6.1"), 1); // 補充覆蓋
         assert_eq!(version_to_pack_format("9.9.9"), 46);
     }
 

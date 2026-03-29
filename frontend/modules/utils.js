@@ -30,7 +30,7 @@ export function appendLog(entry) {
         timestamp: Date.now()
     } : { ...entry };
 
-    // 額外相容舊版：如果訊息包含 ❌ 或 Error，自動升級為 Error 等級（用於測試相容性與直接字串呼叫）
+    // 額外相容舊版：如果訊息包含錯誤標記（如 ❌）或 Error，自動升級為 Error 等級
     if (typeof entry === 'string' && (entry.includes('❌') || entry.includes('Error'))) {
         data.level = 'Error';
     }

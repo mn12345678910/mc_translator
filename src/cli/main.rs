@@ -245,7 +245,7 @@ async fn run_main_with_args(
                             .unwrap_or(0);
                         let mut items: Vec<String> =
                             providers.iter().map(|s| s.to_string()).collect();
-                        items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
+                        items.push(i18n.label_back_to_prev_cli.clone()); // 避免重複返回項
 
                         let idx = interact.select(
                             &i18n.prompt_select_provider_cli,
@@ -333,7 +333,7 @@ async fn run_main_with_args(
                         }
 
                         items.push(i18n.label_custom_input_cli.clone());
-                        items.push(i18n.label_back_to_prev_cli.clone()); // 修正重覆 <-
+                        items.push(i18n.label_back_to_prev_cli.clone()); // 避免重複返回項
 
                         let default_idx = if !config.model.is_empty() {
                             items.iter().position(|m| m == &config.model).unwrap_or(0)
@@ -424,7 +424,7 @@ async fn run_main_with_args(
                             i18n.label_yes_confirm_cli.clone(),
                             i18n.prompt_advanced_settings_cli.clone(),
                             i18n.label_no_cancel_cli.clone(),
-                            i18n.label_back_to_prev_cli.to_string(), // 修正重覆 <-
+                            i18n.label_back_to_prev_cli.to_string(), // 避免重複返回項
                         ];
 
                         let start = interact.select(&i18n.prompt_confirm_start_cli, &items, 0)?;

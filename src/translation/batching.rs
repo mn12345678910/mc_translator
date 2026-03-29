@@ -55,7 +55,7 @@ pub async fn translate_global_batches(
     file_name: &str,
     group_dir: &str,
     group_file_count: usize,
-    global_items_offset: usize, // 新增：全域 offset
+    global_items_offset: usize, // 全域 offset
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     run_translation_batch(RunBatchContext {
         items,
@@ -96,7 +96,7 @@ pub struct RunBatchContext<'a> {
     pub file_name: String,
     pub group_dir: String,
     pub group_file_count: usize,
-    pub global_items_offset: usize, // 新增
+    pub global_items_offset: usize, // 全域 offset
 }
 
 /// 執行一組全域翻譯批次 (包含重試與降級邏輯)

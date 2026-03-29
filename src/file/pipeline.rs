@@ -168,7 +168,7 @@ pub async fn process_all_files(
 
     file_tasks.sort_by(|a, b| get_group_key(&a.path).cmp(&get_group_key(&b.path)));
 
-    // [Bug Fix] 重新規整 global_items，使其與已排序的 file_tasks 順序一致，防範切片失配
+    // 重新規整 global_items，使其與已排序的 file_tasks 順序一致，避免切片失配
     let mut task_item_groups: std::collections::HashMap<usize, Vec<GlobalBatchItem>> =
         std::collections::HashMap::new();
     for item in global_items {
@@ -215,7 +215,7 @@ pub async fn process_all_files(
     // --- 階段三：窗口式跨檔案翻譯迴圈 ---
     let mut task_ptr = 0;
     let mut item_ptr = 0;
-    let mut global_items_offset = 0; // 新增：全域累加 Offset
+    let mut global_items_offset = 0; // 全域累加 Offset
 
     while task_ptr < file_tasks.len() {
         if cancelled_arc.load(Ordering::SeqCst) {
@@ -326,7 +326,7 @@ pub async fn process_all_files(
         })
         .await??;
 
-        // [新增] 補齊檔案處理完成日誌
+        // 補齊檔案處理完成日誌
         let cfg = job_config.lock().unwrap().clone();
         add_log_event(
             &log,

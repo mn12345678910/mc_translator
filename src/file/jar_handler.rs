@@ -176,7 +176,7 @@ pub async fn collect_jar_tasks(
             for (orig, key) in pending {
                 global_items.push(GlobalBatchItem::new(&orig, file_id, &key));
             }
-            // 加入預先填滿的項目 (修正丟失條目與進度條問題)
+            // 加入預填項目，維持條目與進度一致
             for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {
                 let mut item = GlobalBatchItem::new(orig, file_id, key);
                 item.translated = Some(trans.clone());

@@ -1,5 +1,5 @@
 //! # 設定模組
-//! 負責 AppConfig 結構體定義、`.env` 環境變數的讀寫邏輯。
+//! 負責 AppConfig 結構體定義、.env 環境變數的讀寫邏輯。
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -497,7 +497,7 @@ impl StyleConfig {
             self.progress_style = "default".to_string();
         }
 
-        // --- [新增欄位驗證] ---
+        // --- [欄位驗證] ---
         self.border_alpha = self.border_alpha.clamp(0.0, 1.0);
         self.panel_alpha = self.panel_alpha.clamp(0.0, 1.0);
         self.backdrop_alpha = self.backdrop_alpha.clamp(0.0, 1.0);

@@ -545,7 +545,7 @@ tr:hover {
     color: var(--btn-text);
 }
 
-/* ⚙️ API 參數面板 Grid */
+/* ️ API 參數面板 Grid */
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -664,7 +664,7 @@ input:checked + .slider:before {
     background-color: var(--hover-bg) !important;
 }
 
-/* 🛠️ 折疊面板邊距修正 (解決空白區塊問題) */
+/* 折疊面板邊距調整 (避免空白區塊) */
 .collapsible-panel {
     max-height: 0;
     overflow-y: hidden;
