@@ -7,8 +7,8 @@
 
 ## 核心模組
 
-- [src-tauri/](src-tauri/): Tauri 後端命令與視窗狀態管理
-- [frontend/](frontend/): GUI 前端 (HTML/CSS/JS)
+- [src-tauri/](/src-tauri/): Tauri 後端命令與視窗狀態管理
+- [frontend/](/frontend/): GUI 前端 (HTML/CSS/JS)
 - [src/cli/](/src/cli/): CLI 互動流程與 headless 參數模式
 - [src/translation/](/src/translation/): 翻譯管線、批次降級、API 呼叫、術語系統
 - [src/file/](/src/file/): 檔案掃描與 JAR/JSON/JS 處理、資源包輸出

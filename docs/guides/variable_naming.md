@@ -18,7 +18,7 @@
 ## i18n Keys
 
 - 統一以 `snake_case` 風格
-- 新增 key 時需同步到 [src/i18n.rs](/src/i18n.rs) 與 [src/i18n_assets/*](/src/i18n_assets/*)
+- 新增 key 時需同步到 [src/i18n.rs](/src/i18n.rs) 與 [src/i18n_assets/](/src/i18n_assets/)
 
 ## 建議
 

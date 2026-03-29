@@ -52,9 +52,9 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 
 ## 支援的檔案類型
 
-- [.jar](.jar) (支援內部語言檔與 Patchouli 手冊路徑)
-- [.json](.json)
-- [.js](.js)
+- `.jar` (支援內部語言檔與 Patchouli 手冊路徑)
+- `.json`
+- `.js`
 
 ## 快速開始
 
@@ -126,9 +126,9 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 ## 設定與金鑰儲存
 
 **設定檔位置**
-- [settings/config.cfg](settings/config.cfg): App 設定
-- [settings/style.cfg](settings/style.cfg): GUI 樣式設定
-- [settings/.env](settings/.env): 會被讀取 (可放置自訂環境變數)
+- [settings/](/settings/): 設定資料夾
+- `config.cfg`: App 設定
+- `style.cfg`: GUI 樣式設定
 
 **API Key 儲存方式**
 - 透過作業系統 Keyring 儲存，不會寫入 `config.cfg`
@@ -142,12 +142,12 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 
 CI 在 tag 版號時會產出以下檔名:
 
-- [mc_translator_cli_win_x64.exe](mc_translator_cli_win_x64.exe)
-- [mc_translator_cli_linux_x64](mc_translator_cli_linux_x64)
-- [mc_translator_gui_win_x64.exe](mc_translator_gui_win_x64.exe)
-- [mc_translator_gui_linux_x64](mc_translator_gui_linux_x64)
+- `mc_translator_cli_win_x64.exe`
+- `mc_translator_cli_linux_x64`
+- `mc_translator_gui_win_x64.exe`
+- `mc_translator_gui_linux_x64`
 
-詳細流程請參考: [release_artifacts](docs/guides/release_artifacts.md) 與 [.github/workflows/ci.yml](.github/workflows/ci.yml)
+詳細流程請參考: [release_artifacts](/docs/guides/release_artifacts.md) 與 [.github/workflows/ci.yml](/.github/workflows/ci.yml)
 ## 文檔索引
 
 - 架構總覽: [docs/architecture/overview.md](docs/architecture/overview.md)

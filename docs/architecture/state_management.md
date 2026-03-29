@@ -22,11 +22,13 @@
 
 GUI 透過 Tauri 事件與 command 呼叫同步狀態。
 
-- [job-state-changed](job-state-changed): `Idle` / `Running` / `Paused`
-- [translation-progress](translation-progress): 進度條與狀態訊息
-- [translation-batch-update](translation-batch-update): 批次進度
-- [translation-log](translation-log): 日誌事件
-- [translation-finished](translation-finished): 完成/失敗通知
+完整事件列表與說明請參考: [docs/ui/interactions.md#事件與狀態同步](/docs/ui/interactions.md#事件與狀態同步)
+
+- `job-state-changed`: `Idle` / `Running` / `Paused`
+- `translation-progress`: 進度條與狀態訊息
+- `translation-batch-update`: 批次進度
+- `translation-log`: 日誌事件
+- `translation-finished`: 完成/失敗通知
 
 ## 暫停與繼續
 

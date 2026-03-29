@@ -11,7 +11,7 @@
 
 ## 觸發條件
 
-- [ci.yml](ci.yml) 在 tag 以 `v*` 開頭時會進行 build 與 release
+- [ci.yml](/.github/workflows/ci.yml) 在 tag 以 `v*` 開頭時會進行 build 與 release
 
 ## 流程圖
 
