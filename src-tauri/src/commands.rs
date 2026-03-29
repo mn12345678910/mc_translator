@@ -288,7 +288,7 @@ pub fn get_default_style_config() -> StyleConfig {
     StyleConfig::default()
 }
 
-// Trigger recompile to pick up new include_str! JSON files
+// 觸發重新編譯以抓取新的 include_str! JSON 檔案
 use std::sync::{Mutex, OnceLock};
 
 struct DictCache {
