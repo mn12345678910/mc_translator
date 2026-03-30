@@ -10,6 +10,9 @@
   "scripts": {
     "test": "vitest run",
     "test:frontend": "vitest run",
+    "dev": "vite frontend",
+    "build": "vite build frontend --outDir ../dist",
+    "preview": "vite preview frontend",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
     "lint": "eslint \"frontend/**/*.js\"",
@@ -31,9 +34,11 @@
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/cli": "^2.10.1",
     "@vitest/coverage-v8": "^4.1.2",
+    "@chenglou/pretext": "^0.0.1",
     "eslint": "^10.1.0",
     "happy-dom": "^20.8.8",
     "prettier": "^3.3.3",
+    "vite": "^8.0.3",
     "vitest": "^4.1.2"
   }
 }
