@@ -81,10 +81,10 @@ body {
 .collapsible-panel.expanded {
     max-height: 2000px; /* 足夠高度以應對動態內容 */
     opacity: 1;
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
+    padding: 15px !important;
     margin-bottom: 20px !important;
     border: 1px solid var(--border-light) !important;
+    background-color: var(--panel-bg);
 }
 
 .flex-end {
@@ -154,9 +154,13 @@ h2 {
 
 .control-panel {
     background-color: var(--panel-bg);
+    border-radius: var(--border-radius);
+}
+
+/* Base style for non-collapsible panels */
+.control-panel:not(.collapsible-panel) {
     border: 1px solid var(--border-light);
     padding: 15px;
-    border-radius: var(--border-radius);
     margin-bottom: 20px;
 }
 
@@ -682,9 +686,10 @@ input:checked + .slider:before {
 .log-line {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
-    line-height: 1.4;
+    line-height: 18px; /* [FIX] 絕對像素行高 */
     display: flex;
     align-items: flex-start;
+    overflow: hidden; /* [FIX] 文字溢出隔離 */
 
     .log-time {
         color: #888;

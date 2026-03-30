@@ -53,6 +53,9 @@ export class VirtualLogViewer {
         this.container.addEventListener('scroll', () => this.handleScroll());
         this.resizeObserver = new ResizeObserver(() => {
             this.recalculateHeights();
+            if (this.isLockedToBottom) {
+                this.container.scrollTop = this.totalHeight;
+            }
             this.render();
         });
         this.resizeObserver.observe(this.container);
@@ -86,11 +89,11 @@ export class VirtualLogViewer {
     }
 
     measureHeight(text, width) {
-        // 使用 pretext 進行文字折行測量
         const font = `${this.options.fontSize} ${this.options.fontFamily}`;
+        const safetyWidth = Math.max(10, width - 4); // [FIX] 增加安全寬度緩衝
         const prepared = prepare(text, font);
-        const result = layout(prepared, width, this.options.lineHeight);
-        return Math.max(this.options.lineHeight, result.height);
+        const result = layout(prepared, safetyWidth, this.options.lineHeight);
+        return Math.ceil(Math.max(this.options.lineHeight, result.height)); // [FIX] 強制進位確保不重疊
     }
 
     recalculateHeights() {
@@ -152,7 +155,7 @@ export class VirtualLogViewer {
             const log = this.logs[i];
             const div = document.createElement('div');
             div.className = `log-line log-${log.level}`;
-            div.style.height = `${log.height}px`;
+            div.style.minHeight = `${log.height}px`; // [FIX] 使用 min-height
 
             const timeSpan = document.createElement('span');
             timeSpan.className = 'log-time';
