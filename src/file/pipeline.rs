@@ -213,17 +213,11 @@ pub async fn process_all_files(
     global_items = reordered_items;
 
     // 更新全域進度總量 (以此來源數量為準)
-    let unique_files_count = {
-        let mut seen = std::collections::HashSet::new();
-        for task in &file_tasks {
-            seen.insert(task.path.clone());
-        }
-        seen.len()
-    };
-    if unique_files_count > 0 {
+    let total_tasks_count = file_tasks.len();
+    if total_tasks_count > 0 {
         state
             .global_total
-            .store((unique_files_count as f32).to_bits(), Ordering::SeqCst);
+            .store((total_tasks_count as f32).to_bits(), Ordering::SeqCst);
     }
     // 定錨全域條目總數
     state
@@ -261,13 +255,7 @@ pub async fn process_all_files(
             task_ptr += 1;
         }
 
-        let group_file_count = {
-            let mut seen = std::collections::HashSet::new();
-            for t in &group_tasks {
-                seen.insert(t.path.clone());
-            }
-            seen.len() as f32
-        };
+        let group_tasks_count = group_tasks.len() as f32;
 
         let group_file_ids: std::collections::HashSet<usize> =
             group_tasks.iter().map(|t| t.file_id).collect();
@@ -283,7 +271,7 @@ pub async fn process_all_files(
             let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
             state
                 .global_progress
-                .store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
+                .store((current_g + group_tasks_count).to_bits(), Ordering::SeqCst);
             global_items_offset += items_in_source.len();
             continue;
         }
@@ -325,7 +313,7 @@ pub async fn process_all_files(
             &state.i18n,
             &log_file_name,
             &display_name,
-            group_file_count as usize,
+            group_tasks_count as usize,
             global_items_offset,
         )
         .await?;
@@ -348,6 +336,12 @@ pub async fn process_all_files(
                 task.rel_path.clone()
             };
             translated_results.insert(key, content);
+
+            // 每處理完一個檔案，即時更新全域進度
+            let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
+            state
+                .global_progress
+                .store((current_g + 1.0).to_bits(), Ordering::SeqCst);
         }
 
         let config_locked = job_config.lock().unwrap().clone();
@@ -367,11 +361,6 @@ pub async fn process_all_files(
             &display_name,
             cfg.enable_debug_log,
         );
-
-        let current_g = f32::from_bits(state.global_progress.load(Ordering::SeqCst));
-        state
-            .global_progress
-            .store((current_g + group_file_count).to_bits(), Ordering::SeqCst);
 
         // 累計全域 Offset
         global_items_offset += items_in_source.len();
