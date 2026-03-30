@@ -65,38 +65,30 @@ describe('utils.js 工具模組', () => {
     });
 
     describe('appendLog 日誌紀錄', () => {
-        it('應在 #log-output 新增 <p> 元素', () => {
+        beforeEach(() => {
+            // 模擬全域 __logViewer
+            window.__logViewer = {
+                appendLog: vi.fn()
+            };
+        });
+
+        it('應將訊息轉送給全域的 __logViewer', () => {
             utilsModule.appendLog('測試一則訊息');
-
-            const logOutput = document.getElementById('log-output');
-            expect(logOutput.childNodes.length).toBe(1);
-
-            const logLine = logOutput.querySelector('p');
-            expect(logLine.textContent).toContain('測試一則訊息');
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('測試一則訊息', 'info', expect.any(String));
         });
 
-        it('當訊息包含 ❌ 或 Error 時，顏色應為紅色', () => {
+        it('當訊息包含 ❌ 或 Error 時，應自動識別為 error 等級', () => {
             utilsModule.appendLog('❌ 發生錯誤');
-
-            const logOutput = document.getElementById('log-output');
-            const logLine = logOutput.querySelector('p');
-            // 相容 Happy DOM 回傳 #ff6b6b 或 瀏覽器回傳 rgb
-            expect(['#ff6b6b', 'rgb(255, 107, 107)']).toContain(logLine.style.color);
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('❌ 發生錯誤', 'error', expect.any(String));
         });
 
-        it('當日誌數量超過 500，應刪除最舊的項目', () => {
-            const logOutput = document.getElementById('log-output');
-
-            // 灌入 505 筆
-            for(let i=1; i<=505; i++) {
-                utilsModule.appendLog(`訊息 ${i}`);
-            }
-
-            expect(logOutput.childNodes.length).toBe(500);
-
-            // 最舊的應該已經被刪除，第一個節點應該不會是 "訊息 1"
-            expect(logOutput.firstChild.textContent).not.toContain('訊息 1');
-            expect(logOutput.lastChild.textContent).toContain('訊息 505');
+        it('應正確處理對象形式的 entry', () => {
+            utilsModule.appendLog({
+                level: 'Success',
+                message: '完成',
+                timestamp: Date.now()
+            });
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('完成', 'success', expect.any(String));
         });
     });
 
