@@ -201,4 +201,117 @@ describe('config.js 設定管理模組', () => {
             expect(selectModel.innerHTML).toContain('無可用模型');
         });
     });
+
+    describe('恢復預設完整性測試 (Dirty Check)', () => {
+        const { readFileSync } = require('fs');
+        const { resolve } = require('path');
+        const mockDefaultConfig = {
+            api_provider: 'Gemini',
+            model: 'gemini-1.5-flash',
+            ollama_url: 'http://localhost:11434',
+            api_base_url: '',
+            batch_size: 150,
+            batch_max_chars: 3500,
+            timeout: 60,
+            pack_format: 15,
+            glossary_priority: 'official',
+            system_prompt: 'System default',
+            user_prompt: 'User default',
+            excluded_paths: ['kubejs/data/', 'world/'],
+            skip_json: false,
+            skip_js: false,
+            skip_jar: false,
+            skip_book: false,
+            enable_llm_log: false,
+            enable_debug_log: false,
+            source_lang: 'en_us',
+            target_lang: 'zh_tw'
+        };
+
+        beforeEach(() => {
+            // 💡 關鍵：載入真實的 HTML，確保能偵測到未來新增的欄位
+            const htmlPath = resolve(__dirname, '../../frontend/index.html');
+            const html = readFileSync(htmlPath, 'utf-8');
+            document.body.innerHTML = html;
+
+            stateModule.state.currentConfig = { ...mockDefaultConfig };
+            stateModule.state.currentLabels = { status_config_restored: 'OK', status_dev_restored: 'OK' };
+
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_default_config') return mockDefaultConfig;
+                return {};
+            });
+
+            // 防止 fetch 引發連線錯誤 (例如 Ollama 清單獲取)
+            global.fetch = vi.fn(() => Promise.resolve({
+                 ok: true,
+                 json: () => Promise.resolve([])
+            }));
+        });
+
+        it('API 面板重置：應能重置面板內所有元件，且不干涉開發者面板', async () => {
+            const apiPanel = document.getElementById('api-settings');
+            const devPanel = document.getElementById('developer-settings');
+
+            const apiInputs = Array.from(apiPanel.querySelectorAll('input, select, textarea'));
+            const devInputs = Array.from(devPanel.querySelectorAll('input, select, textarea'));
+
+            // 1. 全部設為髒值 (Dirty)
+            apiInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_API'; });
+            devInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_DEV'; });
+
+            // 2. 執行 API 重置
+            await configModule.restoreDefaultConfig();
+
+            // 3. 自動檢查 API 面板中的每一個元件是否都已「不再是髒值」
+            const missingIds = [];
+            apiInputs.forEach(el => {
+                if (el.id === 'api-key' || el.id === 'ui-lang') return;
+
+                // 元件 ID 與 Config Key 的對應邏輯
+                let configKey = el.id.replace('chk-', '').replace('sel-', '').replace(/-/g, '_');
+                if (el.id === 'timeout-sec') configKey = 'timeout'; // 特殊映射範例
+
+                if (el.type === 'checkbox') {
+                     // 如果預設是 false，重置後應該是 false，不應該還是 true
+                     if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
+                } else if (el.value === 'DIRTY_API') {
+                     missingIds.push(el.id);
+                }
+            });
+
+            if (missingIds.length > 0) {
+                throw new Error(`❌ 偵測到「API 面板」中有元件未被重置邏輯覆蓋：${missingIds.join(', ')}`);
+            }
+
+            // 4. 驗證排除清單（開發者面板）仍為髒值 (獨立性)
+            expect(document.getElementById('excluded-paths').value).toBe('DIRTY_DEV');
+        });
+
+        it('開發人員面板重置：應能重置面板內所有元件，自動偵測漏設定的項目', async () => {
+            const devPanel = document.getElementById('developer-settings');
+            const devInputs = Array.from(devPanel.querySelectorAll('input, select, textarea'));
+
+            // 1. 全部設為髒值
+            devInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_DEV'; });
+
+            // 2. 執行開發者重置
+            await configModule.restoreDevDefaults();
+
+            // 3. 自動檢查有無漏網之魚
+            const missingIds = [];
+            devInputs.forEach(el => {
+                if (el.type === 'checkbox') {
+                     let configKey = el.id.replace('chk-', '').replace(/-/g, '_');
+                     if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
+                } else if (el.value === 'DIRTY_DEV') {
+                     missingIds.push(el.id);
+                }
+            });
+
+            if (missingIds.length > 0) {
+                throw new Error(`❌ 偵測到「開發人員面板」中有元件未被重置邏輯覆蓋：${missingIds.join(', ')}`);
+            }
+        });
+    });
 });
