@@ -26,3 +26,6 @@ langs_backup/
 *.log
 *.bak
 *.tmp
+
+# Artifacts
+dist/
