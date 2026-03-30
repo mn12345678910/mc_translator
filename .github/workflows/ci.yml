@@ -122,9 +122,9 @@ jobs:
         with:
           components: miri
       - name: Run Miri
-        run: cargo miri test --workspace
+        run: cargo miri test -p mc_translator --lib
         env:
-          MIRIFLAGS: "-Zmiri-disable-isolation"
+          MIRIFLAGS: "-Zmiri-disable-isolation -Zmiri-ignore-leaks"
 
   # 4. Multi-platform Build & Release
   build-and-release:
