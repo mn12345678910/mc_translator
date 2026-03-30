@@ -31,26 +31,26 @@ repos:
     name: cargo test
     entry: cargo test --all-features
     language: system
-    stages: [push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: pnpm-lint
     name: pnpm lint
     entry: pnpm lint
     language: system
-    stages: [push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: pnpm-test
     name: pnpm test
     entry: pnpm test
     language: system
-    stages: [push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: cleanup-redundant-files
     name: cleanup redundant files
     entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator' -Recurse -Force -ErrorAction SilentlyContinue"
     language: system
-    stages: [push]
+    stages: [pre-push]
     pass_filenames: false
