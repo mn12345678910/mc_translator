@@ -6,6 +6,9 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0' # 每個週日午夜執行一次
 
 env:
   CARGO_TERM_COLOR: always
