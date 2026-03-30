@@ -4,33 +4,25 @@ description: 推送前自我審查流程，確保 0 警告、0 錯誤且無冗�
 
 此工作流用於在 git push 之前進行全面的本地驗證。
 
-# 1. 清除冗餘檔案
+# 1. 品質與安全檢查
 // turbo
-1. 執行以下命令移除已知冗餘檔案：
-```pwsh
-Remove-Item -Path "repro_serde.rs", "ci_log.txt", "job_log.txt", "ci_failure.log" -ErrorAction SilentlyContinue
-Remove-Item -Path "LLMTranslator" -Recurse -Force -ErrorAction SilentlyContinue
-```
-
-# 2. 品質與安全檢查
-// turbo
-2. 執行格式檢查、靜態分析與安全性審核：
+1. 執行格式檢查、靜態分析與安全性審核：
 ```pwsh
 cargo fmt --all --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo deny check
 ```
 
-# 3. 功能測試
+# 2. 功能測試
 // turbo
-3. 執行各模組測試：
+2. 執行各模組測試：
 ```pwsh
 cargo test --all-features
 pnpm lint
 pnpm test
 ```
 
-# 4. 提交規範確認 (git-cliff)
+# 3. 提交規範確認 (git-cliff)
 > [!TIP]
 > **提交訊息規範建議**：
 > - **語言**：請使用「繁體中文」撰寫標題與內容。
@@ -40,9 +32,17 @@ pnpm test
 >   - `refactor`: 重構 | `perf`: 效能優化 | `style`: 樣式調整
 >   - `test`: 測試 | `ci`: CI/CD | `chore`: 雜務 (如版本發布)
 
-4. 執行變更日誌預覽，確保符合預期：
+3. 執行變更日誌預覽，確保符合預期：
 ```pwsh
 git-cliff --latest
+```
+
+# 4. 清除冗餘檔案
+// turbo
+4. 執行以下命令移除已知冗餘檔案（包含測試產生的暫存檔）：
+```pwsh
+Remove-Item -Path "repro_serde.rs", "ci_log.txt", "job_log.txt", "ci_failure.log" -ErrorAction SilentlyContinue
+Remove-Item -Path "LLMTranslator" -Recurse -Force -ErrorAction SilentlyContinue
 ```
 
 # 5. 完成確認

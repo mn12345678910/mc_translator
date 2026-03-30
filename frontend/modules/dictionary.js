@@ -50,7 +50,7 @@ export async function loadDictionary() {
                 const attrK = k.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 html += `<tr>
                     <td>${escapeHtml(k)}</td>
-                    <td><input type="text" value="${escapeHtml(v)}" data-key="${attrK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;"></td>
+                    <td><input type="text" value="${escapeHtml(v)}" data-key="${attrK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;" autocomplete="off"></td>
                     <td>
                         ${dictType === 'user' ? `<button class="small-btn delete-item" data-key="${attrK}" style="background-color:#aa1111; color:#fff; padding:4px 8px;">🗑</button>` : ''}
                     </td>
