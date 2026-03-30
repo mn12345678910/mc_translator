@@ -67,6 +67,8 @@ jobs:
           pnpm lint
       - name: Tauri API Bridge Check
         run: node tool/check_tauri_sync.js
+      - name: Version Consistency Check
+        run: node tool/check_all_versions.js
 
   # 2. Multi-platform Core Testing
   test:
