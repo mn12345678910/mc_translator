@@ -14,6 +14,11 @@ export default [
                 clearInterval: 'readonly',
                 alert: 'readonly',
                 confirm: 'readonly',
+                ResizeObserver: 'readonly',
+                Intl: 'readonly',
+                performance: 'readonly',
+                documentFragment: 'readonly',
+                navigator: 'readonly',
             }
         },
         rules: {
