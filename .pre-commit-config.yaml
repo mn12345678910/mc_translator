@@ -90,6 +90,28 @@ repos:
     stages: [pre-commit, pre-push]
     pass_filenames: false
 
+  - id: check-config-sync
+    name: check config sync
+    entry: node tool/check_config_sync.js
+    language: system
+    files: (settings\.rs|config\.test\.js)$
+    pass_filenames: false
+
+  - id: check-md-links
+    name: check md links
+    entry: node tool/check_md_links.js
+    language: system
+    stages: [pre-push]
+    files: \.md$
+    pass_filenames: false
+
+  - id: cleanup-assets
+    name: cleanup assets
+    entry: node tool/cleanup_assets.js
+    language: system
+    stages: [pre-push]
+    pass_filenames: false
+
   - id: check-commit-msg
     name: check commit message
     entry: node tool/check_commit_msg.js

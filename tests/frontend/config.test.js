@@ -206,8 +206,8 @@ describe('config.js 設定管理模組', () => {
         const { readFileSync } = require('fs');
         const { resolve } = require('path');
         const mockDefaultConfig = {
-            api_provider: 'Gemini',
-            model: 'gemini-1.5-flash',
+            api_provider: '無',
+            model: '',
             ollama_url: 'http://localhost:11434',
             api_base_url: '',
             batch_size: 150,
@@ -215,9 +215,22 @@ describe('config.js 設定管理模組', () => {
             timeout: 60,
             pack_format: 15,
             glossary_priority: 'official',
-            system_prompt: 'System default',
-            user_prompt: 'User default',
-            excluded_paths: ['kubejs/data/', 'world/'],
+            system_prompt: '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。',
+            user_prompt: '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
+            excluded_paths: [
+                'kubejs/data/',
+                'packmenu/',
+                'config/almostunified/',
+                'fancymenu/',
+                'journeymap/icon/theme',
+                'shaderpacks/',
+                'screenshots/',
+                'saves/',
+                'logs/',
+                'defaultconfigs/',
+                'local/',
+                '.mixin.out/',
+            ],
             skip_json: false,
             skip_js: false,
             skip_jar: false,
@@ -225,8 +238,23 @@ describe('config.js 設定管理模組', () => {
             enable_llm_log: false,
             enable_debug_log: false,
             source_lang: 'en_us',
-            target_lang: 'zh_tw'
+            target_lang: 'zh_tw',
+            ui_lang: 'zh_tw',
+            output_dir: '',
+            show_api_settings: false,
+            show_developer_mode: false,
+            main_x: 50.0,
+            main_y: 50.0,
+            main_width: 800.0,
+            main_height: 600.0,
+            viewer_x: 100.0,
+            viewer_y: 100.0,
+            viewer_width: 800.0,
+            viewer_height: 600.0
         };
+
+
+
 
         beforeEach(() => {
             // 💡 關鍵：載入真實的 HTML，確保能偵測到未來新增的欄位
