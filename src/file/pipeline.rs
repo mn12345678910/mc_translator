@@ -497,7 +497,9 @@ mod tests {
 
     #[test]
     fn test_shorten_rel_paths_exactly_five() {
-        let paths = (1..=5).map(|i| format!("file{}.json", i)).collect::<Vec<_>>();
+        let paths = (1..=5)
+            .map(|i| format!("file{}.json", i))
+            .collect::<Vec<_>>();
         let result = shorten_rel_paths(&paths);
         assert!(!result.contains('\n'));
         assert_eq!(result.split(", ").count(), 5);
