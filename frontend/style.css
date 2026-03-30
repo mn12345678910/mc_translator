@@ -693,18 +693,40 @@ input:checked + .slider:before {
 
 #log-output {
     flex: 1 !important;
-    overflow-y: auto !important;
-    min-height: 150px;
-    max-height: 40vh;
+    min-height: 200px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: var(--border-radius);
     background-color: var(--input-bg);
-    padding: 10px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 虛擬化日誌行樣式 */
+.log-line {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
+    line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-all;
+    display: flex;
 }
+
+.log-time {
+    color: #888;
+    margin-right: 8px;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.log-msg {
+    flex: 1;
+}
+
+.log-error .log-msg { color: var(--danger-color); }
+.log-warn .log-msg { color: #ffcc00; }
+.log-info .log-msg { color: var(--text-color); }
+.log-success .log-msg { color: #00ff88; }
 
 
 

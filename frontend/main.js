@@ -13,6 +13,7 @@ import {
 import { loadStyle, saveStyle, restoreDefaultStyle, applyColors, updatePaletteValue } from './modules/style.js';
 import { initDictionary, loadDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
+import { VirtualLogViewer } from './modules/virtual_log.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 2. 初始化子模組事件綁定
+    window.__logViewer = new VirtualLogViewer('log-output');
     initDictionary();
     initTranslation();
 
