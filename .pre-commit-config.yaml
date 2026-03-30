@@ -50,7 +50,7 @@ repos:
 
   - id: cleanup-redundant-files
     name: cleanup redundant files
-    entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator' -Recurse -Force -ErrorAction SilentlyContinue"
+    entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator' -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
     language: system
     stages: [pre-push]
     pass_filenames: false
