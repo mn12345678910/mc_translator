@@ -230,6 +230,16 @@ pub struct StyleConfig {
     #[serde(default = "default_progress_style")]
     pub progress_style: String,
 
+    // --- [特效定色] ---
+    #[serde(default = "default_aurora_1")]
+    pub aurora_1: [u8; 3],
+    #[serde(default = "default_aurora_2")]
+    pub aurora_2: [u8; 3],
+    #[serde(default = "default_aurora_3")]
+    pub aurora_3: [u8; 3],
+    #[serde(default = "default_neon_color")]
+    pub neon_color: [u8; 3],
+
     // --- [特定元件覆寫] ---
     #[serde(default)]
     pub instance_overrides: HashMap<String, ComponentStyle>,
@@ -252,17 +262,17 @@ fn default_dark_text() -> [u8; 3] {
     [200, 160, 100]
 }
 fn default_light_bg() -> [u8; 3] {
-    [0xFF, 0xFD, 0xF0]
+    [252, 252, 253] // 清爽白
 }
 fn default_light_text() -> [u8; 3] {
-    [34, 34, 34]
+    [30, 30, 35] // 深灰色
 }
 
 fn default_dark_label() -> [u8; 3] {
     [200, 160, 100]
 }
 fn default_light_label() -> [u8; 3] {
-    [34, 34, 34]
+    [30, 30, 35]
 }
 
 fn default_dark_text_muted() -> [u8; 3] {
@@ -279,24 +289,24 @@ fn default_dark_btn_text() -> [u8; 3] {
     [220, 220, 220]
 }
 fn default_light_btn_bg() -> [u8; 3] {
-    [240, 240, 230]
+    [240, 240, 245] // 按鈕淺灰
 }
 fn default_light_btn_text() -> [u8; 3] {
-    [40, 40, 40]
+    [45, 45, 50]
 }
 
 fn default_dark_input_bg() -> [u8; 3] {
     [20, 20, 25]
 }
 fn default_light_input_bg() -> [u8; 3] {
-    [250, 250, 245]
+    [255, 255, 255] // 純白輸入框
 }
 
 fn default_dark_list_bg() -> [u8; 3] {
     [25, 25, 30]
 }
 fn default_light_list_bg() -> [u8; 3] {
-    [255, 255, 250]
+    [250, 250, 252] // 淺灰日誌背景
 }
 
 fn default_dark_tab_active() -> [u8; 3] {
@@ -306,29 +316,29 @@ fn default_dark_tab_inactive() -> [u8; 3] {
     [35, 35, 40]
 }
 fn default_light_tab_active() -> [u8; 3] {
-    [220, 220, 210]
+    [230, 235, 245]
 }
 fn default_light_tab_inactive() -> [u8; 3] {
-    [245, 245, 240]
+    [245, 245, 250]
 }
 
 fn default_dark_header_bg() -> [u8; 3] {
     [37, 37, 43]
 }
 fn default_light_header_bg() -> [u8; 3] {
-    [245, 245, 235]
+    [235, 235, 240]
 }
 fn default_dark_border_color() -> [u8; 3] {
     [60, 60, 66]
 }
 fn default_light_border_color() -> [u8; 3] {
-    [210, 210, 200]
+    [210, 210, 220] // 增強邊框對比
 }
 fn default_dark_hover_bg() -> [u8; 3] {
     [56, 56, 64]
 }
 fn default_light_hover_bg() -> [u8; 3] {
-    [230, 230, 220]
+    [225, 235, 250] // 藍色懸停感
 }
 fn default_dark_slider_bg() -> [u8; 3] {
     [42, 42, 48]
@@ -352,14 +362,14 @@ fn default_dark_progress_bg() -> [u8; 3] {
     [51, 51, 51]
 }
 fn default_light_progress_bg() -> [u8; 3] {
-    [240, 240, 230]
+    [235, 235, 240]
 }
 
 fn default_dark_accent() -> [u8; 3] {
     [212, 175, 55]
 }
 fn default_light_accent() -> [u8; 3] {
-    [212, 175, 55]
+    [0, 120, 212]
 }
 fn default_dark_danger() -> [u8; 3] {
     [170, 17, 17]
@@ -400,6 +410,20 @@ fn default_progress_style() -> String {
 fn default_true() -> bool {
     true
 }
+
+fn default_aurora_1() -> [u8; 3] {
+    [255, 0, 127]
+}
+fn default_aurora_2() -> [u8; 3] {
+    [127, 0, 255]
+}
+fn default_aurora_3() -> [u8; 3] {
+    [0, 255, 255]
+}
+fn default_neon_color() -> [u8; 3] {
+    [0, 255, 204]
+}
+
 fn default_ui_lang() -> String {
     "zh_tw".to_string()
 }
@@ -447,6 +471,10 @@ impl Default for StyleConfig {
             light_accent: default_light_accent(),
             dark_danger: default_dark_danger(),
             light_danger: default_light_danger(),
+            aurora_1: default_aurora_1(),
+            aurora_2: default_aurora_2(),
+            aurora_3: default_aurora_3(),
+            neon_color: default_neon_color(),
             border_alpha: default_alpha_border(),
             panel_alpha: default_alpha_panel(),
             backdrop_alpha: default_alpha_backdrop(),
@@ -724,6 +752,10 @@ mod tests {
         let style_json = r#"{"theme": "dark", "font_size": 12.0, "dark_bg": [0,0,0], "dark_text":[0,0,0], "light_bg":[0,0,0], "light_text":[0,0,0], "dark_label":[0,0,0], "light_label":[0,0,0], "dark_btn_bg":[0,0,0], "dark_btn_text":[0,0,0], "light_btn_bg":[0,0,0], "light_btn_text":[0,0,0], "dark_input_bg":[0,0,0], "light_input_bg":[0,0,0], "dark_list_bg":[0,0,0], "light_list_bg":[0,0,0], "dark_tab_active":[0,0,0], "dark_tab_inactive":[0,0,0], "light_tab_active":[0,0,0], "light_tab_inactive":[0,0,0], "btn_rounding_enabled": true, "btn_rounding_value": 0.0, "progress_pulse_speed": 0.0, "instance_overrides": {}}"#;
         let style: StyleConfig = serde_json::from_str(style_json).unwrap();
         assert!(style.progress_pulse_enabled);
+        assert_eq!(style.aurora_1, [255, 0, 127]);
+        assert_eq!(style.aurora_2, [127, 0, 255]);
+        assert_eq!(style.aurora_3, [0, 255, 255]);
+        assert_eq!(style.neon_color, [0, 255, 204]);
     }
 
     #[test]

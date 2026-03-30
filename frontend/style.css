@@ -21,6 +21,10 @@
     --slider-bg: #2a2a30;
     --slider-thumb: #e0e0e0;
     --switch-bg: #1a1a1f;
+    --aurora-1: #ff007f;
+    --aurora-2: #7f00ff;
+    --aurora-3: #00ffff;
+    --neon-color: #00ffcc;
 
     /* 📐 間距系統 */
     --space-sm: 10px;
@@ -40,16 +44,14 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-size: var(--font-size);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100vh; /* 允許全局捲動 */
     box-sizing: border-box;
-    transition:
-        background-color 0.2s,
-        color 0.2s;
+    transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* 📐 實用工具類別 (Utility Classes) */
@@ -67,9 +69,12 @@ body {
 }
 
 .collapsible-panel.expanded {
-    max-height: 500px; /* 足夠高的預設，可視內容自適應 */
+    max-height: 2000px; /* 足夠高度以應對動態內容 */
     opacity: 1;
-    margin-bottom: 20px;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+    border: 1px solid var(--border-light) !important;
 }
 
 .flex-end {
@@ -147,7 +152,7 @@ h2 {
 
 label {
     display: block;
-    margin-bottom: 0px;
+    margin-bottom: 6px;
     color: var(--label-color, var(--text-color));
 }
 
@@ -181,7 +186,9 @@ label {
 
 input[type='text'],
 input[type='password'],
-textarea {
+textarea,
+select,
+input[type='number'] {
     width: 100%;
     padding: 10px;
     background-color: var(--input-bg);
@@ -189,15 +196,29 @@ textarea {
     border-radius: var(--border-radius);
     color: var(--text-color);
     box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 💎 全域元件聚焦效果 (更明顯的雙層發光環) */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none !important;
+    border-color: var(--accent-color) !important;
+    box-shadow:
+        0 0 0 2px var(--bg-color),
+        0 0 0 4px var(--accent-color),
+        0 0 15px rgba(var(--accent-color-rgb, 0, 120, 212), 0.3) !important;
 }
 
 button {
+    cursor: pointer;
     background-color: var(--btn-bg);
     color: var(--btn-text);
     border: 1px solid var(--border-color);
     padding: 10px 20px;
     border-radius: var(--border-radius);
-    cursor: pointer;
     font-weight: bold;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, background-color 0.2s;
 }
@@ -205,17 +226,19 @@ button {
 button:hover {
     background-color: var(--hover-bg);
     transform: translateY(-2px);
-    box-shadow: 0 0 10px var(--accent-color); /* 🌟 1.A 微發光效果 */
+    box-shadow: 0 0 12px var(--accent-color);
 }
 
 #btn-translate,
-#btn-save-style {
+#btn-save-style,
+#btn-dict-add {
     background-color: var(--accent-color);
-    color: #111;
+    color: #111 !important;
 }
 
 #btn-translate:hover,
-#btn-save-style:hover {
+#btn-save-style:hover,
+#btn-dict-add:hover {
     filter: brightness(1.2);
 }
 
@@ -281,20 +304,40 @@ input[type='color'] {
     box-sizing: border-box;
 }
 
+/* 🛠️ 日誌區域自適應佈局 (修正失效問題) */
 .status-section {
-    flex: 1;
+    flex: 1 1 auto; /* 視窗拉大時主動伸展 */
     display: flex;
     flex-direction: column;
-    min-height: 200px; /* 🚨 保障最少高度安全區 */
+    min-height: 250px; /* 保證展開時不會消失的最小值 */
+    margin-top: 20px;
+    gap: 8px;
 }
 
 #log-output {
-    flex: 1;
-    background-color: var(--input-bg);
+    flex: 1 1 0; /* 基礎比例為 0，由 flex-grow 決定最終大小 */
+    min-height: 200px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    padding: 10px;
-    overflow-y: auto;
+    background-color: var(--list-bg);
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+
+    .log-scroller {
+        width: 100%;
+        height: 0px;
+    }
+
+    .log-viewport {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
 }
 
 #progress-container,
@@ -312,7 +355,6 @@ input[type='color'] {
     width: 0%;
     height: 100%;
     transition: width 0.2s;
-    /* 動畫由 JS 套用 */
 }
 
 @keyframes pulse {
@@ -335,7 +377,7 @@ input[type='color'] {
 /* --- [進度條樣式擴充] --- */
 #progress-bar.style-aurora,
 #batch-progress-bar.style-aurora {
-    background: linear-gradient(90deg, #ff007f, #7f00ff, #00ffff) !important;
+    background: linear-gradient(90deg, var(--aurora-1), var(--aurora-2), var(--aurora-3)) !important;
     background-size: 200% auto !important;
     animation: aurora 3s linear infinite !important;
 }
@@ -347,8 +389,8 @@ input[type='color'] {
 
 #progress-bar.style-neon,
 #batch-progress-bar.style-neon {
-    background: #00ffcc !important;
-    box-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc !important;
+    background: var(--neon-color) !important;
+    box-shadow: 0 0 10px var(--neon-color), 0 0 20px var(--neon-color) !important;
     background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent) !important;
     background-size: 1rem 1rem !important;
     animation: stripe 1s linear infinite !important;
@@ -357,18 +399,6 @@ input[type='color'] {
 @keyframes stripe {
     0% { background-position: 0 0; }
     100% { background-position: 2rem 0; }
-}
-
-#log-output {
-    flex: 1;
-    background-color: var(--list-bg);
-    border: 1px solid #333;
-    border-radius: var(--border-radius);
-    padding: 10px;
-    overflow-y: auto;
-    font-family: monospace;
-    white-space: pre-wrap;
-    font-size: 0.9rem;
 }
 
 /* 🔧 開發人員選項 Grid */
@@ -385,7 +415,7 @@ input[type='color'] {
     gap: 8px;
     color: var(--text-color);
     cursor: pointer;
-    margin-bottom: 0; /* 覆蓋全域 label */
+    margin-bottom: 0;
 }
 
 .checkbox-grid input[type='checkbox'] {
@@ -410,7 +440,7 @@ input[type='color'] {
 }
 
 .styled-dialog[open] {
-    display: flex; /* 開啟時強制 flex 排版 */
+    display: flex;
 }
 
 .styled-dialog::backdrop {
@@ -533,63 +563,6 @@ tr:hover {
     font-size: 0.85rem;
 }
 
-/* 輔助按鈕 Row */
-.button-row {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.secondary-btn {
-    background-color: var(--btn-bg);
-    color: var(--btn-text);
-}
-
-/* ️ API 參數面板 Grid */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 15px;
-}
-
-.input-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 8px;
-    align-items: center;
-}
-
-.input-row input {
-    flex: 1;
-}
-
-.action-btn {
-    padding: 8px 12px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-}
-
-select {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    color: var(--text-color);
-    box-sizing: border-box;
-    cursor: pointer;
-}
-
-input[type='number'] {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    color: var(--text-color);
-    box-sizing: border-box;
-}
-
 /* 🎚️ 滑動開關 (Switch) 樣式 - 復刻 eGUI Toggle */
 .switch-group {
     display: flex;
@@ -664,94 +637,38 @@ input:checked + .slider:before {
     background-color: var(--hover-bg) !important;
 }
 
-/* 折疊面板邊距調整 (避免空白區塊) */
-.collapsible-panel {
-    max-height: 0;
-    overflow-y: hidden;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin-bottom: 0 !important;
-    border: none !important;
-    transition: max-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
-}
-
-.collapsible-panel.expanded {
-    max-height: 2000px; /* 🚨 大約足夠展開的高度 */
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
-    margin-bottom: 20px !important;
-    border: 1px solid var(--border-light) !important;
-}
-
-/* 🛠️ 日誌區域回復自適應 (彈性伸縮填滿底部) */
-.status-section {
-    flex: 1 !important;
-    display: flex;
-    flex-direction: column;
-    height: auto !important;
-}
-
-#log-output {
-    flex: 1 !important;
-    min-height: 200px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background-color: var(--input-bg);
-    padding: 0;
-    overflow: hidden;
-    position: relative;
-
-    .log-scroller {
-        width: 100%;
-        height: 0px;
-    }
-
-    .log-viewport {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        padding: 10px;
-        box-sizing: border-box;
-    }
-}
-
 /* 虛擬化日誌行樣式 (使用 Nesting 改寫) */
 .log-line {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
     line-height: 1.4;
-    white-space: pre-wrap;
-    word-break: break-all;
     display: flex;
+    align-items: flex-start;
 
     .log-time {
         color: #888;
         margin-right: 8px;
         white-space: nowrap;
         user-select: none;
+        flex-shrink: 0;
     }
 
     .log-msg {
         flex: 1;
+        min-width: 0;
+        white-space: pre-wrap;
+        word-break: break-all;
     }
 
     /* 各等級分色 */
-    &.log-error .log-msg { color: var(--danger-color); }
-    &.log-warn .log-msg { color: #ffcc00; }
+    &.log-error .log-msg { color: var(--danger-color); font-weight: bold; }
+    &.log-warn .log-msg { color: #d97706; } /* 亮色下更有感的暗金色 */
     &.log-info .log-msg { color: var(--text-color); }
-    &.log-success .log-msg { color: #00ff88; }
+    &.log-success .log-msg { color: #059669; } /* 亮色下更有感的深翠綠 */
 }
-
-
 
 #label-files, #status-text {
     color: var(--text-muted, #ddd);
-}
-
-#btn-dict-add {
-    background-color: var(--accent-color);
-    color: #111 !important;
 }
 
 #btn-dict-replace {

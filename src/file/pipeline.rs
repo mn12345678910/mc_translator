@@ -459,5 +459,47 @@ pub fn shorten_rel_paths(paths: &[String]) -> String {
         }
         last_parts = current_parts;
     }
-    result.join(", ")
+    // 將結果每 5 個檔案分行顯示
+    let mut lines = Vec::new();
+    for chunk in result.chunks(5) {
+        lines.push(chunk.join(", "));
+    }
+    lines.join(",\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shorten_rel_paths_line_split() {
+        let paths = vec![
+            "a/b/c/1.json".to_string(),
+            "a/b/c/2.json".to_string(),
+            "a/b/c/3.json".to_string(),
+            "a/b/c/4.json".to_string(),
+            "a/b/c/5.json".to_string(),
+            "a/b/c/6.json".to_string(),
+        ];
+        let result = shorten_rel_paths(&paths);
+        // Common prefix "a/b/c/" for 2-6. 1st is full.
+        // Result: "a/b/c/1.json, 2.json, 3.json, 4.json, 5.json,\n6.json"
+        assert!(result.contains(",\n"));
+        assert_eq!(result.lines().count(), 2);
+    }
+
+    #[test]
+    fn test_shorten_rel_paths_single() {
+        let paths = vec!["a/b/c/1.json".to_string()];
+        let result = shorten_rel_paths(&paths);
+        assert_eq!(result, "a/b/c/1.json");
+    }
+
+    #[test]
+    fn test_shorten_rel_paths_exactly_five() {
+        let paths = (1..=5).map(|i| format!("file{}.json", i)).collect::<Vec<_>>();
+        let result = shorten_rel_paths(&paths);
+        assert!(!result.contains('\n'));
+        assert_eq!(result.split(", ").count(), 5);
+    }
 }

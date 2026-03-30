@@ -28,7 +28,10 @@ export function applyColors(style) {
 
     if (bg) root.style.setProperty('--bg-color', `rgb(${bg[0]},${bg[1]},${bg[2]})`);
     if (text) root.style.setProperty('--text-color', `rgb(${text[0]},${text[1]},${text[2]})`);
-    if (accent) root.style.setProperty('--accent-color', `rgb(${accent[0]},${accent[1]},${accent[2]})`);
+    if (accent) {
+        root.style.setProperty('--accent-color', `rgb(${accent[0]},${accent[1]},${accent[2]})`);
+        root.style.setProperty('--accent-color-rgb', `${accent[0]}, ${accent[1]}, ${accent[2]}`);
+    }
     if (danger) root.style.setProperty('--danger-color', `rgb(${danger[0]},${danger[1]},${danger[2]})`);
 
     // --- [間距系統] ---
@@ -72,6 +75,10 @@ export function applyColors(style) {
     if (sliderThumb) root.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
     if (switchBg) root.style.setProperty('--switch-bg', `rgb(${switchBg[0]},${switchBg[1]},${switchBg[2]})`);
     if (progressBg) root.style.setProperty('--progress-bg', `rgb(${progressBg[0]},${progressBg[1]},${progressBg[2]})`);
+    if (style.aurora_1) root.style.setProperty('--aurora-1', `rgb(${style.aurora_1[0]},${style.aurora_1[1]},${style.aurora_1[2]})`);
+    if (style.aurora_2) root.style.setProperty('--aurora-2', `rgb(${style.aurora_2[0]},${style.aurora_2[1]},${style.aurora_2[2]})`);
+    if (style.aurora_3) root.style.setProperty('--aurora-3', `rgb(${style.aurora_3[0]},${style.aurora_3[1]},${style.aurora_3[2]})`);
+    if (style.neon_color) root.style.setProperty('--neon-color', `rgb(${style.neon_color[0]},${style.neon_color[1]},${style.neon_color[2]})`);
 
     // --- [面板與背景透明度] ---
     if (bg) {
