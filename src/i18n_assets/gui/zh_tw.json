@@ -202,6 +202,10 @@
   "palette_label_alpha": "透明度 (0.0-1.0)",
   "palette_label_rounding": "圓角數值 (px)",
   "status_style_restored": "🎨 介面樣式已恢復預設",
+  "label_excluded_paths": "路徑排除清單 (每行一個):",
+  "placeholder_excluded_paths": "例如:\nkubejs/data/\nconfig/almostunified/",
+  "status_config_restored": "✅ API 與翻譯設定已恢復預設",
+  "status_dev_restored": "🛠 開發人員設定已恢復預設",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

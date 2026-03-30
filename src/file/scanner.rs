@@ -12,7 +12,7 @@ pub fn scan_files_recursive(
         let path = entry.path();
         if path.is_file() {
             if let Some(ext) = path.extension() {
-                if ext == "jar" || ext == "json" || ext == "js" {
+                if ext == "jar" || ext == "json" || ext == "js" || ext == "snbt" {
                     let path_norm = path.canonicalize().unwrap_or(path.to_path_buf());
 
                     let rel = match path_norm.strip_prefix(&base_norm) {

@@ -175,5 +175,6 @@
   "cli_label_model": "モデル: {}",
   "cli_label_input": "入力: {}",
   "cli_label_output": "出力: {}",
-  "cli_label_default": "デフォルト"
+  "cli_label_default": "デフォルト",
+  "cli_hint_config_exclude": "ヒント：設定ファイル (config.cfg) で永続的な除外設定を行うこともできます。"
 }

@@ -175,5 +175,6 @@
   "cli_label_model": "Model: {}",
   "cli_label_input": "Input: {}",
   "cli_label_output": "Output: {}",
-  "cli_label_default": "Default"
+  "cli_label_default": "Default",
+  "cli_hint_config_exclude": "Hint: You can also set permanent exclusions in config.cfg."
 }

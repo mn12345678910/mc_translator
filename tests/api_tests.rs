@@ -89,5 +89,6 @@ fn create_ollama_config(url: String) -> JobConfig {
         cleanup_prefixes: vec![],
         cleanup_contains: vec![],
         enable_debug_log: false,
+        excluded_paths: Vec::new(),
     }
 }

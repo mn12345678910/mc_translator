@@ -202,6 +202,10 @@
   "palette_label_alpha": "透明度 (0.0-1.0)",
   "palette_label_rounding": "角丸設定 (px)",
   "status_style_restored": "🎨 インターフェース設定をデフォルトに戻しました",
+  "label_excluded_paths": "パス除外リスト (1行に1つ):",
+  "placeholder_excluded_paths": "例:\nkubejs/data/\nconfig/almostunified/",
+  "status_config_restored": "✅ API と翻訳設定がデフォルトに戻されました",
+  "status_dev_restored": "🛠 開発者設定がデフォルトに戻されました",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

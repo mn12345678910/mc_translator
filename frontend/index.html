@@ -301,6 +301,19 @@
                 </div>
             </div>
 
+            <!-- [NEW] 排除路徑設定區 -->
+            <div style="margin-top: 15px">
+                <div class="form-group" style="margin-top: 10px">
+                    <label for="excluded-paths" data-i18n="label_excluded_paths"></label>
+                    <textarea
+                        id="excluded-paths"
+                        rows="4"
+                        autocomplete="off"
+                        data-i18n-placeholder="placeholder_excluded_paths"
+                    ></textarea>
+                </div>
+            </div>
+
             <!-- [NEW] 系統技術指令 (開發人員專用) -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
@@ -309,6 +322,16 @@
                     >
                     <textarea id="system-prompt" rows="5" style="margin-top: 4px" autocomplete="off"></textarea>
                 </div>
+            </div>
+            <div class="button-row mt-md" style="justify-content: flex-end">
+                <button
+                    id="btn-restore-dev"
+                    class="action-btn"
+                    data-i18n="btn_restore_defaults"
+                    style="background-color: var(--secondary-color)"
+                >
+                    ⟲
+                </button>
             </div>
         </div>
 

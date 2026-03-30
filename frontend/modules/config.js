@@ -59,7 +59,10 @@ export async function loadConfig() {
         if (chkSkipJar) chkSkipJar.checked = config.skip_jar || false;
         if (chkSkipBook) chkSkipBook.checked = config.skip_book || false;
         if (chkLlmLog) chkLlmLog.checked = config.enable_llm_log || false;
-        if (chkDebugLog) chkDebugLog.checked = config.enable_debug_log || false;
+        const excludedPaths = document.getElementById('excluded-paths');
+        if (excludedPaths && config.excluded_paths) {
+            excludedPaths.value = config.excluded_paths.join('\n');
+        }
 
         toggleOllamaGroup();
         await updateUiLanguage();
@@ -135,6 +138,14 @@ export async function saveConfig() {
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
         state.currentConfig.enable_debug_log = chkDebugLog ? chkDebugLog.checked : false;
 
+        const excludedPaths = document.getElementById('excluded-paths');
+        state.currentConfig.excluded_paths = excludedPaths
+            ? excludedPaths.value
+                  .split('\n')
+                  .map((s) => s.trim())
+                  .filter((s) => s !== '')
+            : [];
+
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();
     } catch (e) {
@@ -203,8 +214,8 @@ export async function restoreDefaultConfig() {
         state.currentConfig.batch_max_chars = defaultConfig.batch_max_chars;
         state.currentConfig.timeout = defaultConfig.timeout;
         state.currentConfig.glossary_priority = defaultConfig.glossary_priority;
-        state.currentConfig.system_prompt = defaultConfig.system_prompt;
         state.currentConfig.user_prompt = defaultConfig.user_prompt;
+        // 移除 excluded_paths 與 system_prompt 的重置（改由 Dev 按鈕負責）
 
         // 金鑰重置為空 (比照預設值)
         await invoke('save_api_key_cmd', { key: '' });
@@ -219,6 +230,7 @@ export async function restoreDefaultConfig() {
         const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
         const systemPrompt = document.getElementById('system-prompt');
         const userPrompt = document.getElementById('user-prompt');
+        // const excludedPaths = document.getElementById('excluded-paths'); // 此處不重置
 
         if (apiProvider) apiProvider.value = state.currentConfig.api_provider;
         if (apiKey) apiKey.value = '';
@@ -229,6 +241,7 @@ export async function restoreDefaultConfig() {
         if (chkGlossaryPriority) chkGlossaryPriority.checked = state.currentConfig.glossary_priority === 'user';
         if (systemPrompt) systemPrompt.value = state.currentConfig.system_prompt;
         if (userPrompt) userPrompt.value = state.currentConfig.user_prompt;
+        // if (excludedPaths) excludedPaths.value = state.currentConfig.excluded_paths.join('\n'); // 此處不重置
 
         toggleOllamaGroup();
         toggleApiKeyVisibility();
@@ -239,5 +252,55 @@ export async function restoreDefaultConfig() {
         appendLog(state.currentLabels.status_config_restored || 'API 設定已恢復預設');
     } catch (e) {
         console.error('恢復 API 預設失敗:', e);
+    }
+}
+
+export async function restoreDevDefaults() {
+    try {
+        const defaultConfig = await invoke('get_default_config');
+
+        // 僅更新與「開發人員選項」相關的欄位
+        state.currentConfig.skip_json = defaultConfig.skip_json;
+        state.currentConfig.skip_js = defaultConfig.skip_js;
+        state.currentConfig.skip_jar = defaultConfig.skip_jar;
+        state.currentConfig.skip_book = defaultConfig.skip_book;
+        state.currentConfig.enable_llm_log = defaultConfig.enable_llm_log;
+        state.currentConfig.enable_debug_log = defaultConfig.enable_debug_log;
+        state.currentConfig.system_prompt = defaultConfig.system_prompt;
+        state.currentConfig.excluded_paths = defaultConfig.excluded_paths;
+
+        // 重新載入 UI
+        const chkSkipJson = document.getElementById('chk-skip-json');
+        const chkSkipJs = document.getElementById('chk-skip-js');
+        const chkSkipJar = document.getElementById('chk-skip-jar');
+        const chkSkipBook = document.getElementById('chk-skip-book');
+        const chkLlmLog = document.getElementById('chk-llm-log');
+        const chkDebugLog = document.getElementById('chk-debug-log');
+        const systemPrompt = document.getElementById('system-prompt');
+        const excludedPaths = document.getElementById('excluded-paths');
+
+        if (chkSkipJson) chkSkipJson.checked = state.currentConfig.skip_json;
+        if (chkSkipJs) chkSkipJs.checked = state.currentConfig.skip_js;
+        if (chkSkipJar) chkSkipJar.checked = state.currentConfig.skip_jar;
+        if (chkSkipBook) chkSkipBook.checked = state.currentConfig.skip_book;
+        if (chkLlmLog) chkLlmLog.checked = state.currentConfig.enable_llm_log;
+        if (chkDebugLog) chkDebugLog.checked = state.currentConfig.enable_debug_log;
+        if (systemPrompt) systemPrompt.value = state.currentConfig.system_prompt;
+        if (excludedPaths) excludedPaths.value = state.currentConfig.excluded_paths.join('\n');
+
+        // 更新 Label 狀態 (切換開關的文字)
+        const updateToggleStateLabelModule = await import('./i18n.js').then((m) => m.updateToggleStateLabel);
+        ['chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log', 'chk-debug-log'].forEach(
+            (id) => {
+                const el = document.getElementById(id);
+                if (el) updateToggleStateLabelModule(id, el.checked);
+            }
+        );
+
+        // 自動儲存變更
+        await invoke('save_config', { config: state.currentConfig });
+        appendLog(state.currentLabels.status_dev_restored || '開發人員設定已恢復預設');
+    } catch (e) {
+        console.error('恢復開發者預設失敗:', e);
     }
 }

@@ -291,6 +291,14 @@ pub struct GuiLabels {
     pub palette_label_alpha: String,
     pub palette_label_rounding: String,
     pub status_style_restored: String,
+    #[serde(default)]
+    pub label_excluded_paths: String,
+    #[serde(default)]
+    pub placeholder_excluded_paths: String,
+    #[serde(default)]
+    pub status_config_restored: String,
+    #[serde(default)]
+    pub status_dev_restored: String,
 }
 
 impl GuiLabels {
@@ -436,6 +444,8 @@ pub struct CliLabels {
     pub cli_label_output: String,
     #[serde(default)]
     pub cli_label_default: String,
+    #[serde(default)]
+    pub cli_hint_config_exclude: String,
 }
 
 impl CliLabels {

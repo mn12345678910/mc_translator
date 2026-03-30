@@ -113,6 +113,28 @@ pub async fn process_all_files(
             return Ok(());
         }
 
+        // --- 全域排除過濾 (Global Blacklist) ---
+        // 1. 正規化路徑（小寫 + 統一正斜線）以利匹配
+        let rel_path_norm = rel_path.to_lowercase().replace('\\', "/");
+
+        // 2. 動態排除清單 (包含核心技術目錄與使用者自定義)
+        let excluded = {
+            let cfg = job_config.lock().unwrap();
+            cfg.excluded_paths.clone()
+        };
+
+        if excluded.iter().any(|p: &String| {
+            let p_norm = p.to_lowercase().replace('\\', "/");
+            !p_norm.is_empty() && rel_path_norm.contains(&p_norm)
+        }) {
+            continue;
+        }
+
+        // 3. 針對 JourneyMap 擴展名檢查（雙重保險）
+        if rel_path_norm.ends_with(".theme2.json") {
+            continue;
+        }
+
         let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
         match ext {
             "json" => {
@@ -519,6 +541,40 @@ mod tests {
             extract_group_label(Path::new("root_file.json")),
             "root_file.json"
         );
+    }
+
+    #[test]
+    fn test_path_filtering_logic() {
+        let test_cases = vec![
+            ("kubejs/data/worldgen/structure.json", true),
+            ("journeymap/icon/theme/flat/DesertTemple.theme2.json", true),
+            ("packmenu/resources/assets/atm/buttons/play.json", true),
+            ("config/almostunified/unify.json", true),
+            ("mods/my_awesome_mod.jar", false),
+            ("config/minecraft/server.properties", false),
+            ("patchouli_books/manual/en_us/chapters/intro.json", false),
+            ("kubejs/server_scripts/script.js", false),
+        ];
+
+        for (rel_path, should_skip) in test_cases {
+            let rel_path_norm = rel_path.to_lowercase().replace('\\', "/");
+            let is_skipped = rel_path_norm.contains("kubejs/data/")
+                || rel_path_norm.contains("journeymap/icon/theme")
+                || rel_path_norm.contains("packmenu/")
+                || rel_path_norm.contains("config/almostunified/")
+                || rel_path_norm.contains("fancymenu/")
+                || rel_path_norm.contains("shaderpacks/")
+                || rel_path_norm.contains("screenshots/")
+                || rel_path_norm.contains("saves/")
+                || rel_path_norm.contains(".mixin.out/")
+                || rel_path_norm.ends_with(".theme2.json");
+
+            assert_eq!(
+                is_skipped, should_skip,
+                "Path '{}' filtering mismatch",
+                rel_path
+            );
+        }
     }
 
     #[test]

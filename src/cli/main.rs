@@ -80,6 +80,10 @@ struct Args {
     /// 啟用偵錯日誌持久化 (debug.log)
     #[arg(long)]
     log_debug: bool,
+
+    /// 排除路徑 (例如: --exclude "secret_folder" -e "ignore_this") [僅追加]
+    #[arg(short = 'e', long)]
+    exclude: Vec<String>,
 }
 
 #[tokio::main]
@@ -148,6 +152,10 @@ async fn run_main_with_args(
     }
     if args.log_debug {
         config.enable_debug_log = true;
+    }
+    if !args.exclude.is_empty() {
+        config.excluded_paths.extend(args.exclude);
+        println!("{}", i18n.cli_hint_config_exclude);
     }
 
     let is_headless = args.input.is_some();

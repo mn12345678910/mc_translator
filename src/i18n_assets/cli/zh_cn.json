@@ -175,5 +175,6 @@
   "cli_label_model": "模型: {}",
   "cli_label_input": "输入: {}",
   "cli_label_output": "输出: {}",
-  "cli_label_default": "默认"
+  "cli_label_default": "默认",
+  "cli_hint_config_exclude": "提示：您可以在配置文件 (config.cfg) 中进行永久排除设置。"
 }

@@ -33,6 +33,7 @@ fn create_mock_state(output_dir: String) -> JobSharedState {
         cleanup_prefixes: vec![],
         cleanup_contains: vec![],
         enable_debug_log: false,
+        excluded_paths: Vec::new(),
     };
 
     JobSharedState {

@@ -78,6 +78,10 @@ pub struct AppConfig {
     #[serde(alias = "記錄偵錯日誌", default)]
     pub enable_debug_log: bool,
 
+    // --- [檔案過濾] ---
+    #[serde(alias = "排除路徑", default = "default_excluded_paths")]
+    pub excluded_paths: Vec<String>,
+
     // --- [視窗幾何資訊] ---
     #[serde(alias = "主視窗X")]
     pub main_x: f32,
@@ -95,6 +99,23 @@ pub struct AppConfig {
     pub viewer_width: f32,
     #[serde(alias = "建議詞視窗高度")]
     pub viewer_height: f32,
+}
+
+pub fn default_excluded_paths() -> Vec<String> {
+    vec![
+        "kubejs/data/".to_string(),
+        "packmenu/".to_string(),
+        "config/almostunified/".to_string(),
+        "fancymenu/".to_string(),
+        "journeymap/icon/theme".to_string(),
+        "shaderpacks/".to_string(),
+        "screenshots/".to_string(),
+        "saves/".to_string(),
+        "logs/".to_string(),
+        "defaultconfigs/".to_string(),
+        "local/".to_string(),
+        ".mixin.out/".to_string(),
+    ]
 }
 
 /// 外觀與視覺設定檔 (style.cfg)
@@ -589,6 +610,7 @@ impl Default for AppConfig {
             viewer_y: 100.0,
             viewer_width: 800.0,
             viewer_height: 600.0,
+            excluded_paths: default_excluded_paths(),
         }
     }
 }

@@ -154,6 +154,7 @@ pub async fn start_translation_workflow(
         config.source_lang.clone(),
         config.target_lang.clone(),
         config.enable_debug_log,
+        config.excluded_paths.clone(),
     )));
 
     // 4. 建立 JobSharedState

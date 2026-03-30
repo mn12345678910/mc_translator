@@ -6,6 +6,7 @@ import {
     loadConfig,
     saveConfig,
     restoreDefaultConfig,
+    restoreDevDefaults,
     toggleOllamaGroup,
     toggleApiKeyVisibility,
     validateCanTranslate,
@@ -94,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'timeout-sec',
         'user-prompt',
         'system-prompt',
+        'excluded-paths',
     ];
     configInputs.forEach((id) => {
         const inputEl = document.getElementById(id);
@@ -325,6 +327,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnRestoreApi = document.getElementById('btn-restore-api');
     if (btnRestoreApi) {
         btnRestoreApi.addEventListener('click', restoreDefaultConfig);
+    }
+    const btnRestoreDev = document.getElementById('btn-restore-dev');
+    if (btnRestoreDev) {
+        btnRestoreDev.addEventListener('click', restoreDevDefaults);
     }
     const btnRestorePalette = document.getElementById('btn-restore-palette');
     if (btnRestorePalette) {

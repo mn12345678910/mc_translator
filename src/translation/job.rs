@@ -45,6 +45,7 @@ pub struct JobConfig {
     pub source_lang: String,
     pub target_lang: String,
     pub enable_debug_log: bool,
+    pub excluded_paths: Vec<String>,
 }
 
 /// 翻譯任務在執行過程中的共享狀態物件 (Arc<Mutex<...>>)
@@ -96,6 +97,7 @@ impl JobConfig {
         source_lang: String,
         target_lang: String,
         enable_debug_log: bool,
+        excluded_paths: Vec<String>,
     ) -> Self {
         Self {
             api_key,
@@ -122,6 +124,7 @@ impl JobConfig {
             source_lang,
             target_lang,
             enable_debug_log,
+            excluded_paths,
         }
     }
 }

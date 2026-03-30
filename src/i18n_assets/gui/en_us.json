@@ -202,6 +202,10 @@
   "palette_label_alpha": "Alpha (0.0-1.0)",
   "palette_label_rounding": "Rounding (px)",
   "status_style_restored": "🎨 UI style restored to default",
+  "label_excluded_paths": "Path Exclusion List (One per line):",
+  "placeholder_excluded_paths": "Example:\nkubejs/data/\nconfig/almostunified/",
+  "status_config_restored": "✅ API & Translation settings restored to defaults",
+  "status_dev_restored": "🛠 Developer settings restored to defaults",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",
