@@ -122,7 +122,9 @@ jobs:
         with:
           components: miri
       - name: Run Miri
-        run: cargo miri test -p mc_translator --lib i18n::tests utils::helpers::tests utils::text_processing::tests
+        run: |
+          cargo miri test -p mc_translator --lib i18n
+          cargo miri test -p mc_translator --lib utils
         env:
           MIRIFLAGS: "-Zmiri-disable-isolation -Zmiri-ignore-leaks"
 
