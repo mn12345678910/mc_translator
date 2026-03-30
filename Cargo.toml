@@ -41,5 +41,6 @@ panic = "abort"
 strip = true
 
 [dev-dependencies]
+tempfile = "3.27.0"
 wiremock = "0.6"
 # 沿用現有依賴或新增測試與 Mocked 必要項

@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
+use tempfile::tempdir;
 
 use mc_translator::file::json_handler::{apply_json_task, collect_json_task};
 use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::job::{JobConfig, JobSharedState};
 
-fn create_mock_state() -> JobSharedState {
+fn create_mock_state(output_dir: String) -> JobSharedState {
     let config = JobConfig {
         api_key: "".to_string(),
         api_provider: "Gemini".to_string(),
@@ -19,7 +20,7 @@ fn create_mock_state() -> JobSharedState {
         timeout: 60,
         batch_size: 150,
         batch_max_chars: 3500,
-        output_dir: "output_test_dir".to_string(),
+        output_dir,
         pack_format: 15,
         glossary_priority: "official".to_string(),
         skip_json: false,
@@ -56,11 +57,14 @@ fn create_mock_state() -> JobSharedState {
 
 #[tokio::test]
 async fn test_json_task_collection_and_application() {
-    let mock_state = create_mock_state();
-    let temp_dir = std::env::temp_dir().join("mc_translator_test_json");
-    fs::create_dir_all(&temp_dir).unwrap();
+    let t_dir = tempdir().unwrap();
+    let input_dir = t_dir.path().join("input");
+    let output_dir = t_dir.path().join("output");
+    fs::create_dir_all(&input_dir).unwrap();
 
-    let json_file_path = temp_dir.join("test_file.json");
+    let mock_state = create_mock_state(output_dir.to_string_lossy().to_string());
+
+    let json_file_path = input_dir.join("test_file.json");
     let json_content = r#"{
         "menu.title": "Main Menu",
         "btn.start": "Start Game"
@@ -95,18 +99,12 @@ async fn test_json_task_collection_and_application() {
     assert!(apply_res.is_ok(), "套用 JSON 任務失敗");
 
     // 檢查輸出的檔案是否存在且內容正確
-    let output_file_path = std::path::Path::new("output_test_dir")
-        .join("LLMTranslator")
-        .join("test_file.json");
+    let output_file_path = output_dir.join("LLMTranslator").join("test_file.json");
 
     assert!(output_file_path.exists(), "輸出檔案不存在");
     let written_content = fs::read_to_string(&output_file_path).unwrap();
     assert!(written_content.contains("主選單"), "未包含翻譯：主選單");
     assert!(written_content.contains("開始遊戲"), "未包含翻譯：開始遊戲");
-
-    // 清理
-    let _ = fs::remove_dir_all(&temp_dir);
-    let _ = fs::remove_dir_all("output_test_dir");
 }
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -142,11 +140,12 @@ async fn test_e2e_translation_workflow() {
     });
 
     // 2. 準備實體檔案環境
-    let temp_dir = std::env::temp_dir().join("mc_translator_e2e");
-    let _ = fs::remove_dir_all(&temp_dir); // 先清理舊的
-    fs::create_dir_all(&temp_dir).unwrap();
+    let t_dir = tempdir().unwrap();
+    let input_dir = t_dir.path().join("e2e_input");
+    let output_dir = t_dir.path().join("e2e_output");
+    fs::create_dir_all(&input_dir).unwrap();
 
-    let lang_file_path = temp_dir.join("en_us.json");
+    let lang_file_path = input_dir.join("en_us.json");
     fs::write(
         &lang_file_path,
         r#"{
@@ -162,7 +161,7 @@ async fn test_e2e_translation_workflow() {
         ollama_url: mock_url,
         api_base_url: "".to_string(),
         model: "mock-model".to_string(),
-        output_dir: temp_dir.join("output").to_string_lossy().to_string(),
+        output_dir: output_dir.to_string_lossy().to_string(),
         ..Default::default()
     };
 
@@ -182,10 +181,7 @@ async fn test_e2e_translation_workflow() {
     assert!(res.is_ok(), "E2E 管線工作流執行失敗: {:?}", res.err());
 
     // 5. 驗證輸出
-    let output_path = temp_dir
-        .join("output")
-        .join("LLMTranslator")
-        .join("zh_tw.json");
+    let output_path = output_dir.join("LLMTranslator").join("zh_tw.json");
 
     assert!(output_path.exists(), "E2E 輸出檔案不存在");
     let written = fs::read_to_string(&output_path).unwrap();
@@ -194,5 +190,4 @@ async fn test_e2e_translation_workflow() {
 
     // 清理
     server_handle.abort();
-    let _ = fs::remove_dir_all(&temp_dir);
 }

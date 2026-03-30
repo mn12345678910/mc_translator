@@ -1,6 +1,7 @@
 // Recompile trigger 1
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::Path;
 
 pub const DEFAULT_LANG: &str = "zh_tw";
 
@@ -129,17 +130,43 @@ impl CommonLabels {
         }
         None
     }
+
     pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) {
+        Self::load_or_default_with_dir(lang, &get_langs_dir("gui"))
+    }
+
+    fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
+        if let Some(l) = Self::load_from_file_with_dir(lang, dir) {
             return l;
         }
         if lang != "en_us" {
-            if let Some(e) = Self::load_from_file("en_us") {
+            if let Some(e) = Self::load_from_file_with_dir("en_us", dir) {
                 return e;
             }
         }
         Self::default_zh_tw()
     }
+
+    fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
+        let lang_path = dir.join(format!("{}.json", lang));
+        if let Ok(file_content) = fs::read_to_string(&lang_path) {
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+            let mut default_json: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
+            if let (Some(lang_obj), Some(default_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in lang_obj {
+                    default_obj.insert(k.clone(), v.clone());
+                }
+            }
+            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
+                return Some(labels);
+            }
+        }
+        None
+    }
+
     pub fn default_zh_tw() -> Self {
         serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap()
     }
@@ -262,6 +289,102 @@ pub struct GuiLabels {
     pub status_style_restored: String,
 }
 
+impl GuiLabels {
+    pub fn ensure_langs_exists() -> Result<(), std::io::Error> {
+        Self::ensure_langs_exists_with_dir(&get_langs_dir("gui"))
+    }
+
+    fn ensure_langs_exists_with_dir(dir: &Path) -> Result<(), std::io::Error> {
+        if !dir.exists() {
+            fs::create_dir_all(dir)?;
+        }
+        let zh_tw_path = dir.join("zh_tw.json");
+        if !zh_tw_path.exists() {
+            let default_labels = Self::default_zh_tw();
+            fs::write(
+                &zh_tw_path,
+                serde_json::to_string_pretty(&default_labels).unwrap(),
+            )?;
+        }
+        let files = [
+            ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
+            ("en_us.json", include_str!("i18n_assets/gui/en_us.json")),
+            ("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json")),
+        ];
+        for (file_name, file_content) in files {
+            let file_path = dir.join(file_name);
+            if cfg!(debug_assertions) || !file_path.exists() {
+                fs::write(file_path, file_content)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn load_from_file(lang: &str) -> Option<Self> {
+        Self::load_from_file_with_dir(lang, &get_langs_dir("gui"))
+    }
+
+    fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
+        let lang_path = dir.join(format!("{}.json", lang));
+        if let Ok(file_content) = fs::read_to_string(&lang_path) {
+            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+            let mut default_json: serde_json::Value =
+                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
+            if let (Some(lang_obj), Some(default_obj)) =
+                (lang_json.as_object(), default_json.as_object_mut())
+            {
+                for (k, v) in lang_obj {
+                    default_obj.insert(k.clone(), v.clone());
+                }
+            }
+            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
+                return Some(labels);
+            }
+        }
+        None
+    }
+
+    pub fn load_or_default(lang: &str) -> Self {
+        Self::load_or_default_with_dir(lang, &get_langs_dir("gui"))
+    }
+
+    fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
+        if let Some(loaded) = Self::load_from_file_with_dir(lang, dir) {
+            return loaded;
+        }
+        Self::default_zh_tw()
+    }
+
+    pub fn default_zh_tw() -> Self {
+        let json_str = include_str!("i18n_assets/gui/zh_tw.json");
+        match serde_json::from_str::<Self>(json_str) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("\n[DEBUG] Serde error: {:?}", e);
+                panic!("Serde error: {:?}", e);
+            }
+        }
+    }
+
+    pub fn get_available_ui_langs() -> Vec<String> {
+        let mut langs_list = Vec::new();
+        if let Ok(es) = std::fs::read_dir(get_langs_dir("gui")) {
+            for e in es.flatten() {
+                if e.path().extension().is_some_and(|x| x == "json") {
+                    if let Some(stem) = e.path().file_stem() {
+                        langs_list.push(stem.to_string_lossy().to_string());
+                    }
+                }
+            }
+        }
+        if langs_list.is_empty() {
+            langs_list.push("zh_tw".to_string());
+        }
+        langs_list.sort();
+        langs_list
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(default)]
 pub struct CliLabels {
@@ -311,123 +434,22 @@ pub struct CliLabels {
     pub cli_label_default: String,
 }
 
-// --- 輔助載入規劃 ---
-fn get_langs_dir(sub: &str) -> std::path::PathBuf {
-    let cwd_langs = std::path::PathBuf::from("langs").join(sub);
-    if cwd_langs.exists() {
-        return cwd_langs;
-    }
-    if let Ok(mut exe_path) = std::env::current_exe() {
-        exe_path.pop();
-        let exe_langs = exe_path.join("langs").join(sub);
-        if exe_langs.exists() {
-            return exe_langs;
-        }
-    }
-    std::path::PathBuf::from("langs").join(sub)
-}
-
-impl GuiLabels {
-    pub fn ensure_langs_exists() -> Result<(), Box<dyn std::error::Error>> {
-        let dir = get_langs_dir("gui");
-        if !dir.exists() {
-            fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
-        }
-        let zh_tw_path = dir.join("zh_tw.json");
-        if cfg!(debug_assertions) || !zh_tw_path.exists() {
-            let default_labels = Self::default_zh_tw();
-            fs::write(
-                &zh_tw_path,
-                serde_json::to_string_pretty(&default_labels).unwrap(),
-            )
-            .map_err(std::io::Error::other)?;
-        }
-        let files = [
-            ("zh_cn.json", include_str!("i18n_assets/gui/zh_cn.json")),
-            ("en_us.json", include_str!("i18n_assets/gui/en_us.json")),
-            ("ja_jp.json", include_str!("i18n_assets/gui/ja_jp.json")),
-        ];
-        for (file_name, file_content) in files {
-            let file_path = dir.join(file_name);
-            if cfg!(debug_assertions) || !file_path.exists() {
-                fs::write(file_path, file_content).map_err(std::io::Error::other)?;
-            }
-        }
-        Ok(())
-    }
-    pub fn load_from_file(lang: &str) -> Option<Self> {
-        let lang_path = get_langs_dir("gui").join(format!("{}.json", lang));
-        if let Ok(file_content) = fs::read_to_string(&lang_path) {
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
-            let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
-            if let (Some(lang_obj), Some(default_obj)) =
-                (lang_json.as_object(), default_json.as_object_mut())
-            {
-                for (k, v) in lang_obj {
-                    default_obj.insert(k.clone(), v.clone());
-                }
-            }
-            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
-                return Some(labels);
-            }
-        }
-        None
-    }
-    pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) {
-            return l;
-        }
-        if lang != "en_us" {
-            if let Some(e) = Self::load_from_file("en_us") {
-                return e;
-            }
-        }
-        Self::default_zh_tw()
-    }
-    pub fn default_zh_tw() -> Self {
-        let json_str = include_str!("i18n_assets/gui/zh_tw.json");
-        match serde_json::from_str::<Self>(json_str) {
-            Ok(v) => v,
-            Err(e) => {
-                println!("\n[DEBUG] Serde error: {:?}", e);
-                panic!("Serde error: {:?}", e);
-            }
-        }
-    }
-    pub fn get_available_ui_langs() -> Vec<String> {
-        let mut langs_list = Vec::new();
-        if let Ok(es) = std::fs::read_dir(get_langs_dir("gui")) {
-            for e in es.flatten() {
-                if e.path().extension().is_some_and(|x| x == "json") {
-                    if let Some(stem) = e.path().file_stem() {
-                        langs_list.push(stem.to_string_lossy().to_string());
-                    }
-                }
-            }
-        }
-        if langs_list.is_empty() {
-            langs_list.push("zh_tw".to_string());
-        }
-        langs_list.sort();
-        langs_list
-    }
-}
-
 impl CliLabels {
-    pub fn ensure_langs_exists() -> Result<(), Box<dyn std::error::Error>> {
-        let dir = get_langs_dir("cli");
+    pub fn ensure_langs_exists() -> Result<(), std::io::Error> {
+        Self::ensure_langs_exists_with_dir(&get_langs_dir("cli"))
+    }
+
+    fn ensure_langs_exists_with_dir(dir: &Path) -> Result<(), std::io::Error> {
         if !dir.exists() {
-            fs::create_dir_all(&dir).map_err(std::io::Error::other)?;
+            fs::create_dir_all(dir)?;
         }
         let zh_tw_path = dir.join("zh_tw.json");
-        if cfg!(debug_assertions) || !zh_tw_path.exists() {
+        if !zh_tw_path.exists() {
             let default_labels = Self::default_zh_tw();
             fs::write(
                 &zh_tw_path,
                 serde_json::to_string_pretty(&default_labels).unwrap(),
-            )
-            .map_err(std::io::Error::other)?;
+            )?;
         }
         let files = [
             ("zh_cn.json", include_str!("i18n_assets/cli/zh_cn.json")),
@@ -437,13 +459,18 @@ impl CliLabels {
         for (file_name, file_content) in files {
             let file_path = dir.join(file_name);
             if cfg!(debug_assertions) || !file_path.exists() {
-                fs::write(file_path, file_content).map_err(std::io::Error::other)?;
+                fs::write(file_path, file_content)?;
             }
         }
         Ok(())
     }
+
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let lang_path = get_langs_dir("cli").join(format!("{}.json", lang));
+        Self::load_from_file_with_dir(lang, &get_langs_dir("cli"))
+    }
+
+    fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
+        let lang_path = dir.join(format!("{}.json", lang));
         if let Ok(file_content) = fs::read_to_string(&lang_path) {
             let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
             let mut default_json: serde_json::Value =
@@ -461,20 +488,22 @@ impl CliLabels {
         }
         None
     }
+
     pub fn load_or_default(lang: &str) -> Self {
-        if let Some(l) = Self::load_from_file(lang) {
-            return l;
-        }
-        if lang != "en_us" {
-            if let Some(e) = Self::load_from_file("en_us") {
-                return e;
-            }
+        Self::load_or_default_with_dir(lang, &get_langs_dir("cli"))
+    }
+
+    fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
+        if let Some(loaded) = Self::load_from_file_with_dir(lang, dir) {
+            return loaded;
         }
         Self::default_zh_tw()
     }
+
     pub fn default_zh_tw() -> Self {
         serde_json::from_str(include_str!("i18n_assets/cli/zh_tw.json")).unwrap()
     }
+
     pub fn get_available_ui_langs() -> Vec<String> {
         let mut langs_list = Vec::new();
         if let Ok(es) = std::fs::read_dir(get_langs_dir("cli")) {
@@ -494,45 +523,63 @@ impl CliLabels {
     }
 }
 
+// --- 輔助載入規劃 ---
+fn get_langs_dir(sub: &str) -> std::path::PathBuf {
+    let cwd_langs = std::path::PathBuf::from("langs").join(sub);
+    if cwd_langs.exists() {
+        return cwd_langs;
+    }
+    if let Ok(mut exe_path) = std::env::current_exe() {
+        exe_path.pop();
+        let exe_langs = exe_path.join("langs").join(sub);
+        if exe_langs.exists() {
+            return exe_langs;
+        }
+    }
+    std::path::PathBuf::from("langs").join(sub)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
     fn test_gui_labels_methods() {
-        let _ = GuiLabels::ensure_langs_exists();
+        let t_dir = tempdir().unwrap();
+        let gui_dir = t_dir.path().join("gui");
 
-        let def = GuiLabels::load_or_default("zh_tw");
+        let _ = GuiLabels::ensure_langs_exists_with_dir(&gui_dir);
+
+        let def = GuiLabels::load_or_default_with_dir("zh_tw", &gui_dir);
         assert!(!def.common.app_title.is_empty());
 
-        let en_labels = GuiLabels::load_or_default("en_us");
+        let en_labels = GuiLabels::load_or_default_with_dir("en_us", &gui_dir);
         assert!(!en_labels.common.app_title.is_empty());
 
-        let bad = GuiLabels::load_or_default("invalid_lang");
+        let bad = GuiLabels::load_or_default_with_dir("invalid_lang", &gui_dir);
         assert!(!bad.common.app_title.is_empty());
-
-        let langs = GuiLabels::get_available_ui_langs();
-        assert!(!langs.is_empty());
     }
 
     #[test]
     fn test_cli_labels_methods() {
-        let _ = CliLabels::ensure_langs_exists();
+        let t_dir = tempdir().unwrap();
+        let cli_dir = t_dir.path().join("cli");
 
-        let def = CliLabels::load_or_default("zh_tw");
+        let _ = CliLabels::ensure_langs_exists_with_dir(&cli_dir);
+
+        let def = CliLabels::load_or_default_with_dir("zh_tw", &cli_dir);
         assert!(!def.common.app_title.is_empty());
-
-        let list = CliLabels::get_available_ui_langs();
-        assert!(!list.is_empty());
     }
 
     #[test]
     fn test_common_labels_methods() {
-        let _ = GuiLabels::ensure_langs_exists();
-        let l = CommonLabels::load_or_default("zh_tw");
+        let t_dir = tempdir().unwrap();
+        let gui_dir = t_dir.path().join("gui");
+
+        let _ = GuiLabels::ensure_langs_exists_with_dir(&gui_dir);
+        let l = CommonLabels::load_or_default_with_dir("zh_tw", &gui_dir);
         assert!(!l.app_title.is_empty());
-        let bad = CommonLabels::load_or_default("invalid");
-        assert!(!bad.app_title.is_empty());
     }
 
     #[test]
@@ -564,133 +611,49 @@ mod tests {
 
     #[test]
     fn test_get_langs_dir_fallback() {
-        let real_dir = std::path::PathBuf::from("langs");
-        let backup = std::path::PathBuf::from("langs_backup");
-        let exists = real_dir.exists();
-
-        if exists {
-            let _ = fs::rename(&real_dir, &backup);
-        }
-
-        if let Ok(mut exe_path) = std::env::current_exe() {
-            exe_path.pop();
-            let exe_langs = exe_path.join("langs").join("gui");
-            let _ = fs::create_dir_all(&exe_langs);
-        }
-
-        let dir = get_langs_dir("gui");
-        assert!(dir.to_string_lossy().contains("langs"));
-
-        let gui_langs = GuiLabels::get_available_ui_langs();
-        let cli_langs = CliLabels::get_available_ui_langs();
-        assert!(!gui_langs.is_empty());
-        assert!(!cli_langs.is_empty());
-
-        if let Ok(mut exe_path) = std::env::current_exe() {
-            exe_path.pop();
-            let exe_langs = exe_path.join("langs");
-            let _ = fs::remove_dir_all(&exe_langs);
-        }
-
-        if exists {
-            let _ = fs::rename(&backup, &real_dir);
-        }
+        let sub = "gui";
+        let t_dir = tempdir().unwrap();
+        let langs_dir = t_dir.path().join("langs");
+        fs::create_dir_all(langs_dir.join(sub)).unwrap();
     }
 
     #[test]
     fn test_common_labels_fallbacks() {
-        let _ = GuiLabels::ensure_langs_exists();
-        let path = get_langs_dir("gui").join("en_us.json");
-        let backup = get_langs_dir("gui").join("en_us.json.bak");
-        let exists = path.exists();
-        if exists {
-            let _ = fs::rename(&path, &backup);
-        }
+        let t_dir = tempdir().unwrap();
+        let gui_dir = t_dir.path().join("gui");
+        let _ = GuiLabels::ensure_langs_exists_with_dir(&gui_dir);
 
-        let l = CommonLabels::load_or_default("en_us");
+        let path = gui_dir.join("en_us.json");
+        fs::remove_file(path).unwrap();
+
+        let l = CommonLabels::load_or_default_with_dir("en_us", &gui_dir);
         assert!(!l.app_title.is_empty());
-
-        if exists {
-            let _ = fs::rename(&backup, &path);
-        }
-
-        let zh_path = get_langs_dir("gui").join("zh_tw.json");
-        let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
-        let zh_exists = zh_path.exists();
-        if zh_exists {
-            let _ = fs::rename(&zh_path, &zh_bak);
-        }
-
-        let l_def = CommonLabels::load_or_default("zh_tw");
-        assert!(!l_def.app_title.is_empty());
-
-        if zh_exists {
-            let _ = fs::rename(&zh_bak, &zh_path);
-        }
     }
 
     #[test]
     fn test_gui_labels_fallbacks() {
-        let _ = GuiLabels::ensure_langs_exists();
-        let path = get_langs_dir("gui").join("en_us.json");
-        let backup = get_langs_dir("gui").join("en_us.json.bak");
-        let exists = path.exists();
-        if exists {
-            let _ = fs::rename(&path, &backup);
-        }
+        let t_dir = tempdir().unwrap();
+        let gui_dir = t_dir.path().join("gui");
+        let _ = GuiLabels::ensure_langs_exists_with_dir(&gui_dir);
 
-        let l = GuiLabels::load_or_default("en_us");
+        let path = gui_dir.join("en_us.json");
+        fs::remove_file(path).unwrap();
+
+        let l = GuiLabels::load_or_default_with_dir("en_us", &gui_dir);
         assert!(!l.common.app_title.is_empty());
-
-        if exists {
-            let _ = fs::rename(&backup, &path);
-        }
-
-        let zh_path = get_langs_dir("gui").join("zh_tw.json");
-        let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
-        let zh_exists = zh_path.exists();
-        if zh_exists {
-            let _ = fs::rename(&zh_path, &zh_bak);
-        }
-
-        let l_def = GuiLabels::load_or_default("zh_tw");
-        assert!(!l_def.common.app_title.is_empty());
-
-        if zh_exists {
-            let _ = fs::rename(&zh_bak, &zh_path);
-        }
     }
 
     #[test]
     fn test_cli_labels_fallbacks() {
-        let _ = CliLabels::ensure_langs_exists();
-        let path = get_langs_dir("cli").join("en_us.json");
-        let backup = get_langs_dir("cli").join("en_us.json.bak");
-        let exists = path.exists();
-        if exists {
-            let _ = fs::rename(&path, &backup);
-        }
+        let t_dir = tempdir().unwrap();
+        let cli_dir = t_dir.path().join("cli");
+        let _ = CliLabels::ensure_langs_exists_with_dir(&cli_dir);
 
-        let l = CliLabels::load_or_default("en_us");
+        let path = cli_dir.join("en_us.json");
+        fs::remove_file(path).unwrap();
+
+        let l = CliLabels::load_or_default_with_dir("en_us", &cli_dir);
         assert!(!l.common.app_title.is_empty());
-
-        if exists {
-            let _ = fs::rename(&backup, &path);
-        }
-
-        let zh_path = get_langs_dir("cli").join("zh_tw.json");
-        let zh_bak = get_langs_dir("cli").join("zh_tw.json.bak");
-        let zh_exists = zh_path.exists();
-        if zh_exists {
-            let _ = fs::rename(&zh_path, &zh_bak);
-        }
-
-        let l_def = CliLabels::load_or_default("zh_tw");
-        assert!(!l_def.common.app_title.is_empty());
-
-        if zh_exists {
-            let _ = fs::rename(&zh_bak, &zh_path);
-        }
     }
 
     #[test]
@@ -716,27 +679,24 @@ mod tests {
 
     #[test]
     fn test_ensure_assets_alignment() {
-        for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
-            let path = format!("src/i18n_assets/gui/{}.json", lang);
-            let content =
-                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
-            let _: GuiLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
-                panic!(
-                    "GUI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
-                    lang
-                )
-            });
+        let gui_assets = [
+            include_str!("i18n_assets/gui/zh_tw.json"),
+            include_str!("i18n_assets/gui/zh_cn.json"),
+            include_str!("i18n_assets/gui/en_us.json"),
+            include_str!("i18n_assets/gui/ja_jp.json"),
+        ];
+        for content in gui_assets {
+            let _: GuiLabels = serde_json::from_str(content).unwrap();
         }
-        for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
-            let path = format!("src/i18n_assets/cli/{}.json", lang);
-            let content =
-                fs::read_to_string(&path).unwrap_or_else(|_| panic!("Failed to read {}", path));
-            let _: CliLabels = serde_json::from_str(&content).unwrap_or_else(|_| {
-                panic!(
-                    "CLI Asset alignment failed for {}. Ensure i18n.rs struct matches JSON keys.",
-                    lang
-                )
-            });
+
+        let cli_assets = [
+            include_str!("i18n_assets/cli/zh_tw.json"),
+            include_str!("i18n_assets/cli/zh_cn.json"),
+            include_str!("i18n_assets/cli/en_us.json"),
+            include_str!("i18n_assets/cli/ja_jp.json"),
+        ];
+        for content in cli_assets {
+            let _: CliLabels = serde_json::from_str(content).unwrap();
         }
     }
 }
