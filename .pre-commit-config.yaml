@@ -41,11 +41,32 @@ repos:
     stages: [pre-commit, pre-push]
     pass_filenames: false
 
+  - id: sync-version
+    name: sync version
+    entry: node tool/sync_version.js
+    language: system
+    files: (Cargo\.toml|tauri\.conf\.json)$
+    pass_filenames: false
+
+  - id: i18n-scaffold
+    name: i18n scaffold
+    entry: node tool/i18n_scaffold.js
+    language: system
+    files: \.json$
+    pass_filenames: false
+
   - id: check-i18n-keys
     name: check i18n keys
     entry: node tool/check_i18n_keys.js
     language: system
     files: \.json$
+    pass_filenames: false
+
+  - id: check-tauri-api
+    name: check tauri api
+    entry: node tool/check_tauri_sync.js
+    language: system
+    stages: [pre-commit, pre-push]
     pass_filenames: false
 
   - id: pnpm-lint
@@ -68,3 +89,9 @@ repos:
     language: system
     stages: [pre-commit, pre-push]
     pass_filenames: false
+
+  - id: check-commit-msg
+    name: check commit message
+    entry: node tool/check_commit_msg.js
+    language: system
+    stages: [commit-msg]

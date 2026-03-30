@@ -3,20 +3,40 @@ const path = require('path');
 
 const ROOT_DIR = path.join(__dirname, '..');
 const MODULES_DIR = path.join(ROOT_DIR, 'frontend/modules');
+const RUST_COMMANDS_FILE = path.join(ROOT_DIR, 'src-tauri/src/commands.rs');
 const MOCK_FILE = path.join(ROOT_DIR, 'tests/frontend/tauri_mock.js');
 
 /**
- * 掃描前端模組中的 Tauri API 調用
+ * 遞歸掃描目錄下的檔案
+ */
+function getFilesRecursively(dir, fileList = []) {
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isDirectory()) {
+            if (file !== 'tests' && file !== 'node_modules') {
+                getFilesRecursively(filePath, fileList);
+            }
+        } else if (file.endsWith('.js') || file.endsWith('.html')) {
+            fileList.push(filePath);
+        }
+    });
+    return fileList;
+}
+
+/**
+ * 掃描前端目錄中的 Tauri API 調用
  */
 function scanFrontendCalls() {
     const commands = new Set();
     const events = new Set();
 
-    if (!fs.existsSync(MODULES_DIR)) return { commands, events };
+    const frontendDir = path.join(ROOT_DIR, 'frontend');
+    if (!fs.existsSync(frontendDir)) return { commands, events };
 
-    const files = fs.readdirSync(MODULES_DIR).filter(f => f.endsWith('.js'));
+    const files = getFilesRecursively(frontendDir);
     for (const file of files) {
-        const content = fs.readFileSync(path.join(MODULES_DIR, file), 'utf8');
+        const content = fs.readFileSync(file, 'utf8');
 
         // 搜尋 invoke('command')
         const invokeRegex = /invoke\(['"]([^'"]+)['"]/g;
@@ -35,40 +55,75 @@ function scanFrontendCalls() {
 }
 
 /**
- * 驗證 tauri_mock.js 是否涵蓋了這些調用
- * 註：目前的 tauri_mock.js 使用動態代理，此腳本主要用於提醒開發者檢查測試案例中是否已實作對應 Mock
+ * 掃描 Rust 後端的指令實作
  */
-function verifySync(calls) {
-    console.log('🔍 正在掃描前端 Tauri API 調用...');
-    console.log(`找到指令: ${Array.from(calls.commands).join(', ') || '無'}`);
-    console.log(`找到事件: ${Array.from(calls.events).join(', ') || '無'}`);
-    console.log('\n▶ 正在驗證測試 Mock 環境...');
+function scanRustCommands() {
+    const commands = new Set();
+    if (!fs.existsSync(RUST_COMMANDS_FILE)) return commands;
 
-    const mockContent = fs.readFileSync(MOCK_FILE, 'utf8');
-    let warnings = 0;
+    const content = fs.readFileSync(RUST_COMMANDS_FILE, 'utf8');
+    // 搜尋 #[tauri::command] 後方的 pub fn 或 pub async fn
+    // Regex: 匹配 #[tauri::command] 之後出現的 pub (async)? fn (\w+)
+    const commandRegex = /#\[tauri::command\]\s+(?:#\[[^\]]+\]\s+)*pub\s+(?:async\s+)?fn\s+(\w+)/g;
 
-    // 這裡我們檢查測試文件中是否至少「提到」了這些命令
-    // 在進階版本中，我們可以檢查 tests/frontend/*.test.js 是否有應對的 mockInvoke.mockImplementation
-    for (const cmd of calls.commands) {
-        // 檢查指令是否在 Mock 文件或測試案例中被提及
-        // 此處簡化處理，若未來需要更嚴格，可擴充掃描 tests/*.test.js
-        if (!mockContent.includes(cmd)) {
-            // 由於我們使用了動態代理，其實不一定要在 tauri_mock.js 寫死
-            // 但為了「確保開發者記得更新測試」，我們可以建立一個清單文件或在 mock 中加入註釋
-            console.warn(`[提醒] 指令 "${cmd}" 在前端被引用，請確保在對應的 .test.js 中有使用 mockInvoke 處理它。`);
-            warnings++;
+    let match;
+    while ((match = commandRegex.exec(content)) !== null) {
+        commands.add(match[1]);
+    }
+    return commands;
+}
+
+/**
+ * 驗證前後端同步狀況
+ */
+function verifySync() {
+    console.log('🔍 正在執行前後端 Tauri API 介面對齊檢查...');
+
+    const fe = scanFrontendCalls();
+    const be = scanRustCommands();
+
+    console.log(`- 前端請求指令: ${fe.commands.size} 個`);
+    console.log(`- 後端實作指令: ${be.size} 個`);
+
+    let hasError = false;
+
+    // 1. 檢查前端是否有無效調用 (前端有但後端沒有)
+    const invalidCalls = [];
+    fe.commands.forEach(cmd => {
+        if (!be.has(cmd)) {
+            invalidCalls.push(cmd);
         }
+    });
+
+    if (invalidCalls.length > 0) {
+        console.error(`❌ [同步錯誤] 前端調用了後端未定義的指令:`);
+        invalidCalls.forEach(c => console.error(`   - ${c}`));
+        hasError = true;
     }
 
-    console.log(`\n✅ 掃描完成。警告數: ${warnings}`);
-    if (warnings > 0) {
-        console.log('💡 提示：雖然動態代理能自動轉發調用，但請確保您的單元測試涵蓋了上述指令的邏輯。');
+    // 2. 驗證測試 Mock 環境
+    const mockContent = fs.existsSync(MOCK_FILE) ? fs.readFileSync(MOCK_FILE, 'utf8') : "";
+    let mockWarnings = 0;
+    fe.commands.forEach(cmd => {
+        if (!mockContent.includes(cmd)) {
+            mockWarnings++;
+        }
+    });
+
+    if (mockWarnings > 0) {
+        console.warn(`⚠️ [測試提醒] 有 ${mockWarnings} 個指令尚未在 tauri_mock.js 中顯式定義，請確保測試覆蓋。`);
+    }
+
+    if (!hasError) {
+        console.log('✅ 前後端 Tauri 指令集對齊成功。');
+        process.exit(0);
+    } else {
+        process.exit(1);
     }
 }
 
 try {
-    const calls = scanFrontendCalls();
-    verifySync(calls);
+    verifySync();
 } catch (err) {
     console.error('❌ 執行同步檢查時發生錯誤:', err.message);
     process.exit(1);

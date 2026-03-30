@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         targetLang.addEventListener('change', async () => {
             const lang = targetLang.value;
             try {
-                const labels = await invoke('get_i18n_labels_cmd', { lang: lang });
+                const labels = await invoke('get_i18n_labels', { lang: lang });
                 const userPrompt = document.getElementById('user-prompt');
                 const systemPrompt = document.getElementById('system-prompt');
                 if (userPrompt && labels.default_user_prompt) {

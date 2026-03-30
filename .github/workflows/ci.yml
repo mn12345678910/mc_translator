@@ -65,6 +65,8 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm lint
+      - name: Tauri API Bridge Check
+        run: node tool/check_tauri_sync.js
 
   # 2. Multi-platform Core Testing
   test:
