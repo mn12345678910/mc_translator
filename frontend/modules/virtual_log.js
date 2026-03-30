@@ -1,5 +1,5 @@
 // frontend/modules/virtual_log.js
-import { createPretext } from '@chenglou/pretext';
+import { prepare, layout } from '@chenglou/pretext';
 
 /**
  * 基於 Pretext 的虛擬化日誌檢視器
@@ -19,7 +19,6 @@ export class VirtualLogViewer {
         };
 
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
-        this.pretext = createPretext();
         this.isLockedToBottom = true;
         this.itemHeights = [];
         this.totalHeight = 0;
@@ -88,13 +87,10 @@ export class VirtualLogViewer {
 
     measureHeight(text, width) {
         // 使用 pretext 進行文字折行測量
-        const measurements = this.pretext.measure(text, {
-            width: width,
-            fontSize: this.options.fontSize,
-            fontFamily: this.options.fontFamily,
-            lineHeight: this.options.lineHeight
-        });
-        return Math.max(this.options.lineHeight, measurements.height);
+        const font = `${this.options.fontSize} ${this.options.fontFamily}`;
+        const prepared = prepare(text, font);
+        const result = layout(prepared, width, this.options.lineHeight);
+        return Math.max(this.options.lineHeight, result.height);
     }
 
     recalculateHeights() {
@@ -124,14 +120,11 @@ export class VirtualLogViewer {
         let currentY = 0;
         let startIndex = -1;
         let endIndex = -1;
-        let startOffset = 0;
 
         for (let i = 0; i < this.itemHeights.length; i++) {
             const h = this.itemHeights[i];
             if (startIndex === -1 && currentY + h > scrollTop) {
                 startIndex = Math.max(0, i - this.options.buffer);
-                startOffset = currentY;
-                // 修正快取後的位移偏移 (這裡簡化處理)
             }
             if (currentY > scrollTop + viewHeight) {
                 endIndex = Math.min(this.logs.length - 1, i + this.options.buffer);
