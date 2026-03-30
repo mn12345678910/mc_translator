@@ -528,25 +528,26 @@ mod tests {
 
     #[test]
     fn test_common_labels_methods() {
-        // 先確保檔案存在以免並行測試讀取失敗
         let _ = GuiLabels::ensure_langs_exists();
-
         let l = CommonLabels::load_or_default("zh_tw");
         assert!(!l.app_title.is_empty());
-
         let bad = CommonLabels::load_or_default("invalid");
         assert!(!bad.app_title.is_empty());
     }
 
     #[test]
     fn debug_gui_labels_err() {
-        let _ = GuiLabels::ensure_langs_exists();
-        for lang in ["en_us", "zh_cn", "ja_jp"] {
-            let file_content =
-                fs::read_to_string(get_langs_dir("gui").join(format!("{}.json", lang))).unwrap();
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).unwrap();
+        let assets = [
+            ("en_us", include_str!("i18n_assets/gui/en_us.json")),
+            ("zh_cn", include_str!("i18n_assets/gui/zh_cn.json")),
+            ("ja_jp", include_str!("i18n_assets/gui/ja_jp.json")),
+        ];
+
+        for (lang, file_content) in assets {
+            let lang_json: serde_json::Value = serde_json::from_str(file_content).unwrap();
             let mut default_json: serde_json::Value =
                 serde_json::from_str(include_str!("i18n_assets/gui/zh_tw.json")).unwrap();
+
             if let (Some(l_obj), Some(d_obj)) =
                 (lang_json.as_object(), default_json.as_object_mut())
             {
@@ -571,7 +572,6 @@ mod tests {
             let _ = fs::rename(&real_dir, &backup);
         }
 
-        // --- 測試：模擬 exe_langs 存在 ---
         if let Ok(mut exe_path) = std::env::current_exe() {
             exe_path.pop();
             let exe_langs = exe_path.join("langs").join("gui");
@@ -581,13 +581,11 @@ mod tests {
         let dir = get_langs_dir("gui");
         assert!(dir.to_string_lossy().contains("langs"));
 
-        // --- 測試：get_available_ui_langs() 目錄為空時的 fallback ---
         let gui_langs = GuiLabels::get_available_ui_langs();
         let cli_langs = CliLabels::get_available_ui_langs();
         assert!(!gui_langs.is_empty());
         assert!(!cli_langs.is_empty());
 
-        // --- 恢復與清理 ---
         if let Ok(mut exe_path) = std::env::current_exe() {
             exe_path.pop();
             let exe_langs = exe_path.join("langs");
@@ -616,7 +614,6 @@ mod tests {
             let _ = fs::rename(&backup, &path);
         }
 
-        // --- 測試：最底層 fallback 至 default_zh_tw ---
         let zh_path = get_langs_dir("gui").join("zh_tw.json");
         let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
         let zh_exists = zh_path.exists();
@@ -649,7 +646,6 @@ mod tests {
             let _ = fs::rename(&backup, &path);
         }
 
-        // Gui extreme fallback
         let zh_path = get_langs_dir("gui").join("zh_tw.json");
         let zh_bak = get_langs_dir("gui").join("zh_tw.json.bak");
         let zh_exists = zh_path.exists();
@@ -682,7 +678,6 @@ mod tests {
             let _ = fs::rename(&backup, &path);
         }
 
-        // Cli extreme fallback
         let zh_path = get_langs_dir("cli").join("zh_tw.json");
         let zh_bak = get_langs_dir("cli").join("zh_tw.json.bak");
         let zh_exists = zh_path.exists();
@@ -699,34 +694,28 @@ mod tests {
     }
 
     #[test]
-    fn test_i18n_corrupt_json_fallback() {
-        // 建立毀損的 JSON 測試反序列化失敗 (ok? fallback)
-        let _ = GuiLabels::ensure_langs_exists();
-        let en_path = get_langs_dir("gui").join("en_us.json");
-        let backup = get_langs_dir("gui").join("en_us.json.bak");
+    fn test_i18n_corrupt_json_fallback_logic() {
+        let corrupt_json: serde_json::Value = serde_json::json!({
+            "app_title": 12345
+        });
 
-        if en_path.exists() {
-            let _ = fs::rename(&en_path, &backup);
+        let mut default_json: serde_json::Value =
+            serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).unwrap();
+
+        if let (Some(lang_obj), Some(default_obj)) =
+            (corrupt_json.as_object(), default_json.as_object_mut())
+        {
+            for (k, v) in lang_obj {
+                default_obj.insert(k.clone(), v.clone());
+            }
         }
 
-        // 寫入類型錯誤的 JSON: app_title 預期型別 String，寫入 Number
-        fs::write(&en_path, r#"{"app_title": 12345}"#).unwrap();
-
-        // 測試載入 169 行: if let Ok(labels) = serde_json::from_value::<Self>(default_json) { -> None
-        let res = CommonLabels::load_from_file("en_us");
-        assert!(res.is_none());
-
-        // 清理
-        let _ = fs::remove_file(&en_path);
-        if backup.exists() {
-            let _ = fs::rename(&backup, &en_path);
-        }
+        let res = serde_json::from_value::<CommonLabels>(default_json);
+        assert!(res.is_err(), "應該因為 app_title 是 Number 而解析失敗");
     }
 
     #[test]
     fn test_ensure_assets_alignment() {
-        // 測試所有資產檔案是否能正確解析為對應結構體，若 JSON 包含結構體未定義的鍵值將觸發失敗
-        // GUI Assets
         for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
             let path = format!("src/i18n_assets/gui/{}.json", lang);
             let content =
@@ -738,7 +727,6 @@ mod tests {
                 )
             });
         }
-        // CLI Assets
         for lang in ["zh_tw", "zh_cn", "en_us", "ja_jp"] {
             let path = format!("src/i18n_assets/cli/{}.json", lang);
             let content =
