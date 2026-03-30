@@ -700,9 +700,23 @@ input:checked + .slider:before {
     padding: 0;
     overflow: hidden;
     position: relative;
+
+    .log-scroller {
+        width: 100%;
+        height: 0px;
+    }
+
+    .log-viewport {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+    }
 }
 
-/* 虛擬化日誌行樣式 */
+/* 虛擬化日誌行樣式 (使用 Nesting 改寫) */
 .log-line {
     font-family: 'Courier New', Courier, monospace;
     font-size: 13px;
@@ -710,23 +724,24 @@ input:checked + .slider:before {
     white-space: pre-wrap;
     word-break: break-all;
     display: flex;
-}
 
-.log-time {
-    color: #888;
-    margin-right: 8px;
-    white-space: nowrap;
-    user-select: none;
-}
+    .log-time {
+        color: #888;
+        margin-right: 8px;
+        white-space: nowrap;
+        user-select: none;
+    }
 
-.log-msg {
-    flex: 1;
-}
+    .log-msg {
+        flex: 1;
+    }
 
-.log-error .log-msg { color: var(--danger-color); }
-.log-warn .log-msg { color: #ffcc00; }
-.log-info .log-msg { color: var(--text-color); }
-.log-success .log-msg { color: #00ff88; }
+    /* 各等級分色 */
+    &.log-error .log-msg { color: var(--danger-color); }
+    &.log-warn .log-msg { color: #ffcc00; }
+    &.log-info .log-msg { color: var(--text-color); }
+    &.log-success .log-msg { color: #00ff88; }
+}
 
 
 
