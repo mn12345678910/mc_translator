@@ -156,6 +156,20 @@ pub async fn run_translation_batch(
     total_batches.store(initial_batches.len() as u32, Ordering::SeqCst);
     current_batch.store(0, Ordering::SeqCst); // 確保重新開始時標籤為 0/N
 
+    // [修復] 在進入批次迴圈前，僅顯示一次彙總資訊，避免重複
+    add_log_event(
+        &log,
+        LogLevel::Info,
+        &i18n
+            .log_processing_file_mask
+            .replacen("{}", &ctx.group_file_count.to_string(), 1)
+            .replacen("{}", &ctx.group_dir, 1),
+        &cfg.source_lang,
+        &cfg.target_lang,
+        "",
+        cfg.enable_debug_log,
+    );
+
     for (batch_idx, batch_item_indices) in initial_batches.iter().enumerate() {
         if cancelled.load(Ordering::SeqCst) {
             break;
@@ -181,8 +195,6 @@ pub async fn run_translation_batch(
             glossary_automaton,
             i18n,
             file_name: &ctx.file_name,
-            group_dir: &ctx.group_dir,
-            group_file_count: ctx.group_file_count,
             batch_idx,
             total_batches: initial_batches.len(),
         })
@@ -261,8 +273,6 @@ pub async fn run_translation_batch(
                 glossary_automaton,
                 i18n,
                 file_name: &ctx.file_name,
-                group_dir: &ctx.group_dir,
-                group_file_count: ctx.group_file_count,
                 batch_idx: 0,
                 total_batches: retry_batches.len(),
             })
@@ -403,8 +413,6 @@ struct BatchContext<'a> {
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
-    group_dir: &'a str,
-    group_file_count: usize,
     batch_idx: usize,
     total_batches: usize,
 }
@@ -423,20 +431,6 @@ async fn process_one_global_batch(
 
     // 3. 呼叫翻譯服務
     let cfg = ctx.config.lock().unwrap().clone();
-
-    // [優化] 顯示彙總資訊至日誌區
-    add_log_event(
-        ctx._log,
-        LogLevel::Info,
-        &ctx.i18n
-            .log_processing_file_mask
-            .replacen("{}", &ctx.group_file_count.to_string(), 1)
-            .replacen("{}", ctx.group_dir, 1),
-        &cfg.source_lang,
-        &cfg.target_lang,
-        "",
-        cfg.enable_debug_log,
-    );
 
     // 1. 準備批次文本 (優化：使用批次內相對索引)
     let (tagged_texts, texts_to_translate) =
