@@ -95,10 +95,18 @@ pub async fn process_all_files(
     let mut global_items = Vec::new();
     let mut current_file_id = 0;
 
-    let (skip_json, skip_js, skip_jar) = {
+    let (skip_json, skip_js, skip_jar, source_lang, target_lang) = {
         let cfg = job_config.lock().unwrap();
-        (cfg.skip_json, cfg.skip_js, cfg.skip_jar)
+        (
+            cfg.skip_json,
+            cfg.skip_js,
+            cfg.skip_jar,
+            cfg.source_lang.clone(),
+            cfg.target_lang.clone(),
+        )
     };
+
+    let source_lang_file = format!("{}.json", source_lang);
 
     for (path, rel_path) in paths {
         if cancelled_arc.load(Ordering::SeqCst) {
@@ -111,8 +119,30 @@ pub async fn process_all_files(
                 if skip_json {
                     continue;
                 }
+
+                // 語言檔過濾：如果父目錄是 lang，且不是來源語言，則略過。
+                let parent_name = path
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+
+                if parent_name.eq_ignore_ascii_case("lang") {
+                    if !file_name.eq_ignore_ascii_case(&source_lang_file) {
+                        continue;
+                    }
+                } else if rel_path.contains("patchouli_books") {
+                    // Patchouli 書籍過濾：避免掃描到目標語言目錄
+                    let tgt_dir = format!("/{}/", target_lang);
+                    let tgt_dir_win = format!("\\{}\\", target_lang);
+                    if rel_path.contains(&tgt_dir) || rel_path.contains(&tgt_dir_win) {
+                        continue;
+                    }
+                }
+
                 if let Ok(Some((task, items))) =
-                    collect_json_task(current_file_id, &path, rel_path, &state).await
+                    collect_json_task(current_file_id, &path, rel_path.clone(), &state).await
                 {
                     file_tasks.push(task);
                     global_items.extend(items);

@@ -688,10 +688,15 @@ pub fn log_llm_communication(
 ) {
     use std::io::Write;
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let log_dir = crate::utils::helpers::get_log_dir();
+    let _ = std::fs::create_dir_all(&log_dir);
+    let log_path = log_dir.join("llm_communication.log");
+
     if let Ok(mut file) = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
-        .open("llm_communication.log")
+        .open(log_path)
     {
         let settings = format!(
             "[設定]: {} / {} / <{}->{}> / 檔案: {} / 批次量: {} / 文字數量: {} / 逾時: {}s",
