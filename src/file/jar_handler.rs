@@ -174,11 +174,11 @@ pub async fn collect_jar_tasks(
         let prefilled_count = ctx.prefilled.lock().unwrap().len();
         if !pending.is_empty() || prefilled_count > 0 {
             for (orig, key) in pending {
-                global_items.push(GlobalBatchItem::new(&orig, file_id, &key));
+                global_items.push(GlobalBatchItem::new(&orig, file_id, &name, &key));
             }
             // 加入預填項目，維持條目與進度一致
             for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {
-                let mut item = GlobalBatchItem::new(orig, file_id, key);
+                let mut item = GlobalBatchItem::new(orig, file_id, &name, key);
                 item.translated = Some(trans.clone());
                 global_items.push(item);
             }

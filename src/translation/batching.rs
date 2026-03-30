@@ -17,6 +17,8 @@ pub struct GlobalBatchItem {
     pub markers: Vec<String>,
     /// 來源檔案 ID（對應到 FileTask）
     pub file_id: usize,
+    /// 來源檔案相對路徑 (用於日誌追蹤)
+    pub rel_path: String,
     /// 在檔案中的鍵或路徑標記
     pub key: String,
     /// 最終翻譯結果
@@ -24,13 +26,14 @@ pub struct GlobalBatchItem {
 }
 
 impl GlobalBatchItem {
-    pub fn new(original: &str, file_id: usize, key: &str) -> Self {
+    pub fn new(original: &str, file_id: usize, rel_path: &str, key: &str) -> Self {
         let (preprocessed, markers) = preprocess_text(original);
         Self {
             original: original.to_string(),
             preprocessed,
             markers,
             file_id,
+            rel_path: rel_path.to_string(),
             key: key.to_string(),
             translated: None,
         }
@@ -156,17 +159,21 @@ pub async fn run_translation_batch(
     total_batches.store(initial_batches.len() as u32, Ordering::SeqCst);
     current_batch.store(0, Ordering::SeqCst); // 確保重新開始時標籤為 0/N
 
-    // [修復] 在進入批次迴圈前，僅顯示一次彙總資訊，避免重複
+    // [修復] 在進入批次迴圈前，僅顯示一次彙總資訊，依據分組格式顯示
+    let log_msg = format!(
+        "{}{}",
+        i18n.log_processing_file_mask
+            .replacen("{}", &ctx.group_file_count.to_string(), 1)
+            .replacen("{}", "", 1),
+        ctx.file_name
+    );
     add_log_event(
         &log,
         LogLevel::Info,
-        &i18n
-            .log_processing_file_mask
-            .replacen("{}", &ctx.group_file_count.to_string(), 1)
-            .replacen("{}", &ctx.group_dir, 1),
+        &log_msg,
         &cfg.source_lang,
         &cfg.target_lang,
-        "",
+        &ctx.group_dir,
         cfg.enable_debug_log,
     );
 
@@ -227,7 +234,7 @@ pub async fn run_translation_batch(
                         .replacen("{}", &err_msg, 1),
                     &cfg.source_lang,
                     &cfg.target_lang,
-                    &ctx.file_name,
+                    &ctx.group_dir,
                     cfg.enable_debug_log,
                 );
                 failed_indices.extend(batch_item_indices.clone());
@@ -245,7 +252,7 @@ pub async fn run_translation_batch(
                 .replace("{}", &failed_indices.len().to_string()),
             &cfg.source_lang,
             &cfg.target_lang,
-            &ctx.file_name,
+            &ctx.group_dir,
             cfg.enable_debug_log,
         );
 
@@ -310,7 +317,7 @@ pub async fn run_translation_batch(
                     .replace("{}", &second_failed_indices.len().to_string()),
                 &cfg.source_lang,
                 &cfg.target_lang,
-                &ctx.file_name,
+                &ctx.group_dir,
                 cfg.enable_debug_log,
             );
             for &idx in &second_failed_indices {
@@ -352,13 +359,18 @@ pub async fn run_translation_batch(
                         );
                     }
                     Err(e) => {
+                        let err_msg = format!(
+                            "{}: {}",
+                            item.rel_path,
+                            i18n.log_single_final_failed.replace("{}", &e.to_string())
+                        );
                         add_log_event(
                             &log,
                             LogLevel::Error,
-                            &i18n.log_single_final_failed.replace("{}", &e.to_string()),
+                            &err_msg,
                             &cfg.source_lang,
                             &cfg.target_lang,
-                            &ctx.file_name,
+                            &ctx.group_dir,
                             cfg_snapshot.enable_debug_log,
                         );
                     }
@@ -541,6 +553,7 @@ mod tests {
             items.push(GlobalBatchItem::new(
                 &format!("Item {}", i),
                 i,
+                "test.json",
                 &format!("k{}", i),
             ));
         }
@@ -607,7 +620,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_run_translation_batch_all_done() {
-        let mut item = GlobalBatchItem::new("Apple", 1, "k1");
+        let mut item = GlobalBatchItem::new("Apple", 1, "test.json", "k1");
         item.translated = Some("蘋果".to_string());
         let mut items = vec![item];
 

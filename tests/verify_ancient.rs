@@ -12,11 +12,11 @@ fn test_intra_batch_deduplication_ancient_json() {
 
     // 1. 模擬 5 筆重複條目
     let mut items = [
-        GlobalBatchItem::new(target_text, 1, "cities.__readonly__"),
-        GlobalBatchItem::new(target_text, 1, "client.__readonly__"),
-        GlobalBatchItem::new(target_text, 1, "explosions.__readonly__"),
-        GlobalBatchItem::new(target_text, 1, "lostcity.__readonly__"),
-        GlobalBatchItem::new(target_text, 1, "cityspheres.__readonly__"),
+        GlobalBatchItem::new(target_text, 1, "ancient.json", "cities.__readonly__"),
+        GlobalBatchItem::new(target_text, 1, "ancient.json", "client.__readonly__"),
+        GlobalBatchItem::new(target_text, 1, "ancient.json", "explosions.__readonly__"),
+        GlobalBatchItem::new(target_text, 1, "ancient.json", "lostcity.__readonly__"),
+        GlobalBatchItem::new(target_text, 1, "ancient.json", "cityspheres.__readonly__"),
     ];
 
     let batch_indices = vec![0, 1, 2, 3, 4]; // 假設這5個都在同一個批次中

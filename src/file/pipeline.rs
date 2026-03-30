@@ -276,19 +276,20 @@ pub async fn process_all_files(
             continue;
         }
 
-        let display_name = if source_path
+        let is_jar = source_path
             .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("")
-            .eq_ignore_ascii_case("jar")
-        {
-            let first_rel = group_tasks
-                .first()
-                .map(|t| t.rel_path.as_str())
-                .unwrap_or("");
-            crate::utils::helpers::extract_display_path(Path::new(first_rel))
-        } else {
-            crate::utils::helpers::extract_display_path(&source_path)
+            .is_some_and(|ext| ext.to_string_lossy().to_lowercase() == "jar");
+
+        let display_name = {
+            let first_path = if is_jar {
+                group_tasks
+                    .first()
+                    .map(|t| Path::new(&t.rel_path))
+                    .unwrap_or(&source_path)
+            } else {
+                &source_path
+            };
+            extract_group_label(first_path)
         };
 
         if let Ok(mut p) = state.current_processing_path.lock() {
@@ -327,9 +328,6 @@ pub async fn process_all_files(
                 .collect();
             let content = get_translated_content_for_task(task, &task_items);
 
-            let is_jar = source_path
-                .extension()
-                .is_some_and(|ext| ext.to_string_lossy().to_lowercase() == "jar");
             let key = if is_jar {
                 format!("[BUNDLE]{}", task.rel_path)
             } else {
@@ -419,46 +417,126 @@ pub fn shorten_rel_paths(paths: &[String]) -> String {
     if paths.is_empty() {
         return String::new();
     }
-    if paths.len() == 1 {
-        return paths[0].clone();
+
+    use std::collections::BTreeMap;
+    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+
+    for path in paths {
+        let p = Path::new(path);
+        let parent = p
+            .parent()
+            .map(|d| d.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let file = p
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.clone());
+        groups
+            .entry(parent.replace('\\', "/"))
+            .or_default()
+            .push(file);
     }
 
     let mut result = Vec::new();
-    let mut last_parts: Vec<String> = Vec::new();
-
-    for (i, p) in paths.iter().enumerate() {
-        let current_parts: Vec<String> = p.split(['/', '\\']).map(|s| s.to_string()).collect();
-        if i == 0 {
-            result.push(p.clone());
-        } else {
-            let mut common_idx = 0;
-            while common_idx < current_parts.len()
-                && common_idx < last_parts.len()
-                && current_parts[common_idx] == last_parts[common_idx]
-            {
-                common_idx += 1;
+    for (_dir, files) in groups {
+        // 目錄行 (含縮排一個空格)
+        if !_dir.is_empty() {
+            let mut dir_line = _dir.clone();
+            if !dir_line.ends_with('/') {
+                dir_line.push('/');
             }
+            result.push(format!(" {}", dir_line));
+        }
 
-            if common_idx > 0 && common_idx < current_parts.len() {
-                let shortened = current_parts[common_idx..].join("/");
-                result.push(shortened);
-            } else {
-                result.push(p.clone());
+        // 檔案行 (含縮排一個空格)
+        for chunk in files.chunks(5) {
+            result.push(format!(" {}", chunk.join(", ")));
+        }
+    }
+
+    // 以換行符開頭，使 log_processing_file_mask 後立即換行
+    let mut final_str = result.join("\n");
+    if !final_str.is_empty() {
+        final_str = format!("\n{}", final_str);
+    }
+    final_str
+}
+
+/// 從路徑中提取 ModID 或資料夾名稱，用於日誌標籤
+fn extract_group_label(path: &Path) -> String {
+    let path_str = path.to_string_lossy().replace('\\', "/");
+    // 優先從資產結構提取 modid
+    if let Some(pos) = path_str.find("assets/") {
+        let after_assets = &path_str[pos + 7..];
+        if let Some(modid) = after_assets.split('/').next() {
+            if !modid.is_empty() {
+                return modid.to_string();
             }
         }
-        last_parts = current_parts;
     }
-    // 將結果每 5 個檔案分行顯示
-    let mut lines = Vec::new();
-    for chunk in result.chunks(5) {
-        lines.push(chunk.join(", "));
+    if let Some(pos) = path_str.find("data/") {
+        let after_data = &path_str[pos + 5..];
+        if let Some(modid) = after_data.split('/').next() {
+            if !modid.is_empty() {
+                return modid.to_string();
+            }
+        }
     }
-    lines.join(",\n")
+    // 回退到父目錄名，若無父目錄則使用檔名
+    if let Some(parent) = path.parent() {
+        if let Some(name) = parent.file_name() {
+            let name_str = name.to_string_lossy().to_string();
+            if !name_str.is_empty() && name_str != "." {
+                return name_str;
+            }
+        }
+    }
+
+    path.file_name()
+        .map(|f| f.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Unknown".to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_extract_group_label() {
+        assert_eq!(
+            extract_group_label(Path::new("assets/bloodmagic/lang/en_us.json")),
+            "bloodmagic"
+        );
+        assert_eq!(
+            extract_group_label(Path::new("data/myapp/tags/items/1.json")),
+            "myapp"
+        );
+        assert_eq!(
+            extract_group_label(Path::new("some_folder/file.json")),
+            "some_folder"
+        );
+        assert_eq!(
+            extract_group_label(Path::new("root_file.json")),
+            "root_file.json"
+        );
+    }
+
+    #[test]
+    fn test_shorten_rel_paths_grouped() {
+        let paths = vec![
+            "a/1.json".into(),
+            "a/2.json".into(),
+            "b/3.json".into(),
+            "4.json".into(),
+        ];
+        let result = shorten_rel_paths(&paths);
+        assert!(result.starts_with('\n'));
+        assert!(result.contains(" a/"));
+        assert!(result.contains(" 1.json, 2.json"));
+        assert!(result.contains(" b/"));
+        assert!(result.contains(" 3.json"));
+        assert!(result.contains(" 4.json"));
+    }
 
     #[test]
     fn test_shorten_rel_paths_line_split() {
@@ -471,26 +549,10 @@ mod tests {
             "a/b/c/6.json".to_string(),
         ];
         let result = shorten_rel_paths(&paths);
-        // Common prefix "a/b/c/" for 2-6. 1st is full.
-        // Result: "a/b/c/1.json, 2.json, 3.json, 4.json, 5.json,\n6.json"
-        assert!(result.contains(",\n"));
-        assert_eq!(result.lines().count(), 2);
-    }
-
-    #[test]
-    fn test_shorten_rel_paths_single() {
-        let paths = vec!["a/b/c/1.json".to_string()];
-        let result = shorten_rel_paths(&paths);
-        assert_eq!(result, "a/b/c/1.json");
-    }
-
-    #[test]
-    fn test_shorten_rel_paths_exactly_five() {
-        let paths = (1..=5)
-            .map(|i| format!("file{}.json", i))
-            .collect::<Vec<_>>();
-        let result = shorten_rel_paths(&paths);
-        assert!(!result.contains('\n'));
-        assert_eq!(result.split(", ").count(), 5);
+        assert!(result.contains(" a/b/c/"));
+        assert!(result.contains(" 1.json, 2.json, 3.json, 4.json, 5.json"));
+        // 驗證行末沒有額外的逗號
+        assert!(!result.contains("5.json,"));
+        assert!(result.contains(" 6.json"));
     }
 }

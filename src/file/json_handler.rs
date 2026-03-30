@@ -78,12 +78,12 @@ pub async fn collect_json_task(
 
     let mut global_items = Vec::new();
     for (orig, key) in pending {
-        global_items.push(GlobalBatchItem::new(&orig, file_id, &key));
+        global_items.push(GlobalBatchItem::new(&orig, file_id, &rel_path, &key));
     }
 
     // 加入預填項目，維持條目與進度一致
     for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {
-        let mut item = GlobalBatchItem::new(orig, file_id, key);
+        let mut item = GlobalBatchItem::new(orig, file_id, &rel_path, key);
         item.translated = Some(trans.clone());
         global_items.push(item);
     }

@@ -112,7 +112,7 @@ pub async fn collect_js_task(
     let mut global_items = Vec::new();
     for (_, _, text, idx) in &filtered_matches {
         let key = format!("js_key_{}", idx);
-        let item = GlobalBatchItem::new(text, file_id, &key);
+        let item = GlobalBatchItem::new(text, file_id, &rel_path, &key);
         global_items.push(item);
     }
 
@@ -291,7 +291,7 @@ addItem('something', ['新增', '編輯'])"#,
         };
         let config_locked = Arc::new(Mutex::new(config));
 
-        let mut item = GlobalBatchItem::new("你好", 1, "js_key_0");
+        let mut item = GlobalBatchItem::new("你好", 1, "test.js", "js_key_0");
         item.translated = Some("Hello".to_string());
 
         let res = apply_js_task(&task, &[item], &config_locked).await;
