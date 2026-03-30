@@ -104,18 +104,24 @@ export async function saveConfig() {
         await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
         state.currentConfig.model = selectedModel ? selectedModel.value : '';
         const old = state.currentConfig;
-        const parseSafeInt = (v, f) => { let p = parseInt(v); return isNaN(p) ? f : p; };
+        const parseSafeInt = (v, f) => {
+            let p = parseInt(v);
+            return isNaN(p) ? f : p;
+        };
 
         state.currentConfig.ollama_url = ollamaUrl ? ollamaUrl.value : '';
         state.currentConfig.batch_size = batchSize ? parseSafeInt(batchSize.value, old.batch_size || 150) : 150;
-        state.currentConfig.batch_max_chars = batchMaxChars ? parseSafeInt(batchMaxChars.value, old.batch_max_chars || 3500) : 3500;
+        state.currentConfig.batch_max_chars = batchMaxChars
+            ? parseSafeInt(batchMaxChars.value, old.batch_max_chars || 3500)
+            : 3500;
         state.currentConfig.timeout = timeoutSec ? parseSafeInt(timeoutSec.value, old.timeout || 60) : 60;
         if (uiLang) state.currentConfig.ui_lang = uiLang.value;
         if (sourceLang) state.currentConfig.source_lang = sourceLang.value;
         if (targetLang) state.currentConfig.target_lang = targetLang.value;
         state.currentConfig.pack_format = packFormat ? parseSafeInt(packFormat.value, old.pack_format || 15) : 15;
-        state.currentConfig.glossary_priority = chkGlossaryPriority && chkGlossaryPriority.checked ? 'user' : 'official';
-        state.currentConfig.ui_lang = uiLang ? uiLang.value : (state.currentConfig.ui_lang || 'zh_tw');
+        state.currentConfig.glossary_priority =
+            chkGlossaryPriority && chkGlossaryPriority.checked ? 'user' : 'official';
+        state.currentConfig.ui_lang = uiLang ? uiLang.value : state.currentConfig.ui_lang || 'zh_tw';
         state.currentConfig.output_dir = outputDir ? outputDir.value : '';
         state.currentConfig.path = inputPath ? inputPath.value : '';
 

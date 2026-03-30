@@ -9,12 +9,42 @@
     </head>
     <body>
         <header class="top-navbar">
-            <div class="nav-links" style="margin-left: auto;">
-                <button id="btn-nav-api" class="secondary-btn" title="API & Settings" data-i18n-title="btn_nav_settings">⚙️</button>
-                <button id="btn-nav-dict" class="secondary-btn" title="Suggestion Manager" data-i18n-title="btn_nav_dict">📖</button>
-                <button id="btn-nav-palette" class="secondary-btn" title="Theme & Palette" data-i18n-title="btn_nav_palette">🎨</button>
-                <button id="btn-nav-theme" class="secondary-btn" title="Toggle Light/Dark Theme" data-i18n-title="btn_nav_theme">🌓</button>
-                <button id="btn-nav-dev" class="secondary-btn" title="Developer Options" data-i18n-title="btn_nav_dev">🔧</button>
+            <div class="nav-links" style="margin-left: auto">
+                <button
+                    id="btn-nav-api"
+                    class="secondary-btn"
+                    title="API & Settings"
+                    data-i18n-title="btn_nav_settings"
+                >
+                    ⚙️
+                </button>
+                <button
+                    id="btn-nav-dict"
+                    class="secondary-btn"
+                    title="Suggestion Manager"
+                    data-i18n-title="btn_nav_dict"
+                >
+                    📖
+                </button>
+                <button
+                    id="btn-nav-palette"
+                    class="secondary-btn"
+                    title="Theme & Palette"
+                    data-i18n-title="btn_nav_palette"
+                >
+                    🎨
+                </button>
+                <button
+                    id="btn-nav-theme"
+                    class="secondary-btn"
+                    title="Toggle Light/Dark Theme"
+                    data-i18n-title="btn_nav_theme"
+                >
+                    🌓
+                </button>
+                <button id="btn-nav-dev" class="secondary-btn" title="Developer Options" data-i18n-title="btn_nav_dev">
+                    🔧
+                </button>
             </div>
         </header>
 
@@ -24,13 +54,30 @@
                 <div class="label-row">
                     <label for="input-path" data-i18n="label_input_path">:</label>
                     <div class="row-buttons">
-                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">📂Select File</button>
-                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">📁Select Folder</button>
+                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">
+                            📂Select File
+                        </button>
+                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">
+                            📁Select Folder
+                        </button>
                     </div>
                 </div>
                 <div class="input-row">
-                    <input type="text" id="input-path" placeholder="Enter or drag path here..." data-i18n-placeholder="placeholder_input_path" autocomplete="off" />
-                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('input-path').value=''" data-i18n-title="btn_clear" title="Clear">❌</button>
+                    <input
+                        type="text"
+                        id="input-path"
+                        placeholder="Enter or drag path here..."
+                        data-i18n-placeholder="placeholder_input_path"
+                        autocomplete="off"
+                    />
+                    <button
+                        class="clear-btn action-btn danger-hover"
+                        onclick="document.getElementById('input-path').value = ''"
+                        data-i18n-title="btn_clear"
+                        title="Clear"
+                    >
+                        ❌
+                    </button>
                 </div>
             </div>
 
@@ -39,18 +86,35 @@
                 <div class="label-row">
                     <label for="output-dir" data-i18n="label_output_path">Output Folder Path:</label>
                     <div class="row-buttons">
-                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">📁Select Folder</button>
-                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">📂Open Folder</button>
+                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">
+                            📁Select Folder
+                        </button>
+                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">
+                            📂Open Folder
+                        </button>
                     </div>
                 </div>
                 <div class="input-row">
-                    <input type="text" id="output-dir" placeholder="./LLMTranslator (Default)" data-i18n-placeholder="placeholder_output_path" autocomplete="off" />
-                    <button class="clear-btn action-btn danger-hover" onclick="document.getElementById('output-dir').value=''" data-i18n-title="btn_clear" title="Clear">❌</button>
+                    <input
+                        type="text"
+                        id="output-dir"
+                        placeholder="./LLMTranslator (Default)"
+                        data-i18n-placeholder="placeholder_output_path"
+                        autocomplete="off"
+                    />
+                    <button
+                        class="clear-btn action-btn danger-hover"
+                        onclick="document.getElementById('output-dir').value = ''"
+                        data-i18n-title="btn_clear"
+                        title="Clear"
+                    >
+                        ❌
+                    </button>
                 </div>
             </div>
 
             <!-- [NEW] 介面語言與導航列 (100% 復刻) -->
-            <div class="form-group mt-sm" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
+            <div class="form-group mt-sm" style="display: flex; flex-direction: row; align-items: center; gap: 8px">
                 <label for="ui-lang" data-i18n="label_ui_lang">:</label>
                 <select id="ui-lang" style="max-width: 150px; padding: 6px">
                     <option value="zh_tw">繁體中文 (zh_tw)</option>
@@ -64,18 +128,32 @@
                 <button id="btn-translate" data-i18n="btn_run_trans">▶</button>
                 <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
                 <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶</button>
-                <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">⏹️</button>
-                <span id="status-prefix" class="status-label ml-md" style="margin-left: 15px; color: var(--text-muted);" data-i18n="label_current_status">Current Status: </span>
-                <span id="current-status-label" class="status-label" data-i18n="status_idle" style="color: var(--text-muted);">Idle</span>
+                <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">
+                    ⏹️
+                </button>
+                <span
+                    id="status-prefix"
+                    class="status-label ml-md"
+                    style="margin-left: 15px; color: var(--text-muted)"
+                    data-i18n="label_current_status"
+                    >Current Status:
+                </span>
+                <span
+                    id="current-status-label"
+                    class="status-label"
+                    data-i18n="status_idle"
+                    style="color: var(--text-muted)"
+                    >Idle</span
+                >
             </div>
         </div>
 
         <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
         <div class="control-panel api-settings collapsible-panel">
-<h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
+            <h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
             <div class="form-grid">
                 <div class="form-group">
-<label for="api-provider" data-i18n="label_provider"></label>
+                    <label for="api-provider" data-i18n="label_provider"></label>
                     <select id="api-provider">
                         <option value="Gemini">Gemini (Google)</option>
                         <option value="OpenAI">OpenAI</option>
@@ -88,11 +166,18 @@
                     </select>
                 </div>
                 <div class="form-group" id="api-key-group">
-<label for="api-key" data-i18n="label_api_key">API</label>
-                    <input type="password" id="api-key" placeholder="Enter API Key..." data-i18n-placeholder="placeholder_api_key" autocomplete="off" autocomplete="new-password" />
+                    <label for="api-key" data-i18n="label_api_key">API</label>
+                    <input
+                        type="password"
+                        id="api-key"
+                        placeholder="Enter API Key..."
+                        data-i18n-placeholder="placeholder_api_key"
+                        autocomplete="off"
+                        autocomplete="new-password"
+                    />
                 </div>
                 <div class="form-group">
-<label for="selected-model" data-i18n="label_model"></label>
+                    <label for="selected-model" data-i18n="label_model"></label>
                     <select id="selected-model"></select>
                 </div>
                 <div class="form-group" id="ollama-url-group" style="display: none">
@@ -104,11 +189,11 @@
                     <input type="number" id="batch-size" min="1" max="300" autocomplete="off" />
                 </div>
                 <div class="form-group">
-<label for="batch-max-chars" data-i18n="label_max_chars"></label>
+                    <label for="batch-max-chars" data-i18n="label_max_chars"></label>
                     <input type="number" id="batch-max-chars" step="100" autocomplete="off" />
                 </div>
                 <div class="form-group">
-<label for="timeout-sec" data-i18n="label_timeout">API</label>
+                    <label for="timeout-sec" data-i18n="label_timeout">API</label>
                     <input type="number" id="timeout-sec" min="5" autocomplete="off" />
                 </div>
             </div>
@@ -153,43 +238,46 @@
             <!-- [NEW] 自訂 Prompts 設定區 -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-<label for="user-prompt" data-i18n="label_user_prompt">:</label>
-                    <textarea
-                        id="user-prompt"
-                        rows="3"
-                        autocomplete="off"
-                    ></textarea>
+                    <label for="user-prompt" data-i18n="label_user_prompt">:</label>
+                    <textarea id="user-prompt" rows="3" autocomplete="off"></textarea>
                 </div>
             </div>
-            <div class="button-row mt-md" style="justify-content: flex-end;">
-                <button id="btn-restore-api" class="action-btn" data-i18n="btn_restore_defaults" style="background-color: var(--secondary-color);">⟲</button>
+            <div class="button-row mt-md" style="justify-content: flex-end">
+                <button
+                    id="btn-restore-api"
+                    class="action-btn"
+                    data-i18n="btn_restore_defaults"
+                    style="background-color: var(--secondary-color)"
+                >
+                    ⟲
+                </button>
             </div>
         </div>
 
         <!-- 🔧 開發人員選項 -->
         <div class="control-panel developer-settings collapsible-panel">
-<h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
+            <h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
             <div class="checkbox-grid">
                 <div class="switch-group">
-<span id="label-skip-json" data-i18n="label_skip_json">.json</span>
+                    <span id="label-skip-json" data-i18n="label_skip_json">.json</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-json" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-js" data-i18n="label_skip_js">.js</span>
+                    <span id="label-skip-js" data-i18n="label_skip_js">.js</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-js" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-jar" data-i18n="label_skip_jar">.jar</span>
+                    <span id="label-skip-jar" data-i18n="label_skip_jar">.jar</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-jar" /><span class="slider round"></span
                     ></label>
                 </div>
                 <div class="switch-group">
-<span id="label-skip-book" data-i18n="label_skip_book">Patchouli</span>
+                    <span id="label-skip-book" data-i18n="label_skip_book">Patchouli</span>
                     <label class="switch"
                         ><input type="checkbox" id="chk-skip-book" /><span class="slider round"></span
                     ></label>
@@ -216,30 +304,27 @@
             <!-- [NEW] 系統技術指令 (開發人員專用) -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-                    <label for="system-prompt"><span data-i18n="label_system_prompt">📜 System Instructions</span>:</label>
-                    <textarea
-                        id="system-prompt"
-                        rows="5"
-                        style="margin-top: 4px;"
-                        autocomplete="off"
-                    ></textarea>
+                    <label for="system-prompt"
+                        ><span data-i18n="label_system_prompt">📜 System Instructions</span>:</label
+                    >
+                    <textarea id="system-prompt" rows="5" style="margin-top: 4px" autocomplete="off"></textarea>
                 </div>
             </div>
         </div>
 
         <!-- 🎨 調色盤與佈局管理面板 -->
         <div class="control-panel theme-settings collapsible-panel">
-<h2 id="header-palette" data-i18n="header_palette">🎨</h2>
+            <h2 id="header-palette" data-i18n="header_palette">🎨</h2>
             <div class="form-grid">
                 <div class="form-group">
-<label for="palette-target-type" data-i18n="label_palette_target_type"></label>
+                    <label for="palette-target-type" data-i18n="label_palette_target_type"></label>
                     <select id="palette-target-type" style="width: 100%">
                         <option value="global" data-i18n="group_batch"></option>
                         <option value="specific" data-i18n="group_specific"></option>
                     </select>
                 </div>
                 <div class="form-group">
-<label for="palette-target-item" data-i18n="label_palette_target_item"></label>
+                    <label for="palette-target-item" data-i18n="label_palette_target_item"></label>
                     <select id="palette-target-item" style="width: 100%">
                         <!-- Global Categories -->
                         <optgroup data-i18n-label="group_batch" id="group-global">
@@ -299,7 +384,7 @@
                 </div>
                 <!-- [NEW] 屬性選擇 -->
                 <div class="form-group" id="palette-property-group" style="display: none">
-<label for="palette-property" data-i18n="label_palette_property"></label>
+                    <label for="palette-property" data-i18n="label_palette_property"></label>
                     <select id="palette-property" style="width: 100%">
                         <option value="bg" data-i18n="label_bg_color">Background Color</option>
                         <option value="text" data-i18n="label_text_color">Text Color</option>
@@ -307,15 +392,13 @@
                     </select>
                 </div>
                 <div class="form-group" id="palette-color-group">
-<label for="palette-color" id="label-palette-color" data-i18n="label_palette_color"></label>
-                    <input
-                        type="color"
-                        id="palette-color"
-                        autocomplete="off"
-                    />
+                    <label for="palette-color" id="label-palette-color" data-i18n="label_palette_color"></label>
+                    <input type="color" id="palette-color" autocomplete="off" />
                 </div>
                 <div class="form-group" id="palette-number-group" style="display: none">
-<label for="palette-number" id="label-palette-number" data-i18n="label_palette_rounding">Value</label>
+                    <label for="palette-number" id="label-palette-number" data-i18n="label_palette_rounding"
+                        >Value</label
+                    >
                     <input
                         type="number"
                         id="palette-number"
@@ -337,17 +420,24 @@
                     </button>
                 </div>
             </div>
-            <div class="button-row mt-md" style="justify-content: flex-end;">
-                <button id="btn-restore-palette" class="action-btn" data-i18n="btn_restore_defaults" style="background-color: var(--secondary-color);">⟲</button>
+            <div class="button-row mt-md" style="justify-content: flex-end">
+                <button
+                    id="btn-restore-palette"
+                    class="action-btn"
+                    data-i18n="btn_restore_defaults"
+                    style="background-color: var(--secondary-color)"
+                >
+                    ⟲
+                </button>
             </div>
             <!-- [NEW] 字體大小與圓角/動畫設定 -->
             <div class="form-grid" style="margin-top: 15px">
                 <div class="form-group">
-<label for="font-size" data-i18n="label_font_size">:</label>
+                    <label for="font-size" data-i18n="label_font_size">:</label>
                     <input type="number" id="font-size" value="15" min="12" max="30" step="0.5" autocomplete="off" />
                 </div>
                 <div class="form-group">
-<label for="btn-rounding-value" data-i18n="label_rounding_value">:</label>
+                    <label for="btn-rounding-value" data-i18n="label_rounding_value">:</label>
                     <div style="display: flex; gap: 8px; align-items: center">
                         <input type="checkbox" id="chk-btn-rounding" checked style="width: 20px" />
                         <input
@@ -363,7 +453,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-<label for="pulse-speed" data-i18n="label_anim_speed">:</label>
+                    <label for="pulse-speed" data-i18n="label_anim_speed">:</label>
                     <div style="display: flex; gap: 8px; align-items: center">
                         <input type="checkbox" id="chk-pulse" checked style="width: 20px" />
                         <input
@@ -387,29 +477,23 @@
                     </select>
                 </div>
             </div>
-
         </div>
 
         <!-- 進度與日誌面板 -->
         <div class="status-section">
             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px">
-<span id="label-items" style="color: var(--text-muted)" data-i18n="label_items"></span>
+                <span id="label-items" style="color: var(--text-muted)" data-i18n="label_items"></span>
                 <span id="batch-status-text" style="color: var(--text-muted)">0 / 0</span>
             </div>
-            <div
-                id="batch-progress-container"
-            >
-                <div
-                    id="batch-progress-bar"
-                ></div>
+            <div id="batch-progress-container">
+                <div id="batch-progress-bar"></div>
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px">
-<span id="label-files" style="font-weight: bold" data-i18n="label_files"></span>
-<span id="status-text"></span>
+                <span id="label-files" style="font-weight: bold" data-i18n="label_files"></span>
+                <span id="status-text"></span>
             </div>
             <div id="progress-container"><div id="progress-bar"></div></div>
             <div id="log-output" style="margin-top: 10px"></div>
         </div>
-
     </body>
 </html>

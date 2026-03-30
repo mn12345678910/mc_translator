@@ -265,7 +265,7 @@ export function initDictionary() {
                 // dictType 在模組頂部有宣告
                 await invoke('open_dictionary_location', { dictType: dictType });
             } catch (e) {
-                appendLog((state.currentLabels.status_open_path_failed).replace('{}', e));
+                appendLog(state.currentLabels.status_open_path_failed.replace('{}', e));
             }
         });
     }

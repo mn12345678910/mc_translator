@@ -63,22 +63,34 @@ export function applyColors(style) {
     if (inputBg) root.style.setProperty('--input-bg', `rgb(${inputBg[0]},${inputBg[1]},${inputBg[2]})`);
     if (listBg) root.style.setProperty('--list-bg', `rgb(${listBg[0]},${listBg[1]},${listBg[2]})`);
     if (tabActive) root.style.setProperty('--tab-active-bg', `rgb(${tabActive[0]},${tabActive[1]},${tabActive[2]})`);
-    if (tabInactive) root.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
+    if (tabInactive)
+        root.style.setProperty('--tab-inactive-bg', `rgb(${tabInactive[0]},${tabInactive[1]},${tabInactive[2]})`);
     if (headerBg) root.style.setProperty('--header-bg', `rgb(${headerBg[0]},${headerBg[1]},${headerBg[2]})`);
     if (borderColor) {
         root.style.setProperty('--border-color', `rgb(${borderColor[0]},${borderColor[1]},${borderColor[2]})`);
         const alpha = style.border_alpha !== undefined ? style.border_alpha : 0.15;
-        root.style.setProperty('--border-light', `rgba(${borderColor[0]},${borderColor[1]},${borderColor[2]},${alpha})`);
+        root.style.setProperty(
+            '--border-light',
+            `rgba(${borderColor[0]},${borderColor[1]},${borderColor[2]},${alpha})`
+        );
     }
     if (hoverBg) root.style.setProperty('--hover-bg', `rgb(${hoverBg[0]},${hoverBg[1]},${hoverBg[2]})`);
     if (sliderBg) root.style.setProperty('--slider-bg', `rgb(${sliderBg[0]},${sliderBg[1]},${sliderBg[2]})`);
-    if (sliderThumb) root.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
+    if (sliderThumb)
+        root.style.setProperty('--slider-thumb', `rgb(${sliderThumb[0]},${sliderThumb[1]},${sliderThumb[2]})`);
     if (switchBg) root.style.setProperty('--switch-bg', `rgb(${switchBg[0]},${switchBg[1]},${switchBg[2]})`);
     if (progressBg) root.style.setProperty('--progress-bg', `rgb(${progressBg[0]},${progressBg[1]},${progressBg[2]})`);
-    if (style.aurora_1) root.style.setProperty('--aurora-1', `rgb(${style.aurora_1[0]},${style.aurora_1[1]},${style.aurora_1[2]})`);
-    if (style.aurora_2) root.style.setProperty('--aurora-2', `rgb(${style.aurora_2[0]},${style.aurora_2[1]},${style.aurora_2[2]})`);
-    if (style.aurora_3) root.style.setProperty('--aurora-3', `rgb(${style.aurora_3[0]},${style.aurora_3[1]},${style.aurora_3[2]})`);
-    if (style.neon_color) root.style.setProperty('--neon-color', `rgb(${style.neon_color[0]},${style.neon_color[1]},${style.neon_color[2]})`);
+    if (style.aurora_1)
+        root.style.setProperty('--aurora-1', `rgb(${style.aurora_1[0]},${style.aurora_1[1]},${style.aurora_1[2]})`);
+    if (style.aurora_2)
+        root.style.setProperty('--aurora-2', `rgb(${style.aurora_2[0]},${style.aurora_2[1]},${style.aurora_2[2]})`);
+    if (style.aurora_3)
+        root.style.setProperty('--aurora-3', `rgb(${style.aurora_3[0]},${style.aurora_3[1]},${style.aurora_3[2]})`);
+    if (style.neon_color)
+        root.style.setProperty(
+            '--neon-color',
+            `rgb(${style.neon_color[0]},${style.neon_color[1]},${style.neon_color[2]})`
+        );
 
     // --- [面板與背景透明度] ---
     if (bg) {
@@ -106,7 +118,7 @@ export function applyColors(style) {
     }
 
     const bars = [progressBar, batchProgressBar];
-    bars.forEach(bar => {
+    bars.forEach((bar) => {
         if (!bar) return;
         bar.classList.remove('style-aurora', 'style-neon');
         if (style.progress_style === 'aurora') bar.classList.add('style-aurora');
@@ -118,7 +130,8 @@ export function applyColors(style) {
         for (const [id, overrides] of Object.entries(style.instance_overrides)) {
             const el = document.getElementById(id);
             if (!el) continue;
-            if (overrides.bg) el.style.backgroundColor = `rgb(${overrides.bg[0]},${overrides.bg[1]},${overrides.bg[2]})`;
+            if (overrides.bg)
+                el.style.backgroundColor = `rgb(${overrides.bg[0]},${overrides.bg[1]},${overrides.bg[2]})`;
             if (overrides.text) el.style.color = `rgb(${overrides.text[0]},${overrides.text[1]},${overrides.text[2]})`;
             if (overrides.rounding !== undefined) el.style.borderRadius = `${overrides.rounding}px`;
         }
@@ -149,7 +162,11 @@ export function updatePaletteValue() {
     if (palettePropertyGroup) palettePropertyGroup.style.display = isSpecific ? 'block' : 'none';
 
     // 判斷是否為數值型項目
-    const isNumberItem = target.startsWith('space_') || target.endsWith('_alpha') || target === 'font_size' || (isSpecific && prop === 'rounding');
+    const isNumberItem =
+        target.startsWith('space_') ||
+        target.endsWith('_alpha') ||
+        target === 'font_size' ||
+        (isSpecific && prop === 'rounding');
 
     if (paletteColorGroup) paletteColorGroup.style.display = isNumberItem ? 'none' : 'block';
     if (paletteNumberGroup) paletteNumberGroup.style.display = isNumberItem ? 'block' : 'none';
@@ -158,20 +175,32 @@ export function updatePaletteValue() {
         // 設定 Label 與數值
         if (labelPaletteNumber) {
             if (target.startsWith('space_')) {
-                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_spacing) ? state.currentLabels.palette_label_spacing : 'Spacing (px)';
+                labelPaletteNumber.textContent =
+                    state.currentLabels && state.currentLabels.palette_label_spacing
+                        ? state.currentLabels.palette_label_spacing
+                        : 'Spacing (px)';
             } else if (target.endsWith('_alpha')) {
-                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_alpha) ? state.currentLabels.palette_label_alpha : 'Alpha (0.0-1.0)';
+                labelPaletteNumber.textContent =
+                    state.currentLabels && state.currentLabels.palette_label_alpha
+                        ? state.currentLabels.palette_label_alpha
+                        : 'Alpha (0.0-1.0)';
             } else if (target === 'font_size') {
-                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.label_font_size) ? state.currentLabels.label_font_size : 'Font Size (px)';
+                labelPaletteNumber.textContent =
+                    state.currentLabels && state.currentLabels.label_font_size
+                        ? state.currentLabels.label_font_size
+                        : 'Font Size (px)';
             } else {
-                labelPaletteNumber.textContent = (state.currentLabels && state.currentLabels.palette_label_rounding) ? state.currentLabels.palette_label_rounding : 'Rounding (px)';
+                labelPaletteNumber.textContent =
+                    state.currentLabels && state.currentLabels.palette_label_rounding
+                        ? state.currentLabels.palette_label_rounding
+                        : 'Rounding (px)';
             }
         }
 
         let val = 0;
         if (isSpecific) {
             const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
-            val = ov ? (ov.rounding || 4) : 4;
+            val = ov ? ov.rounding || 4 : 4;
         } else {
             val = state.currentStyle[target] || 0;
         }
@@ -182,9 +211,14 @@ export function updatePaletteValue() {
     } else {
         // 設定顏色預覽
         if (labelPaletteColor) {
-            labelPaletteColor.textContent = prop === 'bg'
-                ? ((state.currentLabels && state.currentLabels.label_bg_color) ? state.currentLabels.label_bg_color : 'Background')
-                : ((state.currentLabels && state.currentLabels.label_text_color) ? state.currentLabels.label_text_color : 'Text');
+            labelPaletteColor.textContent =
+                prop === 'bg'
+                    ? state.currentLabels && state.currentLabels.label_bg_color
+                        ? state.currentLabels.label_bg_color
+                        : 'Background'
+                    : state.currentLabels && state.currentLabels.label_text_color
+                      ? state.currentLabels.label_text_color
+                      : 'Text';
         }
 
         let color = null;
@@ -301,7 +335,7 @@ export async function restoreDefaultStyle() {
 
         state.currentStyle = {
             ...defaultStyle,
-            show_palette_settings: state.currentStyle.show_palette_settings
+            show_palette_settings: state.currentStyle.show_palette_settings,
         };
 
         applyColors(state.currentStyle);
@@ -325,7 +359,10 @@ export async function restoreDefaultStyle() {
             updatePaletteValue();
         }
 
-        const msg = (state.currentLabels && state.currentLabels.status_style_restored) ? state.currentLabels.status_style_restored : '介面樣式已恢復預設';
+        const msg =
+            state.currentLabels && state.currentLabels.status_style_restored
+                ? state.currentLabels.status_style_restored
+                : '介面樣式已恢復預設';
         console.log(msg);
     } catch (e) {
         console.error('恢復樣式預設失敗:', e);

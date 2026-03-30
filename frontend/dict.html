@@ -49,8 +49,22 @@
     <body>
         <div class="dialog-header">
             <!-- 術語優先級切換開關 -->
-            <div class="switch-group" style="background: transparent; border: none; padding: 0; margin-left: auto; margin-right: 15px; gap: 8px; display: flex; align-items: center;">
-                <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem;">Priority:</span>
+            <div
+                class="switch-group"
+                style="
+                    background: transparent;
+                    border: none;
+                    padding: 0;
+                    margin-left: auto;
+                    margin-right: 15px;
+                    gap: 8px;
+                    display: flex;
+                    align-items: center;
+                "
+            >
+                <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem"
+                    >Priority:</span
+                >
                 <label class="switch" title="切換 官方優先 或 使用者優先">
                     <input type="checkbox" id="chk-glossary-priority" />
                     <span class="slider round"></span>
@@ -60,13 +74,15 @@
 
         <div class="dialog-body">
             <!-- 分頁與按鈕行 -->
-            <div class="tabs flex-between" style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; gap: 10px;">
+            <div class="tabs flex-between" style="display: flex; justify-content: space-between; align-items: center">
+                <div style="display: flex; gap: 10px">
                     <button class="tab-btn active" id="tab-user" data-i18n="glossary_tab_user">User Glossary</button>
-                    <button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official">Official Glossary</button>
+                    <button class="tab-btn" id="tab-official" data-i18n="glossary_tab_official">
+                        Official Glossary
+                    </button>
                 </div>
                 <!-- 按鈕群組 -->
-                <div id="dict-user-buttons" class="flex-wrap" style="display: flex; gap: 8px;">
+                <div id="dict-user-buttons" class="flex-wrap" style="display: flex; gap: 8px">
                     <button id="btn-dict-add" class="action-btn" title="Add Entry">➕</button>
                     <button id="btn-dict-replace" class="action-btn" title="Replace Existing">🔄</button>
                     <button id="btn-dict-import" class="action-btn" title="Import">📥</button>
@@ -77,11 +93,29 @@
             </div>
 
             <!-- 輸入與搜尋區 -->
-            <div id="dict-user-controls" class="flex-wrap mt-sm" style="display: flex; gap: 10px; margin-top: 10px;">
-                <input type="text" id="dict-input-key" placeholder="Original (Key)" style="flex: 1; min-width: 140px; padding: 8px;" autocomplete="off" />
-                <input type="text" id="dict-input-value" placeholder="Translation (Value)" style="flex: 1; min-width: 140px; padding: 8px;" autocomplete="off" />
-                <div class="search-bar" style="margin-left: auto;">
-                    <input type="text" id="dict-search" placeholder="🔍 Search..." style="width: 180px; padding: 8px 10px; font-size: 0.9rem;" autocomplete="off" />
+            <div id="dict-user-controls" class="flex-wrap mt-sm" style="display: flex; gap: 10px; margin-top: 10px">
+                <input
+                    type="text"
+                    id="dict-input-key"
+                    placeholder="Original (Key)"
+                    style="flex: 1; min-width: 140px; padding: 8px"
+                    autocomplete="off"
+                />
+                <input
+                    type="text"
+                    id="dict-input-value"
+                    placeholder="Translation (Value)"
+                    style="flex: 1; min-width: 140px; padding: 8px"
+                    autocomplete="off"
+                />
+                <div class="search-bar" style="margin-left: auto">
+                    <input
+                        type="text"
+                        id="dict-search"
+                        placeholder="🔍 Search..."
+                        style="width: 180px; padding: 8px 10px; font-size: 0.9rem"
+                        autocomplete="off"
+                    />
                 </div>
             </div>
 
@@ -89,7 +123,7 @@
         </div>
 
         <div class="dialog-footer">
-            <div class="pagination" style="display: flex; gap: 10px; align-items: center;">
+            <div class="pagination" style="display: flex; gap: 10px; align-items: center">
                 <button id="page-prev" class="page-btn">Previous</button>
                 <span id="page-info">1 / 1</span>
                 <button id="page-next" class="page-btn">Next</button>

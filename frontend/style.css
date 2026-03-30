@@ -51,21 +51,31 @@ body {
     flex-direction: column;
     min-height: 100vh; /* 允許全局捲動 */
     box-sizing: border-box;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
 }
 
 /* 📐 實用工具類別 (Utility Classes) */
-.mt-sm { margin-top: var(--space-sm); }
-.mt-md { margin-top: var(--space-md); }
+.mt-sm {
+    margin-top: var(--space-sm);
+}
+.mt-md {
+    margin-top: var(--space-md);
+}
 
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
 /* 🌟 1.A & 2.A 動畫轉場核心 */
 .collapsible-panel {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    transition:
+        max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.2s ease;
 }
 
 .collapsible-panel.expanded {
@@ -84,8 +94,12 @@ body {
     gap: 8px;
 }
 
-.w-100 { width: 100%; }
-.flex-1 { flex: 1; }
+.w-100 {
+    width: 100%;
+}
+.flex-1 {
+    flex: 1;
+}
 
 .flex-wrap {
     display: flex;
@@ -196,7 +210,9 @@ input[type='number'] {
     border-radius: var(--border-radius);
     color: var(--text-color);
     box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
 }
 
 /* 💎 全域元件聚焦效果 (更明顯的雙層發光環) */
@@ -220,7 +236,10 @@ button {
     padding: 10px 20px;
     border-radius: var(--border-radius);
     font-weight: bold;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s, background-color 0.2s;
+    transition:
+        transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        box-shadow 0.2s,
+        background-color 0.2s;
 }
 
 button:hover {
@@ -243,20 +262,23 @@ button:hover {
 }
 
 /* 🗂️ 基礎排版 Grid */
-.form-grid, .checkbox-grid {
+.form-grid,
+.checkbox-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
 }
 
 @media (max-width: 768px) {
-    .form-grid, .checkbox-grid {
+    .form-grid,
+    .checkbox-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 480px) {
-    .form-grid, .checkbox-grid {
+    .form-grid,
+    .checkbox-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -323,7 +345,7 @@ input[type='color'] {
     padding: 0;
     overflow: hidden;
     position: relative;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
 
     .log-scroller {
         width: 100%;
@@ -383,22 +405,41 @@ input[type='color'] {
 }
 
 @keyframes aurora {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 100% 50%;
+    }
 }
 
 #progress-bar.style-neon,
 #batch-progress-bar.style-neon {
     background: var(--neon-color) !important;
-    box-shadow: 0 0 10px var(--neon-color), 0 0 20px var(--neon-color) !important;
-    background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent) !important;
+    box-shadow:
+        0 0 10px var(--neon-color),
+        0 0 20px var(--neon-color) !important;
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.15) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.15) 75%,
+        transparent 75%,
+        transparent
+    ) !important;
     background-size: 1rem 1rem !important;
     animation: stripe 1s linear infinite !important;
 }
 
 @keyframes stripe {
-    0% { background-position: 0 0; }
-    100% { background-position: 2rem 0; }
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 2rem 0;
+    }
 }
 
 /* 🔧 開發人員選項 Grid */
@@ -661,13 +702,23 @@ input:checked + .slider:before {
     }
 
     /* 各等級分色 */
-    &.log-error .log-msg { color: var(--danger-color); font-weight: bold; }
-    &.log-warn .log-msg { color: #d97706; } /* 亮色下更有感的暗金色 */
-    &.log-info .log-msg { color: var(--text-color); }
-    &.log-success .log-msg { color: #059669; } /* 亮色下更有感的深翠綠 */
+    &.log-error .log-msg {
+        color: var(--danger-color);
+        font-weight: bold;
+    }
+    &.log-warn .log-msg {
+        color: #d97706;
+    } /* 亮色下更有感的暗金色 */
+    &.log-info .log-msg {
+        color: var(--text-color);
+    }
+    &.log-success .log-msg {
+        color: #059669;
+    } /* 亮色下更有感的深翠綠 */
 }
 
-#label-files, #status-text {
+#label-files,
+#status-text {
     color: var(--text-muted, #ddd);
 }
 

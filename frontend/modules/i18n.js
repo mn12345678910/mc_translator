@@ -83,7 +83,6 @@ export async function updateUiLanguage() {
 
         // 移除原有的手動 optionMapping 循環
 
-
         // 已在函式開頭宣告過，直接使用
 
         if (labels.btn_nav_settings && btnNavApi) btnNavApi.title = labels.btn_nav_settings;
@@ -154,19 +153,31 @@ export async function updateUiLanguage() {
         const selectedModel = document.getElementById('selected-model');
         if (selectedModel && selectedModel.options.length > 0) {
             const firstOpt = selectedModel.options[0];
-            if (firstOpt.value === "") {
+            if (firstOpt.value === '') {
                 const oldSelect = oldLabels.prompt_select_model;
                 const oldLoading = oldLabels.label_loading_models;
                 const oldNoModels = oldLabels.label_no_models;
-                if (firstOpt.textContent === oldSelect || firstOpt.textContent === oldLoading || firstOpt.textContent === oldNoModels) {
+                if (
+                    firstOpt.textContent === oldSelect ||
+                    firstOpt.textContent === oldLoading ||
+                    firstOpt.textContent === oldNoModels
+                ) {
                     firstOpt.textContent = labels.prompt_select_model;
                 }
             }
         }
 
         // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
-        const allSwitches = ['chk-glossary-priority', 'chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log', 'chk-debug-log'];
-        allSwitches.forEach(id => {
+        const allSwitches = [
+            'chk-glossary-priority',
+            'chk-skip-json',
+            'chk-skip-js',
+            'chk-skip-jar',
+            'chk-skip-book',
+            'chk-llm-log',
+            'chk-debug-log',
+        ];
+        allSwitches.forEach((id) => {
             const toggleEl = document.getElementById(id);
             if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
         });
@@ -174,7 +185,6 @@ export async function updateUiLanguage() {
         if (window.__TAURI__ && window.__TAURI__.event) {
             window.__TAURI__.event.emit('ui-lang-changed', uiLang ? uiLang.value : undefined);
         }
-
     } catch (err) {
         console.error('Failed to update UI language:', err);
     }
@@ -187,22 +197,18 @@ export function updateToggleStateLabel(id, checked) {
     if (!labelEl) return;
 
     if (id === 'chk-glossary-priority') {
-        labelEl.textContent = checked
-            ? (labels.glossary_priority_user)
-            : (labels.glossary_priority_official);
+        labelEl.textContent = checked ? labels.glossary_priority_user : labels.glossary_priority_official;
     } else if (id === 'chk-llm-log') {
-        labelEl.textContent = checked
-            ? (labels.label_enable_log)
-            : (labels.label_disable_log);
+        labelEl.textContent = checked ? labels.label_enable_log : labels.label_disable_log;
     } else if (id === 'chk-skip-json') {
-        labelEl.textContent = checked ? (labels.label_skip_json) : (labels.label_no_skip_json);
+        labelEl.textContent = checked ? labels.label_skip_json : labels.label_no_skip_json;
     } else if (id === 'chk-skip-js') {
-        labelEl.textContent = checked ? (labels.label_skip_js) : (labels.label_no_skip_js);
+        labelEl.textContent = checked ? labels.label_skip_js : labels.label_no_skip_js;
     } else if (id === 'chk-skip-jar') {
-        labelEl.textContent = checked ? (labels.label_skip_jar) : (labels.label_no_skip_jar);
+        labelEl.textContent = checked ? labels.label_skip_jar : labels.label_no_skip_jar;
     } else if (id === 'chk-skip-book') {
-        labelEl.textContent = checked ? (labels.label_skip_book) : (labels.label_no_skip_book);
+        labelEl.textContent = checked ? labels.label_skip_book : labels.label_no_skip_book;
     } else if (id === 'chk-debug-log') {
-        labelEl.textContent = checked ? (labels.label_enable_debug_log) : (labels.label_disable_debug_log);
+        labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
     }
 }

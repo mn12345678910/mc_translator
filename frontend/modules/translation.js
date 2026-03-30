@@ -9,7 +9,7 @@ const { listen } = window.__TAURI__ ? window.__TAURI__.event : { listen: () => {
 const UI_STATUS = {
     IDLE: 'IDLE',
     RUNNING: 'RUNNING',
-    PAUSED: 'PAUSED'
+    PAUSED: 'PAUSED',
 };
 
 /**
@@ -38,7 +38,7 @@ function getFormConfig() {
         skip_book: document.getElementById('chk-skip-book')?.checked || false,
         enable_llm_log: document.getElementById('chk-llm-log')?.checked || false,
         enable_debug_log: document.getElementById('chk-debug-log')?.checked || false,
-        ui_lang: document.getElementById('ui-lang')?.value || 'zh_tw'
+        ui_lang: document.getElementById('ui-lang')?.value || 'zh_tw',
     };
 }
 
@@ -64,11 +64,11 @@ export function updateUiState(status) {
         '.dev-settings input',
         '.dev-settings textarea',
         '#user-prompt',
-        '#system-prompt'
+        '#system-prompt',
     ].join(',');
 
     const elementsToLock = document.querySelectorAll(lockedSelectors);
-    elementsToLock.forEach(el => {
+    elementsToLock.forEach((el) => {
         // 唯有在 RUNNING 時鎖定，IDLE 與 PAUSED 皆開放
         el.disabled = isRunning;
     });
@@ -104,7 +104,7 @@ export function updateUiState(status) {
     // 4. 動畫與狀態清理
     if (isIdle || isPaused) {
         const pulses = document.querySelectorAll('.pulse-glow, [style*="pulse"]');
-        pulses.forEach(el => el.style.animation = 'none');
+        pulses.forEach((el) => (el.style.animation = 'none'));
     }
 
     if (isIdle) {
@@ -149,13 +149,13 @@ export function initTranslation() {
 
                 await invoke('start_translation', {
                     config: state.currentConfig,
-                    inputPaths: [state.currentConfig.path]
+                    inputPaths: [state.currentConfig.path],
                 });
             } catch (e) {
                 appendLog({
                     level: 'Error',
                     message: (state.currentLabels.status_trans_failed_mask || '翻譯失敗: {}').replace('{}', e),
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
                 });
                 updateUiState(UI_STATUS.IDLE);
             }
@@ -168,7 +168,7 @@ export function initTranslation() {
                 await invoke('pause_translation');
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_paused;
             } catch (e) {
-                console.error("Pause failed:", e);
+                console.error('Pause failed:', e);
             }
         });
     }
@@ -184,7 +184,7 @@ export function initTranslation() {
                 await invoke('resume_translation');
                 if (statusText) statusText.textContent = state.currentLabels.status_trans_resumed;
             } catch (e) {
-                console.error("Resume failed:", e);
+                console.error('Resume failed:', e);
             }
         });
     }
@@ -198,7 +198,7 @@ export function initTranslation() {
                     await invoke('stop_translation');
                     if (statusText) statusText.textContent = state.currentLabels.status_trans_stopping;
                 } catch (e) {
-                    console.error("Stop failed:", e);
+                    console.error('Stop failed:', e);
                 }
             }
         });
@@ -208,7 +208,7 @@ export function initTranslation() {
     if (window.__TAURI__) {
         // 監聽後端狀態同步 (核心)
         listen('job-state-changed', (event) => {
-            console.log("Job state changed:", event.payload);
+            console.log('Job state changed:', event.payload);
             updateUiState(event.payload);
         });
 
@@ -252,7 +252,7 @@ export function initTranslation() {
             appendLog({
                 level: data.success ? 'Success' : 'Error',
                 message: data.msg,
-                timestamp: Date.now()
+                timestamp: Date.now(),
             });
         });
 

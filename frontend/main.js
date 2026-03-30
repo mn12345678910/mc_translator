@@ -312,9 +312,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await invoke('save_style_config', { config: state.currentStyle });
 
                 const targetName = paletteTargetItem.options[paletteTargetItem.selectedIndex].text;
-                appendLog(
-                    (state.currentLabels.status_palette_clear_item).replace('{}', targetName)
-                );
+                appendLog(state.currentLabels.status_palette_clear_item.replace('{}', targetName));
             } catch (e) {
                 console.error(e);
             }

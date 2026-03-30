@@ -4,6 +4,11 @@
 Write-Host "🔍 正在檢查 I18n 資產對齊情況..." -ForegroundColor Cyan
 
 # 執行 Cargo Test 中的專屬測試案例
+# 1. 執行跨語言 Key 集對齊檢查與空值檢查
+node tool/check_i18n_keys.js
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+# 2. 執行 Cargo Test 確認 Rust 結構體對齊
 cargo test test_ensure_assets_alignment -- --nocapture
 
 if ($LASTEXITCODE -eq 0) {

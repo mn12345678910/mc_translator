@@ -29,13 +29,14 @@ export function appendLog(entry) {
     }
 
     // 支援舊版字串輸入
-    let data = typeof entry === 'string'
-        ? {
-              level: 'Info',
-              message: entry,
-              timestamp: Date.now(),
-          }
-        : { ...entry };
+    let data =
+        typeof entry === 'string'
+            ? {
+                  level: 'Info',
+                  message: entry,
+                  timestamp: Date.now(),
+              }
+            : { ...entry };
 
     // 額外相容舊版：如果訊息包含錯誤標記（如 ❌）或 Error，自動升級為 Error 等級
     if (typeof entry === 'string' && (entry.includes('❌') || entry.includes('Error'))) {

@@ -15,7 +15,7 @@ export class VirtualLogViewer {
             fontSize: options.fontSize || '13px',
             fontFamily: options.fontFamily || "'Courier New', Courier, monospace",
             buffer: options.buffer || 5, // 上下快取渲染行數
-            ...options
+            ...options,
         };
 
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
@@ -69,7 +69,7 @@ export class VirtualLogViewer {
             message,
             level,
             timeStr,
-            height
+            height,
         };
 
         this.logs.push(logEntry);
@@ -96,7 +96,7 @@ export class VirtualLogViewer {
     recalculateHeights() {
         const width = this.container.clientWidth - 20;
         this.totalHeight = 0;
-        this.itemHeights = this.logs.map(log => {
+        this.itemHeights = this.logs.map((log) => {
             const h = this.measureHeight(log.message, width);
             log.height = h;
             this.totalHeight += h;
@@ -108,7 +108,7 @@ export class VirtualLogViewer {
     handleScroll() {
         const { scrollTop, scrollHeight, clientHeight } = this.container;
         // 判斷是否鎖定在底部 (保留 30px 的誤觸空間)
-        this.isLockedToBottom = (scrollHeight - scrollTop - clientHeight) < 30;
+        this.isLockedToBottom = scrollHeight - scrollTop - clientHeight < 30;
         this.render();
     }
 
