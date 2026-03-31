@@ -130,32 +130,7 @@ pub async fn start_translation_workflow(
     let target_i18n = crate::i18n::CommonLabels::load_or_default(&config.target_lang);
 
     // 3. 組裝 JobConfig
-    let job_config = Arc::new(Mutex::new(JobConfig::new(
-        config.api_key.clone(),
-        config.api_provider.clone(),
-        config.model.clone(),
-        config.ollama_url.clone(),
-        config.api_base_url.clone(),
-        target_i18n.cleanup_prefixes.clone(),
-        target_i18n.cleanup_contains.clone(),
-        config.user_prompt.clone(),
-        config.system_prompt.clone(),
-        config.timeout,
-        config.batch_size,
-        config.batch_max_chars,
-        config.output_dir.clone(),
-        config.pack_format,
-        config.glossary_priority.clone(),
-        config.skip_json,
-        config.skip_js,
-        config.skip_jar,
-        config.skip_book,
-        config.enable_llm_log,
-        config.source_lang.clone(),
-        config.target_lang.clone(),
-        config.enable_debug_log,
-        config.excluded_paths.clone(),
-    )));
+    let job_config = Arc::new(Mutex::new(JobConfig::from_app_config_and_i18n(&config, &target_i18n)));
 
     // 4. 建立 JobSharedState
 

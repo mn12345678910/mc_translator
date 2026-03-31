@@ -566,7 +566,7 @@ mod tests {
 
     #[test]
     fn test_gui_labels_methods() {
-        let t_dir = tempdir().unwrap();
+        let t_dir = tempdir().expect("Failed to create temp dir");
         let gui_dir = t_dir.path().join("gui");
 
         let _ = GuiLabels::ensure_langs_exists_with_dir(&gui_dir);

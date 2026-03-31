@@ -1,6 +1,7 @@
 //! # 翻譯任務定義與共用狀態
 //! 封裝翻譯任務所需的設定參數與跨執行緒共享的狀態物件。
 
+use crate::config::settings::AppConfig;
 use crate::i18n::CommonLabels;
 use crate::translation::LogEntry;
 use std::collections::HashMap;
@@ -125,6 +126,36 @@ impl JobConfig {
             target_lang,
             enable_debug_log,
             excluded_paths,
+        }
+    }
+
+    /// 從 AppConfig 和 CommonLabels 建立 JobConfig
+    pub fn from_app_config_and_i18n(config: &AppConfig, i18n: &CommonLabels) -> Self {
+        Self {
+            api_key: config.api_key.clone(),
+            api_provider: config.api_provider.clone(),
+            selected_model: config.model.clone(),
+            ollama_url: config.ollama_url.clone(),
+            api_base_url: config.api_base_url.clone(),
+            cleanup_prefixes: i18n.cleanup_prefixes.clone(),
+            cleanup_contains: i18n.cleanup_contains.clone(),
+            user_prompt: config.user_prompt.clone(),
+            system_prompt: config.system_prompt.clone(),
+            timeout: config.timeout as u64,
+            batch_size: config.batch_size,
+            batch_max_chars: config.batch_max_chars,
+            output_dir: config.output_dir.clone(),
+            pack_format: config.pack_format,
+            glossary_priority: config.glossary_priority.clone(),
+            skip_json: config.skip_json,
+            skip_js: config.skip_js,
+            skip_jar: config.skip_jar,
+            skip_book: config.skip_book,
+            enable_llm_log: config.enable_llm_log,
+            source_lang: config.source_lang.clone(),
+            target_lang: config.target_lang.clone(),
+            enable_debug_log: config.enable_debug_log,
+            excluded_paths: config.excluded_paths.clone(),
         }
     }
 }

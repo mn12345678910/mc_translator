@@ -153,8 +153,6 @@ pub fn write_to_temp_or_output(
 }
 
 pub async fn output_resource_pack(
-    _src_path: &Path,
-    _translated_files: HashMap<String, String>,
     config: JobConfig,
     log: Arc<Mutex<Vec<LogEntry>>>,
     i18n: crate::i18n::CommonLabels,
@@ -176,7 +174,9 @@ pub async fn output_resource_pack(
                 .any(|e| e.file_type().is_file());
 
             if !has_files {
-                let _ = fs::remove_dir_all(&temp_dir); // 清理空目錄
+                if let Err(e) = fs::remove_dir_all(&temp_dir) {
+                    eprintln!("清理空目錄失敗: {}", e);
+                }
                 return Ok(());
             }
 
@@ -237,7 +237,9 @@ pub async fn output_resource_pack(
             }
             zip_out.finish()?;
 
-            let _ = fs::remove_dir_all(&temp_dir);
+            if let Err(e) = fs::remove_dir_all(&temp_dir) {
+                eprintln!("清理暫存目錄失敗: {}", e);
+            }
 
             add_log_event(
                 &log,
@@ -263,7 +265,6 @@ mod tests {
     use crate::translation::job::JobConfig;
     use std::collections::HashMap;
     use std::fs;
-    use std::path::Path;
     use std::sync::{Arc, Mutex};
 
     fn get_test_temp_dir() -> std::path::PathBuf {
@@ -377,8 +378,6 @@ mod tests {
         };
 
         let res = output_resource_pack(
-            Path::new("."),
-            HashMap::new(),
             config.clone(),
             log.clone(),
             i18n,
@@ -412,8 +411,6 @@ mod tests {
         let i18n = crate::i18n::CommonLabels::default();
 
         let res = output_resource_pack(
-            Path::new("."),
-            HashMap::new(),
             config.clone(),
             log.clone(),
             i18n,

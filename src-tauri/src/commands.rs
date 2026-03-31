@@ -246,7 +246,7 @@ pub async fn start_translation(
             // 嚴重錯誤記錄至日誌區
             if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
                 if let Some(job) = active.as_ref() {
-                    let cfg_shared = job.config.lock().unwrap();
+                    let cfg_shared = job.config.lock().expect("Failed to lock job config");
                     add_log_event(
                         &job.log,
                         LogLevel::Error,
@@ -319,7 +319,7 @@ pub fn query_dictionary(
 
     let path_str = path.to_string_lossy().to_string();
 
-    let mut cache = dict_cache().lock().unwrap();
+    let mut cache = dict_cache().lock().expect("Failed to lock dict cache");
     let items = if let Some(c) = cache.as_ref() {
         if c.path == path_str {
             c.items.clone()
@@ -403,7 +403,7 @@ pub fn pause_translation(handle: tauri::AppHandle) -> Result<(), String> {
             job.paused.store(true, std::sync::atomic::Ordering::SeqCst);
 
             // 發送暫停日誌
-            let config_shared = job.config.lock().unwrap();
+            let config_shared = job.config.lock().expect("Failed to lock job config");
             add_log_event(
                 &job.log,
                 LogLevel::Warn,
@@ -434,7 +434,7 @@ pub fn resume_translation(handle: tauri::AppHandle) -> Result<(), String> {
             job.pause_notifier.notify_one();
 
             // 發送恢復日誌
-            let config_shared = job.config.lock().unwrap();
+            let config_shared = job.config.lock().expect("Failed to lock job config");
             add_log_event(
                 &job.log,
                 LogLevel::Info,
@@ -466,7 +466,7 @@ pub fn stop_translation(handle: tauri::AppHandle) -> Result<(), String> {
             job.pause_notifier.notify_one();
 
             // 發送中止日誌
-            let config_shared = job.config.lock().unwrap();
+            let config_shared = job.config.lock().expect("Failed to lock job config");
             add_log_event(
                 &job.log,
                 LogLevel::Error,
