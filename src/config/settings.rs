@@ -809,11 +809,13 @@ mod tests {
     #[test]
     fn test_config_validation() {
         // 1. AppConfig 驗證
-        let mut app = AppConfig::default();
-        app.batch_size = 999;
-        app.timeout = 0;
-        app.batch_max_chars = 50000;
-        app.pack_format = 200;
+        let mut app = AppConfig {
+            batch_size: 999,
+            timeout: 0,
+            batch_max_chars: 50000,
+            pack_format: 200,
+            ..AppConfig::default()
+        };
         app.validate();
         assert_eq!(app.batch_size, 500); // 上限 500
         assert_eq!(app.timeout, 60); // 0 重設為預設 60 並通過 clamp (或 1)
@@ -821,12 +823,14 @@ mod tests {
         assert_eq!(app.pack_format, 128); // 上限 128
 
         // 2. StyleConfig 驗證
-        let mut style = StyleConfig::default();
-        style.font_size = 5.0;
-        style.btn_rounding_value = 200.0;
-        style.progress_pulse_speed = 50.0;
-        style.border_alpha = 0.0;
-        style.space_sm = -10.0;
+        let mut style = StyleConfig {
+            font_size: 5.0,
+            btn_rounding_value: 200.0,
+            progress_pulse_speed: 50.0,
+            border_alpha: 0.0,
+            space_sm: -10.0,
+            ..StyleConfig::default()
+        };
         style.validate();
         assert_eq!(style.font_size, 12.0); // 下限 12.0
         assert_eq!(style.btn_rounding_value, 100.0); // 上限 100.0
