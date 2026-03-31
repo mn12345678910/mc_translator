@@ -1,4 +1,4 @@
-const { invoke } = window.__TAURI__.core;
+const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 import { state } from './state.js';
 
 // 輔助函數：RGB 轉 Hex
@@ -92,6 +92,21 @@ export function applyColors(style) {
             `rgb(${style.neon_color[0]},${style.neon_color[1]},${style.neon_color[2]})`
         );
 
+    // --- [日誌色彩] ---
+    const lInfo = isDark ? style.dark_log_info : style.light_log_info;
+    const lWarn = isDark ? style.dark_log_warn : style.light_log_warn;
+    const lError = isDark ? style.dark_log_error : style.light_log_error;
+    const lSuccess = isDark ? style.dark_log_success : style.light_log_success;
+    const lDir = isDark ? style.dark_log_dir : style.light_log_dir;
+    const lFile = isDark ? style.dark_log_file : style.light_log_file;
+
+    if (lInfo) root.style.setProperty('--log-info-color', `rgb(${lInfo[0]},${lInfo[1]},${lInfo[2]})`);
+    if (lWarn) root.style.setProperty('--log-warn-color', `rgb(${lWarn[0]},${lWarn[1]},${lWarn[2]})`);
+    if (lError) root.style.setProperty('--log-error-color', `rgb(${lError[0]},${lError[1]},${lError[2]})`);
+    if (lSuccess) root.style.setProperty('--log-success-color', `rgb(${lSuccess[0]},${lSuccess[1]},${lSuccess[2]})`);
+    if (lDir) root.style.setProperty('--log-dir-color', `rgb(${lDir[0]},${lDir[1]},${lDir[2]})`);
+    if (lFile) root.style.setProperty('--log-file-color', `rgb(${lFile[0]},${lFile[1]},${lFile[2]})`);
+
     // --- [面板與背景透明度] ---
     if (bg) {
         const pAlpha = style.panel_alpha !== undefined ? style.panel_alpha : 0.03;
@@ -127,13 +142,17 @@ export function applyColors(style) {
 
     // --- [實例覆寫] ---
     if (style.instance_overrides) {
-        for (const [id, overrides] of Object.entries(style.instance_overrides)) {
+        for (const [id, ov] of Object.entries(style.instance_overrides)) {
             const el = document.getElementById(id);
             if (!el) continue;
-            if (overrides.bg)
-                el.style.backgroundColor = `rgb(${overrides.bg[0]},${overrides.bg[1]},${overrides.bg[2]})`;
-            if (overrides.text) el.style.color = `rgb(${overrides.text[0]},${overrides.text[1]},${overrides.text[2]})`;
-            if (overrides.rounding !== undefined) el.style.borderRadius = `${overrides.rounding}px`;
+
+            // 優先選取主題感應顏色
+            const cBg = isDark ? ov.dark_bg : ov.light_bg;
+            const cText = isDark ? ov.dark_text : ov.light_text;
+
+            if (cBg) el.style.backgroundColor = `rgb(${cBg[0]},${cBg[1]},${cBg[2]})`;
+            if (cText) el.style.color = `rgb(${cText[0]},${cText[1]},${cText[2]})`;
+            if (ov.rounding !== undefined) el.style.borderRadius = `${ov.rounding}px`;
         }
     }
 }
@@ -166,10 +185,15 @@ export function updatePaletteValue() {
         target.startsWith('space_') ||
         target.endsWith('_alpha') ||
         target === 'font_size' ||
+        target.includes('log_') || // [NEW] 日誌顏色項目依舊是顏色型，但需在此排除
         (isSpecific && prop === 'rounding');
 
-    if (paletteColorGroup) paletteColorGroup.style.display = isNumberItem ? 'none' : 'block';
-    if (paletteNumberGroup) paletteNumberGroup.style.display = isNumberItem ? 'block' : 'none';
+    // 重新修正：日誌顏色不屬於數值型，是顏色型
+    const isLogColor = target.includes('log_');
+    const finalIsNumber = isNumberItem && !isLogColor;
+
+    if (paletteColorGroup) paletteColorGroup.style.display = finalIsNumber ? 'none' : 'block';
+    if (paletteNumberGroup) paletteNumberGroup.style.display = finalIsNumber ? 'block' : 'none';
 
     if (isNumberItem) {
         // 設定 Label 與數值
@@ -224,7 +248,14 @@ export function updatePaletteValue() {
         let color = null;
         if (isSpecific) {
             const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
-            color = ov ? (prop === 'bg' ? ov.bg : ov.text) : null;
+            if (ov) {
+                const isDark = state.currentStyle.theme !== 'light';
+                if (prop === 'bg') {
+                    color = isDark ? ov.dark_bg : ov.light_bg;
+                } else {
+                    color = isDark ? ov.dark_text : ov.light_text;
+                }
+            }
         } else {
             color = state.currentStyle[target];
         }

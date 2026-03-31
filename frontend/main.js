@@ -259,19 +259,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (paletteColor) {
         paletteColor.addEventListener('input', () => {
             const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
-            const target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
-            const prop = paletteProperty ? paletteProperty.value : 'bg';
+            let target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
+            const prop = paletteProperty ? paletteProperty.value : 'bg'; // bg or text
             const hex = paletteColor.value;
             if (!hex.startsWith('#')) return;
             const bigint = parseInt(hex.slice(1), 16);
             const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
 
+            const isDark = state.currentStyle.theme !== 'light';
+
             if (!isSpecific) {
+                // 全域類別：處理 dark_/light_ 前綴
+                if (target.startsWith('dark_') || target.startsWith('light_')) {
+                    const baseKey = target.substring(target.indexOf('_') + 1);
+                    target = (isDark ? 'dark_' : 'light_') + baseKey;
+                }
                 state.currentStyle[target] = rgb;
             } else {
+                // 特定組件：根據目前主題決定存入 dark_... 或 light_...
                 if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
                 if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-                state.currentStyle.instance_overrides[target][prop] = rgb;
+
+                const themedProp = (isDark ? 'dark_' : 'light_') + prop;
+                state.currentStyle.instance_overrides[target][themedProp] = rgb;
             }
             applyColors(state.currentStyle);
             debouncedSavePalette();

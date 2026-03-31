@@ -706,20 +706,29 @@ input:checked + .slider:before {
         word-break: break-all;
     }
 
-    /* 各等級分色 */
+    /* 各等級分色 (去硬編碼，使用調色盤變數) */
     &.log-error .log-msg {
-        color: var(--danger-color);
+        color: var(--log-error-color, var(--danger-color));
         font-weight: bold;
     }
     &.log-warn .log-msg {
-        color: #d97706;
-    } /* 亮色下更有感的暗金色 */
+        color: var(--log-warn-color, #d97706);
+    }
     &.log-info .log-msg {
-        color: var(--text-color);
+        color: var(--log-info-color, var(--text-color));
     }
     &.log-success .log-msg {
-        color: #059669;
-    } /* 亮色下更有感的深翠綠 */
+        color: var(--log-success-color, #059669);
+    }
+
+    /* 路徑識別標籤樣式 */
+    .log-dir {
+        color: var(--log-dir-color, var(--accent-color));
+        font-weight: bold;
+    }
+    .log-file {
+        color: var(--log-file-color, #55ffff);
+    }
 }
 
 #label-files,

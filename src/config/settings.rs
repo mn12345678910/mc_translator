@@ -221,6 +221,37 @@ pub struct StyleConfig {
     #[serde(default = "default_light_danger")]
     pub light_danger: [u8; 3],
 
+    // --- [日誌色彩] ---
+    #[serde(default = "default_dark_log_info")]
+    pub dark_log_info: [u8; 3],
+    #[serde(default = "default_light_log_info")]
+    pub light_log_info: [u8; 3],
+
+    #[serde(default = "default_dark_log_warn")]
+    pub dark_log_warn: [u8; 3],
+    #[serde(default = "default_light_log_warn")]
+    pub light_log_warn: [u8; 3],
+
+    #[serde(default = "default_dark_log_error")]
+    pub dark_log_error: [u8; 3],
+    #[serde(default = "default_light_log_error")]
+    pub light_log_error: [u8; 3],
+
+    #[serde(default = "default_dark_log_success")]
+    pub dark_log_success: [u8; 3],
+    #[serde(default = "default_light_log_success")]
+    pub light_log_success: [u8; 3],
+
+    #[serde(default = "default_dark_log_dir")]
+    pub dark_log_dir: [u8; 3],
+    #[serde(default = "default_light_log_dir")]
+    pub light_log_dir: [u8; 3],
+
+    #[serde(default = "default_dark_log_file")]
+    pub dark_log_file: [u8; 3],
+    #[serde(default = "default_light_log_file")]
+    pub light_log_file: [u8; 3],
+
     // --- [透明度設定 (0.0 - 1.0)] ---
     #[serde(default = "default_alpha_border")]
     pub border_alpha: f32,
@@ -269,9 +300,13 @@ pub struct StyleConfig {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ComponentStyle {
     #[serde(default)]
-    pub bg: Option<[u8; 3]>,
+    pub dark_bg: Option<[u8; 3]>,
     #[serde(default)]
-    pub text: Option<[u8; 3]>,
+    pub dark_text: Option<[u8; 3]>,
+    #[serde(default)]
+    pub light_bg: Option<[u8; 3]>,
+    #[serde(default)]
+    pub light_text: Option<[u8; 3]>,
     #[serde(default)]
     pub rounding: Option<f32>,
 }
@@ -399,6 +434,49 @@ fn default_light_danger() -> [u8; 3] {
     [170, 17, 17]
 }
 
+// --- [日誌預設色] ---
+fn default_dark_log_info() -> [u8; 3] {
+    [200, 200, 200]
+}
+fn default_light_log_info() -> [u8; 3] {
+    [30, 30, 35]
+}
+
+fn default_dark_log_warn() -> [u8; 3] {
+    [217, 119, 6] // 暗金色
+}
+fn default_light_log_warn() -> [u8; 3] {
+    [180, 100, 0]
+}
+
+fn default_dark_log_error() -> [u8; 3] {
+    [255, 85, 85] // 亮紅
+}
+fn default_light_log_error() -> [u8; 3] {
+    [170, 17, 17]
+}
+
+fn default_dark_log_success() -> [u8; 3] {
+    [60, 180, 120] // 翠綠
+}
+fn default_light_log_success() -> [u8; 3] {
+    [5, 150, 105]
+}
+
+fn default_dark_log_dir() -> [u8; 3] {
+    [212, 175, 55] // 跟 Accent 同樣的金色感
+}
+fn default_light_log_dir() -> [u8; 3] {
+    [150, 110, 0]
+}
+
+fn default_dark_log_file() -> [u8; 3] {
+    [85, 255, 255] // 水藍
+}
+fn default_light_log_file() -> [u8; 3] {
+    [0, 120, 212]
+}
+
 fn default_alpha_border() -> f32 {
     0.15
 }
@@ -492,6 +570,18 @@ impl Default for StyleConfig {
             light_accent: default_light_accent(),
             dark_danger: default_dark_danger(),
             light_danger: default_light_danger(),
+            dark_log_info: default_dark_log_info(),
+            light_log_info: default_light_log_info(),
+            dark_log_warn: default_dark_log_warn(),
+            light_log_warn: default_light_log_warn(),
+            dark_log_error: default_dark_log_error(),
+            light_log_error: default_light_log_error(),
+            dark_log_success: default_dark_log_success(),
+            light_log_success: default_light_log_success(),
+            dark_log_dir: default_dark_log_dir(),
+            light_log_dir: default_light_log_dir(),
+            dark_log_file: default_dark_log_file(),
+            light_log_file: default_light_log_file(),
             aurora_1: default_aurora_1(),
             aurora_2: default_aurora_2(),
             aurora_3: default_aurora_3(),

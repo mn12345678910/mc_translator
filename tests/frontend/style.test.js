@@ -96,7 +96,7 @@ describe('style.js 樣式與主題管理模組', () => {
             const fakeStyle = {
                 theme: 'dark',
                 instance_overrides: {
-                    'btn-translate': { bg: [255, 0, 0], text: [0, 0, 0], rounding: 8 }
+                    'btn-translate': { dark_bg: [255, 0, 0], dark_text: [0, 0, 0], rounding: 8 }
                 }
             };
 
@@ -106,6 +106,22 @@ describe('style.js 樣式與主題管理模組', () => {
             expect(btn.style.backgroundColor).toBe('rgb(255, 0, 0)');
             expect(btn.style.color).toBe('rgb(0, 0, 0)');
             expect(btn.style.borderRadius).toBe('8px');
+        });
+
+        it('切換主題時應該正確選擇對應的主題覆寫色', () => {
+             const fakeStyle = {
+                theme: 'light',
+                instance_overrides: {
+                    'btn-translate': {
+                        dark_bg: [0, 0, 0],
+                        light_bg: [255, 255, 255]
+                    }
+                }
+            };
+
+            styleModule.applyColors(fakeStyle);
+            const btn = document.getElementById('btn-translate');
+            expect(btn.style.backgroundColor).toBe('rgb(255, 255, 255)');
         });
     });
 

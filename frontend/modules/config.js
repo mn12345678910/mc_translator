@@ -163,12 +163,17 @@ export async function loadModels() {
     try {
         const models = await invoke('get_models_from_provider', { provider });
         selectedModel.innerHTML = `<option value="">${state.currentLabels.prompt_select_model}</option>`;
-        models.forEach((m) => {
-            const opt = document.createElement('option');
-            opt.value = m;
-            opt.textContent = m;
-            selectedModel.appendChild(opt);
-        });
+        if (Array.isArray(models)) {
+            models.forEach((m) => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                selectedModel.appendChild(opt);
+            });
+        } else {
+            console.warn('models is not an array:', models);
+            selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models || 'No models'}</option>`;
+        }
     } catch (e) {
         console.error(e);
         selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models}</option>`;

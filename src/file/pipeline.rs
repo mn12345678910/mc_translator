@@ -467,12 +467,17 @@ pub fn shorten_rel_paths(paths: &[String]) -> String {
             if !dir_line.ends_with('/') {
                 dir_line.push('/');
             }
-            result.push(format!(" {}", dir_line));
+            result.push(format!(" <dir>{}</dir>", dir_line));
         }
 
         // 檔案行 (含縮排一個空格)
         for chunk in files.chunks(5) {
-            result.push(format!(" {}", chunk.join(", ")));
+            let files_str = chunk
+                .iter()
+                .map(|f| format!("<file>{}</file>", f))
+                .collect::<Vec<_>>()
+                .join(", ");
+            result.push(format!(" {}", files_str));
         }
     }
 
@@ -578,7 +583,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shorten_rel_paths_grouped() {
+    fn test_shorten_rel_paths_styling() {
         let paths = vec![
             "a/1.json".into(),
             "a/2.json".into(),
@@ -587,11 +592,11 @@ mod tests {
         ];
         let result = shorten_rel_paths(&paths);
         assert!(result.starts_with('\n'));
-        assert!(result.contains(" a/"));
-        assert!(result.contains(" 1.json, 2.json"));
-        assert!(result.contains(" b/"));
-        assert!(result.contains(" 3.json"));
-        assert!(result.contains(" 4.json"));
+        assert!(result.contains(" <dir>a/</dir>"));
+        assert!(result.contains(" <file>1.json</file>, <file>2.json</file>"));
+        assert!(result.contains(" <dir>b/</dir>"));
+        assert!(result.contains(" <file>3.json</file>"));
+        assert!(result.contains(" <file>4.json</file>"));
     }
 
     #[test]
@@ -605,10 +610,10 @@ mod tests {
             "a/b/c/6.json".to_string(),
         ];
         let result = shorten_rel_paths(&paths);
-        assert!(result.contains(" a/b/c/"));
-        assert!(result.contains(" 1.json, 2.json, 3.json, 4.json, 5.json"));
+        assert!(result.contains(" <dir>a/b/c/</dir>"));
+        assert!(result.contains(" <file>1.json</file>, <file>2.json</file>, <file>3.json</file>, <file>4.json</file>, <file>5.json</file>"));
         // 驗證行末沒有額外的逗號
-        assert!(!result.contains("5.json,"));
-        assert!(result.contains(" 6.json"));
+        assert!(!result.contains("5.json</file>,"));
+        assert!(result.contains(" <file>6.json</file>"));
     }
 }

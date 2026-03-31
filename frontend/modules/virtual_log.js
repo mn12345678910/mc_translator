@@ -89,9 +89,11 @@ export class VirtualLogViewer {
     }
 
     measureHeight(text, width) {
+        // [NEW] 測量前過濾掉所有標籤，確保 pretext 計算的是純文字寬度
+        const cleanMsg = text.replace(/<dir>|<\/dir>|<file>|<\/file>/g, '');
         const font = `${this.options.fontSize} ${this.options.fontFamily}`;
         const safetyWidth = Math.max(10, width - 4); // [FIX] 增加安全寬度緩衝
-        const prepared = prepare(text, font);
+        const prepared = prepare(cleanMsg, font);
         const result = layout(prepared, safetyWidth, this.options.lineHeight);
         return Math.ceil(Math.max(this.options.lineHeight, result.height)); // [FIX] 強制進位確保不重疊
     }
@@ -163,7 +165,24 @@ export class VirtualLogViewer {
 
             const msgSpan = document.createElement('span');
             msgSpan.className = 'log-msg';
-            msgSpan.textContent = log.message;
+
+            // [NEW] 解析標籤並轉換為帶有類別的 Span
+            const parts = log.message.split(/(<dir>.*?<\/dir>|<file>.*?<\/file>)/g);
+            parts.forEach((part) => {
+                if (part.startsWith('<dir>')) {
+                    const s = document.createElement('span');
+                    s.className = 'log-dir';
+                    s.textContent = part.replace(/<dir>|<\/dir>/g, '');
+                    msgSpan.appendChild(s);
+                } else if (part.startsWith('<file>')) {
+                    const s = document.createElement('span');
+                    s.className = 'log-file';
+                    s.textContent = part.replace(/<file>|<\/file>/g, '');
+                    msgSpan.appendChild(s);
+                } else if (part) {
+                    msgSpan.appendChild(document.createTextNode(part));
+                }
+            });
 
             div.appendChild(timeSpan);
             div.appendChild(msgSpan);
