@@ -23,6 +23,7 @@ export class VirtualLogViewer {
         this.itemHeights = [];
         this.totalHeight = 0;
         this.paddingY = 20; // 視圖容器總邊距 (上下各 10px)
+        this.onUpdate = options.onUpdate || null; // [NEW] 狀態更新回調
 
         this.init();
     }
@@ -114,8 +115,22 @@ export class VirtualLogViewer {
     handleScroll() {
         const { scrollTop, scrollHeight, clientHeight } = this.container;
         // 判斷是否鎖定在底部 (保留 30px 的誤觸空間)
-        this.isLockedToBottom = scrollHeight - scrollTop - clientHeight < 30;
+        const locked = scrollHeight - scrollTop - clientHeight < 30;
+        if (this.isLockedToBottom !== locked) {
+            this.isLockedToBottom = locked;
+            this.triggerUpdate();
+        }
         this.render();
+    }
+
+    triggerUpdate() {
+        if (this.onUpdate) {
+            this.onUpdate({
+                total: this.logs.length,
+                rendered: this.lastRenderedCount || 0,
+                isLocked: this.isLockedToBottom,
+            });
+        }
     }
 
     render() {
@@ -149,7 +164,9 @@ export class VirtualLogViewer {
         }
 
         this.viewport.style.transform = `translateY(${exactTop}px)`;
+        this.lastRenderedCount = endIndex - startIndex + 1; // [FIX] 使用正確的變數名稱
         this.renderSlice(startIndex, endIndex);
+        this.triggerUpdate(); // [NEW] 觸發更新
     }
 
     renderSlice(start, end) {

@@ -26,7 +26,6 @@ export async function loadConfig() {
     const chkSkipJar = document.getElementById('chk-skip-jar');
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
-    const chkDebugLog = document.getElementById('chk-debug-log');
     const inputPath = document.getElementById('input-path');
 
     try {

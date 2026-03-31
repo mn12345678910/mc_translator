@@ -5,6 +5,8 @@ const ROOT_DIR = path.join(__dirname, '..');
 const MODULES_DIR = path.join(ROOT_DIR, 'frontend/modules');
 const RUST_COMMANDS_FILE = path.join(ROOT_DIR, 'src-tauri/src/commands.rs');
 const MOCK_FILE = path.join(ROOT_DIR, 'tests/frontend/tauri_mock.js');
+const INDEX_HTML = path.join(ROOT_DIR, 'frontend/index.html');
+const MAIN_JS = path.join(ROOT_DIR, 'frontend/main.js');
 
 /**
  * 遞歸掃描目錄下的檔案
@@ -101,17 +103,27 @@ function verifySync() {
         hasError = true;
     }
 
-    // 2. 驗證測試 Mock 環境
+    // 2. 驗證測試 Mock 環境 (靜態檢查)
     const mockContent = fs.existsSync(MOCK_FILE) ? fs.readFileSync(MOCK_FILE, 'utf8') : "";
-    let mockWarnings = 0;
+    const mainContent = fs.existsSync(MAIN_JS) ? fs.readFileSync(MAIN_JS, 'utf8') : "";
+    const htmlContent = fs.existsSync(INDEX_HTML) ? fs.readFileSync(INDEX_HTML, 'utf8') : "";
+
+    let mockMissing = [];
     fe.commands.forEach(cmd => {
-        if (!mockContent.includes(cmd)) {
-            mockWarnings++;
+        // 檢查測試用 mock、主程式 live mock 與 index.html 全域注入 (支援有/無引號的 Key)
+        const inMock = mockContent.includes(cmd);
+        const inMain = mainContent.includes(`'${cmd}':`) || mainContent.includes(`"${cmd}":`) || mainContent.includes(`${cmd}:`);
+        const inHtml = htmlContent.includes(`'${cmd}':`) || htmlContent.includes(`"${cmd}":`) || htmlContent.includes(`${cmd}:`);
+
+        if (!inMock && !inMain && !inHtml) {
+            mockMissing.push(cmd);
         }
     });
 
-    if (mockWarnings > 0) {
-        console.warn(`⚠️ [測試提醒] 有 ${mockWarnings} 個指令尚未在 tauri_mock.js 中顯式定義，請確保測試覆蓋。`);
+    if (mockMissing.length > 0) {
+        console.error(`❌ [同步錯誤] 以下 ${mockMissing.length} 個指令尚未在任何 Mock 環境中定義:`);
+        mockMissing.forEach(c => console.error(`   - ${c}`));
+        hasError = true;
     }
 
     if (!hasError) {
