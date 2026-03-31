@@ -21,6 +21,7 @@ export class VirtualLogViewer {
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
         this.isLockedToBottom = true;
         this.itemHeights = [];
+        this.cumulativeHeights = []; // [NEW] 儲存累加高度，用於 O(log N) 搜尋
         this.totalHeight = 0;
         this.paddingY = 20; // 視圖容器總邊距 (上下各 10px)
         this.onUpdate = options.onUpdate || null; // [NEW] 狀態更新回調
@@ -79,6 +80,7 @@ export class VirtualLogViewer {
 
         this.logs.push(logEntry);
         this.itemHeights.push(height);
+        this.cumulativeHeights.push(this.totalHeight + height); // [NEW] 增量更新累加高度
         this.totalHeight += height;
 
         this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
@@ -103,10 +105,12 @@ export class VirtualLogViewer {
     recalculateHeights() {
         const width = this.container.clientWidth - 20;
         this.totalHeight = 0;
+        this.cumulativeHeights = []; // [NEW] 重置累加高度
         this.itemHeights = this.logs.map((log) => {
             const h = this.measureHeight(log.message, width);
             log.height = h;
             this.totalHeight += h;
+            this.cumulativeHeights.push(this.totalHeight); // [NEW] 重新構建累加高度
             return h;
         });
         this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
@@ -133,35 +137,40 @@ export class VirtualLogViewer {
         }
     }
 
+    /**
+     * [NEW] 使用二分搜尋在累加高度數組中尋找對應偏移量的索引
+     * 複雜度: O(log N)
+     */
+    findIndexAtOffset(offset) {
+        let low = 0;
+        let high = this.cumulativeHeights.length - 1;
+        while (low <= high) {
+            const mid = (low + high) >>> 1;
+            if (this.cumulativeHeights[mid] <= offset) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return low;
+    }
+
     render() {
+        if (this.logs.length === 0) return;
+
         const scrollTop = this.container.scrollTop;
         const viewHeight = this.container.clientHeight;
 
-        // 計算哪些行在可視區域內
-        let currentY = 0;
-        let startIndex = -1;
-        let endIndex = -1;
+        // [OPTIMIZED] 使用二分搜尋取代線性遍歷 (O(log N))
+        let startIndex = this.findIndexAtOffset(scrollTop);
+        let endIndex = this.findIndexAtOffset(scrollTop + viewHeight);
 
-        for (let i = 0; i < this.itemHeights.length; i++) {
-            const h = this.itemHeights[i];
-            if (startIndex === -1 && currentY + h > scrollTop) {
-                startIndex = Math.max(0, i - this.options.buffer);
-            }
-            if (currentY > scrollTop + viewHeight) {
-                endIndex = Math.min(this.logs.length - 1, i + this.options.buffer);
-                break;
-            }
-            currentY += h;
-        }
+        // 套用緩衝區渲染
+        startIndex = Math.max(0, startIndex - this.options.buffer);
+        endIndex = Math.min(this.logs.length - 1, endIndex + this.options.buffer);
 
-        if (startIndex === -1) startIndex = 0;
-        if (endIndex === -1) endIndex = this.logs.length - 1;
-
-        // 重新計算區塊精確 Top 位移
-        let exactTop = 0;
-        for (let i = 0; i < startIndex; i++) {
-            exactTop += this.itemHeights[i];
-        }
+        // [OPTIMIZED] O(1) 取得精確位移
+        const exactTop = startIndex > 0 ? this.cumulativeHeights[startIndex - 1] : 0;
 
         this.viewport.style.transform = `translateY(${exactTop}px)`;
         this.lastRenderedCount = endIndex - startIndex + 1; // [FIX] 使用正確的變數名稱
