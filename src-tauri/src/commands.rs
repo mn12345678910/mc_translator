@@ -667,15 +667,17 @@ pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
 pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
     let app_c = app.clone();
     let _ = app.run_on_main_thread(move || {
+        log::info!("Opening dictionary window...");
         let dict_window = tauri::WebviewWindowBuilder::new(
             &app_c,
             "dict_manager",
-            tauri::WebviewUrl::App("dict.html".into()),
+            tauri::WebviewUrl::App("/dict.html".into()),
         )
         .title("建議詞管理器")
         .inner_size(800.0, 600.0)
         .min_inner_size(800.0, 600.0)
         .resizable(true)
+        .visible(true)
         .devtools(true)
         .build();
 

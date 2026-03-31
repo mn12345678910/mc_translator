@@ -22,6 +22,7 @@ export class VirtualLogViewer {
         this.isLockedToBottom = true;
         this.itemHeights = [];
         this.totalHeight = 0;
+        this.paddingY = 20; // 視圖容器總邊距 (上下各 10px)
 
         this.init();
     }
@@ -54,7 +55,7 @@ export class VirtualLogViewer {
         this.resizeObserver = new ResizeObserver(() => {
             this.recalculateHeights();
             if (this.isLockedToBottom) {
-                this.container.scrollTop = this.totalHeight;
+                this.container.scrollTop = this.container.scrollHeight;
             }
             this.render();
         });
@@ -79,10 +80,10 @@ export class VirtualLogViewer {
         this.itemHeights.push(height);
         this.totalHeight += height;
 
-        this.scroller.style.height = `${this.totalHeight}px`;
+        this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
 
         if (this.isLockedToBottom) {
-            this.container.scrollTop = this.totalHeight;
+            this.container.scrollTop = this.container.scrollHeight;
         }
 
         this.render();
@@ -107,7 +108,7 @@ export class VirtualLogViewer {
             this.totalHeight += h;
             return h;
         });
-        this.scroller.style.height = `${this.totalHeight}px`;
+        this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
     }
 
     handleScroll() {
