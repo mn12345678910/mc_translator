@@ -1,5 +1,5 @@
 //! # 設定模組
-//! 負責 AppConfig 結構體定義、.env 環境變數的讀寫邏輯。
+//! 負責 AppConfig 結構體定義、config.cfg 與系統憑證 (Keyring) 的讀寫邏輯。
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -676,15 +676,13 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
-    /// 載入設定：從 .env 讀取 API_KEY，其餘從 config.cfg 讀取
+    /// 載入設定：從系統憑證 (Keyring) 讀取 API_KEY，其餘從 config.cfg 讀取
     pub fn load() -> Self {
         Self::load_with_path(std::path::Path::new("settings"))
     }
 
     pub fn load_with_path(dir: &std::path::Path) -> Self {
         let _ = fs::create_dir_all(dir);
-        let env_path = dir.join(".env");
-        dotenvy::from_path(&env_path).ok();
 
         #[allow(unused_mut)]
         let mut config = Self::load_from_config_cfg_path(dir);
