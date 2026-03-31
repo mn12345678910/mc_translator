@@ -635,7 +635,8 @@ impl Default for AppConfig {
             user_prompt: DEFAULT_PROMPT.to_string(),
             system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
 1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
-2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
+2. 嚴禁在此類標籤（%%...%%）之外自行臆造、增加或移動任何格式標籤。若原文無標籤，譯文亦不可有標籤。\n\
+3. 其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
             batch_size: 150,
             batch_max_chars: 3500,
             timeout: 60,

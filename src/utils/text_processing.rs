@@ -175,6 +175,12 @@ static PLACEHOLDER_RE: LazyLock<regex::Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+/// 強韌的佔位符還原正則：匹配形如 %%MC_0%%, %%mc_0%%, MC_0%%, %%0%%, %MC_0% 等變體
+/// 核心是捕捉中間的數字索引 (\d+)。安全性：使用二分支邏輯確保精確匹配並排除 100% 等常見文字
+static ROBUST_PLACEHOLDER_RE: LazyLock<regex::Regex> = LazyLock::new(|| {
+    regex::Regex::new(r"(?i)%%(\d+)%{0,2}|(?i)%{0,2}(?:MC|HEX|VAR)_?(\d+)%{0,2}").unwrap()
+});
+
 /// 將文本中的格式化標記替換為臨時預留位置，以防止 LLM 破壞格式
 pub fn preprocess_text(text: &str) -> (String, Vec<String>) {
     let mut markers = Vec::new();
@@ -199,17 +205,21 @@ pub fn preprocess_text(text: &str) -> (String, Vec<String>) {
 
 /// 將預留位置還原為原始格式標記
 pub fn postprocess_text(text: &str, markers: &[String]) -> String {
-    let mut result = text.to_string();
-    for (i, marker) in markers.iter().enumerate() {
-        let mc_placeholder = format!("%%MC_{}%%", i);
-        let hex_placeholder = format!("%%HEX_{}%%", i);
-        let var_placeholder = format!("%%VAR_{}%%", i);
-
-        result = result.replace(&mc_placeholder, marker);
-        result = result.replace(&hex_placeholder, marker);
-        result = result.replace(&var_placeholder, marker);
-    }
-    result
+    ROBUST_PLACEHOLDER_RE
+        .replace_all(text, |caps: &regex::Captures| {
+            // 從二進制分路徑中獲取索引 (擷取自 group 1 或 group 2)
+            let idx_str = caps.get(1).or_else(|| caps.get(2)).map(|m| m.as_str());
+            if let Some(s) = idx_str {
+                if let Ok(idx) = s.parse::<usize>() {
+                    if idx < markers.len() {
+                        return markers[idx].clone();
+                    }
+                }
+            }
+            // 若索引越界或標籤純屬幻覺，則將其移除 (Stripping Hallucinations)
+            String::new()
+        })
+        .to_string()
 }
 
 /// 針對原始 JSON 檔案內容進行增量更新，儘量保留原始縮排與格式
@@ -453,6 +463,53 @@ mod tests {
         assert_eq!(
             validate_and_cleanup(input3, &prefixes, &contains),
             "正常文字\n保留我"
+        );
+    }
+
+    #[test]
+    fn test_postprocess_robustness() {
+        let markers = vec!["§a".to_string(), "§r".to_string()];
+
+        // 1. 正常還原
+        assert_eq!(
+            postprocess_text("%%MC_0%%Text%%MC_1%%", &markers),
+            "§aText§r"
+        );
+
+        // 2. 大小寫不一致 (Fuzzy Case)
+        assert_eq!(
+            postprocess_text("%%mc_0%%Text%%Mc_1%%", &markers),
+            "§aText§r"
+        );
+
+        // 3. 部分格式損壞 (Missing percents)
+        assert_eq!(postprocess_text("MC_0%%Text%%MC_1", &markers), "§aText§r");
+
+        // 4. 只有索引 (Minimal)
+        assert_eq!(postprocess_text("%%0%%Text%%1%%", &markers), "§aText§r");
+
+        // 5. 幻覺標籤清理 (Hallucination Stripping)
+        // 只有 2 個 marker (0, 1)，%%MC_99%% 應該被剔除
+        assert_eq!(
+            postprocess_text("%%MC_0%%Hello%%MC_99%%", &markers),
+            "§aHello"
+        );
+
+        // 6. 批次污染處理 (空 markers 但 LLM 加上標籤)
+        let empty_markers: Vec<String> = vec![];
+        assert_eq!(
+            postprocess_text("Apotheosis %%MC_0%%Enchanting%%MC_1%%", &empty_markers),
+            "Apotheosis Enchanting"
+        );
+
+        // 7. 安全性測試 (Normal percentages shouldn't be stripped)
+        assert_eq!(
+            postprocess_text("Value is 100% finished", &markers),
+            "Value is 100% finished"
+        );
+        assert_eq!(
+            postprocess_text("Accuracy: 95.5%", &markers),
+            "Accuracy: 95.5%"
         );
     }
 }

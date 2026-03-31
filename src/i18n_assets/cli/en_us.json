@@ -69,7 +69,7 @@
   "log_pack_item_exists_warn": "Warning: An identical resource pack {} already exists and will be overwritten",
   "log_pack_gen_finished": "Resource pack (LLMTranslator.zip) generation finished",
   "default_user_prompt": "You are a professional Minecraft mod translator. Please translate the following strings into 'English (en_us)'.\nMaintain a gaming terminology style (e.g., Block, Entity, Enchantment).",
-  "default_system_prompt": "\n\n[Internal Technical Instruction - Must Comply]\n1. Keep technical placeholders like %%VAR_n%%, %%MC_n%%, %%HEX_n%% exactly as they are (do not modify, translate, or add/remove tags).\n2. All other text contents MUST be translated and not output as is.",
+  "default_system_prompt": "\n\n[Internal Technical Instruction - Must Comply]\n1. Keep technical placeholders like %%VAR_n%%, %%MC_n%%, %%HEX_n%% exactly as they are (do not modify, translate, or add/remove tags).\n2. Strictly forbidden to invent, add, or move any technical tags (%%...%%) outside the provided set. If the original text has no tags, the translation must not have tags either.\n3. All other text contents MUST be translated and not output as is.",
   "placeholder_input_path": "Enter or drag path here",
   "placeholder_output_dir": "./LLMTranslator (Default)",
   "placeholder_api_key": "Enter API Key",
