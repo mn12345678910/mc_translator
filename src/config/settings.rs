@@ -19,85 +19,57 @@ pub struct AppConfig {
     pub api_key: String,
 
     // --- [核心 API 設定] ---
-    #[serde(alias = "服務提供商")]
     pub api_provider: String,
-    #[serde(alias = "模型名稱")]
     pub model: String,
-    #[serde(alias = "Ollama位址")]
     pub ollama_url: String,
-    #[serde(alias = "API基礎網址", default)]
+    #[serde(default)]
     pub api_base_url: String,
 
     // --- [Prompt 集] ---
-    #[serde(alias = "使用者翻譯提示")]
     pub user_prompt: String,
-    #[serde(alias = "系統技術指令")]
     pub system_prompt: String,
 
     // --- [翻譯參數] ---
-    #[serde(alias = "批次量")]
     pub batch_size: u32,
-    #[serde(alias = "批次字數上限")]
     pub batch_max_chars: u32,
-    #[serde(alias = "API逾時秒數")]
     pub timeout: u32,
-    #[serde(alias = "術語優先級")]
     pub glossary_priority: String,
 
     // --- [語言設定] ---
-    #[serde(alias = "來源語言")]
     pub source_lang: String,
-    #[serde(alias = "目標語言")]
     pub target_lang: String,
-    #[serde(alias = "介面語言", default = "default_ui_lang")]
+    #[serde(default = "default_ui_lang")]
     pub ui_lang: String,
 
     // --- [輸出與路徑] ---
-    #[serde(alias = "輸出路徑")]
     pub output_dir: String,
-    #[serde(alias = "資源包版本")]
     pub pack_format: u32,
 
     // --- [效能與面板狀態] ---
-    #[serde(alias = "顯示API設定")]
     pub show_api_settings: bool,
-    #[serde(alias = "顯示開發者模式")]
     pub show_developer_mode: bool,
 
     // --- [檔案篩選] ---
-    #[serde(alias = "跳過JSON")]
     pub skip_json: bool,
-    #[serde(alias = "跳過JS")]
     pub skip_js: bool,
-    #[serde(alias = "跳過JAR")]
     pub skip_jar: bool,
-    #[serde(alias = "跳過手冊")]
     pub skip_book: bool,
-    #[serde(alias = "記錄LLM通訊")]
     pub enable_llm_log: bool,
-    #[serde(alias = "記錄偵錯日誌", default)]
+    #[serde(default)]
     pub enable_debug_log: bool,
 
     // --- [檔案過濾] ---
-    #[serde(alias = "排除路徑", default = "default_excluded_paths")]
+    #[serde(default = "default_excluded_paths")]
     pub excluded_paths: Vec<String>,
 
     // --- [視窗幾何資訊] ---
-    #[serde(alias = "主視窗X")]
     pub main_x: f32,
-    #[serde(alias = "主視窗Y")]
     pub main_y: f32,
-    #[serde(alias = "主視窗寬度")]
     pub main_width: f32,
-    #[serde(alias = "主視窗高度")]
     pub main_height: f32,
-    #[serde(alias = "建議詞視窗X")]
     pub viewer_x: f32,
-    #[serde(alias = "建議詞視窗Y")]
     pub viewer_y: f32,
-    #[serde(alias = "建議詞視窗寬度")]
     pub viewer_width: f32,
-    #[serde(alias = "建議詞視窗高度")]
     pub viewer_height: f32,
 }
 
@@ -122,19 +94,17 @@ pub fn default_excluded_paths() -> Vec<String> {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct StyleConfig {
-    #[serde(alias = "主題顏色")]
     pub theme: String,
-    #[serde(alias = "字體大小")]
     pub font_size: f32,
 
     // --- [自定義調色盤] ---
-    #[serde(default = "default_dark_bg", alias = "深色背景")]
+    #[serde(default = "default_dark_bg")]
     pub dark_bg: [u8; 3],
-    #[serde(default = "default_dark_text", alias = "深色文字")]
+    #[serde(default = "default_dark_text")]
     pub dark_text: [u8; 3],
-    #[serde(default = "default_light_bg", alias = "淺色背景")]
+    #[serde(default = "default_light_bg")]
     pub light_bg: [u8; 3],
-    #[serde(default = "default_light_text", alias = "淺色文字")]
+    #[serde(default = "default_light_text")]
     pub light_text: [u8; 3],
 
     // --- [細部色彩自定義] ---
@@ -783,37 +753,6 @@ mod tests {
         assert_eq!(config.main_width, 800.0);
         assert_eq!(config.main_height, 600.0);
         assert_eq!(config.batch_size, 150);
-    }
-
-    #[test]
-    fn test_app_config_deserialization_aliases() {
-        // 先序列化一個完整的 Default 設定
-        let mut config_json = serde_json::to_value(AppConfig::default()).unwrap();
-        let obj = config_json.as_object_mut().unwrap();
-
-        // 移除原欄位，改用別名插入
-        obj.remove("api_provider");
-        obj.insert(
-            "服務提供商".to_string(),
-            serde_json::Value::String("Gemini".to_string()),
-        );
-
-        obj.remove("model");
-        obj.insert(
-            "模型名稱".to_string(),
-            serde_json::Value::String("gemini-1.5-pro".to_string()),
-        );
-
-        obj.remove("batch_size");
-        obj.insert("批次量".to_string(), serde_json::Value::Number(200.into()));
-
-        // 反序列化驗證
-        let config: Result<AppConfig, _> = serde_json::from_value(config_json);
-        assert!(config.is_ok(), "反序列化別名失敗: {:?}", config.err());
-        let config = config.unwrap();
-        assert_eq!(config.api_provider, "Gemini");
-        assert_eq!(config.model, "gemini-1.5-pro");
-        assert_eq!(config.batch_size, 200);
     }
 
     #[test]
