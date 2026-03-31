@@ -671,7 +671,7 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
         let dict_window = tauri::WebviewWindowBuilder::new(
             &app_c,
             "dict_manager",
-            tauri::WebviewUrl::App("/dict.html".into()),
+            tauri::WebviewUrl::App("dict.html".into()),
         )
         .title("建議詞管理器")
         .inner_size(800.0, 600.0)
