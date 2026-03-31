@@ -130,7 +130,10 @@ pub async fn start_translation_workflow(
     let target_i18n = crate::i18n::CommonLabels::load_or_default(&config.target_lang);
 
     // 3. 組裝 JobConfig
-    let job_config = Arc::new(Mutex::new(JobConfig::from_app_config_and_i18n(&config, &target_i18n)));
+    let job_config = Arc::new(Mutex::new(JobConfig::from_app_config_and_i18n(
+        &config,
+        &target_i18n,
+    )));
 
     // 4. 建立 JobSharedState
 

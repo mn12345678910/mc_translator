@@ -377,12 +377,7 @@ mod tests {
             ..crate::i18n::CommonLabels::default()
         };
 
-        let res = output_resource_pack(
-            config.clone(),
-            log.clone(),
-            i18n,
-        )
-        .await;
+        let res = output_resource_pack(config.clone(), log.clone(), i18n).await;
 
         assert!(res.is_ok());
         assert!(
@@ -410,12 +405,7 @@ mod tests {
         let log = Arc::new(Mutex::new(Vec::new()));
         let i18n = crate::i18n::CommonLabels::default();
 
-        let res = output_resource_pack(
-            config.clone(),
-            log.clone(),
-            i18n,
-        )
-        .await;
+        let res = output_resource_pack(config.clone(), log.clone(), i18n).await;
 
         assert!(res.is_ok());
         assert!(!temp_translator.exists()); // 應該被清理

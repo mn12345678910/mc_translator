@@ -388,12 +388,7 @@ pub async fn process_all_files(
 
     if !cancelled_arc.load(Ordering::SeqCst) {
         let config_locked = job_config.lock().unwrap().clone();
-        output_resource_pack(
-            config_locked,
-            log.clone(),
-            state.i18n.clone(),
-        )
-        .await?;
+        output_resource_pack(config_locked, log.clone(), state.i18n.clone()).await?;
     }
 
     Ok(())
