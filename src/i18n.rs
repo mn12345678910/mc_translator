@@ -305,6 +305,10 @@ pub struct GuiLabels {
     pub status_config_restored: String,
     #[serde(default)]
     pub status_dev_restored: String,
+    #[serde(default)]
+    pub label_show_debug_tools: String,
+    #[serde(default)]
+    pub label_hide_debug_tools: String,
 }
 
 impl GuiLabels {

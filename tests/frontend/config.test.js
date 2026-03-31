@@ -243,6 +243,7 @@ describe('config.js 設定管理模組', () => {
             output_dir: '',
             show_api_settings: false,
             show_developer_mode: false,
+            show_debug_tools: false,
             main_x: 50.0,
             main_y: 50.0,
             main_width: 800.0,

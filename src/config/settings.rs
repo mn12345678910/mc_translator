@@ -48,6 +48,8 @@ pub struct AppConfig {
     // --- [效能與面板狀態] ---
     pub show_api_settings: bool,
     pub show_developer_mode: bool,
+    #[serde(default)]
+    pub show_debug_tools: bool,
 
     // --- [檔案篩選] ---
     pub skip_json: bool,
@@ -648,6 +650,7 @@ impl Default for AppConfig {
             pack_format: 15,
             show_api_settings: false,
             show_developer_mode: false,
+            show_debug_tools: false,
             skip_json: false,
             skip_js: false,
             skip_jar: false,

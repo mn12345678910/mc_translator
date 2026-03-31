@@ -212,6 +212,8 @@
   "placeholder_excluded_paths": "例:\nkubejs/data/\nconfig/almostunified/",
   "status_config_restored": "✅ API と翻訳設定がデフォルトに戻されました",
   "status_dev_restored": "🛠 開発者設定がデフォルトに戻されました",
+  "label_show_debug_tools": "デバッグツールを表示",
+  "label_hide_debug_tools": "デバッグツールを非表示",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

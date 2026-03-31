@@ -6,143 +6,11 @@
         <title>Minecraft Mod Translator Launcher</title>
 
         <!-- [NEW] 全域 Mock 注入器：確保所有模組都能讀取到一致的 Tauri 指令 -->
-        <script>
-            if (!window.__TAURI__) {
-                window.__MOCK_HIT_LIST = new Set();
-                window.__TAURI__ = {
-                    core: {
-                        invoke: async (cmd, args) => {
-                            window.__MOCK_HIT_LIST.add(cmd);
-                            console.warn(`[GLOBAL-MOCK] Invoke: ${cmd}`, args);
-
-                            const mocks = {
-                                get_config: {
-                                    api_provider: 'Gemini',
-                                    ui_lang: 'zh_tw',
-                                    source_lang: 'en_us',
-                                    target_lang: 'zh_tw',
-                                    batch_size: 150,
-                                    batch_max_chars: 3500,
-                                    timeout: 60,
-                                    pack_format: 15,
-                                    system_prompt: '',
-                                    user_prompt: '',
-                                    excluded_paths: [],
-                                },
-                                get_default_config: {
-                                    api_provider: 'Gemini',
-                                    batch_size: 150,
-                                    timeout: 60,
-                                    pack_format: 15,
-                                },
-                                get_style_config: {
-                                    theme: 'dark',
-                                    show_api_settings: true,
-                                    dark_bg: [30, 30, 35],
-                                    show_palette_settings: true,
-                                    font_size: 16,
-                                    btn_rounding_enabled: true,
-                                    btn_rounding_value: 4.0,
-                                    progress_pulse_enabled: true,
-                                    progress_pulse_speed: 1.0,
-                                    dark_text: [240, 240, 245],
-                                    dark_accent: [0, 112, 192],
-                                    dark_danger: [204, 51, 51],
-                                    dark_border_color: [60, 60, 70],
-                                    border_alpha: 0.2,
-                                    panel_alpha: 0.1,
-                                    backdrop_alpha: 0.6,
-                                },
-                                get_default_style_config: { theme: 'dark', dark_bg: [45, 45, 50] },
-                                get_api_key_cmd: 'MOCK_API_KEY_777',
-                                get_available_langs: ['zh_tw', 'zh_cn', 'en_us', 'ja_jp'],
-                                get_i18n_labels: async ({ lang }) => {
-                                    return {
-                                        app_title: 'Minecraft Mod Translator (MOCK)',
-                                        status_idle: '待機中 (MOCK)',
-                                        header_api_settings: '⚙ API 服務設定',
-                                        btn_run_trans: '▶ 開始翻譯',
-                                        label_current_status: '目前狀態: ',
-                                        label_items: '條目',
-                                        label_files: '檔案',
-                                        label_loading_models: '載入模型中...',
-                                        prompt_select_model: '-- 請選擇模型 --',
-                                        btn_nav_dev: '🔧',
-                                        btn_nav_api: '⚙️',
-                                        btn_nav_palette: '🎨',
-                                        btn_nav_theme: '🌓',
-                                        btn_nav_dict: '📖',
-                                        label_font_size: '字體:',
-                                        label_enable_log: '開啟記錄日誌',
-                                        label_enable_debug_log: '開啟 Debug 日誌',
-                                    };
-                                },
-                                get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
-                                query_dictionary: [[], 1],
-                                open_path_dialog: 'C:\\Mock\\Path',
-                                open_folder: null,
-                                save_config: null,
-                                save_style_config: null,
-                                show_window: null,
-                                save_api_key_cmd: null,
-                                edit_dictionary_item: null,
-                                open_dict_window: null,
-                                clear_user_dictionary: null,
-                                import_user_dictionary: null,
-                                export_user_dictionary: null,
-                                open_dictionary_location: null,
-                                start_translation: null,
-                                pause_translation: null,
-                                update_active_job_config: null,
-                                resume_translation: null,
-                                stop_translation: null,
-                            };
-
-                            const res = mocks[cmd];
-                            const finalRes = typeof res === 'function' ? await res(args) : res;
-                            if (window.__refreshMockUICoverage) window.__refreshMockUICoverage();
-                            return finalRes !== undefined ? finalRes : null;
-                        },
-                    },
-                    event: { listen: async () => ({ unlisten: () => {} }), emit: () => {} },
-                };
-            }
-        </script>
-
         <link rel="stylesheet" href="style.css" />
         <script type="module" src="main.js" defer></script>
     </head>
     <body>
-        <!-- [NEW] Mock 覆蓋率顯示面板 -->
-        <div
-            id="mock-coverage-section"
-            style="
-                position: fixed;
-                bottom: 10px;
-                right: 10px;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 10px;
-                font-size: 12px;
-                z-index: 9999;
-                border-radius: 5px;
-            "
-        >
-            <div>Mock Coverage: <span id="mock-coverage-count">0</span> calls</div>
-            <div id="mock-hit-list" style="max-height: 100px; overflow-y: auto; margin-top: 5px"></div>
-            <script>
-                window.__refreshMockUICoverage = () => {
-                    const list = document.getElementById('mock-hit-list');
-                    const count = document.getElementById('mock-coverage-count');
-                    if (list && window.__MOCK_HIT_LIST) {
-                        count.innerText = window.__MOCK_HIT_LIST.size;
-                        list.innerHTML = Array.from(window.__MOCK_HIT_LIST)
-                            .map((cmd) => `<div>• ${cmd}</div>`)
-                            .join('');
-                    }
-                };
-            </script>
-        </div>
+        <!-- Header -->
 
         <header class="top-navbar">
             <div class="nav-links" style="margin-left: auto">
@@ -428,69 +296,17 @@
                         <span class="slider round"></span>
                     </label>
                 </div>
-                <div class="switch-group">
-                    <span id="label-debug-log" data-i18n="label_enable_debug_log">Debug Log (.log)</span>
+                <div class="switch-group" id="group-debug-tools" style="display: none">
+                    <span id="label-debug-tools" data-i18n="label_show_debug_tools">Show Debug Tools</span>
                     <label class="switch">
-                        <input type="checkbox" id="chk-debug-log" />
+                        <input type="checkbox" id="chk-debug-tools" />
                         <span class="slider round"></span>
                     </label>
                 </div>
             </div>
 
-            <!-- [NEW] 日誌壓力測試區 -->
-            <div style="margin-top: 15px; padding: 10px; border: 1px dashed var(--border-color); border-radius: 4px">
-                <h3 style="font-size: 14px; margin-bottom: 8px">🚀 Log Stress Test (1M)</h3>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap">
-                    <button id="btn-stress-10k" class="action-btn" style="background-color: #555">+10,000 Logs</button>
-                    <button id="btn-stress-1m" class="action-btn" style="background-color: var(--danger-color)">
-                        +1,000,000 Logs
-                    </button>
-                </div>
-                <div
-                    style="
-                        margin-top: 10px;
-                        font-size: 12px;
-                        color: var(--text-muted);
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 4px;
-                    "
-                >
-                    <div>
-                        Rendered Nodes:
-                        <span id="debug-rendered-count" style="color: var(--accent-color); font-weight: bold">0</span>
-                    </div>
-                    <div>
-                        Scroll Locked:
-                        <span id="debug-scroll-locked" style="color: var(--accent-color); font-weight: bold">True</span>
-                    </div>
-                    <div>Total Logs: <span id="debug-total-logs">0</span></div>
-                    <div>JS Memory (Est.): <span id="debug-memory-est" style="color: #ff9800">~0 MB</span></div>
-                </div>
-
-                <!-- [NEW] Mock 覆蓋率區 -->
-                <div
-                    style="margin-top: 15px; padding: 10px; border-top: 1px solid var(--border-color); font-size: 11px"
-                >
-                    <h3 style="font-size: 13px; margin-bottom: 5px; color: var(--accent-color)">
-                        📋 Mock Coverage: <span id="mock-coverage-percent">0%</span>
-                    </h3>
-                    <div
-                        id="mock-coverage-list"
-                        style="
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            gap: 2px;
-                            max-height: 150px;
-                            overflow-y: auto;
-                            font-family: monospace;
-                            color: var(--text-muted);
-                        "
-                    >
-                        <!-- 動態填充 -->
-                    </div>
-                </div>
-            </div>
+            <!-- Dynamic Debug Tools Container -->
+            <div id="debug-tools-container"></div>
 
             <!-- [NEW] 排除路徑設定區 -->
             <div style="margin-top: 15px">

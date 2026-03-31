@@ -212,6 +212,8 @@
   "placeholder_excluded_paths": "例如:\nkubejs/data/\nconfig/almostunified/",
   "status_config_restored": "✅ API 与翻译设定已恢复默认",
   "status_dev_restored": "🛠 开发人员设定已恢复默认",
+  "label_show_debug_tools": "显示调试工具",
+  "label_hide_debug_tools": "隐藏调试工具",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

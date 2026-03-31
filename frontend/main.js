@@ -26,6 +26,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStyle();
     await loadDictionary();
 
+    // [NEW] 僅在開發模式下動態載入 Mock 工具
+    if (import.meta.env.DEV) {
+        try {
+            const { initMockTools } = await import('./modules/mock.js');
+            await initMockTools();
+        } catch (e) {
+            console.error('Failed to load mock tools:', e);
+        }
+    }
+
     if (window.__TAURI__) {
         invoke('show_window');
     }
@@ -47,70 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
     });
 
-    // [NEW] 重新實作刷新邏輯，支援全域追蹤
-    const allMockCommands = [
-        'get_config',
-        'get_default_config',
-        'save_config',
-        'get_style_config',
-        'get_default_style_config',
-        'save_style_config',
-        'save_api_key_cmd',
-        'get_api_key_cmd',
-        'get_available_langs',
-        'get_i18n_labels',
-        'show_window',
-        'get_models_from_provider',
-        'start_translation',
-        'pause_translation',
-        'resume_translation',
-        'stop_translation',
-        'update_active_job_config',
-        'query_dictionary',
-        'edit_dictionary_item',
-        'clear_user_dictionary',
-        'import_user_dictionary',
-        'export_user_dictionary',
-        'open_dict_window',
-        'open_dictionary_location',
-        'open_path_dialog',
-        'open_folder',
-    ];
-
-    window.__refreshMockUICoverage = () => {
-        const listEl = document.getElementById('mock-coverage-list');
-        const percentEl = document.getElementById('mock-coverage-percent');
-        const countEl = document.getElementById('mock-coverage-count');
-        const overlayListEl = document.getElementById('mock-hit-list');
-
-        const hitSet = window.__MOCK_HIT_LIST || new Set();
-        let hitCount = 0;
-
-        if (listEl) {
-            listEl.innerHTML = allMockCommands
-                .map((cmd) => {
-                    const isHit = hitSet.has(cmd);
-                    if (isHit) hitCount++;
-                    return `<div style="color: ${isHit ? '#4caf50' : '#888'}">
-                    ${isHit ? '✅' : '⚠️'} ${cmd}
-                </div>`;
-                })
-                .join('');
-        }
-
-        if (percentEl) {
-            percentEl.textContent = `${Math.round((hitCount / allMockCommands.length) * 100)}%`;
-        }
-
-        if (countEl) countEl.innerText = hitSet.size;
-        if (overlayListEl) {
-            overlayListEl.innerHTML = Array.from(hitSet)
-                .map((cmd) => `<div>• ${cmd}</div>`)
-                .join('');
-        }
-    };
-
-    window.__refreshMockUICoverage(); // 初次載入
+    initDictionary();
     initDictionary();
     initTranslation();
 
@@ -203,6 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'chk-skip-book',
         'chk-llm-log',
         'chk-debug-log',
+        'chk-debug-tools',
         'source-lang',
         'selected-model',
     ];
@@ -268,6 +216,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (panelApi) panelApi.classList.toggle('expanded', !!state.currentConfig.show_api_settings);
         if (panelDev) panelDev.classList.toggle('expanded', !!state.currentConfig.show_developer_mode);
         if (panelTheme) panelTheme.classList.toggle('expanded', !!state.currentStyle.show_palette_settings);
+
+        // 控制偵錯工具開關的顯示 (僅在開發者模式展開時才顯示開關本身)
+        const groupDebugTools = document.getElementById('group-debug-tools');
+        if (groupDebugTools) {
+            groupDebugTools.style.display = state.currentConfig.show_developer_mode ? 'flex' : 'none';
+        }
     }
 
     if (btnNavApi) {
@@ -426,34 +380,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnRestorePalette) {
         btnRestorePalette.addEventListener('click', restoreDefaultStyle);
     }
-
-    // 8. 壓力測試邏輯 (Stress Test Logic)
-    async function stressTest(count) {
-        console.log(`Starting stress test: ${count} logs`);
-        const batchSize = 5000;
-        let processed = 0;
-
-        const generate = () => {
-            const end = Math.min(processed + batchSize, count);
-            for (let i = processed; i < end; i++) {
-                window.__logViewer.appendLog(
-                    `[Stress Test] This is log entry #${i + 1} for high-performance virtualization testing.`,
-                    i % 10 === 0 ? 'warn' : i % 25 === 0 ? 'error' : 'info',
-                    new Date().toLocaleTimeString()
-                );
-            }
-            processed = end;
-            if (processed < count) {
-                window.requestAnimationFrame(generate);
-            } else {
-                console.log('Stress test completed.');
-            }
-        };
-        generate();
-    }
-
-    const btn10k = document.getElementById('btn-stress-10k');
-    const btn1m = document.getElementById('btn-stress-1m');
-    if (btn10k) btn10k.addEventListener('click', () => stressTest(10000));
-    if (btn1m) btn1m.addEventListener('click', () => stressTest(1000000));
 });

@@ -26,6 +26,7 @@ export async function loadConfig() {
     const chkSkipJar = document.getElementById('chk-skip-jar');
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
+    const chkDebugTools = document.getElementById('chk-debug-tools');
     const inputPath = document.getElementById('input-path');
 
     try {
@@ -58,6 +59,7 @@ export async function loadConfig() {
         if (chkSkipJar) chkSkipJar.checked = config.skip_jar || false;
         if (chkSkipBook) chkSkipBook.checked = config.skip_book || false;
         if (chkLlmLog) chkLlmLog.checked = config.enable_llm_log || false;
+        if (chkDebugTools) chkDebugTools.checked = config.show_debug_tools || false;
         const excludedPaths = document.getElementById('excluded-paths');
         if (excludedPaths && config.excluded_paths) {
             excludedPaths.value = config.excluded_paths.join('\n');
@@ -100,6 +102,7 @@ export async function saveConfig() {
     const chkSkipBook = document.getElementById('chk-skip-book');
     const chkLlmLog = document.getElementById('chk-llm-log');
     const chkDebugLog = document.getElementById('chk-debug-log');
+    const chkDebugTools = document.getElementById('chk-debug-tools');
 
     try {
         state.currentConfig.api_provider = apiProvider ? apiProvider.value : '';
@@ -136,6 +139,7 @@ export async function saveConfig() {
         state.currentConfig.skip_book = chkSkipBook ? chkSkipBook.checked : false;
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
         state.currentConfig.enable_debug_log = chkDebugLog ? chkDebugLog.checked : false;
+        state.currentConfig.show_debug_tools = chkDebugTools ? chkDebugTools.checked : false;
 
         const excludedPaths = document.getElementById('excluded-paths');
         state.currentConfig.excluded_paths = excludedPaths
@@ -272,6 +276,7 @@ export async function restoreDevDefaults() {
         state.currentConfig.enable_debug_log = defaultConfig.enable_debug_log;
         state.currentConfig.system_prompt = defaultConfig.system_prompt;
         state.currentConfig.excluded_paths = defaultConfig.excluded_paths;
+        state.currentConfig.show_debug_tools = defaultConfig.show_debug_tools || false;
 
         // 重新載入 UI
         const chkSkipJson = document.getElementById('chk-skip-json');
@@ -280,6 +285,7 @@ export async function restoreDevDefaults() {
         const chkSkipBook = document.getElementById('chk-skip-book');
         const chkLlmLog = document.getElementById('chk-llm-log');
         const chkDebugLog = document.getElementById('chk-debug-log');
+        const chkDebugTools = document.getElementById('chk-debug-tools');
         const systemPrompt = document.getElementById('system-prompt');
         const excludedPaths = document.getElementById('excluded-paths');
 
@@ -289,17 +295,24 @@ export async function restoreDevDefaults() {
         if (chkSkipBook) chkSkipBook.checked = state.currentConfig.skip_book;
         if (chkLlmLog) chkLlmLog.checked = state.currentConfig.enable_llm_log;
         if (chkDebugLog) chkDebugLog.checked = state.currentConfig.enable_debug_log;
+        if (chkDebugTools) chkDebugTools.checked = state.currentConfig.show_debug_tools;
         if (systemPrompt) systemPrompt.value = state.currentConfig.system_prompt;
         if (excludedPaths) excludedPaths.value = state.currentConfig.excluded_paths.join('\n');
 
         // 更新 Label 狀態 (切換開關的文字)
         const updateToggleStateLabelModule = await import('./i18n.js').then((m) => m.updateToggleStateLabel);
-        ['chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book', 'chk-llm-log', 'chk-debug-log'].forEach(
-            (id) => {
-                const el = document.getElementById(id);
-                if (el) updateToggleStateLabelModule(id, el.checked);
-            }
-        );
+        [
+            'chk-skip-json',
+            'chk-skip-js',
+            'chk-skip-jar',
+            'chk-skip-book',
+            'chk-llm-log',
+            'chk-debug-log',
+            'chk-debug-tools',
+        ].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) updateToggleStateLabelModule(id, el.checked);
+        });
 
         // 自動儲存變更
         await invoke('save_config', { config: state.currentConfig });

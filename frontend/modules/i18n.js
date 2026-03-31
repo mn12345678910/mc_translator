@@ -176,6 +176,7 @@ export async function updateUiLanguage() {
             'chk-skip-book',
             'chk-llm-log',
             'chk-debug-log',
+            'chk-debug-tools',
         ];
         allSwitches.forEach((id) => {
             const toggleEl = document.getElementById(id);
@@ -210,5 +211,7 @@ export function updateToggleStateLabel(id, checked) {
         labelEl.textContent = checked ? labels.label_skip_book : labels.label_no_skip_book;
     } else if (id === 'chk-debug-log') {
         labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
+    } else if (id === 'chk-debug-tools') {
+        labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
     }
 }
