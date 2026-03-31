@@ -14,15 +14,23 @@
 - [src/utils/skip_rules.rs](/src/utils/skip_rules.rs): 跳過規則判斷
 - [src/translation/glossary/automaton.rs](/src/translation/glossary/automaton.rs): 術語匹配與優先序
 - [src/translation/api/client.rs](/src/translation/api/client.rs): 回應解析與容錯
-- [src/file/*](/src/file/*): JSON/JS/JAR 解析與輸出
-- [src/translation/*](/src/translation/*): 批次翻譯與降級重試
+- [src/file/](/src/file/): JSON/JS/JAR 解析與輸出
+- [src/translation/](/src/translation/): 批次翻譯與降級重試
 - [tests/](/tests/): 整合測試與流程測試
 - [tests/frontend/](/tests/frontend/): 前端 DOM 與 Tauri invoke 行為
 
 ## 測試工具鏈
 
-- Rust: `cargo test`
-- Frontend: `vitest run` (設定在 `vitest.config.js`)
+- Rust 格式化: `cargo fmt --all -- --check`
+- Rust Lint: `cargo clippy -- -D warnings`
+- Rust 測試: `cargo nextest run --workspace --all-targets`
+- 安全掃描: `cargo-deny`, `rustsec/audit`
+- Frontend Lint: `pnpm lint`
+- Frontend 測試: `pnpm vitest run --coverage`
+- Tauri API Bridge: `node tool/check_tauri_sync.js`
+- 版本一致性: `node tool/check_all_versions.js`
+- Markdown 連結: `node tool/check_md_links.js`
+- Miri: `cargo miri test` (排程或手動)
 
 ## 測試位置
 

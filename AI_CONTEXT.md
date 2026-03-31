@@ -14,6 +14,8 @@
 - 若目標語言檔案已存在且該欄位與原文不同，視為已翻譯並直接預填
 - `should_skip_key` 與 `should_skip_value` 會跳過 ID、布林值、純數字、snake_case、命名空間 ID 等
 - 格式保護會將 `§`、`&`、`#HEX`、`%s`、`{0}`、`\n` 等轉為暫存標記，避免 LLM 破壞
+- 會先套用 `excluded_paths` 全域排除清單
+- JourneyMap `.theme2.json` 會被跳過
 
 ## 輸出規則
 
@@ -44,8 +46,9 @@
 ## 設定與金鑰
 
 - 設定檔: `settings/config.cfg` 與 `settings/style.cfg`
-- API Key: 使用 OS Keyring，不寫入 `config.cfg`
+- API Key: 僅使用 OS Keyring，不寫入 `config.cfg`
 - `api_base_url` 可在 `config.cfg` 中手動設定，用於 OpenAI 相容端點
+- StyleConfig 支援 `instance_overrides`，可針對單一元件覆寫主題顏色或圓角
 
 ## 日誌
 

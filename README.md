@@ -88,7 +88,7 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 | `-o, --output <OUTPUT>` | 輸出資料夾路徑 | 空值 (代表 `./LLMTranslator`) |
 | `-p, --provider <PROVIDER>` | API 提供商 | 設定檔的值 |
 | `-m, --model <MODEL>` | 模型名稱 | 設定檔的值 |
-| `--api-key <API_KEY>` | 覆蓋 API Key (Keyring 既有憑證仍會優先) | 空 |
+| `--api-key <API_KEY>` | 覆蓋 API Key (會取代 Keyring 讀取值) | 空 |
 | `--log-llm` | 啟用 LLM 通訊日誌 | 關閉 |
 | `--batch-size <BATCH_SIZE>` | 批次量 | 150 |
 | `--batch-max-chars <CHARS>` | 批次字數上限 | 3500 |
@@ -101,6 +101,7 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 | `--skip-jar` | 跳過 `.jar` | 關閉 |
 | `--skip-book` | 跳過 Patchouli 手冊 | 關閉 |
 | `--log-debug` | 啟用 Debug 日誌 (debug.log) | 關閉 |
+| `-e, --exclude <EXCLUDE>` | 追加排除路徑 (可重複) | 空 |
 
 ## 輸出結構
 
@@ -126,12 +127,38 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 ## 設定與金鑰儲存
 
 **設定檔位置**
-- `settings/`: 設定資料夾
+- `settings/`: 設定資料夾 (首次執行會自動建立)
 - `config.cfg`: App 設定
 - `style.cfg`: GUI 樣式設定
 
 **API Key 儲存方式**
 - 透過作業系統 Keyring 儲存，不會寫入 `config.cfg`
+
+## 設定值說明 (限制與預設值)
+
+本工具對設定值設有基本的驗證邏輯，避免非法數值導致程式崩潰。
+
+### App 設定 (`config.cfg` / CLI 參數)
+
+| 設定項 | 說明 | 預設值 | 限制 (最小值 ~ 最大值) |
+| --- | --- | --- | --- |
+| `batch_size` | 翻譯批次量 | 150 | 1 ~ 500 (若設定為 0 或超出範圍會校正) |
+| `batch_max_chars` | 批次字數上限 | 3500 | 1 ~ 20,000 |
+| `timeout` | API 逾時秒數 | 60 | 1 ~ 300 |
+| `pack_format` | 資源包版本 | 15 | 1 ~ 128 (依 Minecraft 版本) |
+
+### GUI 樣式設定 (`style.cfg`)
+
+| 設定項 | 說明 | 預設值 | 限制 / 範圍 |
+| --- | --- | --- | --- |
+| `font_size` | 介面字體大小 | 15.0 | 12.0 ~ 30.0 |
+| `btn_rounding` | 按鈕圓角值 | 4.0 | 0.0 ~ 100.0 |
+| `pulse_speed` | 進度條動畫速度 | 1.0 | 0.1 ~ 10.0 |
+| `border_alpha` | 邊框透明度 | 0.15 | 0.01 ~ 1.0 |
+| `panel_alpha` | 面板背景透明度 | 0.03 | 0.01 ~ 1.0 |
+| `backdrop_alpha` | 彈窗遮罩透明度 | 0.6 | 0.01 ~ 1.0 |
+| `space_sm / md / lg` | 元件間距 (小/中/大) | 10/15/20 | 0.0 ~ 100.0 |
+
 
 ## 日誌
 
@@ -140,7 +167,7 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 
 ## CI 發行產物
 
-CI 在 tag 版號時會產出以下檔名:
+CI 僅在 tag 版號 (`v*`) 時會產出以下檔名:
 
 - `mc_translator_cli_win_x64.exe`
 - `mc_translator_cli_linux_x64`

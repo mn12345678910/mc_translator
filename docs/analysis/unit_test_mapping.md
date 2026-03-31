@@ -50,4 +50,4 @@
 - [tests/pipeline_tests.rs](/tests/pipeline_tests.rs): pipeline 集成流程
 - [tests/file_tests.rs](/tests/file_tests.rs): 檔案處理與輸出行為
 - [tests/i18n_consistency.rs](/tests/i18n_consistency.rs): i18n keys 一致性
-- [tests/frontend/*](/tests/frontend/*): GUI DOM 與 invoke 行為
+- [tests/frontend/](/tests/frontend/): GUI DOM 與 invoke 行為

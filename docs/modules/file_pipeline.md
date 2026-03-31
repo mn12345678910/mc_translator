@@ -7,6 +7,7 @@
 - 支援 `.jar` / `.json` / `.js`
 - 由 `file/scanner.rs` 遞迴掃描資料夾
 - 由 `file/*_handler.rs` 建立 `FileTask` 與 `GlobalBatchItem`
+- 會先套用 `excluded_paths` 全域排除清單
 
 ## 分組策略
 
@@ -18,6 +19,7 @@
 - 讀取來源檔案與目標語言檔案
 - 依 `should_skip_key` 與 `should_skip_value` 過濾
 - 若目標欄位已翻譯，會預填並跳過翻譯
+- Patchouli 書籍會跳過目標語言目錄
 
 ## JS 處理
 
@@ -29,6 +31,7 @@
 - 掃描 JAR 內 JSON
 - 支援 Patchouli 手冊語言路徑轉換
 - 若來源語言檔不存在，會以 `en_us` 作為 fallback
+- JourneyMap `.theme2.json` 會強制跳過
 
 ## 輸出分流
 

@@ -593,32 +593,23 @@ impl StyleConfig {
     }
 
     pub fn validate(&mut self) {
-        if self.font_size <= 0.0 {
-            self.font_size = 15.0;
-        }
-        if self.btn_rounding_value < 0.0 {
-            self.btn_rounding_value = 0.0;
-        }
-        if self.progress_pulse_speed < 0.1 {
-            self.progress_pulse_speed = 1.0;
-        }
+        // --- [基礎範圍驗證] ---
+        self.font_size = self.font_size.clamp(12.0, 30.0);
+        self.btn_rounding_value = self.btn_rounding_value.clamp(0.0, 100.0);
+        self.progress_pulse_speed = self.progress_pulse_speed.clamp(0.1, 10.0);
+
+        // --- [欄位透明度驗證] ---
+        self.border_alpha = self.border_alpha.clamp(0.01, 1.0);
+        self.panel_alpha = self.panel_alpha.clamp(0.01, 1.0);
+        self.backdrop_alpha = self.backdrop_alpha.clamp(0.01, 1.0);
+
+        // --- [佈局間距驗證] ---
+        self.space_sm = self.space_sm.clamp(0.0, 100.0);
+        self.space_md = self.space_md.clamp(0.0, 100.0);
+        self.space_lg = self.space_lg.clamp(0.0, 100.0);
+
         if self.progress_style.is_empty() {
             self.progress_style = "default".to_string();
-        }
-
-        // --- [欄位驗證] ---
-        self.border_alpha = self.border_alpha.clamp(0.0, 1.0);
-        self.panel_alpha = self.panel_alpha.clamp(0.0, 1.0);
-        self.backdrop_alpha = self.backdrop_alpha.clamp(0.0, 1.0);
-
-        if self.space_sm < 0.0 {
-            self.space_sm = 10.0;
-        }
-        if self.space_md < 0.0 {
-            self.space_md = 15.0;
-        }
-        if self.space_lg < 0.0 {
-            self.space_lg = 20.0;
         }
     }
 
@@ -711,18 +702,26 @@ impl AppConfig {
     }
 
     pub fn validate(&mut self) {
+        // --- [核心參數校正] ---
         if self.batch_size == 0 {
             self.batch_size = 150;
         }
+        self.batch_size = self.batch_size.clamp(1, 500);
+
         if self.batch_max_chars == 0 {
             self.batch_max_chars = 3500;
         }
+        self.batch_max_chars = self.batch_max_chars.clamp(1, 20000);
+
         if self.timeout == 0 {
             self.timeout = 60;
         }
+        self.timeout = self.timeout.clamp(1, 300);
+
         if self.pack_format == 0 {
             self.pack_format = 15;
         }
+        self.pack_format = self.pack_format.clamp(1, 128);
     }
 
     pub fn save_with_path(&mut self, dir: &std::path::Path) {
@@ -808,25 +807,31 @@ mod tests {
     }
 
     #[test]
-    fn test_config_load_invalid_json_fallback() {
-        let temp_dir = std::env::temp_dir().join("mc_translator_settings_test_invalid");
-        let _ = fs::remove_dir_all(&temp_dir);
-        fs::create_dir_all(&temp_dir).unwrap();
+    fn test_config_validation() {
+        // 1. AppConfig 驗證
+        let mut app = AppConfig::default();
+        app.batch_size = 999;
+        app.timeout = 0;
+        app.batch_max_chars = 50000;
+        app.pack_format = 200;
+        app.validate();
+        assert_eq!(app.batch_size, 500); // 上限 500
+        assert_eq!(app.timeout, 60); // 0 重設為預設 60 並通過 clamp (或 1)
+        assert_eq!(app.batch_max_chars, 20000); // 上限 20000
+        assert_eq!(app.pack_format, 128); // 上限 128
 
-        // 1. 寫入損壞 JSON
-        std::fs::write(temp_dir.join("config.cfg"), b"corrupt json").unwrap();
-        std::fs::write(temp_dir.join("style.cfg"), b"corrupt json").unwrap();
-
-        // 3. 驗證讀回
-        let mut app = AppConfig::load_with_path(&temp_dir);
-        let mut style = StyleConfig::load_with_path(&temp_dir);
-        assert_eq!(app.batch_size, 150);
-        assert_eq!(style.font_size, 15.0);
-
-        // 4. 修改後儲存
-        app.batch_size = 500;
-        style.font_size = 25.0;
-        app.save_with_path(&temp_dir);
-        style.save_with_path(&temp_dir);
+        // 2. StyleConfig 驗證
+        let mut style = StyleConfig::default();
+        style.font_size = 5.0;
+        style.btn_rounding_value = 200.0;
+        style.progress_pulse_speed = 50.0;
+        style.border_alpha = 0.0;
+        style.space_sm = -10.0;
+        style.validate();
+        assert_eq!(style.font_size, 12.0); // 下限 12.0
+        assert_eq!(style.btn_rounding_value, 100.0); // 上限 100.0
+        assert_eq!(style.progress_pulse_speed, 10.0); // 上限 10.0
+        assert_eq!(style.border_alpha, 0.01); // 下限 0.01
+        assert_eq!(style.space_sm, 0.0); // 下限 0.0
     }
 }

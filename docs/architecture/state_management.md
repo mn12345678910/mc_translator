@@ -22,7 +22,7 @@
 
 GUI 透過 Tauri 事件與 command 呼叫同步狀態。
 
-完整事件列表與說明請參考: [docs/ui/interactions.md#事件與狀態同步](/docs/ui/interactions.md#事件與狀態同步)
+完整事件列表與說明請參考: [docs/ui/interactions.md](/docs/ui/interactions.md)
 
 - `job-state-changed`: `Idle` / `Running` / `Paused`
 - `translation-progress`: 進度條與狀態訊息

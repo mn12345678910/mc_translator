@@ -4,6 +4,7 @@
 
 - 啟動時載入 config、i18n、style、字典
 - Tauri ready 後顯示主視窗
+- 主題切換會立即套用並儲存 style.cfg
 
 ## 翻譯流程
 
@@ -21,6 +22,18 @@
 
 - 停止會要求使用者確認
 - 停止後狀態回到 Idle
+
+## 設定重置
+
+- API 區塊提供「恢復預設」按鈕，只重置 API 與翻譯參數，不會重置 `excluded_paths` 與 `system_prompt`
+- 開發者區塊提供「恢復預設」按鈕，重置跳過規則、日誌開關、`system_prompt` 與 `excluded_paths`
+- 調色盤區塊提供「恢復預設」按鈕，回到 StyleConfig 預設值
+
+## 調色盤覆寫
+
+- 全域模式: 直接覆寫 `dark_*` / `light_*` 欄位並立刻存檔
+- 特定元件模式: 寫入 `instance_overrides`，依當前主題寫入 `dark_*` 或 `light_*`
+- 特定元件可用「清除覆寫」按鈕移除單一元件覆寫
 
 ## 狀態與元件行為對照表
 

@@ -20,7 +20,16 @@
 
 ## 工具與檢查
 
-- 前端格式化: `pnpm format`
-- 前端 lint: `pnpm lint`
-- 前端測試: `pnpm test`
-- Tauri 同步檢查: `pnpm check-tauri`
+- Pre-commit / pre-push 會自動執行對應 hooks
+- Rust 格式化: `cargo fmt --all`
+- Rust Lint: `cargo clippy --workspace --all-targets -- -D warnings`
+- Rust 測試: `cargo test --all-features` (pre-push)
+- Frontend 格式化: `pnpm format`
+- Frontend Lint: `pnpm lint`
+- Frontend 測試: `pnpm test`
+- Tauri 同步檢查: `node tool/check_tauri_sync.js`
+- 版本同步檢查: `node tool/check_all_versions.js`
+- Tag 同步檢查: `node tool/check_tag_sync.js`
+- 設定同步檢查: `node tool/check_config_sync.js`
+- Markdown 連結檢查: `node tool/check_md_links.js`
+- Commit 訊息檢查: `node tool/check_commit_msg.js`

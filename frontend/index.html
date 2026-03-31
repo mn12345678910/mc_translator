@@ -186,15 +186,15 @@
                 </div>
                 <div class="form-group">
                     <label for="batch-size" data-i18n="label_batch_size"></label>
-                    <input type="number" id="batch-size" min="1" max="300" autocomplete="off" />
+                    <input type="number" id="batch-size" min="1" max="500" autocomplete="off" />
                 </div>
                 <div class="form-group">
                     <label for="batch-max-chars" data-i18n="label_max_chars"></label>
-                    <input type="number" id="batch-max-chars" step="100" autocomplete="off" />
+                    <input type="number" id="batch-max-chars" min="1" max="20000" step="100" autocomplete="off" />
                 </div>
                 <div class="form-group">
                     <label for="timeout-sec" data-i18n="label_timeout">API</label>
-                    <input type="number" id="timeout-sec" min="5" autocomplete="off" />
+                    <input type="number" id="timeout-sec" min="1" max="300" autocomplete="off" />
                 </div>
             </div>
 
@@ -474,7 +474,7 @@
                             id="btn-rounding-value"
                             value="4"
                             min="0"
-                            max="20"
+                            max="100"
                             step="1"
                             style="flex: 1"
                             autocomplete="off"
@@ -490,7 +490,7 @@
                             id="pulse-speed"
                             value="1.0"
                             min="0.1"
-                            max="5.0"
+                            max="10.0"
                             step="0.1"
                             style="flex: 1"
                             autocomplete="off"

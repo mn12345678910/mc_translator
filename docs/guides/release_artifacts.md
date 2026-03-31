@@ -11,7 +11,8 @@
 
 ## 觸發條件
 
-- [ci.yml](/.github/workflows/ci.yml) 在 tag 以 `v*` 開頭時會進行 build 與 release
+- [ci.yml](/.github/workflows/ci.yml) 在 tag 以 `v*` 開頭時才會進行 build 與 release
+- Push main / PR / 手動 / 排程 只會執行檢查流程，不會產出 release
 
 ## 流程圖
 

@@ -5,7 +5,16 @@
 ## AppConfig
 
 - 檔案: `settings/config.cfg`
-- 主要欄位: 提供商、模型、批次量、語言、輸出路徑、開發者選項
+- 主要欄位分類: 提供商與模型、Prompt 與語言、翻譯參數、輸出與資源、面板狀態、檔案過濾、日誌開關、全域排除、視窗幾何
+- 提供商與模型: `api_provider`, `model`, `ollama_url`, `api_base_url`
+- Prompt 與語言: `user_prompt`, `system_prompt`, `source_lang`, `target_lang`, `ui_lang`
+- 翻譯參數: `batch_size`, `batch_max_chars`, `timeout`, `glossary_priority`
+- 輸出與資源: `output_dir`, `pack_format`
+- 面板狀態: `show_api_settings`, `show_developer_mode`
+- 檔案過濾: `skip_json`, `skip_js`, `skip_jar`, `skip_book`
+- 日誌開關: `enable_llm_log`, `enable_debug_log`
+- 全域排除: `excluded_paths`
+- 視窗幾何: `main_x`, `main_y`, `main_width`, `main_height`, `viewer_x`, `viewer_y`, `viewer_width`, `viewer_height`
 - `api_key` 不會寫入檔案，改由 OS Keyring 儲存
 - `api_base_url` 可用於 OpenAI 相容端點 (僅能手動修改 config.cfg)
 
@@ -13,13 +22,19 @@
 
 - 檔案: `settings/style.cfg`
 - 內容包含主題、字體大小、調色盤、間距與進度條樣式
+- 顏色欄位: `dark_*` / `light_*` (背景、文字、按鈕、標籤、hover、tab、進度條、日誌色彩)
+- 透明度: `border_alpha`, `panel_alpha`, `backdrop_alpha`
+- 間距: `space_sm`, `space_md`, `space_lg`
+- 圓角與動畫: `btn_rounding_enabled`, `btn_rounding_value`, `progress_pulse_enabled`, `progress_pulse_speed`, `progress_style`
+- 特效色: `aurora_1`, `aurora_2`, `aurora_3`, `neon_color`
 - 支援特定元件覆寫 `instance_overrides`
 
 ## 讀寫流程
 
-- [AppConfig::load](AppConfig::load) 與 `StyleConfig::load` 會建立 `settings/` 目錄
+- `AppConfig::load` 與 `StyleConfig::load` 會建立 `settings/` 目錄
 - 讀取失敗會回退到預設值
 - 儲存時會先進行 `validate` 驗證
+- API Key 透過 Keyring 儲存與讀取
 
 ## 流程圖
 
