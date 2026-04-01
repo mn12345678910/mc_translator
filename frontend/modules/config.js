@@ -267,6 +267,7 @@ export async function restoreDefaultConfig() {
         state.currentConfig.timeout = defaultConfig.timeout;
         state.currentConfig.glossary_priority = defaultConfig.glossary_priority;
         state.currentConfig.user_prompt = defaultConfig.user_prompt;
+        state.currentConfig.fast_convert = defaultConfig.fast_convert || false;
         // 移除 excluded_paths 與 system_prompt 的重置（改由 Dev 按鈕負責）
 
         // 金鑰重置為空 (比照預設值)
@@ -280,6 +281,7 @@ export async function restoreDefaultConfig() {
         const batchMaxChars = document.getElementById('batch-max-chars');
         const timeoutSec = document.getElementById('timeout-sec');
         const chkGlossaryPriority = document.getElementById('chk-glossary-priority');
+        const chkFastConvert = document.getElementById('chk-fast-convert');
         const systemPrompt = document.getElementById('system-prompt');
         const userPrompt = document.getElementById('user-prompt');
         // const excludedPaths = document.getElementById('excluded-paths'); // 此處不重置
@@ -291,12 +293,25 @@ export async function restoreDefaultConfig() {
         if (batchMaxChars) batchMaxChars.value = state.currentConfig.batch_max_chars;
         if (timeoutSec) timeoutSec.value = state.currentConfig.timeout;
         if (chkGlossaryPriority) chkGlossaryPriority.checked = state.currentConfig.glossary_priority === 'user';
+        if (chkFastConvert) chkFastConvert.checked = state.currentConfig.fast_convert;
         if (systemPrompt) systemPrompt.value = state.currentConfig.system_prompt;
         if (userPrompt) userPrompt.value = state.currentConfig.user_prompt;
         // if (excludedPaths) excludedPaths.value = state.currentConfig.excluded_paths.join('\n'); // 此處不重置
 
         toggleOllamaGroup();
         toggleApiKeyVisibility();
+        toggleFastConvertGroup(
+            (state.currentConfig.source_lang === 'zh_cn' && state.currentConfig.target_lang === 'zh_tw') ||
+                (state.currentConfig.source_lang === 'zh_tw' && state.currentConfig.target_lang === 'zh_cn')
+        );
+
+        // 更新 Label 狀態 (切換開關的文字)
+        const updateToggleStateLabelModule = await import('./i18n.js').then((m) => m.updateToggleStateLabel);
+        ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) updateToggleStateLabelModule(el);
+        });
+
         await loadModels();
 
         // 自動儲存變更
