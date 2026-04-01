@@ -264,7 +264,7 @@ export function toggleFastConvertGroup() {
     // 來源為中文時（純簡繁互換），目標必須為另一方；非中文來源則只需目標為中文
     const shouldShow = isTargetChinese && src !== tgt;
 
-    group.style.display = shouldShow ? 'flex' : 'none';
+    group.style.display = shouldShow ? 'block' : 'none';
 }
 
 export function toggleApiKeyVisibility() {

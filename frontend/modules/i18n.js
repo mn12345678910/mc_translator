@@ -204,6 +204,16 @@ export async function updateUiLanguage() {
 // 🟢 依照開關撥動狀態，點按時動態且立即更新對應文字 Label
 export function updateToggleStateLabel(id, checked) {
     const labels = (typeof state !== 'undefined' && state.currentLabels) || {};
+
+    // 🔴 [FIX] 針對 chk-fast-convert 特殊處理，因其標籤 ID 是 label-fast-convert-state
+    if (id === 'chk-fast-convert') {
+        const stateEl = document.getElementById('label-fast-convert-state');
+        if (stateEl) {
+            stateEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
+        }
+        return;
+    }
+
     const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
     if (!labelEl) return;
 
@@ -223,8 +233,5 @@ export function updateToggleStateLabel(id, checked) {
         labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
     } else if (id === 'chk-debug-tools') {
         labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
-    } else if (id === 'chk-fast-convert') {
-        const stateEl = document.getElementById('label-fast-convert-state');
-        if (stateEl) stateEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
     }
 }

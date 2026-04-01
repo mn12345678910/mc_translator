@@ -121,7 +121,7 @@
             </div>
 
             <div class="button-row mt-md">
-                <button id="btn-translate" data-i18n="btn_run_trans"></button>
+                <button id="btn-translate" data-i18n="btn_run"></button>
                 <button id="btn-pause" style="display: none" data-i18n="btn_pause"></button>
                 <button id="btn-resume" style="display: none" data-i18n="btn_resume"></button>
                 <button
@@ -208,16 +208,13 @@
                     </select>
                 </div>
                 <div class="form-group" id="group-fast-convert" style="display: none">
-                    <label>&nbsp;</label>
+                    <label data-i18n="label_fast_convert"></label>
                     <div class="switch-group">
-                        <span id="label-fast-convert">
-                            <span data-i18n="label_fast_convert"></span>
-                            <small id="label-fast-convert-state" style="opacity: 0.65; margin-left: 5px"></small>
-                        </span>
                         <label class="switch">
                             <input type="checkbox" id="chk-fast-convert" />
                             <span class="slider round"></span>
                         </label>
+                        <small id="label-fast-convert-state" style="opacity: 0.65; margin-left: 10px"></small>
                     </div>
                 </div>
                 <div class="form-group">
@@ -397,7 +394,7 @@
                         </optgroup>
                         <!-- Specific Components -->
                         <optgroup data-i18n-label="group_specific" id="group-specific" style="display: none">
-                            <option value="btn-translate" data-i18n="spec_btn_run_trans"></option>
+                            <option value="btn-translate" data-i18n="spec_btn_run"></option>
                             <option value="btn-pause" data-i18n="spec_btn_pause"></option>
                             <option value="btn-stop" data-i18n="spec_btn_stop"></option>
                             <option value="btn-browse-file" data-i18n="spec_btn_select_file"></option>

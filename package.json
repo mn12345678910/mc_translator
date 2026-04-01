@@ -1,6 +1,6 @@
 {
   "name": "mc_translator",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "> [!NOTE] > 安全須知: > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。",
   "main": "index.js",
   "directories": {
@@ -10,8 +10,8 @@
   "scripts": {
     "test": "vitest run",
     "test:frontend": "vitest run",
-    "dev": "vite frontend",
-    "build": "vite build frontend --outDir ../dist",
+    "dev": "node tool/sync_frontend_langs.js && vite frontend",
+    "build": "node tool/sync_frontend_langs.js && vite build frontend --outDir ../dist",
     "preview": "vite preview frontend",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/**/*.{html,js,css}\"",

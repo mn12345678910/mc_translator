@@ -610,11 +610,11 @@ tr:hover {
 
 .switch-group {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     background-color: var(--switch-bg);
     padding: 0 14px;
-    height: 41px; /* 🚨 強制與 Select 高度 100% 一致 (41px 來自瀏覽器測量) */
+    height: 41px;
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
     box-sizing: border-box;
@@ -622,7 +622,7 @@ tr:hover {
 }
 
 #group-fast-convert {
-    padding-top: 26px; /* 🚨 補償 Label 高度 (1.2em ~ 20px) + Margin (6px) 以對齊橫向 Select */
+    /* 移除之前的 padding-top hack，改為標準 Label 對齊 */
 }
 
 .switch-group:hover {

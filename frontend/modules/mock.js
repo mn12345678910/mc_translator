@@ -35,6 +35,13 @@ export async function initMockTools() {
     // 1. Inject Tauri Mock if missing
     if (!window.__TAURI__) {
         window.__MOCK_HIT_LIST = new Set();
+        window.__MOCK_EVENT_LISTENERS = {};
+        window.__TAURI_EMIT__ = (eventName, payload) => {
+            console.log(`[MOCK-EVENT] Emit: ${eventName}`, payload);
+            const listeners = window.__MOCK_EVENT_LISTENERS[eventName] || [];
+            listeners.forEach((cb) => cb({ event: eventName, payload }));
+        };
+
         window.__TAURI__ = {
             core: {
                 invoke: async (cmd, args) => {
@@ -81,44 +88,39 @@ export async function initMockTools() {
                             'zh_tw',
                         ],
                         get_i18n_labels: async ({ lang }) => {
-                            // 如果 state.currentLabels 是空的，回傳一份基礎內容確保 UI 不會白屏
-                            if (!state.currentLabels || Object.keys(state.currentLabels).length === 0) {
-                                return {
-                                    app_title: 'Minecraft 模組翻譯器 (Mock)',
-                                    label_current_status: '目前狀態',
-                                    status_idle: '待機中',
-                                    label_input_path: '輸入路徑',
-                                    btn_select_file: '選擇檔案',
-                                    btn_nav_dev: '開發人員',
-                                    cat_all_bg: '全部背景',
-                                    label_page_info: '第 {} / {} 頁',
-                                    label_ui_lang: '介面語言',
-                                    label_source_lang: '來源語言',
-                                    label_target_lang: '目標語言',
-                                    label_pack_format: '資源包版本',
-                                    label_batch_size: '批次量',
-                                    label_max_chars: '字數上限',
-                                    label_timeout: '逾時',
-                                    label_api_key: 'API 金鑰',
-                                    label_model: '選擇模型',
-                                    label_provider: '服務商',
-                                    status_processing_item: '正在處理 {}',
-                                    lang_zh_tw: '繁體中文 (zh_tw)',
-                                    lang_zh_cn: '簡體中文 (zh_cn)',
-                                    lang_en_us: 'English (en_us)',
-                                    lang_ja_jp: '日本語 (ja_jp)',
-                                    lang_ko_kr: '韓國語 (ko_kr)',
-                                    lang_fr_fr: '法語 (fr_fr)',
-                                    lang_de_de: '德語 (de_de)',
-                                    label_fast_convert_on: '開啟簡繁轉換',
-                                    label_fast_convert_off: '關閉簡繁轉換',
-                                    label_fast_convert: '快速簡繁轉換',
-                                    page_title: 'Minecraft 模組翻譯器',
-                                    placeholder_output_path: './LLMTranslator (預設輸出)',
-                                    label_llm_log: 'LLM 請求日誌',
-                                };
+                            const targetLang = lang || 'zh_tw';
+                            try {
+                                const resp = await fetch(`/langs/gui/${targetLang}.json`);
+                                if (resp.ok) {
+                                    const json = await resp.json();
+                                    state.currentLabels = json;
+                                    return json;
+                                }
+                            } catch (e) {
+                                console.error('[MOCK] Failed to fetch real i18n JSON, using fallback.', e);
                             }
-                            return state.currentLabels;
+
+                            // Fallback 基礎內容確保 UI 不會白屏
+                            const fallback = {
+                                app_title: 'Minecraft 模組翻譯器 (Mock)',
+                                label_current_status: '目前狀態',
+                                status_idle: '待機中',
+                                label_input_path: '輸入路徑',
+                                btn_select_file: '選擇檔案',
+                                btn_nav_dev: '開發人員',
+                                cat_all_bg: '全部背景',
+                                lang_zh_tw: '繁體中文 (zh_tw)',
+                                lang_zh_cn: '簡體中文 (zh_cn)',
+                                lang_en_us: 'English (en_us)',
+                                lang_ja_jp: '日本語 (ja_jp)',
+                                label_fast_convert: '快速簡繁轉換',
+                                btn_run_trans: '▶ 執行',
+                                btn_pause_trans: '⏸ 暫停',
+                                btn_stop_trans: '⏹ 停止',
+                                page_title: 'Minecraft 模組翻譯器',
+                            };
+                            state.currentLabels = fallback;
+                            return fallback;
                         },
                         get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
                         query_dictionary: [[], 1],
@@ -140,7 +142,35 @@ export async function initMockTools() {
                         import_user_dictionary: null,
                         export_user_dictionary: null,
                         open_dictionary_location: null,
-                        start_translation: null,
+                        start_translation: async () => {
+                            console.log('[MOCK] 翻譯啟動');
+                            const isFast = state.currentConfig.fast_convert;
+
+                            // 模擬進度事件
+                            setTimeout(() => {
+                                window.__TAURI_EMIT__('translation-progress', {
+                                    progress: 0.1,
+                                    status: '正在處理: zh_cn -> zh_tw',
+                                });
+                            }, 500);
+
+                            setTimeout(() => {
+                                // 模擬日誌事件，展示「下界巖 -> 地獄巖」的修復效果
+                                window.__TAURI_EMIT__('log-event', {
+                                    level: 'Success',
+                                    message: isFast
+                                        ? '[Fast Convert] tag.block.netherrack: 「下界巖」 -> 「地獄巖」'
+                                        : '[LLM] tag.block.netherrack: 翻譯完成',
+                                    source_lang: 'zh_cn',
+                                    target_lang: 'zh_tw',
+                                    group_dir: 'tags/blocks',
+                                });
+                                window.__TAURI_EMIT__('translation-progress', {
+                                    progress: 1.0,
+                                    status: '翻譯完成',
+                                });
+                            }, 1500);
+                        },
                         pause_translation: null,
                         update_active_job_config: null,
                         resume_translation: null,
@@ -153,7 +183,18 @@ export async function initMockTools() {
                     return finalRes !== undefined ? finalRes : null;
                 },
             },
-            event: { listen: async () => ({ unlisten: () => {} }), emit: () => {} },
+            event: {
+                listen: async (eventName, handler) => {
+                    if (!window.__MOCK_EVENT_LISTENERS[eventName]) {
+                        window.__MOCK_EVENT_LISTENERS[eventName] = [];
+                    }
+                    window.__MOCK_EVENT_LISTENERS[eventName].push(handler);
+                    return { unlisten: () => {} };
+                },
+                emit: (eventName, payload) => {
+                    window.__TAURI_EMIT__(eventName, payload);
+                },
+            },
         };
     }
 
