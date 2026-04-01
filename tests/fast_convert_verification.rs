@@ -28,6 +28,7 @@ async fn test_fast_convert_bypass_llm() {
         source_lang: "zh_cn".to_string(),
         target_lang: "zh_tw".to_string(),
         fast_convert: true,
+        timeout: 60,
         ..JobConfig::default()
     };
 
@@ -96,6 +97,7 @@ async fn test_fast_convert_with_glossary_priority() {
         source_lang: "zh_cn".to_string(),
         target_lang: "zh_tw".to_string(),
         fast_convert: true,
+        timeout: 60,
         ..JobConfig::default()
     };
 
@@ -155,6 +157,7 @@ async fn test_fast_convert_disabled_uses_llm() {
         source_lang: "zh_cn".to_string(),
         target_lang: "zh_tw".to_string(),
         fast_convert: false,
+        timeout: 60,
         ..JobConfig::default()
     };
 
