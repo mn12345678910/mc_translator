@@ -10,9 +10,9 @@
   "scripts": {
     "test": "vitest run",
     "test:frontend": "vitest run",
-    "dev": "node tool/sync_frontend_langs.js && vite frontend",
-    "build": "node tool/sync_frontend_langs.js && vite build frontend --outDir ../dist",
-    "preview": "vite preview frontend",
+    "dev": "node tool/sync_frontend_langs.js && vite",
+    "build": "node tool/sync_frontend_langs.js && vite build",
+    "preview": "vite preview",
     "tauri": "tauri",
     "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
     "lint": "eslint \"frontend/**/*.js\"",

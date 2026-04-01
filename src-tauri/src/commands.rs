@@ -673,18 +673,31 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
     let app_c = app.clone();
     let _ = app.run_on_main_thread(move || {
         log::info!("Opening dictionary window...");
-        let dict_window = tauri::WebviewWindowBuilder::new(
-            &app_c,
-            "dict_manager",
-            tauri::WebviewUrl::App("dict.html".into()),
-        )
-        .title("建議詞管理器")
-        .inner_size(800.0, 600.0)
-        .min_inner_size(800.0, 600.0)
-        .resizable(true)
-        .visible(true)
-        .devtools(true)
-        .build();
+        let dict_url = if cfg!(debug_assertions) {
+            let dev_url = app_c.config().build.dev_url.as_ref().map(|u| u.to_string());
+            if let Some(base) = dev_url {
+                let base = base.trim_end_matches('/');
+                let full = format!("{}/dict.html", base);
+                if let Ok(url) = tauri::Url::parse(&full) {
+                    tauri::WebviewUrl::External(url)
+                } else {
+                    tauri::WebviewUrl::App("dict.html".into())
+                }
+            } else {
+                tauri::WebviewUrl::App("dict.html".into())
+            }
+        } else {
+            tauri::WebviewUrl::App("dict.html".into())
+        };
+
+        let dict_window = tauri::WebviewWindowBuilder::new(&app_c, "dict_manager", dict_url)
+            .title("建議詞管理器")
+            .inner_size(800.0, 600.0)
+            .min_inner_size(800.0, 600.0)
+            .resizable(true)
+            .visible(true)
+            .devtools(true)
+            .build();
 
         match dict_window {
             Ok(window) => {
