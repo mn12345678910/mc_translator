@@ -1,7 +1,7 @@
 // frontend/modules/config.js
 import { state } from './state.js';
 import { appendLog } from './utils.js';
-import { updateUiLanguage } from './i18n.js';
+import { updateUiLanguage, updateToggleStateLabel } from './i18n.js';
 
 const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
 
@@ -72,7 +72,8 @@ export async function loadConfig() {
             const chkFast = document.getElementById('chk-fast-convert');
             if (chkFast) {
                 chkFast.checked = config.fast_convert;
-                updateToggleStateLabel('chk-fast-convert', chkFast.checked);
+                chkFast.checked = config.fast_convert;
+                updateToggleStateLabel(chkFast);
             }
         }
         toggleFastConvertGroup();
@@ -306,10 +307,9 @@ export async function restoreDefaultConfig() {
         );
 
         // 更新 Label 狀態 (切換開關的文字)
-        const updateToggleStateLabelModule = await import('./i18n.js').then((m) => m.updateToggleStateLabel);
         ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabelModule(el);
+            if (el) updateToggleStateLabel(el);
         });
 
         await loadModels();
@@ -359,7 +359,6 @@ export async function restoreDevDefaults() {
         if (excludedPaths) excludedPaths.value = state.currentConfig.excluded_paths.join('\n');
 
         // 更新 Label 狀態 (切換開關的文字)
-        const updateToggleStateLabelModule = await import('./i18n.js').then((m) => m.updateToggleStateLabel);
         [
             'chk-skip-json',
             'chk-skip-js',
@@ -370,7 +369,7 @@ export async function restoreDevDefaults() {
             'chk-debug-tools',
         ].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabelModule(id, el.checked);
+            if (el) updateToggleStateLabel(el);
         });
 
         // 自動儲存變更

@@ -60,7 +60,7 @@ export async function initMockTools() {
                         get_default_style_config: { theme: 'dark', dark_bg: [45, 45, 50] },
                         get_api_key_cmd: 'MOCK_API_KEY_777',
                         get_available_langs: ['zh_tw', 'zh_cn', 'en_us', 'ja_jp'],
-                        get_i18n_labels: async ({ lang }) => {
+                        get_i18n_labels: async () => {
                             return state.currentLabels;
                         },
                         get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
