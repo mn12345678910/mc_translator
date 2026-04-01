@@ -41,6 +41,7 @@ async fn test_fast_convert_bypass_llm() {
         rel_path: "test.json".to_string(),
         key: "key1".to_string(),
         translated: None,
+        alt_source: None,
     }];
 
     let glossary = GlossaryAutomaton::new(
@@ -113,6 +114,7 @@ async fn test_fast_convert_with_glossary_priority() {
         rel_path: "test.json".to_string(),
         key: "key1".to_string(),
         translated: None,
+        alt_source: None,
     }];
 
     let ctx = RunBatchContext {
@@ -169,6 +171,7 @@ async fn test_fast_convert_disabled_uses_llm() {
         rel_path: "test.json".to_string(),
         key: "key1".to_string(),
         translated: None,
+        alt_source: None,
     }];
 
     let log = Arc::new(Mutex::new(Vec::new()));

@@ -15,34 +15,94 @@ pub async fn collect_json_task(
     state: &JobSharedState,
 ) -> Result<Option<(FileTask, Vec<GlobalBatchItem>)>, Box<dyn std::error::Error + Send + Sync>> {
     let path_clone = path.to_path_buf();
-    let target_lang = state.config.lock().unwrap().target_lang.clone();
-    let (content, source_value, target_base) = tokio::task::spawn_blocking(move || -> Result<(String, serde_json::Value, serde_json::Value), Box<dyn std::error::Error + Send + Sync>> {
-        let content = match fs::read_to_string(&path_clone) {
-            Ok(c) => c,
-            Err(e) => {
-                eprintln!("\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m",
-                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
-                return Err(e.into());
-            }
-        };
-        let source_value: serde_json::Value = match serde_json::from_str(&content) {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m",
-                    chrono::Local::now().format("%H:%M:%S"), path_clone, e);
-                return Err(e.into());
-            }
-        };
+    let (target_lang, source_lang, fast_convert) = {
+        let cfg = state.config.lock().unwrap();
+        (
+            cfg.target_lang.clone(),
+            cfg.source_lang.clone(),
+            cfg.fast_convert,
+        )
+    };
 
-        let target_path = path_clone.with_file_name(format!("{}.json", target_lang));
-        let mut target_base = serde_json::Value::Null;
-        if target_path.exists() {
-            if let Ok(existing) = fs::read_to_string(&target_path) {
-                target_base = serde_json::from_str(&existing).unwrap_or(serde_json::Value::Null);
-            }
+    // 計算兄弟中文方言（用於跨語言快速轉換）
+    // 条件： fast_convert 開啟、目標為中文、來源非中文
+    let is_target_chinese = target_lang == "zh_cn" || target_lang == "zh_tw";
+    let is_source_chinese = source_lang == "zh_cn" || source_lang == "zh_tw";
+    let alt_lang = if fast_convert && is_target_chinese && !is_source_chinese {
+        if target_lang == "zh_tw" {
+            Some("zh_cn".to_string())
+        } else {
+            Some("zh_tw".to_string())
         }
-        Ok((content, source_value, target_base))
-    }).await??;
+    } else {
+        None
+    };
+
+    type JsonTaskData = (
+        String,
+        serde_json::Value,
+        serde_json::Value,
+        HashMap<String, String>,
+    );
+    let (content, source_value, target_base, alt_map) = tokio::task::spawn_blocking(
+        move || -> Result<JsonTaskData, Box<dyn std::error::Error + Send + Sync>> {
+            let content = match fs::read_to_string(&path_clone) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!(
+                        "\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m",
+                        chrono::Local::now().format("%H:%M:%S"),
+                        path_clone,
+                        e
+                    );
+                    return Err(e.into());
+                }
+            };
+            let source_value: serde_json::Value = match serde_json::from_str(&content) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!(
+                        "\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m",
+                        chrono::Local::now().format("%H:%M:%S"),
+                        path_clone,
+                        e
+                    );
+                    return Err(e.into());
+                }
+            };
+
+            let target_path = path_clone.with_file_name(format!("{}.json", target_lang));
+            let mut target_base = serde_json::Value::Null;
+            if target_path.exists() {
+                if let Ok(existing) = fs::read_to_string(&target_path) {
+                    target_base =
+                        serde_json::from_str(&existing).unwrap_or(serde_json::Value::Null);
+                }
+            }
+
+            // 讀取兄弟中文方言檔案，建立 key → value 對照表
+            let mut alt_map: HashMap<String, String> = HashMap::new();
+            if let Some(ref alt) = alt_lang {
+                let alt_path = path_clone.with_file_name(format!("{}.json", alt));
+                if alt_path.exists() {
+                    if let Ok(alt_content) = fs::read_to_string(&alt_path) {
+                        if let Ok(serde_json::Value::Object(map)) =
+                            serde_json::from_str::<serde_json::Value>(&alt_content)
+                        {
+                            for (k, v) in map {
+                                if let serde_json::Value::String(s) = v {
+                                    alt_map.insert(k, s);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Ok((content, source_value, target_base, alt_map))
+        },
+    )
+    .await??;
 
     let mut pending = Vec::new();
 
@@ -78,7 +138,12 @@ pub async fn collect_json_task(
 
     let mut global_items = Vec::new();
     for (orig, key) in pending {
-        global_items.push(GlobalBatchItem::new(&orig, file_id, &rel_path, &key));
+        let mut item = GlobalBatchItem::new(&orig, file_id, &rel_path, &key);
+        // 填充兄弟中文方言的對應值（如果存在）
+        if let Some(alt_val) = alt_map.get(&key) {
+            item.alt_source = Some(alt_val.clone());
+        }
+        global_items.push(item);
     }
 
     // 加入預填項目，維持條目與進度一致

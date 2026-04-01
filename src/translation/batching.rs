@@ -23,6 +23,9 @@ pub struct GlobalBatchItem {
     pub key: String,
     /// 最終翻譯結果
     pub translated: Option<String>,
+    /// 兄弟中文語言檔案的對應值（用於跨語言快速簡繁轉換）
+    /// 例如：來源為 en_us，目標為 zh_tw，若 zh_cn 存在同鍵，則此欄存放 zh_cn 的中文文本
+    pub alt_source: Option<String>,
 }
 
 impl GlobalBatchItem {
@@ -36,6 +39,7 @@ impl GlobalBatchItem {
             rel_path: rel_path.to_string(),
             key: key.to_string(),
             translated: None,
+            alt_source: None,
         }
     }
 }
@@ -151,7 +155,7 @@ pub async fn run_translation_batch(
     }
 
     // ── 快速簡繁轉換路徑 ──
-    // 當 fast_convert 啟用且語言對為 zh_cn↔zh_tw 時，繞過 LLM 直接轉換
+    // 情況 A：來源與目標皆為簡繁中文互換（zh_cn↔zh_tw），直接全量轉換後返回
     let is_fast_pair = (cfg.source_lang == "zh_cn" && cfg.target_lang == "zh_tw")
         || (cfg.source_lang == "zh_tw" && cfg.target_lang == "zh_cn");
 
@@ -203,6 +207,63 @@ pub async fn run_translation_batch(
         );
 
         return Ok(());
+    }
+
+    // ── 情況 B：混合快速轉換路徑 ──
+    // 當 fast_convert 啟用且目標為中文，但來源為非中文語言時
+    // 對有 alt_source（兄弟中文檔案的對應值）的條目直接進行 hanconv 轉換
+    // 其餘條目繼續進入 LLM 批次
+    let is_target_chinese = cfg.target_lang == "zh_cn" || cfg.target_lang == "zh_tw";
+
+    if cfg.fast_convert && is_target_chinese && !is_fast_pair {
+        let alt_indices: Vec<usize> = pending_indices
+            .iter()
+            .copied()
+            .filter(|&i| items[i].alt_source.is_some())
+            .collect();
+
+        if !alt_indices.is_empty() {
+            let alt_texts: Vec<String> = alt_indices
+                .iter()
+                .map(|&i| items[i].alt_source.clone().unwrap_or_default())
+                .collect();
+            let glossary_map = glossary_automaton.extract(alt_texts.as_slice());
+
+            let mut fast_count = 0usize;
+            for &idx in &alt_indices {
+                let alt_text = items[idx].alt_source.clone().unwrap_or_default();
+
+                // 術語表優先
+                if let Some((term, _)) = glossary_map.get(alt_text.as_str()) {
+                    items[idx].translated = Some(term.clone());
+                } else {
+                    // 根據目標語言決定轉換方向
+                    let converted = if cfg.target_lang == "zh_tw" {
+                        hanconv::s2tw(&alt_text)
+                    } else {
+                        hanconv::tw2s(&alt_text)
+                    };
+                    items[idx].translated = Some(converted);
+                }
+                fast_count += 1;
+            }
+
+            add_log_event(
+                &log,
+                LogLevel::Info,
+                &format!(
+                    "[Fast Convert] {} items via alt-source ({} → {}), {} items will use LLM",
+                    fast_count,
+                    cfg.source_lang,
+                    cfg.target_lang,
+                    pending_indices.len() - fast_count,
+                ),
+                &cfg.source_lang,
+                &cfg.target_lang,
+                &ctx.group_dir,
+                cfg.enable_debug_log,
+            );
+        }
     }
 
     let initial_batches = create_adaptive_batches_from_indices(

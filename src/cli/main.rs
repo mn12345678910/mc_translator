@@ -85,7 +85,7 @@ struct Args {
     #[arg(short = 'e', long)]
     exclude: Vec<String>,
 
-    /// 啟用快速簡繁轉換 (zh_cn↔zh_tw 繞過 LLM)
+    /// 啟用快速簡繁轉換（目標為中文時優先使用現有中文翻譯繞過 LLM，支援跨語言來源）
     #[arg(long)]
     fast_convert: bool,
 }

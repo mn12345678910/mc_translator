@@ -15,16 +15,36 @@ pub async fn collect_jar_tasks(
     state: &JobSharedState,
 ) -> Result<(Vec<FileTask>, Vec<GlobalBatchItem>), Box<dyn std::error::Error + Send + Sync>> {
     let path_clone = path.to_path_buf();
-    let (source_lang, target_lang, skip_book) = {
+    let (source_lang, target_lang, skip_book, fast_convert) = {
         let cfg = state.config.lock().unwrap();
         (
             cfg.source_lang.clone(),
             cfg.target_lang.clone(),
             cfg.skip_book,
+            cfg.fast_convert,
         )
     };
 
-    type JarTaskData = (String, serde_json::Value, String, serde_json::Value);
+    // 計算兄弟中文方言（用於跨語言快速轉換）
+    let is_target_chinese = target_lang == "zh_cn" || target_lang == "zh_tw";
+    let is_source_chinese = source_lang == "zh_cn" || source_lang == "zh_tw";
+    let alt_lang: Option<String> = if fast_convert && is_target_chinese && !is_source_chinese {
+        if target_lang == "zh_tw" {
+            Some("zh_cn".to_string())
+        } else {
+            Some("zh_tw".to_string())
+        }
+    } else {
+        None
+    };
+
+    type JarTaskData = (
+        String,
+        serde_json::Value,
+        String,
+        serde_json::Value,
+        HashMap<String, String>,
+    );
     let state_clone = state.clone();
     let tasks_data = tokio::task::spawn_blocking(
         move || -> Result<Vec<JarTaskData>, Box<dyn std::error::Error + Send + Sync>> {
@@ -129,7 +149,40 @@ pub async fn collect_jar_tasks(
                                     serde_json::from_str(&zh_c).unwrap_or(serde_json::Value::Null);
                             }
                         }
-                        entries.push((name, value, content, target_base));
+                        // 讀取兄弟中文方言檔案（在 ZIP 內部搜尋）
+                        let mut alt_map: HashMap<String, String> = HashMap::new();
+                        if let Some(ref alt) = alt_lang {
+                            let alt_name = if name.contains("patchouli_books/") {
+                                let src_part = if name.contains("/en_us/") {
+                                    "/en_us/"
+                                } else {
+                                    &src_dir
+                                };
+                                name.replace(src_part, &format!("/{}/", alt))
+                            } else {
+                                let src_part = if name.ends_with("en_us.json") {
+                                    "en_us.json"
+                                } else {
+                                    &src_suffix
+                                };
+                                name.replace(src_part, &format!("{}.json", alt))
+                            };
+                            if let Ok(mut alt_entry) = archive.by_name(&alt_name) {
+                                let mut alt_content = String::new();
+                                if alt_entry.read_to_string(&mut alt_content).is_ok() {
+                                    if let Ok(serde_json::Value::Object(map)) =
+                                        serde_json::from_str::<serde_json::Value>(&alt_content)
+                                    {
+                                        for (k, v) in map {
+                                            if let serde_json::Value::String(s) = v {
+                                                alt_map.insert(k, s);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        entries.push((name, value, content, target_base, alt_map));
 
                         // 移除此處的多餘遞增，由 pipeline 統一計算
                     }
@@ -147,7 +200,9 @@ pub async fn collect_jar_tasks(
         &HashMap::new(),
     ));
 
-    for (idx, (name, source_value, content, target_base)) in tasks_data.into_iter().enumerate() {
+    for (idx, (name, source_value, content, target_base, alt_map)) in
+        tasks_data.into_iter().enumerate()
+    {
         let file_id = start_file_id + idx;
         let mut pending = Vec::new();
         let empty_map = HashMap::new();
@@ -174,7 +229,12 @@ pub async fn collect_jar_tasks(
         let prefilled_count = ctx.prefilled.lock().unwrap().len();
         if !pending.is_empty() || prefilled_count > 0 {
             for (orig, key) in pending {
-                global_items.push(GlobalBatchItem::new(&orig, file_id, &name, &key));
+                let mut item = GlobalBatchItem::new(&orig, file_id, &name, &key);
+                // 填充兄弟中文方言的對應值（如果存在）
+                if let Some(alt_val) = alt_map.get(&key) {
+                    item.alt_source = Some(alt_val.clone());
+                }
+                global_items.push(item);
             }
             // 加入預填項目，維持條目與進度一致
             for (orig, key, trans) in ctx.prefilled.lock().unwrap().iter() {

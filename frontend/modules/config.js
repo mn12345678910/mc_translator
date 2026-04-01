@@ -248,28 +248,23 @@ export function toggleOllamaGroup() {
     }
 }
 
-/** 僅當來源與目標語言為 zh_cn↔zh_tw 時顯示快速轉換開關 */
+/** 當目標語言為中文（zh_cn 或 zh_tw）時顯示快速轉換開關 */
 export function toggleFastConvertGroup() {
-    console.log('[DEBUG] toggleFastConvertGroup called');
     const group = document.getElementById('group-fast-convert');
     const sourceLang = document.getElementById('source-lang');
     const targetLang = document.getElementById('target-lang');
 
     if (!group || !sourceLang || !targetLang) {
-        console.warn('[DEBUG] Missing elements for toggleFastConvertGroup', {
-            group: !!group,
-            sourceLang: !!sourceLang,
-            targetLang: !!targetLang,
-        });
         return;
     }
 
     const src = sourceLang.value;
     const tgt = targetLang.value;
-    const isZhPair = (src === 'zh_cn' && tgt === 'zh_tw') || (src === 'zh_tw' && tgt === 'zh_cn');
+    const isTargetChinese = tgt === 'zh_cn' || tgt === 'zh_tw';
+    // 來源為中文時（純簡繁互換），目標必須為另一方；非中文來源則只需目標為中文
+    const shouldShow = isTargetChinese && src !== tgt;
 
-    console.log(`[DEBUG] Lang pair: ${src} -> ${tgt}, isZhPair: ${isZhPair}`);
-    group.style.display = isZhPair ? 'flex' : 'none';
+    group.style.display = shouldShow ? 'flex' : 'none';
 }
 
 export function toggleApiKeyVisibility() {
