@@ -52,6 +52,9 @@ export async function updateUiLanguage() {
         const oldLabels = { ...state.currentLabels };
         state.currentLabels = { ...labels };
 
+        // 先更新 UI 語言下拉顯示文字（需要 labels 就緒）
+        await loadUiLangs();
+
         if (uiLang && uiLang.value) {
             document.documentElement.lang = uiLang.value.replace('_', '-');
         }

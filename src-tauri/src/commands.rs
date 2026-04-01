@@ -546,13 +546,13 @@ pub fn open_folder(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn get_available_langs() -> Result<Vec<String>, String> {
-    let dir = std::path::Path::new("langs");
+    let dir = std::path::Path::new("langs").join("gui");
     if !dir.exists() {
         return Ok(vec!["zh_tw".to_string(), "en_us".to_string()]);
     }
 
     let mut langs = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(dir) {
+    if let Ok(entries) = std::fs::read_dir(&dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {

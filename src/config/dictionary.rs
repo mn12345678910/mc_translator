@@ -61,16 +61,12 @@ pub fn get_available_dict_langs() -> Vec<String> {
     let mut langs = std::collections::HashSet::new();
 
     let base = std::path::Path::new(DICT_DIR);
-    let dirs = [base.join("official"), base.join("user")];
-
-    for dir in dirs {
-        if let Ok(entries) = fs::read_dir(dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
-                    if let Some(stem) = path.file_stem() {
-                        langs.insert(stem.to_string_lossy().to_string());
-                    }
+    if let Ok(entries) = fs::read_dir(base) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
+                if let Some(stem) = path.file_stem() {
+                    langs.insert(stem.to_string_lossy().to_string());
                 }
             }
         }
