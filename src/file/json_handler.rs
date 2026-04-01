@@ -3,10 +3,36 @@ use crate::translation::batching::GlobalBatchItem;
 use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
 use crate::translation::job::{JobConfig, JobSharedState};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+
+/// 遞迴遍歷 JSON，模擬 `engine::collect_translatable_strings` 的遍歷順序，
+/// 產生 (leaf_key, string_value) 序列，用於建立兄弟語言檔案的對照表。
+fn flatten_json_values(
+    value: &serde_json::Value,
+    key: Option<&str>,
+    out: &mut Vec<(String, String)>,
+) {
+    match value {
+        serde_json::Value::String(s) => {
+            let k = key.unwrap_or("__ARRAY_ELEMENT__").to_string();
+            out.push((k, s.clone()));
+        }
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                flatten_json_values(v, Some(k), out);
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr {
+                flatten_json_values(v, None, out);
+            }
+        }
+        _ => {}
+    }
+}
 
 pub async fn collect_json_task(
     file_id: usize,
@@ -42,7 +68,7 @@ pub async fn collect_json_task(
         String,
         serde_json::Value,
         serde_json::Value,
-        HashMap<String, String>,
+        HashMap<String, VecDeque<String>>,
     );
     let (content, source_value, target_base, alt_map) = tokio::task::spawn_blocking(
         move || -> Result<JsonTaskData, Box<dyn std::error::Error + Send + Sync>> {
@@ -80,19 +106,19 @@ pub async fn collect_json_task(
                 }
             }
 
-            // 讀取兄弟中文方言檔案，建立 key → value 對照表
-            let mut alt_map: HashMap<String, String> = HashMap::new();
+            // 讀取兄弟中文方言檔案，建立 key → value 對照表（支援嵌套 JSON）
+            let mut alt_map: HashMap<String, VecDeque<String>> = HashMap::new();
             if let Some(ref alt) = alt_lang {
                 let alt_path = path_clone.with_file_name(format!("{}.json", alt));
                 if alt_path.exists() {
                     if let Ok(alt_content) = fs::read_to_string(&alt_path) {
-                        if let Ok(serde_json::Value::Object(map)) =
+                        if let Ok(alt_value) =
                             serde_json::from_str::<serde_json::Value>(&alt_content)
                         {
-                            for (k, v) in map {
-                                if let serde_json::Value::String(s) = v {
-                                    alt_map.insert(k, s);
-                                }
+                            let mut pairs = Vec::new();
+                            flatten_json_values(&alt_value, None, &mut pairs);
+                            for (k, v) in pairs {
+                                alt_map.entry(k).or_default().push_back(v);
                             }
                         }
                     }
@@ -137,11 +163,14 @@ pub async fn collect_json_task(
     }
 
     let mut global_items = Vec::new();
+    let mut alt_map = alt_map; // 取得所有權以進行消費式匹配
     for (orig, key) in pending {
         let mut item = GlobalBatchItem::new(&orig, file_id, &rel_path, &key);
-        // 填充兄弟中文方言的對應值（如果存在）
-        if let Some(alt_val) = alt_map.get(&key) {
-            item.alt_source = Some(alt_val.clone());
+        // 消費式匹配：按順序取出兄弟方言的對應值，確保同名 Key 不碰撞
+        if let Some(queue) = alt_map.get_mut(&key) {
+            if let Some(alt_val) = queue.pop_front() {
+                item.alt_source = Some(alt_val);
+            }
         }
         global_items.push(item);
     }

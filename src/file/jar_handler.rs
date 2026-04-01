@@ -3,11 +3,37 @@ use crate::translation::batching::GlobalBatchItem;
 use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
 use crate::translation::job::JobSharedState;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::Arc;
+
+/// 遞迴遍歷 JSON，模擬 `engine::collect_translatable_strings` 的遍歷順序，
+/// 產生 (leaf_key, string_value) 序列，用於建立兄弟語言檔案的對照表。
+fn flatten_json_values_jar(
+    value: &serde_json::Value,
+    key: Option<&str>,
+    out: &mut Vec<(String, String)>,
+) {
+    match value {
+        serde_json::Value::String(s) => {
+            let k = key.unwrap_or("__ARRAY_ELEMENT__").to_string();
+            out.push((k, s.clone()));
+        }
+        serde_json::Value::Object(map) => {
+            for (k, v) in map {
+                flatten_json_values_jar(v, Some(k), out);
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for v in arr {
+                flatten_json_values_jar(v, None, out);
+            }
+        }
+        _ => {}
+    }
+}
 
 pub async fn collect_jar_tasks(
     start_file_id: usize,
@@ -43,7 +69,7 @@ pub async fn collect_jar_tasks(
         serde_json::Value,
         String,
         serde_json::Value,
-        HashMap<String, String>,
+        HashMap<String, VecDeque<String>>,
     );
     let state_clone = state.clone();
     let tasks_data = tokio::task::spawn_blocking(
@@ -149,8 +175,8 @@ pub async fn collect_jar_tasks(
                                     serde_json::from_str(&zh_c).unwrap_or(serde_json::Value::Null);
                             }
                         }
-                        // 讀取兄弟中文方言檔案（在 ZIP 內部搜尋）
-                        let mut alt_map: HashMap<String, String> = HashMap::new();
+                        // 讀取兄弟中文方言檔案（在 ZIP 內部搜尋），支援嵌套 JSON
+                        let mut alt_map: HashMap<String, VecDeque<String>> = HashMap::new();
                         if let Some(ref alt) = alt_lang {
                             let alt_name = if name.contains("patchouli_books/") {
                                 let src_part = if name.contains("/en_us/") {
@@ -170,13 +196,13 @@ pub async fn collect_jar_tasks(
                             if let Ok(mut alt_entry) = archive.by_name(&alt_name) {
                                 let mut alt_content = String::new();
                                 if alt_entry.read_to_string(&mut alt_content).is_ok() {
-                                    if let Ok(serde_json::Value::Object(map)) =
+                                    if let Ok(alt_value) =
                                         serde_json::from_str::<serde_json::Value>(&alt_content)
                                     {
-                                        for (k, v) in map {
-                                            if let serde_json::Value::String(s) = v {
-                                                alt_map.insert(k, s);
-                                            }
+                                        let mut pairs = Vec::new();
+                                        flatten_json_values_jar(&alt_value, None, &mut pairs);
+                                        for (k, v) in pairs {
+                                            alt_map.entry(k).or_default().push_back(v);
                                         }
                                     }
                                 }
@@ -200,7 +226,7 @@ pub async fn collect_jar_tasks(
         &HashMap::new(),
     ));
 
-    for (idx, (name, source_value, content, target_base, alt_map)) in
+    for (idx, (name, source_value, content, target_base, mut alt_map)) in
         tasks_data.into_iter().enumerate()
     {
         let file_id = start_file_id + idx;
@@ -230,9 +256,11 @@ pub async fn collect_jar_tasks(
         if !pending.is_empty() || prefilled_count > 0 {
             for (orig, key) in pending {
                 let mut item = GlobalBatchItem::new(&orig, file_id, &name, &key);
-                // 填充兄弟中文方言的對應值（如果存在）
-                if let Some(alt_val) = alt_map.get(&key) {
-                    item.alt_source = Some(alt_val.clone());
+                // 消費式匹配：按順序取出兄弟方言的對應值，確保同名 Key 不碰撞
+                if let Some(queue) = alt_map.get_mut(&key) {
+                    if let Some(alt_val) = queue.pop_front() {
+                        item.alt_source = Some(alt_val);
+                    }
                 }
                 global_items.push(item);
             }

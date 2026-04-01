@@ -252,7 +252,7 @@ pub async fn run_translation_batch(
                 &log,
                 LogLevel::Info,
                 &format!(
-                    "[Fast Convert] {} items via alt-source ({} → {}), {} items will use LLM",
+                    "[Fast Convert] {} items via alt-source ({} → {}), {} items remaining for LLM",
                     fast_count,
                     cfg.source_lang,
                     cfg.target_lang,
@@ -263,7 +263,31 @@ pub async fn run_translation_batch(
                 &ctx.group_dir,
                 cfg.enable_debug_log,
             );
+
+            // 更新進度條
+            progress.store(
+                ((ctx.global_items_offset + already_done + fast_count) as f32).to_bits(),
+                Ordering::SeqCst,
+            );
         }
+    }
+
+    // [重要] 重新整理待翻譯清單：排除已透過混合快速轉換、術語表或 TM 預填完成的項目
+    let pending_indices: Vec<usize> = pending_indices
+        .into_iter()
+        .filter(|&i| items[i].translated.is_none())
+        .collect();
+
+    // 重新計算 already_done，涵蓋 Case B 快速轉換的成果
+    let already_done = total_items - pending_indices.len();
+
+    // 如果所有項目都已透過快速轉換處理完畢，則提前返回
+    if pending_indices.is_empty() {
+        progress.store(
+            ((ctx.global_items_offset + total_items) as f32).to_bits(),
+            Ordering::SeqCst,
+        );
+        return Ok(());
     }
 
     let initial_batches = create_adaptive_batches_from_indices(
