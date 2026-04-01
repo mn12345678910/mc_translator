@@ -90,5 +90,6 @@ fn create_ollama_config(url: String) -> JobConfig {
         cleanup_contains: vec![],
         enable_debug_log: false,
         excluded_paths: Vec::new(),
+        fast_convert: false,
     }
 }

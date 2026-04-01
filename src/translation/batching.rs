@@ -150,6 +150,61 @@ pub async fn run_translation_batch(
         return Ok(());
     }
 
+    // ── 快速簡繁轉換路徑 ──
+    // 當 fast_convert 啟用且語言對為 zh_cn↔zh_tw 時，繞過 LLM 直接轉換
+    let is_fast_pair = (cfg.source_lang == "zh_cn" && cfg.target_lang == "zh_tw")
+        || (cfg.source_lang == "zh_tw" && cfg.target_lang == "zh_cn");
+
+    if cfg.fast_convert && is_fast_pair {
+        total_batches.store(1, Ordering::SeqCst);
+        current_batch.store(1, Ordering::SeqCst);
+
+        // 收集所有待翻譯文本以提取術語
+        let texts_for_glossary: Vec<String> = pending_indices
+            .iter()
+            .map(|&i| items[i].original.clone())
+            .collect();
+        let glossary_map = glossary_automaton.extract(texts_for_glossary.as_slice());
+
+        for &idx in &pending_indices {
+            let original = &items[idx].original;
+
+            // 1. 術語表優先：精確匹配術語直接替換
+            if let Some((term, _term_type)) = glossary_map.get(original.as_str()) {
+                items[idx].translated = Some(term.clone());
+            } else {
+                // 2. 通用簡繁轉換 (hanconv)
+                let converted = if cfg.source_lang == "zh_cn" {
+                    hanconv::s2tw(original)
+                } else {
+                    hanconv::tw2s(original)
+                };
+                items[idx].translated = Some(converted);
+            }
+            success_count += 1;
+        }
+
+        progress.store(
+            ((ctx.global_items_offset + already_done + success_count) as f32).to_bits(),
+            Ordering::SeqCst,
+        );
+
+        add_log_event(
+            &log,
+            LogLevel::Success,
+            &format!(
+                "[Fast Convert] {} items ({} → {})",
+                success_count, cfg.source_lang, cfg.target_lang
+            ),
+            &cfg.source_lang,
+            &cfg.target_lang,
+            &ctx.group_dir,
+            cfg.enable_debug_log,
+        );
+
+        return Ok(());
+    }
+
     let initial_batches = create_adaptive_batches_from_indices(
         items,
         &pending_indices,

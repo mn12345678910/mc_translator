@@ -84,6 +84,10 @@ struct Args {
     /// 排除路徑 (例如: --exclude "secret_folder" -e "ignore_this") [僅追加]
     #[arg(short = 'e', long)]
     exclude: Vec<String>,
+
+    /// 啟用快速簡繁轉換 (zh_cn↔zh_tw 繞過 LLM)
+    #[arg(long)]
+    fast_convert: bool,
 }
 
 #[tokio::main]
@@ -156,6 +160,9 @@ async fn run_main_with_args(
     if !args.exclude.is_empty() {
         config.excluded_paths.extend(args.exclude);
         println!("{}", i18n.cli_hint_config_exclude);
+    }
+    if args.fast_convert {
+        config.fast_convert = true;
     }
 
     let is_headless = args.input.is_some();

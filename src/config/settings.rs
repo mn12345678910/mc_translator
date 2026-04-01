@@ -64,6 +64,10 @@ pub struct AppConfig {
     #[serde(default = "default_excluded_paths")]
     pub excluded_paths: Vec<String>,
 
+    // --- [快速轉換] ---
+    #[serde(default)]
+    pub fast_convert: bool,
+
     // --- [視窗幾何資訊] ---
     pub main_x: f32,
     pub main_y: f32,
@@ -666,6 +670,7 @@ impl Default for AppConfig {
             viewer_width: 800.0,
             viewer_height: 600.0,
             excluded_paths: default_excluded_paths(),
+            fast_convert: false,
         }
     }
 }

@@ -31,6 +31,14 @@ export async function loadConfig() {
 
     try {
         const config = await invoke('get_config');
+
+        // [Vite 偵錯優化] 在開發環境下預設開啟開發者模式與偵錯工具
+        if (import.meta.env.DEV) {
+            config.show_developer_mode = true;
+            config.show_debug_tools = true;
+            console.log('[DEBUG] Vite 環境偵測：已自動開啟開發者模式與偵錯工具');
+        }
+
         state.currentConfig = config;
 
         if (apiProvider) apiProvider.value = config.api_provider;
@@ -60,6 +68,14 @@ export async function loadConfig() {
         if (chkSkipBook) chkSkipBook.checked = config.skip_book || false;
         if (chkLlmLog) chkLlmLog.checked = config.enable_llm_log || false;
         if (chkDebugTools) chkDebugTools.checked = config.show_debug_tools || false;
+        if (config.fast_convert !== undefined) {
+            const chkFast = document.getElementById('chk-fast-convert');
+            if (chkFast) {
+                chkFast.checked = config.fast_convert;
+                updateToggleStateLabel('chk-fast-convert', chkFast.checked);
+            }
+        }
+        toggleFastConvertGroup();
         const excludedPaths = document.getElementById('excluded-paths');
         if (excludedPaths && config.excluded_paths) {
             excludedPaths.value = config.excluded_paths.join('\n');
@@ -140,6 +156,10 @@ export async function saveConfig() {
         state.currentConfig.enable_llm_log = chkLlmLog ? chkLlmLog.checked : false;
         state.currentConfig.enable_debug_log = chkDebugLog ? chkDebugLog.checked : false;
         state.currentConfig.show_debug_tools = chkDebugTools ? chkDebugTools.checked : false;
+        const chkFast = document.getElementById('chk-fast-convert');
+        if (chkFast) {
+            state.currentConfig.fast_convert = chkFast.checked;
+        }
 
         const excludedPaths = document.getElementById('excluded-paths');
         state.currentConfig.excluded_paths = excludedPaths
@@ -189,6 +209,30 @@ export function toggleOllamaGroup() {
     if (ollamaUrlGroup && apiProvider) {
         ollamaUrlGroup.style.display = apiProvider.value === 'Ollama' ? 'block' : 'none';
     }
+}
+
+/** 僅當來源與目標語言為 zh_cn↔zh_tw 時顯示快速轉換開關 */
+export function toggleFastConvertGroup() {
+    console.log('[DEBUG] toggleFastConvertGroup called');
+    const group = document.getElementById('group-fast-convert');
+    const sourceLang = document.getElementById('source-lang');
+    const targetLang = document.getElementById('target-lang');
+
+    if (!group || !sourceLang || !targetLang) {
+        console.warn('[DEBUG] Missing elements for toggleFastConvertGroup', {
+            group: !!group,
+            sourceLang: !!sourceLang,
+            targetLang: !!targetLang,
+        });
+        return;
+    }
+
+    const src = sourceLang.value;
+    const tgt = targetLang.value;
+    const isZhPair = (src === 'zh_cn' && tgt === 'zh_tw') || (src === 'zh_tw' && tgt === 'zh_cn');
+
+    console.log(`[DEBUG] Lang pair: ${src} -> ${tgt}, isZhPair: ${isZhPair}`);
+    group.style.display = isZhPair ? 'flex' : 'none';
 }
 
 export function toggleApiKeyVisibility() {

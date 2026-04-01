@@ -9,6 +9,7 @@ import {
     restoreDevDefaults,
     toggleOllamaGroup,
     toggleApiKeyVisibility,
+    toggleFastConvertGroup,
     validateCanTranslate,
 } from './modules/config.js';
 import { loadStyle, saveStyle, restoreDefaultStyle, applyColors, updatePaletteValue } from './modules/style.js';
@@ -25,6 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUiLangs();
     await loadStyle();
     await loadDictionary();
+
+    // 初始化已載入設定的 UI 顯示比例與內容
+    toggleFastConvertGroup();
+    toggleOllamaGroup();
 
     // [NEW] 僅在開發模式下動態載入 Mock 工具
     if (import.meta.env.DEV) {
@@ -151,20 +156,48 @@ document.addEventListener('DOMContentLoaded', async () => {
         'chk-llm-log',
         'chk-debug-log',
         'chk-debug-tools',
+        'chk-fast-convert',
         'source-lang',
+        'target-lang',
         'selected-model',
     ];
     configSelects.forEach((id) => {
         const selectEl = document.getElementById(id);
         if (selectEl) {
-            selectEl.addEventListener('change', () => {
+            selectEl.addEventListener('change', async () => {
                 if (id.startsWith('chk-')) {
                     updateToggleStateLabel(id, selectEl.checked);
                 }
+
+                // 處理簡繁快速轉換開關顯示
+                if (id === 'source-lang' || id === 'target-lang') {
+                    toggleFastConvertGroup();
+                }
+
+                // 目標語言變更時載入預設 Prompt
+                if (id === 'target-lang') {
+                    const lang = selectEl.value;
+                    try {
+                        const labels = await invoke('get_i18n_labels', { lang: lang });
+                        const userPrompt = document.getElementById('user-prompt');
+                        const systemPrompt = document.getElementById('system-prompt');
+                        if (userPrompt && labels.default_user_prompt) {
+                            userPrompt.value = labels.default_user_prompt;
+                        }
+                        if (systemPrompt && labels.default_system_prompt) {
+                            systemPrompt.value = labels.default_system_prompt;
+                        }
+                    } catch (e) {
+                        console.error('載入預設 Prompts 失敗:', e);
+                    }
+                }
+
                 debouncedSaveConfig();
             });
         }
     });
+
+    // 移除重複的 target-lang 監聽器
 
     const styleSelects = ['chk-btn-rounding', 'chk-pulse', 'progress-style'];
     styleSelects.forEach((id) => {
@@ -182,26 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    const targetLang = document.getElementById('target-lang');
-    if (targetLang) {
-        targetLang.addEventListener('change', async () => {
-            const lang = targetLang.value;
-            try {
-                const labels = await invoke('get_i18n_labels', { lang: lang });
-                const userPrompt = document.getElementById('user-prompt');
-                const systemPrompt = document.getElementById('system-prompt');
-                if (userPrompt && labels.default_user_prompt) {
-                    userPrompt.value = labels.default_user_prompt;
-                }
-                if (systemPrompt && labels.default_system_prompt) {
-                    systemPrompt.value = labels.default_system_prompt;
-                }
-                debouncedSaveConfig();
-            } catch (e) {
-                console.error('載入預設 Prompts 失敗:', e);
-            }
-        });
-    }
+    // 移除舊的重複監聽器區塊
 
     // 5. 導覽面板控制
     const btnNavApi = document.getElementById('btn-nav-api');

@@ -43,14 +43,20 @@ export async function initMockTools() {
                     console.warn(`[GLOBAL-MOCK] Invoke: ${cmd}`, args);
 
                     const mocks = {
-                        get_config: state.currentConfig,
+                        get_config: () => {
+                            const saved = localStorage.getItem('mock_config');
+                            return saved ? JSON.parse(saved) : state.currentConfig;
+                        },
                         get_default_config: {
                             api_provider: '無',
                             batch_size: 150,
                             timeout: 60,
                             pack_format: 15,
                         },
-                        get_style_config: state.currentStyle,
+                        get_style_config: () => {
+                            const saved = localStorage.getItem('mock_style');
+                            return saved ? JSON.parse(saved) : state.currentStyle;
+                        },
                         get_default_style_config: { theme: 'dark', dark_bg: [45, 45, 50] },
                         get_api_key_cmd: 'MOCK_API_KEY_777',
                         get_available_langs: ['zh_tw', 'zh_cn', 'en_us', 'ja_jp'],
@@ -61,8 +67,14 @@ export async function initMockTools() {
                         query_dictionary: [[], 1],
                         open_path_dialog: 'C:\\Mock\\Path',
                         open_folder: null,
-                        save_config: null,
-                        save_style_config: null,
+                        save_config: ({ config }) => {
+                            state.currentConfig = config;
+                            localStorage.setItem('mock_config', JSON.stringify(config));
+                        },
+                        save_style_config: ({ config }) => {
+                            state.currentStyle = config;
+                            localStorage.setItem('mock_style', JSON.stringify(config));
+                        },
                         show_window: null,
                         save_api_key_cmd: null,
                         edit_dictionary_item: null,

@@ -251,7 +251,8 @@ describe('config.js 設定管理模組', () => {
             viewer_x: 100.0,
             viewer_y: 100.0,
             viewer_width: 800.0,
-            viewer_height: 600.0
+            viewer_height: 600.0,
+            fast_convert: false
         };
 
 
