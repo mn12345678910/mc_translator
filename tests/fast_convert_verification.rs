@@ -33,16 +33,7 @@ async fn test_fast_convert_bypass_llm() {
     };
 
     let log = Arc::new(Mutex::new(Vec::new()));
-    let mut items = vec![GlobalBatchItem {
-        original: "下界".to_string(),
-        preprocessed: "下界".to_string(),
-        markers: vec![],
-        file_id: 0,
-        rel_path: "test.json".to_string(),
-        key: "key1".to_string(),
-        translated: None,
-        alt_source: None,
-    }];
+    let mut items = vec![GlobalBatchItem::new("下界", 0, "test.json", "key1")];
 
     let glossary = GlossaryAutomaton::new(
         &HashMap::new(),
@@ -106,16 +97,7 @@ async fn test_fast_convert_with_glossary_priority() {
     official.insert("下界".to_string(), "地獄".to_string());
     let glossary = GlossaryAutomaton::new(&official, &HashMap::new(), &HashMap::new(), "official");
 
-    let mut items = vec![GlobalBatchItem {
-        original: "下界".to_string(),
-        preprocessed: "下界".to_string(),
-        markers: vec![],
-        file_id: 0,
-        rel_path: "test.json".to_string(),
-        key: "key1".to_string(),
-        translated: None,
-        alt_source: None,
-    }];
+    let mut items = vec![GlobalBatchItem::new("下界", 0, "test.json", "key1")];
 
     let ctx = RunBatchContext {
         items: &mut items,
@@ -163,16 +145,7 @@ async fn test_fast_convert_disabled_uses_llm() {
         ..JobConfig::default()
     };
 
-    let mut items = vec![GlobalBatchItem {
-        original: "测试".to_string(),
-        preprocessed: "测试".to_string(),
-        markers: vec![],
-        file_id: 0,
-        rel_path: "test.json".to_string(),
-        key: "key1".to_string(),
-        translated: None,
-        alt_source: None,
-    }];
+    let mut items = vec![GlobalBatchItem::new("测试", 0, "test.json", "key1")];
 
     let log = Arc::new(Mutex::new(Vec::new()));
     let i18n = CommonLabels {
