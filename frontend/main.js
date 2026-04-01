@@ -183,8 +183,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // 目標語言變更時載入預設 Prompt
                 if (id === 'target-lang') {
                     const lang = selectEl.value;
+                    const builtInLangs = ['zh_tw', 'zh_cn', 'ja_jp', 'en_us'];
+                    const targetLang = builtInLangs.includes(lang) ? lang : 'en_us';
                     try {
-                        const labels = await invoke('get_i18n_labels', { lang: lang });
+                        const labels = await invoke('get_i18n_labels', { lang: targetLang });
                         const userPrompt = document.getElementById('user-prompt');
                         const systemPrompt = document.getElementById('system-prompt');
                         if (userPrompt && labels.default_user_prompt) {

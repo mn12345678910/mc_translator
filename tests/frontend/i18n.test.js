@@ -69,7 +69,7 @@ describe('i18n.js 介面語言模組', () => {
         expect(firstOpt.textContent).toBe('Select a Model (EN)');
     });
 
-    it('updateUiLanguage 應該在 User Prompt 符合預設簡體提示字串時，更新它', async () => {
+    it('updateUiLanguage 不應該在 User Prompt 符合預設簡體提示字串時更新它', async () => {
         const mockLabels = {
             default_user_prompt: 'English prompt defaults...',
         };
@@ -77,12 +77,13 @@ describe('i18n.js 介面語言模組', () => {
 
         const promptArea = document.getElementById('user-prompt');
         // 加入含有「风格」的簡體中文提示字串（已被我們修好的狀態）
-        promptArea.value = '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。';
+        const original = '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。';
+        promptArea.value = original;
 
         await i18nModule.updateUiLanguage();
 
-        // 畫面應該更新為 English 預設
-        expect(promptArea.value.trim()).toBe('English prompt defaults...');
+        // UI 語系切換不再改動使用者提示
+        expect(promptArea.value.trim()).toBe(original.trim());
     });
     it('loadUiLangs 應該在 invoke 拋出異常時妥善處理', async () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -247,17 +248,18 @@ describe('i18n.js 介面語言模組', () => {
     });
 
     describe('額外涵蓋範圍 (Coverage Extension)', () => {
-        it('updateUiLanguage 應該在 System Prompt 符合預設提示時，更新它', async () => {
+        it('updateUiLanguage 不應該在 System Prompt 符合預設提示時更新它', async () => {
             const mockLabels = { default_system_prompt: 'English system defaults...' };
             mockInvoke.mockResolvedValue(mockLabels);
 
             document.body.innerHTML += `<textarea id="system-prompt"></textarea>`;
             const promptArea = document.getElementById('system-prompt');
-            promptArea.value = '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。';
+            const original = '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。';
+            promptArea.value = original;
 
             await i18nModule.updateUiLanguage();
 
-            expect(promptArea.value.trim()).toBe('English system defaults...');
+            expect(promptArea.value.trim()).toBe(original.trim());
         });
 
         it('updateUiLanguage 應該在 invoke 拋出異常時妥善處理 (Catch)', async () => {

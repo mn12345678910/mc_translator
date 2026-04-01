@@ -131,33 +131,7 @@ export async function updateUiLanguage() {
             else if (labels[key]) el.placeholder = labels[key];
         });
 
-        const normValue = (v) => (v ? v.replace(/\r\n/g, '\n').trim() : '');
-
-        const knownUserDefaults = [
-            '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
-            "You are a professional Minecraft mod translator. Please translate the following strings into 'English (en_us)'.\nMaintain a gaming terminology style (e.g., Block, Entity, Enchantment).",
-            '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。',
-            'あなたはプロのMinecraft Mod翻訳者です。以下のMod文字列を「日本語 (ja_jp)」に翻訳してください。\nゲームの用語スタイル（例：ブロック、エンティティ、エンチャント）を維持してください。',
-        ];
-        const knownSysDefaults = [
-            '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。',
-            '\n\n[Internal Technical Instruction - Must Comply]\n1. Keep technical placeholders like %%VAR_n%%, %%MC_n%%, %%HEX_n%% exactly as they are (do not modify, translate, or add/remove tags).\n2. All other text contents MUST be translated and not output as is.',
-            '\n\n[内部技术指令 - 请务必遵守]\n1. 仅针对 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技术占位符执行「保持原样」操作（不可修改、翻译或增删标签）。\n2. 除上述占位符外的其余文本内容均「必须」按要求翻译，绝对不可将全文原样输出。',
-            '\n\n[内部技術指令 - 必ず遵守してください]\n1. %%VAR_n%%、%%MC_n%%、%%HEX_n%% などの技術プレースホルダーは、そのまま維持してください（変更、翻訳、タグの追加/削除は不可）。\n2. それ以外のすべてのテキストコンテンツは必ず翻訳し、そのまま出力してはいけません。',
-        ];
-
-        if (userPrompt && labels.default_user_prompt) {
-            const currentVal = normValue(userPrompt.value);
-            if (knownUserDefaults.some((v) => normValue(v) === currentVal)) {
-                userPrompt.value = labels.default_user_prompt;
-            }
-        }
-        if (systemPrompt && labels.default_system_prompt) {
-            const currentVal = normValue(systemPrompt.value);
-            if (knownSysDefaults.some((v) => normValue(v) === currentVal)) {
-                systemPrompt.value = labels.default_system_prompt;
-            }
-        }
+        // NOTE: UI 語系切換不再影響使用者/系統提示
 
         const selectedModel = document.getElementById('selected-model');
         if (selectedModel && selectedModel.options.length > 0) {
