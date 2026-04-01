@@ -101,6 +101,7 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 | `--skip-jar` | 跳過 `.jar` | 關閉 |
 | `--skip-book` | 跳過 Patchouli 手冊 | 關閉 |
 | `--log-debug` | 啟用 Debug 日誌 (debug.log) | 關閉 |
+| `--fast-convert` | 啟用快速簡繁轉換 (僅限 zh_cn ↔ zh_tw) | 關閉 |
 | `-e, --exclude <EXCLUDE>` | 追加排除路徑 (可重複) | 空 |
 
 ## 輸出結構
@@ -164,6 +165,14 @@ GUI 與 CLI 都提供相同的服務商選項，但「模型列表的動態拉�
 
 - LLM 通訊日誌: `llm_communication.log` (啟用 `--log-llm` 或 GUI 開關)
 - Debug 日誌: `logs/debug.log` (啟用 `--log-debug` 或 GUI 開關)
+
+## 快速簡繁轉換 (Fast Chinese Conversion)
+
+當 **來源語言** 與 **目標語言** 設定為 `zh_cn` (簡體中文) 與 `zh_tw` (繁體中文) 互轉時，您可以開啟此功能。
+
+- **優點**：完全在本地執行，速度極快（毫秒級），且不消耗任何 LLM API 額度。
+- **在地化保證**：系統會優先使用 **術語表 (Glossary)** 進行精確替換，以確保 Minecraft 官方譯名（如：下界、紅石）正確轉換，剩餘部分才使用通用簡繁轉換。
+- **啟用方式**：介面選對語言後，在 API 設定面板勾選「快速簡繁轉換」即可。
 
 ## CI 發行產物
 

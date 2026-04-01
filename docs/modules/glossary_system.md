@@ -39,6 +39,13 @@ flowchart TD
 - 僅在字詞邊界匹配成功時生效
 - 每批次最多使用 30 筆術語提示
 
+## 快速簡繁轉換模式 (Fast Chinese Conversion)
+
+當啟用快速簡繁轉換時：
+- **優先級提升**：術語表不再僅作為「提示」，而是作為「強制替換規則」。
+- **邏輯分流**：先以 `Glossary Automaton` 進行術語優先替換，其餘內容才執行字元級轉換 (`hanconv`)。
+- **支援對象**：目前專為 `zh_cn` (簡體) 與 `zh_tw` (繁體) 之間的互轉設計。
+
 ## 相關檔案
 
 - [src/translation/glossary/mc_lang.rs](/src/translation/glossary/mc_lang.rs)
