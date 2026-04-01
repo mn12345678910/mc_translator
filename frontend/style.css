@@ -608,16 +608,21 @@ tr:hover {
     font-size: 0.85rem;
 }
 
-/* 🎚️ 滑動開關 (Switch) 樣式 - 復刻 eGUI Toggle */
 .switch-group {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: var(--switch-bg);
-    padding: 10px 14px;
+    padding: 0 14px;
+    height: 41px; /* 🚨 強制與 Select 高度 100% 一致 (41px 來自瀏覽器測量) */
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
+    box-sizing: border-box;
     transition: background-color 0.2s;
+}
+
+#group-fast-convert {
+    padding-top: 26px; /* 🚨 補償 Label 高度 (1.2em ~ 20px) + Margin (6px) 以對齊橫向 Select */
 }
 
 .switch-group:hover {

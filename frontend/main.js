@@ -17,29 +17,27 @@ import { initDictionary, loadDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
 import { VirtualLogViewer } from './modules/virtual_log.js';
 
-// 使用全域注入的 window.__TAURI__.core.invoke
-const { invoke } = window.__TAURI__.core;
+// 動態取得 invoke，防止在 Mock 載入前就被靜態截流 (支援 Vite 瀏覽器偵錯)
+const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. 初始化資料載入
-    await loadConfig();
-    await loadUiLangs();
-    await loadStyle();
-    await loadDictionary();
-
-    // 初始化已載入設定的 UI 顯示比例與內容
-    toggleFastConvertGroup();
-    toggleOllamaGroup();
-
-    // [NEW] 僅在開發模式下動態載入 Mock 工具
-    if (import.meta.env.DEV) {
+    // [NEW] 1. 優先在開發模式下載入 Mock 工具，確保後續 invoke 正常
+    if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
         try {
             const { initMockTools } = await import('./modules/mock.js');
             await initMockTools();
+            console.log('[DEBUG] Mock tools initialized before config load.');
         } catch (e) {
-            console.error('Failed to load mock tools:', e);
+            console.error('Failed to pre-load mock tools:', e);
         }
     }
+
+    // 2. 初始化資料載入
+    await loadConfig();
+    await loadUiLangs();
+    await updateUiLanguage();
+    await loadStyle();
+    await loadDictionary();
 
     if (window.__TAURI__) {
         invoke('show_window');
@@ -227,6 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelTheme = document.querySelector('.theme-settings');
 
     function updatePanelVisibility() {
+        if (!state.currentConfig || !state.currentStyle) return; // [SAFETY]
         if (panelApi) panelApi.classList.toggle('expanded', !!state.currentConfig.show_api_settings);
         if (panelDev) panelDev.classList.toggle('expanded', !!state.currentConfig.show_developer_mode);
         if (panelTheme) panelTheme.classList.toggle('expanded', !!state.currentStyle.show_palette_settings);

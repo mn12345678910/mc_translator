@@ -206,27 +206,24 @@
                 <div class="form-group">
                     <label for="source-lang" id="label-source-lang" data-i18n="label_source_lang"></label>
                     <select id="source-lang">
-                        <option value="en_us">English (US)</option>
-                        <option value="zh_tw">Traditional Chinese</option>
-                        <option value="zh_cn">Simplified Chinese</option>
-                        <option value="ja_jp">Japanese</option>
+                        <!-- 動態由 config.js:loadTranslationLangs 填入 -->
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="target-lang" id="label-target-lang" data-i18n="label_target_lang"></label>
                     <select id="target-lang">
-                        <option value="zh_tw">Traditional Chinese</option>
-                        <option value="en_us">English (US)</option>
-                        <option value="zh_cn">Simplified Chinese</option>
-                        <option value="ja_jp">Japanese</option>
+                        <!-- 動態由 config.js:loadTranslationLangs 填入 -->
                     </select>
                 </div>
-                <div class="form-group switch-group" id="group-fast-convert" style="display: none">
-                    <span id="label-fast-convert" data-i18n="label_fast_convert">快速簡繁轉換</span>
-                    <label class="switch">
-                        <input type="checkbox" id="chk-fast-convert" />
-                        <span class="slider round"></span>
-                    </label>
+                <div class="form-group" id="group-fast-convert" style="display: none">
+                    <label>&nbsp;</label>
+                    <div class="switch-group">
+                        <span id="label-fast-convert" data-i18n="label_fast_convert">快速簡繁轉換</span>
+                        <label class="switch">
+                            <input type="checkbox" id="chk-fast-convert" />
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="pack-format" data-i18n="label_pack_format"></label>

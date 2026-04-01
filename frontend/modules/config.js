@@ -3,7 +3,8 @@ import { state } from './state.js';
 import { appendLog } from './utils.js';
 import { updateUiLanguage, updateToggleStateLabel } from './i18n.js';
 
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
+// 動態取得 invoke，防止在 Mock 載入前就被靜態截流
+const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 export async function loadConfig() {
     const apiProvider = document.getElementById('api-provider');
@@ -33,7 +34,8 @@ export async function loadConfig() {
         const config = await invoke('get_config');
 
         // [Vite 偵錯優化] 在開發環境下預設開啟開發者模式與偵錯工具
-        if (import.meta.env.DEV) {
+        // 使用 typeof 檢查以確保在各種環境下都不會因為存取此變項報錯
+        if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
             config.show_developer_mode = true;
             config.show_debug_tools = true;
             console.log('[DEBUG] Vite 環境偵測：已自動開啟開發者模式與偵錯工具');
@@ -56,8 +58,8 @@ export async function loadConfig() {
         if (chkGlossaryPriority) chkGlossaryPriority.checked = config.glossary_priority === 'user';
         if (uiLang) uiLang.value = config.ui_lang;
         if (sourceLang) sourceLang.value = config.source_lang;
-        if (targetLang) targetLang.value = config.target_lang;
-        if (outputDir) outputDir.value = config.output_dir;
+        if (targetLang) targetLang.value = config.target_lang || 'zh_tw';
+        if (outputDir) outputDir.value = config.output_dir || '';
 
         if (systemPrompt) systemPrompt.value = config.system_prompt;
         if (userPrompt) userPrompt.value = config.user_prompt;
@@ -83,6 +85,7 @@ export async function loadConfig() {
         }
 
         toggleOllamaGroup();
+        await loadTranslationLangs(); // 🟢 動態載入翻譯語言清單
         await updateUiLanguage();
         await loadModels();
         if (config.model && selectedModel) {
@@ -175,6 +178,39 @@ export async function saveConfig() {
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
+    }
+}
+
+/** 🟢 根據 dicts/ 目錄動態載入翻譯來源與目標語言 */
+export async function loadTranslationLangs() {
+    const sourceLang = document.getElementById('source-lang');
+    const targetLang = document.getElementById('target-lang');
+    if (!sourceLang || !targetLang) return;
+
+    try {
+        const rawLangs = await invoke('get_available_translation_langs');
+        const langs = Array.isArray(rawLangs) ? rawLangs : [];
+
+        const populate = (el, currentVal) => {
+            el.innerHTML = '';
+            langs.forEach((l) => {
+                const opt = document.createElement('option');
+                opt.value = l;
+                // 嘗試從 i18n 標籤中取得顯示名稱 (例如 lang_zh_tw)，無則顯示原始代碼
+                const labelKey = `lang_${l}`;
+                opt.textContent = state.currentLabels[labelKey] || l;
+                el.appendChild(opt);
+            });
+            if (currentVal) el.value = currentVal;
+        };
+
+        populate(sourceLang, state.currentConfig.source_lang);
+        populate(targetLang, state.currentConfig.target_lang);
+
+        // 刷新簡繁轉換開關顯示狀態
+        toggleFastConvertGroup();
+    } catch (e) {
+        console.error('無法載入翻譯語言清單:', e);
     }
 }
 

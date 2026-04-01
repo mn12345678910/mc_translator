@@ -567,6 +567,11 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn get_available_translation_langs() -> Result<Vec<String>, String> {
+    Ok(mc_translator::config::dictionary::get_available_dict_langs())
+}
+
+#[tauri::command]
 pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
     use mc_translator::config::settings::AppConfig;
     let config = AppConfig::load();

@@ -1,12 +1,15 @@
 // frontend/modules/i18n.js
 import { state } from './state.js';
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
+import { loadTranslationLangs } from './config.js';
+// 動態取得 invoke，防止在 Mock 載入前就被靜態截流
+const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 export async function loadUiLangs() {
     const uiLang = document.getElementById('ui-lang');
     if (!uiLang) return;
     try {
-        const langs = await invoke('get_available_langs');
+        const rawLangs = await invoke('get_available_langs');
+        const langs = Array.isArray(rawLangs) ? rawLangs : [];
         uiLang.innerHTML = '';
         const allLangs = Array.from(new Set([...langs, 'zh_tw', 'zh_cn', 'en_us', 'ja_jp']));
         allLangs.forEach((l) => {
@@ -177,6 +180,7 @@ export async function updateUiLanguage() {
             'chk-llm-log',
             'chk-debug-log',
             'chk-debug-tools',
+            'chk-fast-convert',
         ];
         allSwitches.forEach((id) => {
             const toggleEl = document.getElementById(id);
@@ -186,6 +190,9 @@ export async function updateUiLanguage() {
         if (window.__TAURI__ && window.__TAURI__.event) {
             window.__TAURI__.event.emit('ui-lang-changed', uiLang ? uiLang.value : undefined);
         }
+
+        // 🟢 重新渲染翻譯語言下拉標籤 (由於語系變換需要顯示各語系的翻譯名稱)
+        await loadTranslationLangs();
     } catch (err) {
         console.error('Failed to update UI language:', err);
     }
@@ -213,5 +220,7 @@ export function updateToggleStateLabel(id, checked) {
         labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
     } else if (id === 'chk-debug-tools') {
         labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
+    } else if (id === 'chk-fast-convert') {
+        labelEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
     }
 }

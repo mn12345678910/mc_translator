@@ -131,6 +131,7 @@ pub fn run() {
             commands::open_path_dialog,
             commands::open_folder,
             commands::get_available_langs,
+            commands::get_available_translation_langs,
             commands::open_dict_window,
             commands::show_window
         ])

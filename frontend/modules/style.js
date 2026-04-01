@@ -1,4 +1,5 @@
-const { invoke } = window.__TAURI__ ? window.__TAURI__.core : { invoke: () => {} };
+// 動態取得 invoke，防止在 Mock 載入前就被靜態截流
+const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 import { state } from './state.js';
 
 // 輔助函數：RGB 轉 Hex
@@ -278,15 +279,15 @@ export function updatePaletteValue() {
 
 export async function loadStyle() {
     try {
-        const style = await invoke('get_style_config');
+        const style = (await invoke('get_style_config')) || {};
         state.currentStyle = style;
         applyColors(style);
 
         // --- 同步常規控制項 ---
         const controls = {
-            'font-size': style.font_size,
-            'btn-rounding-value': style.btn_rounding_value,
-            'pulse-speed': style.progress_pulse_speed,
+            'font-size': style.font_size || 15,
+            'btn-rounding-value': style.btn_rounding_value || 4,
+            'pulse-speed': style.progress_pulse_speed || 1,
             'progress-style': style.progress_style || 'default',
         };
         for (const [id, val] of Object.entries(controls)) {
