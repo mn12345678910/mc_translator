@@ -13,7 +13,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
-  RUSTC_WRAPPER: sccache
   SCCACHE_GHA_ENABLED: "true"
 
 permissions:
@@ -39,7 +38,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
       - name: Install Sccache
+        id: install_sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+        continue-on-error: true
+      - name: Setup Sccache Wrapper
+        if: steps.install_sccache.outcome == 'success'
+        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
       - name: Check Formatting
         run: cargo fmt --all -- --check
       - name: Run Clippy (Linter)
@@ -89,7 +93,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
       - name: Install Sccache
+        id: install_sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+        continue-on-error: true
+      - name: Setup Sccache Wrapper
+        if: steps.install_sccache.outcome == 'success'
+        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -165,7 +174,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
       - name: Install Sccache
+        id: install_sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+        continue-on-error: true
+      - name: Setup Sccache Wrapper
+        if: steps.install_sccache.outcome == 'success'
+        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
       - name: Install Frontend Dependencies
         run: pnpm install --frozen-lockfile
       - name: Build CLI & GUI

@@ -10,8 +10,8 @@ export default defineConfig({
     target: 'esnext',
     rollupOptions: {
       input: {
-        main: 'index.html', // 既然 root 是 frontend，此路徑相對於 root
-        dict: 'dict.html',
+        main: resolve(__dirname, 'frontend/index.html'),
+        dict: resolve(__dirname, 'frontend/dict.html'),
       },
     },
   },

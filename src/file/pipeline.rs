@@ -77,7 +77,7 @@ pub async fn process_all_files(
     paths: Vec<(std::path::PathBuf, String)>,
     state: JobSharedState,
     _mc_lang_arc: Arc<Mutex<Option<McLangFiles>>>,
-    _term_arc: Arc<Mutex<Vec<(String, String)>>>,
+    term_arc: Arc<Mutex<Vec<(String, String)>>>,
     exact_arc: Arc<Mutex<HashMap<String, String>>>,
     inferred_arc: Arc<Mutex<HashMap<String, String>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -251,8 +251,22 @@ pub async fn process_all_files(
         return Ok(());
     }
 
+    let mut merged_exact = exact_arc.lock().unwrap().clone();
+    let (is_fast_convert, target_lang) = {
+        let cfg = job_config.lock().unwrap();
+        (cfg.fast_convert, cfg.target_lang.clone())
+    };
+    // 雙向簡繁轉換（zh_cn↔zh_tw）時，將術語差異表合併進術語自動機
+    // term_arc 在 mc_lang.rs 中已依 target_lang 方向預先建立好對應的差異表
+    let is_cjk_target = target_lang == "zh_tw" || target_lang == "zh_cn";
+    if is_fast_convert || is_cjk_target {
+        for (src_val, tgt_val) in term_arc.lock().unwrap().iter() {
+            merged_exact.insert(src_val.clone(), tgt_val.clone());
+        }
+    }
+
     let glossary_automaton = GlossaryAutomaton::new(
-        &exact_arc.lock().unwrap(),
+        &merged_exact,
         &state.translation_memory.lock().unwrap(),
         &inferred_arc.lock().unwrap(),
         &job_config.lock().unwrap().glossary_priority,

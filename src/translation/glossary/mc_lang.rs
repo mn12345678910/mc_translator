@@ -101,29 +101,50 @@ pub async fn load_mc_dicts_with_args(
     let mut exact = HashMap::new();
     let mut unfiltered_diffs = Vec::new();
 
-    // 3. 僅當條件為 en_us -> zh_tw 時，進入術語系統處理
-    if source_lang == "en_us" && target_lang == "zh_tw" {
-        if let (Some(en), Some(tw)) = (files.langs.get("en_us"), files.langs.get("zh_tw")) {
-            // 建構精確匹配表
-            for (k, v) in en {
-                if let Some(tw_val) = tw.get(k) {
-                    exact.insert(v.to_lowercase(), tw_val.clone());
-                }
+    // 3. 根據目前 source_lang 與 target_lang 建構精確匹配表
+    if let (Some(src_map), Some(tgt_map)) =
+        (files.langs.get(source_lang), files.langs.get(target_lang))
+    {
+        for (k, v) in src_map {
+            if let Some(tgt_val) = tgt_map.get(k) {
+                exact.insert(v.to_lowercase(), tgt_val.clone());
             }
         }
+    }
 
+    // 4. 建立雙向簡繁差異術語表，用於 fast_convert 與兄弟檔轉換
+    //    - target_lang == "zh_tw"：zh_cn → zh_tw（簡轉繁）
+    //    - target_lang == "zh_cn"：zh_tw → zh_cn（繁轉簡）
+    if target_lang == "zh_tw" {
         if let (Some(cn), Some(tw)) = (files.langs.get("zh_cn"), files.langs.get("zh_tw")) {
-            // 建構常規差異表 (Unfiltered)
             for (k, cn_val) in cn {
                 if let Some(tw_val) = tw.get(k) {
                     if cn_val != tw_val {
                         let converted = hanconv::s2tw(cn_val);
                         if converted != *tw_val {
+                            // 官方繁體與 hanconv 自動轉換結果不同 → 需要術語優先替換
                             unfiltered_diffs.push((cn_val.clone(), tw_val.clone()));
                         }
                     }
                 }
             }
+            // 排序確保最長字串優先替換（避免部份覆蓋）
+            unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        }
+    } else if target_lang == "zh_cn" {
+        if let (Some(cn), Some(tw)) = (files.langs.get("zh_cn"), files.langs.get("zh_tw")) {
+            for (k, tw_val) in tw {
+                if let Some(cn_val) = cn.get(k) {
+                    if tw_val != cn_val {
+                        let converted = hanconv::tw2s(tw_val);
+                        if converted != *cn_val {
+                            // 官方簡體與 hanconv 自動轉換結果不同 → 需要術語優先替換
+                            unfiltered_diffs.push((tw_val.clone(), cn_val.clone()));
+                        }
+                    }
+                }
+            }
+            // 排序確保最長字串優先替換（避免部份覆蓋）
             unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
         }
     }
