@@ -112,6 +112,10 @@ export async function initMockTools() {
                                     lang_de_de: '德語 (de_de)',
                                     label_fast_convert_on: '開啟簡繁轉換',
                                     label_fast_convert_off: '關閉簡繁轉換',
+                                    label_fast_convert: '快速簡繁轉換',
+                                    page_title: 'Minecraft 模組翻譯器',
+                                    placeholder_output_path: './LLMTranslator (預設輸出)',
+                                    label_llm_log: 'LLM 請求日誌',
                                 };
                             }
                             return state.currentLabels;

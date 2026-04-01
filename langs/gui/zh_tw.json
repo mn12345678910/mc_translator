@@ -246,5 +246,8 @@
   "status_style_restored": "🎨 介面樣式已恢復預設",
   "label_excluded_paths": "路徑排除清單 (每行一個):",
   "placeholder_excluded_paths": "例如:\nkubejs/data/\nconfig/almostunified/",
-  "status_config_restored": "✅ API 與排除設定已恢復預設"
+  "status_config_restored": "✅ API 與排除設定已恢復預設",
+  "page_title": "Minecraft 模組翻譯器",
+  "placeholder_output_path": "./LLMTranslator (預設輸出)",
+  "label_llm_log": "LLM 請求日誌"
 }

@@ -44,6 +44,42 @@ impl GlobalBatchItem {
     }
 }
 
+/// 對文字執行 Aho-Corasick 全文術語替換，再交 hanconv 轉換
+/// - `to_tw = true`：簡 → 繁（s2tw）
+/// - `to_tw = false`：繁 → 簡（tw2s）
+fn apply_glossary_then_hanconv(
+    text: &str,
+    automaton: &crate::translation::glossary::GlossaryAutomaton,
+    to_tw: bool,
+) -> String {
+    // 1. 收集所有匹配位置（含重疊，使用 LeftmostLongest 策略）
+    let mut matches: Vec<(usize, usize, String)> = automaton
+        .ac
+        .find_iter(text)
+        .map(|mat| {
+            let entry = &automaton.entries[mat.pattern().as_usize()];
+            (mat.start(), mat.end(), entry.translated.clone())
+        })
+        .collect();
+
+    // 2. 反向替換（避免 byte offset 位移）
+    matches.sort_by(|a, b| b.0.cmp(&a.0));
+    let mut result = text.to_string();
+    for (start, end, replacement) in matches {
+        // 確認 byte 邊界有效（防止 UTF-8 切割錯誤）
+        if text.is_char_boundary(start) && text.is_char_boundary(end) {
+            result.replace_range(start..end, &replacement);
+        }
+    }
+
+    // 3. 再執行 hanconv 處理剩餘字元
+    if to_tw {
+        hanconv::s2tw(&result)
+    } else {
+        hanconv::tw2s(&result)
+    }
+}
+
 /// 全域翻譯批次處理核心函數
 #[allow(clippy::too_many_arguments)]
 pub async fn translate_global_batches(
@@ -163,28 +199,17 @@ pub async fn run_translation_batch(
         total_batches.store(1, Ordering::SeqCst);
         current_batch.store(1, Ordering::SeqCst);
 
-        // 收集所有待翻譯文本以提取術語
-        let texts_for_glossary: Vec<String> = pending_indices
-            .iter()
-            .map(|&i| items[i].original.clone())
-            .collect();
-        let glossary_map = glossary_automaton.extract(texts_for_glossary.as_slice());
-
+        // 使用 apply_glossary_then_hanconv 進行逐條處理
         for &idx in &pending_indices {
             let original = &items[idx].original;
 
-            // 1. 術語表優先：精確匹配術語直接替換
-            if let Some((term, _term_type)) = glossary_map.get(original.as_str()) {
-                items[idx].translated = Some(term.clone());
-            } else {
-                // 2. 通用簡繁轉換 (hanconv)
-                let converted = if cfg.source_lang == "zh_cn" {
-                    hanconv::s2tw(original)
-                } else {
-                    hanconv::tw2s(original)
-                };
-                items[idx].translated = Some(converted);
-            }
+            // 術語優先全文替換 + hanconv
+            let converted = apply_glossary_then_hanconv(
+                original,
+                glossary_automaton,
+                cfg.source_lang == "zh_cn",
+            );
+            items[idx].translated = Some(converted);
             success_count += 1;
         }
 
@@ -223,28 +248,17 @@ pub async fn run_translation_batch(
             .collect();
 
         if !alt_indices.is_empty() {
-            let alt_texts: Vec<String> = alt_indices
-                .iter()
-                .map(|&i| items[i].alt_source.clone().unwrap_or_default())
-                .collect();
-            let glossary_map = glossary_automaton.extract(alt_texts.as_slice());
-
             let mut fast_count = 0usize;
             for &idx in &alt_indices {
                 let alt_text = items[idx].alt_source.clone().unwrap_or_default();
 
-                // 術語表優先
-                if let Some((term, _)) = glossary_map.get(alt_text.as_str()) {
-                    items[idx].translated = Some(term.clone());
-                } else {
-                    // 根據目標語言決定轉換方向
-                    let converted = if cfg.target_lang == "zh_tw" {
-                        hanconv::s2tw(&alt_text)
-                    } else {
-                        hanconv::tw2s(&alt_text)
-                    };
-                    items[idx].translated = Some(converted);
-                }
+                // 術語優先全文替換 + hanconv
+                let converted = apply_glossary_then_hanconv(
+                    &alt_text,
+                    glossary_automaton,
+                    cfg.target_lang == "zh_tw",
+                );
+                items[idx].translated = Some(converted);
                 fast_count += 1;
             }
 

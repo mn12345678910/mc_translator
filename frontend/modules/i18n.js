@@ -56,6 +56,9 @@ export async function updateUiLanguage() {
             document.documentElement.lang = uiLang.value.replace('_', '-');
         }
 
+        // 🟢 更新 <title> 標籤
+        if (labels.page_title) document.title = labels.page_title;
+
         const titleNode = document.querySelector('h1 span') || document.querySelector('h1');
         if (titleNode && labels.app_title) titleNode.textContent = labels.app_title;
         // 🟡 舊有 Mapping 映射已移除，全面採用屬性驅動
@@ -221,6 +224,7 @@ export function updateToggleStateLabel(id, checked) {
     } else if (id === 'chk-debug-tools') {
         labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
     } else if (id === 'chk-fast-convert') {
-        labelEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
+        const stateEl = document.getElementById('label-fast-convert-state');
+        if (stateEl) stateEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
     }
 }

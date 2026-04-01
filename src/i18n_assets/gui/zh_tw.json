@@ -214,6 +214,12 @@
   "status_dev_restored": "🛠 開發人員設定已恢復預設",
   "label_show_debug_tools": "顯示偵錯工具",
   "label_hide_debug_tools": "隱藏偵錯工具",
+  "page_title": "Minecraft 模組翻譯器",
+  "placeholder_output_path": "./LLMTranslator (預設輸出)",
+  "label_llm_log": "LLM 請求日誌",
+  "label_fast_convert": "快速簡繁轉換",
+  "label_fast_convert_on": "開啟簡繁轉換",
+  "label_fast_convert_off": "關閉簡繁轉換",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

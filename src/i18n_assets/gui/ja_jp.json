@@ -214,6 +214,12 @@
   "status_dev_restored": "🛠 開発者設定がデフォルトに戻されました",
   "label_show_debug_tools": "デバッグツールを表示",
   "label_hide_debug_tools": "デバッグツールを非表示",
+  "page_title": "Minecraft Mod 翻訳ツール",
+  "placeholder_output_path": "./LLMTranslator (デフォルト)",
+  "label_llm_log": "LLM リクエストログ",
+  "label_fast_convert": "高速変換",
+  "label_fast_convert_on": "変換: オン",
+  "label_fast_convert_off": "変換: オフ",
   "cleanup_prefixes": [
     "翻譯：",
     "翻译：",

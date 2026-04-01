@@ -243,5 +243,8 @@
   ],
   "label_fast_convert": "快速简繁转换",
   "label_fast_convert_on": "开启简繁转换",
-  "label_fast_convert_off": "关闭简繁转换"
+  "label_fast_convert_off": "关闭简繁转换",
+  "page_title": "Minecraft 模组翻译器",
+  "placeholder_output_path": "./LLMTranslator (默认输出)",
+  "label_llm_log": "LLM 请求日志"
 }

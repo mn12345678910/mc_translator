@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Minecraft Mod Translator Launcher</title>
+        <title></title>
 
         <!-- [NEW] 全域 Mock 注入器：確保所有模組都能讀取到一致的 Tauri 指令 -->
         <link rel="stylesheet" href="style.css" />
@@ -56,14 +56,10 @@
         <div class="control-panel">
             <div class="form-group">
                 <div class="label-row">
-                    <label for="input-path" data-i18n="label_input_path">:</label>
+                    <label for="input-path" data-i18n="label_input_path"></label>
                     <div class="row-buttons">
-                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file">
-                            📂Select File
-                        </button>
-                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder">
-                            📁Select Folder
-                        </button>
+                        <button id="btn-browse-file" class="action-btn" data-i18n="btn_select_file"></button>
+                        <button id="btn-browse-dir" class="action-btn" data-i18n="btn_select_folder"></button>
                     </div>
                 </div>
                 <div class="input-row">
@@ -88,14 +84,10 @@
             <!-- [NEW] 輸出路徑 (100% 復刻) -->
             <div class="form-group mt-sm">
                 <div class="label-row">
-                    <label for="output-dir" data-i18n="label_output_path">Output Folder Path:</label>
+                    <label for="output-dir" data-i18n="label_output_path"></label>
                     <div class="row-buttons">
-                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir">
-                            📁Select Folder
-                        </button>
-                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output">
-                            📂Open Folder
-                        </button>
+                        <button id="btn-browse-output" class="action-btn" data-i18n="btn_output_dir"></button>
+                        <button id="btn-browse-output-open" class="action-btn" data-i18n="btn_open_output"></button>
                     </div>
                 </div>
                 <div class="input-row">
@@ -119,42 +111,42 @@
 
             <!-- [NEW] 介面語言與導航列 (100% 復刻) -->
             <div class="form-group mt-sm" style="display: flex; flex-direction: row; align-items: center; gap: 8px">
-                <label for="ui-lang" data-i18n="label_ui_lang">:</label>
+                <label for="ui-lang" data-i18n="label_ui_lang"></label>
                 <select id="ui-lang" style="max-width: 150px; padding: 6px">
-                    <option value="zh_tw">繁體中文 (zh_tw)</option>
-                    <option value="zh_cn">Simplified Chinese (zh_cn)</option>
-                    <option value="ja_jp">Japanese (ja_jp)</option>
-                    <option value="en_us">English (en_us)</option>
+                    <option value="zh_tw"></option>
+                    <option value="zh_cn"></option>
+                    <option value="ja_jp"></option>
+                    <option value="en_us"></option>
                 </select>
             </div>
 
             <div class="button-row mt-md">
-                <button id="btn-translate" data-i18n="btn_run_trans">▶</button>
-                <button id="btn-pause" style="display: none" data-i18n="btn_pause">⏸️</button>
-                <button id="btn-resume" style="display: none" data-i18n="btn_resume">▶</button>
-                <button id="btn-stop" style="display: none; background-color: var(--danger-color)" data-i18n="btn_stop">
-                    ⏹️
-                </button>
+                <button id="btn-translate" data-i18n="btn_run_trans"></button>
+                <button id="btn-pause" style="display: none" data-i18n="btn_pause"></button>
+                <button id="btn-resume" style="display: none" data-i18n="btn_resume"></button>
+                <button
+                    id="btn-stop"
+                    style="display: none; background-color: var(--danger-color)"
+                    data-i18n="btn_stop"
+                ></button>
                 <span
                     id="status-prefix"
                     class="status-label ml-md"
                     style="margin-left: 15px; color: var(--text-muted)"
                     data-i18n="label_current_status"
-                    >Current Status:
-                </span>
+                ></span>
                 <span
                     id="current-status-label"
                     class="status-label"
                     data-i18n="status_idle"
                     style="color: var(--text-muted)"
-                    >Idle</span
-                >
+                ></span>
             </div>
         </div>
 
         <!-- ⚙️ API 與常規參數面板 (100% 復刻) -->
         <div id="api-settings" class="control-panel api-settings collapsible-panel">
-            <h2 id="header-api-settings" data-i18n="header_api_settings">⚙️ API</h2>
+            <h2 id="header-api-settings" data-i18n="header_api_settings"></h2>
             <div class="form-grid">
                 <div class="form-group">
                     <label for="api-provider" data-i18n="label_provider"></label>
@@ -170,7 +162,7 @@
                     </select>
                 </div>
                 <div class="form-group" id="api-key-group">
-                    <label for="api-key" data-i18n="label_api_key">API</label>
+                    <label for="api-key" data-i18n="label_api_key"></label>
                     <input
                         type="password"
                         id="api-key"
@@ -197,7 +189,7 @@
                     <input type="number" id="batch-max-chars" min="1" max="20000" step="100" autocomplete="off" />
                 </div>
                 <div class="form-group">
-                    <label for="timeout-sec" data-i18n="label_timeout">API</label>
+                    <label for="timeout-sec" data-i18n="label_timeout"></label>
                     <input type="number" id="timeout-sec" min="1" max="300" autocomplete="off" />
                 </div>
             </div>
@@ -218,7 +210,10 @@
                 <div class="form-group" id="group-fast-convert" style="display: none">
                     <label>&nbsp;</label>
                     <div class="switch-group">
-                        <span id="label-fast-convert" data-i18n="label_fast_convert">快速簡繁轉換</span>
+                        <span id="label-fast-convert">
+                            <span data-i18n="label_fast_convert"></span>
+                            <small id="label-fast-convert-state" style="opacity: 0.65; margin-left: 5px"></small>
+                        </span>
                         <label class="switch">
                             <input type="checkbox" id="chk-fast-convert" />
                             <span class="slider round"></span>
@@ -246,7 +241,7 @@
             <!-- [NEW] 自訂 Prompts 設定區 -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-                    <label for="user-prompt" data-i18n="label_user_prompt">:</label>
+                    <label for="user-prompt" data-i18n="label_user_prompt"></label>
                     <textarea id="user-prompt" rows="3" autocomplete="off"></textarea>
                 </div>
             </div>
@@ -264,7 +259,7 @@
 
         <!-- 🔧 開發人員選項 -->
         <div id="developer-settings" class="control-panel developer-settings collapsible-panel">
-            <h2 id="header-dev-mode" data-i18n="header_dev_mode">🔧</h2>
+            <h2 id="header-dev-mode" data-i18n="header_dev_mode"></h2>
             <div class="checkbox-grid">
                 <div class="switch-group">
                     <span id="label-skip-json" data-i18n="label_skip_json">.json</span>
@@ -294,14 +289,14 @@
 
             <div class="checkbox-grid" style="margin-top: 15px">
                 <div class="switch-group">
-                    <span id="label-llm-log">LLM</span>
+                    <span id="label-llm-log" data-i18n="label_llm_log"></span>
                     <label class="switch">
                         <input type="checkbox" id="chk-llm-log" />
                         <span class="slider round"></span>
                     </label>
                 </div>
                 <div class="switch-group" id="group-debug-tools" style="display: none">
-                    <span id="label-debug-tools" data-i18n="label_show_debug_tools">Show Debug Tools</span>
+                    <span id="label-debug-tools" data-i18n="label_show_debug_tools"></span>
                     <label class="switch">
                         <input type="checkbox" id="chk-debug-tools" />
                         <span class="slider round"></span>
@@ -328,9 +323,7 @@
             <!-- [NEW] 系統技術指令 (開發人員專用) -->
             <div style="margin-top: 15px">
                 <div class="form-group" style="margin-top: 10px">
-                    <label for="system-prompt"
-                        ><span data-i18n="label_system_prompt">📜 System Instructions</span>:</label
-                    >
+                    <label for="system-prompt"><span data-i18n="label_system_prompt"></span>:</label>
                     <textarea id="system-prompt" rows="5" style="margin-top: 4px" autocomplete="off"></textarea>
                 </div>
             </div>
@@ -436,9 +429,7 @@
                     <input type="color" id="palette-color" autocomplete="off" />
                 </div>
                 <div class="form-group" id="palette-number-group" style="display: none">
-                    <label for="palette-number" id="label-palette-number" data-i18n="label_palette_rounding"
-                        >Value</label
-                    >
+                    <label for="palette-number" id="label-palette-number" data-i18n="label_palette_rounding"></label>
                     <input
                         type="number"
                         id="palette-number"
@@ -455,9 +446,7 @@
                         class="action-btn"
                         data-i18n="btn_palette_clear_item"
                         style="background-color: #aa1111; color: #fff; width: 100%; height: 38px"
-                    >
-                        🗑 Clear Override
-                    </button>
+                    ></button>
                 </div>
             </div>
             <div class="button-row mt-md" style="justify-content: flex-end">
@@ -509,11 +498,11 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="progress-style" data-i18n="label_progress_style">Bar Style:</label>
+                    <label for="progress-style" data-i18n="label_progress_style"></label>
                     <select id="progress-style" style="width: 100%">
-                        <option value="default" data-i18n="style_default">Default</option>
-                        <option value="aurora" data-i18n="style_aurora">Aurora</option>
-                        <option value="neon" data-i18n="style_neon">Neon</option>
+                        <option value="default" data-i18n="style_default"></option>
+                        <option value="aurora" data-i18n="style_aurora"></option>
+                        <option value="neon" data-i18n="style_neon"></option>
                     </select>
                 </div>
             </div>
