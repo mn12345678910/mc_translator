@@ -1,6 +1,0 @@
-check all versions.......................................................Passed
-- hook id: check-all-versions
-- duration: 0.08s
-
-✅ 檔案版本號一致: 0.9.8
-✅ 標籤同步驗證通過: 版本號等於最新標籤 (v0.9.8)。
