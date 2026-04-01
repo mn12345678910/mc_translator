@@ -58,3 +58,18 @@ fn check_memory_consistency(assets: HashMap<&str, &str>) {
         }
     }
 }
+
+#[test]
+fn test_i18n_gui_struct_deserialization() {
+    let assets = [
+        include_str!("../src/i18n_assets/gui/zh_tw.json"),
+        include_str!("../src/i18n_assets/gui/zh_cn.json"),
+        include_str!("../src/i18n_assets/gui/en_us.json"),
+        include_str!("../src/i18n_assets/gui/ja_jp.json"),
+    ];
+
+    for content in assets {
+        let _: mc_translator::i18n::GuiLabels = serde_json::from_str(content)
+            .expect("Failed to deserialize JSON into GuiLabels struct. Check for missing or mismatched fields.");
+    }
+}

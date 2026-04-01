@@ -4,6 +4,8 @@ import { debounce, appendLog } from './modules/utils.js';
 import { loadUiLangs, updateUiLanguage, updateToggleStateLabel } from './modules/i18n.js';
 import {
     loadConfig,
+    loadTranslationLangs,
+    loadModels,
     saveConfig,
     restoreDefaultConfig,
     restoreDevDefaults,
@@ -32,12 +34,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 2. 初始化資料載入
-    await loadConfig();
-    await loadUiLangs();
-    await updateUiLanguage();
-    await loadStyle();
-    await loadDictionary();
+    // 2. 初始化資料載入 (嚴格確保載入順序)
+    await loadConfig(); // 載入設定 (決定 UI 語言與基礎路徑)
+    await loadUiLangs(); // 載入介面語言選單
+    await updateUiLanguage(); // 根據設定更新介面標籤 (同步 labels)
+    await loadTranslationLangs(); // 根據 labels 填充翻譯選單
+    await loadModels(); // 根據 labels 填充模型選單
+    if (state.currentConfig.model) {
+        const sm = document.getElementById('selected-model');
+        if (sm) sm.value = state.currentConfig.model;
+    }
+    await loadStyle(); // 載入視覺樣式
+    await loadDictionary(); // 載入辭典快取
 
     if (window.__TAURI__) {
         invoke('show_window');

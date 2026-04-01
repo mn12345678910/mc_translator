@@ -58,19 +58,34 @@ pub fn save_translation_memory(lang: &str, memory: &HashMap<String, String>) {
 
 /// 獲取所有可用的辭典語言 (從 dicts/ 目錄下的 JSON 檔案)
 pub fn get_available_dict_langs() -> Vec<String> {
-    let mut langs = Vec::new();
-    if let Ok(entries) = fs::read_dir(DICT_DIR) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
-                if let Some(stem) = path.file_stem() {
-                    langs.push(stem.to_string_lossy().to_string());
+    let mut langs = std::collections::HashSet::new();
+
+    let base = std::path::Path::new(DICT_DIR);
+    let dirs = [base.join("official"), base.join("user")];
+
+    for dir in dirs {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
+                    if let Some(stem) = path.file_stem() {
+                        langs.insert(stem.to_string_lossy().to_string());
+                    }
                 }
             }
         }
     }
-    langs.sort();
-    langs
+
+    if langs.is_empty() {
+        langs.insert("zh_tw".to_string());
+        langs.insert("zh_cn".to_string());
+        langs.insert("ja_jp".to_string());
+        langs.insert("en_us".to_string());
+    }
+
+    let mut langs_vec: Vec<String> = langs.into_iter().collect();
+    langs_vec.sort();
+    langs_vec
 }
 
 #[cfg(test)]

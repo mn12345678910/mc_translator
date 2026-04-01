@@ -74,8 +74,7 @@ export async function loadConfig() {
             const chkFast = document.getElementById('chk-fast-convert');
             if (chkFast) {
                 chkFast.checked = config.fast_convert;
-                chkFast.checked = config.fast_convert;
-                updateToggleStateLabel(chkFast);
+                updateToggleStateLabel('chk-fast-convert', chkFast.checked);
             }
         }
         toggleFastConvertGroup();
@@ -85,12 +84,6 @@ export async function loadConfig() {
         }
 
         toggleOllamaGroup();
-        await loadTranslationLangs(); // 🟢 動態載入翻譯語言清單
-        await updateUiLanguage();
-        await loadModels();
-        if (config.model && selectedModel) {
-            selectedModel.value = config.model;
-        }
         toggleApiKeyVisibility();
         validateCanTranslate();
     } catch (e) {

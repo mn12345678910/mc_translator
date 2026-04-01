@@ -173,7 +173,6 @@ impl CommonLabels {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-#[serde(default)]
 pub struct GuiLabels {
     #[serde(flatten)]
     pub common: CommonLabels,
@@ -312,6 +311,12 @@ pub struct GuiLabels {
     pub label_show_debug_tools: String,
     #[serde(default)]
     pub label_hide_debug_tools: String,
+    #[serde(default)]
+    pub page_title: String,
+    #[serde(default)]
+    pub placeholder_output_path: String,
+    #[serde(default)]
+    pub label_llm_log: String,
 }
 
 impl GuiLabels {
