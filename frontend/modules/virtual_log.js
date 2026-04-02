@@ -21,6 +21,7 @@ export class VirtualLogViewer {
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
         this.isLockedToBottom = true;
         this.isProgrammaticScroll = false;
+        this.programmaticScrollUntil = 0;
         this.suspendAutoScroll = false;
         this.lastUserScrollAt = 0;
         this.itemHeights = [];
@@ -77,6 +78,7 @@ export class VirtualLogViewer {
     scrollToBottom() {
         if (this.suspendAutoScroll) return;
         this.isProgrammaticScroll = true;
+        this.programmaticScrollUntil = Date.now() + 50;
         const raf =
             (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 0));
         raf(() => {
@@ -155,7 +157,9 @@ export class VirtualLogViewer {
     }
 
     handleScroll() {
-        if (!this.isProgrammaticScroll) {
+        const now = Date.now();
+        const inProgrammaticWindow = now < this.programmaticScrollUntil;
+        if (!this.isProgrammaticScroll && !inProgrammaticWindow) {
             this.lastUserScrollAt = Date.now();
             this.suspendAutoScroll = true;
             const { scrollTop, scrollHeight, clientHeight } = this.container;
@@ -167,7 +171,7 @@ export class VirtualLogViewer {
                 this.triggerUpdate();
             }
         }
-        if (this.suspendAutoScroll && Date.now() - this.lastUserScrollAt > this.userScrollGraceMs) {
+        if (this.suspendAutoScroll && now - this.lastUserScrollAt > this.userScrollGraceMs) {
             this.suspendAutoScroll = false;
         }
         this.render();

@@ -336,6 +336,7 @@ input[type='color'] {
     display: flex;
     flex-direction: column;
     min-height: 250px; /* 保證展開時不會消失的最小值 */
+    min-height: 0;
     margin-top: 20px;
     gap: 8px;
 }
@@ -343,6 +344,7 @@ input[type='color'] {
 #log-output {
     flex: 1 1 0; /* 基礎比例為 0，由 flex-grow 決定最終大小 */
     min-height: 200px;
+    min-height: 0;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     background-color: var(--list-bg);
