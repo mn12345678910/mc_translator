@@ -57,6 +57,11 @@ export class VirtualLogViewer {
         this.viewport.style.boxSizing = 'border-box';
         this.container.appendChild(this.viewport);
 
+        // 底部哨兵：用於貼齊底部的精準校正
+        this.sentinel = document.createElement('div');
+        this.sentinel.className = 'log-sentinel';
+        this.sentinel.style.height = '1px';
+
         // 監聽捲動與尺寸變化
         this.container.addEventListener('scroll', () => this.handleScroll());
         this.resizeObserver = new ResizeObserver(() => {
@@ -82,6 +87,15 @@ export class VirtualLogViewer {
 
     syncBottomIfNeeded() {
         if (!this.isLockedToBottom || this.suspendAutoScroll) return;
+        if (this.sentinel && this.sentinel.isConnected) {
+            const containerBottom = this.container.getBoundingClientRect().bottom;
+            const sentinelBottom = this.sentinel.getBoundingClientRect().bottom;
+            const delta = sentinelBottom - containerBottom;
+            if (delta > 0 && delta <= this.lockThreshold * 2) {
+                this.container.scrollTop += delta;
+                return;
+            }
+        }
         const gap = this.container.scrollHeight - (this.container.scrollTop + this.container.clientHeight);
         if (gap > 0 && gap <= this.lockThreshold * 2) {
             this.container.scrollTop += gap;
@@ -250,5 +264,6 @@ export class VirtualLogViewer {
         }
         this.viewport.innerHTML = '';
         this.viewport.appendChild(fragment);
+        this.viewport.appendChild(this.sentinel);
     }
 }
