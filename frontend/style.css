@@ -348,6 +348,7 @@ input[type='color'] {
     background-color: var(--list-bg);
     padding: 0;
     overflow: hidden;
+    overflow-anchor: none;
     position: relative;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
 

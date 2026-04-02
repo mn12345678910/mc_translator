@@ -20,11 +20,13 @@ export class VirtualLogViewer {
 
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
         this.isLockedToBottom = true;
+        this.isProgrammaticScroll = false;
         this.itemHeights = [];
         this.cumulativeHeights = []; // [NEW] 儲存累加高度，用於 O(log N) 搜尋
         this.totalHeight = 0;
         this.paddingY = 20; // 視圖容器總邊距 (上下各 10px)
         this.onUpdate = options.onUpdate || null; // [NEW] 狀態更新回調
+        this.lockThreshold = options.lockThreshold || 30;
 
         this.init();
     }
@@ -56,12 +58,22 @@ export class VirtualLogViewer {
         this.container.addEventListener('scroll', () => this.handleScroll());
         this.resizeObserver = new ResizeObserver(() => {
             this.recalculateHeights();
-            if (this.isLockedToBottom) {
-                this.container.scrollTop = this.container.scrollHeight;
-            }
             this.render();
+            if (this.isLockedToBottom) {
+                this.scrollToBottom();
+            }
         });
         this.resizeObserver.observe(this.container);
+    }
+
+    scrollToBottom() {
+        this.isProgrammaticScroll = true;
+        const raf =
+            (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 0));
+        raf(() => {
+            this.container.scrollTop = Math.max(0, this.container.scrollHeight - this.container.clientHeight);
+            this.isProgrammaticScroll = false;
+        });
     }
 
     /**
@@ -86,7 +98,7 @@ export class VirtualLogViewer {
         this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
 
         if (this.isLockedToBottom) {
-            this.container.scrollTop = this.container.scrollHeight;
+            this.scrollToBottom();
         }
 
         this.render();
@@ -117,12 +129,15 @@ export class VirtualLogViewer {
     }
 
     handleScroll() {
-        const { scrollTop, scrollHeight, clientHeight } = this.container;
-        // 判斷是否鎖定在底部 (保留 30px 的誤觸空間)
-        const locked = scrollHeight - scrollTop - clientHeight < 30;
-        if (this.isLockedToBottom !== locked) {
-            this.isLockedToBottom = locked;
-            this.triggerUpdate();
+        if (!this.isProgrammaticScroll) {
+            const { scrollTop, scrollHeight, clientHeight } = this.container;
+            // 判斷是否鎖定在底部 (保留 30px 的誤觸空間)
+            const gap = scrollHeight - (scrollTop + clientHeight);
+            const locked = gap <= this.lockThreshold;
+            if (this.isLockedToBottom !== locked) {
+                this.isLockedToBottom = locked;
+                this.triggerUpdate();
+            }
         }
         this.render();
     }
