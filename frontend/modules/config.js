@@ -9,7 +9,6 @@ const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})
 export async function loadConfig() {
     const apiProvider = document.getElementById('api-provider');
     const apiKey = document.getElementById('api-key');
-    const selectedModel = document.getElementById('selected-model');
     const ollamaUrl = document.getElementById('ollama-url');
     const batchSize = document.getElementById('batch-size');
     const batchMaxChars = document.getElementById('batch-max-chars');

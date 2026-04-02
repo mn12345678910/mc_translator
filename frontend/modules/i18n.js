@@ -43,8 +43,6 @@ export async function updateUiLanguage() {
     const btnNavPalette = document.getElementById('btn-nav-palette');
     const btnNavTheme = document.getElementById('btn-nav-theme');
     const btnNavDev = document.getElementById('btn-nav-dev');
-    const userPrompt = document.getElementById('user-prompt');
-    const systemPrompt = document.getElementById('system-prompt');
 
     try {
         const labels = await invoke('get_i18n_labels', { lang: uiLang ? uiLang.value : undefined });
