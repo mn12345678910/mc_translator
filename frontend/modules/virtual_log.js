@@ -21,12 +21,15 @@ export class VirtualLogViewer {
         this.logs = []; // 儲存格式: { message, level, timestamp, height }
         this.isLockedToBottom = true;
         this.isProgrammaticScroll = false;
+        this.suspendAutoScroll = false;
+        this.lastUserScrollAt = 0;
         this.itemHeights = [];
         this.cumulativeHeights = []; // [NEW] 儲存累加高度，用於 O(log N) 搜尋
         this.totalHeight = 0;
         this.paddingY = 20; // 視圖容器總邊距 (上下各 10px)
         this.onUpdate = options.onUpdate || null; // [NEW] 狀態更新回調
         this.lockThreshold = options.lockThreshold || 30;
+        this.userScrollGraceMs = options.userScrollGraceMs || 200;
 
         this.init();
     }
@@ -67,6 +70,7 @@ export class VirtualLogViewer {
     }
 
     scrollToBottom() {
+        if (this.suspendAutoScroll) return;
         this.isProgrammaticScroll = true;
         const raf =
             (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 0));
@@ -74,6 +78,14 @@ export class VirtualLogViewer {
             this.container.scrollTop = Math.max(0, this.container.scrollHeight - this.container.clientHeight);
             this.isProgrammaticScroll = false;
         });
+    }
+
+    syncBottomIfNeeded() {
+        if (!this.isLockedToBottom || this.suspendAutoScroll) return;
+        const gap = this.container.scrollHeight - (this.container.scrollTop + this.container.clientHeight);
+        if (gap > 0 && gap <= this.lockThreshold * 2) {
+            this.container.scrollTop += gap;
+        }
     }
 
     /**
@@ -130,6 +142,8 @@ export class VirtualLogViewer {
 
     handleScroll() {
         if (!this.isProgrammaticScroll) {
+            this.lastUserScrollAt = Date.now();
+            this.suspendAutoScroll = true;
             const { scrollTop, scrollHeight, clientHeight } = this.container;
             // 判斷是否鎖定在底部 (保留 30px 的誤觸空間)
             const gap = scrollHeight - (scrollTop + clientHeight);
@@ -138,6 +152,9 @@ export class VirtualLogViewer {
                 this.isLockedToBottom = locked;
                 this.triggerUpdate();
             }
+        }
+        if (this.suspendAutoScroll && Date.now() - this.lastUserScrollAt > this.userScrollGraceMs) {
+            this.suspendAutoScroll = false;
         }
         this.render();
     }
@@ -190,6 +207,7 @@ export class VirtualLogViewer {
         this.viewport.style.transform = `translateY(${exactTop}px)`;
         this.lastRenderedCount = endIndex - startIndex + 1; // [FIX] 使用正確的變數名稱
         this.renderSlice(startIndex, endIndex);
+        this.syncBottomIfNeeded();
         this.triggerUpdate(); // [NEW] 觸發更新
     }
 
