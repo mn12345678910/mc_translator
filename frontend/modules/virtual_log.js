@@ -31,6 +31,7 @@ export class VirtualLogViewer {
         this.onUpdate = options.onUpdate || null; // [NEW] 狀態更新回調
         this.lockThreshold = options.lockThreshold || 30;
         this.userScrollGraceMs = options.userScrollGraceMs || 200;
+        this.prefixWidth = 0; // [NEW] 儲存時間戳記寬度
 
         this.init();
     }
@@ -73,6 +74,37 @@ export class VirtualLogViewer {
             }
         });
         this.resizeObserver.observe(this.container);
+
+        // [NEW] 初始測量前綴寬度
+        this._measurePrefixWidth();
+    }
+
+    /**
+     * [NEW] 測量時間戳記前綴的實際寬度
+     */
+    _measurePrefixWidth() {
+        const dummy = document.createElement('div');
+        dummy.style.visibility = 'hidden';
+        dummy.style.position = 'absolute';
+        dummy.style.width = '500px'; // 足夠寬度防止換行
+        dummy.style.fontFamily = this.options.fontFamily;
+        dummy.style.fontSize = this.options.fontSize;
+        dummy.className = 'log-line'; // 繼承 flex 佈局與字體樣式
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'log-time';
+        timeSpan.textContent = '[00:00:00] ';
+        dummy.appendChild(timeSpan);
+
+        const msgSpan = document.createElement('span');
+        msgSpan.className = 'log-msg';
+        msgSpan.textContent = 'M'; // 用一個字元來定位
+        dummy.appendChild(msgSpan);
+
+        document.body.appendChild(dummy);
+        // Prefix 寬度應該是從行首到訊息內容開始的位置
+        this.prefixWidth = msgSpan.offsetLeft || 85;
+        document.body.removeChild(dummy);
     }
 
     scrollToBottom() {
@@ -89,18 +121,27 @@ export class VirtualLogViewer {
 
     syncBottomIfNeeded() {
         if (!this.isLockedToBottom || this.suspendAutoScroll) return;
-        if (this.sentinel && this.sentinel.isConnected) {
-            const containerBottom = this.container.getBoundingClientRect().bottom;
-            const sentinelBottom = this.sentinel.getBoundingClientRect().bottom;
-            const delta = sentinelBottom - containerBottom;
-            if (delta > 0 && delta <= this.lockThreshold * 2) {
-                this.container.scrollTop += delta;
-                return;
-            }
+
+        const container = this.container;
+        const scrollHeight = container.scrollHeight;
+        const clientHeight = container.clientHeight;
+        const scrollTop = container.scrollTop;
+
+        // [FIX] 使用更強健的底部判定 (容許 1.5px 的次像素誤差)
+        const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1.5;
+
+        if (!isAtBottom) {
+            container.scrollTop = scrollHeight - clientHeight;
         }
-        const gap = this.container.scrollHeight - (this.container.scrollTop + this.container.clientHeight);
-        if (gap > 0 && gap <= this.lockThreshold * 2) {
-            this.container.scrollTop += gap;
+
+        // 第二重保護：檢查 sentinel 是否在視窗底部附近
+        if (this.sentinel && this.sentinel.isConnected) {
+            const containerRect = container.getBoundingClientRect();
+            const sentinelRect = this.sentinel.getBoundingClientRect();
+            const delta = sentinelRect.bottom - containerRect.bottom;
+            if (delta > 0 && delta <= this.lockThreshold) {
+                container.scrollTop += delta;
+            }
         }
     }
 
@@ -136,10 +177,16 @@ export class VirtualLogViewer {
         // [NEW] 測量前過濾掉所有標籤，確保 pretext 計算的是純文字寬度
         const cleanMsg = text.replace(/<dir>|<\/dir>|<file>|<\/file>/g, '');
         const font = `${this.options.fontSize} ${this.options.fontFamily}`;
-        const safetyWidth = Math.max(10, width - 4); // [FIX] 增加安全寬度緩衝
+
+        // [FIX] 扣除時間戳記前綴寬度與 padding，得到真正的文字可用寬度
+        const availableWidth = width - this.prefixWidth - 4;
+        const safetyWidth = Math.max(10, availableWidth);
+
         const prepared = prepare(cleanMsg, font);
         const result = layout(prepared, safetyWidth, this.options.lineHeight);
-        return Math.ceil(Math.max(this.options.lineHeight, result.height)); // [FIX] 強制進位確保不重疊
+
+        // [FIX] 使用 Math.ceil 確保不因次像素四捨五入導致內容溢出容器
+        return Math.max(this.options.lineHeight, Math.ceil(result.height));
     }
 
     recalculateHeights() {
