@@ -1,9 +1,10 @@
 // frontend/modules/virtual_log.js
-import { prepare, layout } from '@chenglou/pretext';
+
+/* global requestAnimationFrame */
 
 /**
- * 基於 Pretext 的虛擬化日誌檢視器
- * 核心原理：預先測量所有文字行高度，僅渲染可視區域內的 DOM 節點。
+ * 基於 DOM 測量的虛擬化日誌檢視器
+ * 核心原理：使用隱藏的 DOM 節點預先測量所有文字行高度，僅渲染可視區域內的節點。
  */
 export class VirtualLogViewer {
     constructor(containerId, options = {}) {
@@ -32,6 +33,8 @@ export class VirtualLogViewer {
         this.lockThreshold = options.lockThreshold || 30;
         this.userScrollGraceMs = options.userScrollGraceMs || 200;
         this.prefixWidth = 0; // [NEW] 儲存時間戳記寬度
+        this.measurementCache = new Map(); // [NEW] 高度測量快取
+        this.renderRequested = false; // [NEW] 節流操作標記
 
         this.init();
     }
@@ -75,8 +78,37 @@ export class VirtualLogViewer {
         });
         this.resizeObserver.observe(this.container);
 
+        // [NEW] 初始化測量輔助器 (Measure Buffer)
+        this._initMeasureBuffer();
+
         // [NEW] 初始測量前綴寬度
         this._measurePrefixWidth();
+    }
+
+    /**
+     * [NEW] 建立一個隱藏的 DIV 用於精確測量高度
+     */
+    _initMeasureBuffer() {
+        this.measureBuffer = document.createElement('div');
+        this.measureBuffer.className = 'log-line'; // 繼承字體與排版樣式
+        this.measureBuffer.style.position = 'fixed';
+        this.measureBuffer.style.visibility = 'hidden';
+        this.measureBuffer.style.pointerEvents = 'none';
+        this.measureBuffer.style.top = '-9999px';
+        this.measureBuffer.style.left = '0';
+        this.measureBuffer.style.zIndex = '-1';
+        this.measureBuffer.style.padding = '10px'; // 與 viewport 一致
+        this.measureBuffer.style.boxSizing = 'border-box';
+
+        // 建立內部的訊息容器
+        this.measureTime = document.createElement('span');
+        this.measureTime.className = 'log-time';
+        this.measureMsg = document.createElement('span');
+        this.measureMsg.className = 'log-msg';
+
+        this.measureBuffer.appendChild(this.measureTime);
+        this.measureBuffer.appendChild(this.measureMsg);
+        document.body.appendChild(this.measureBuffer);
     }
 
     /**
@@ -114,7 +146,9 @@ export class VirtualLogViewer {
         const raf =
             (typeof globalThis !== 'undefined' && globalThis.requestAnimationFrame) || ((cb) => setTimeout(cb, 0));
         raf(() => {
-            this.container.scrollTop = Math.max(0, this.container.scrollHeight - this.container.clientHeight);
+            if (this.container) {
+                this.container.scrollTop = Math.max(0, this.container.scrollHeight - this.container.clientHeight);
+            }
             this.isProgrammaticScroll = false;
         });
     }
@@ -131,7 +165,14 @@ export class VirtualLogViewer {
         const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight - 1.5;
 
         if (!isAtBottom) {
+            this.isProgrammaticScroll = true;
+            this.programmaticScrollUntil = Date.now() + 100; // 延長保護時間
             container.scrollTop = scrollHeight - clientHeight;
+
+            // 下一幀重設標記
+            requestAnimationFrame(() => {
+                this.isProgrammaticScroll = false;
+            });
         }
 
         // 第二重保護：檢查 sentinel 是否在視窗底部附近
@@ -166,31 +207,42 @@ export class VirtualLogViewer {
 
         this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
 
-        if (this.isLockedToBottom) {
-            this.scrollToBottom();
-        }
+        this.requestRender();
+    }
 
-        this.render();
+    /**
+     * [NEW] 使用 RAF 進行節流渲染
+     */
+    requestRender() {
+        if (this.renderRequested) return;
+        this.renderRequested = true;
+        requestAnimationFrame(() => {
+            this.renderRequested = false;
+            this.render();
+        });
     }
 
     measureHeight(text, width) {
-        // [NEW] 測量前過濾掉所有標籤，確保 pretext 計算的是純文字寬度
         const cleanMsg = text.replace(/<dir>|<\/dir>|<file>|<\/file>/g, '');
-        const font = `${this.options.fontSize} ${this.options.fontFamily}`;
+        const cacheKey = `${cleanMsg.length}:${width}:${cleanMsg.substring(0, 10)}`;
 
-        // [FIX] 扣除時間戳記前綴寬度與 padding，得到真正的文字可用寬度
-        const availableWidth = width - this.prefixWidth - 4;
-        const safetyWidth = Math.max(10, availableWidth);
+        if (this.measurementCache.has(cacheKey)) {
+            return this.measurementCache.get(cacheKey);
+        }
 
-        const prepared = prepare(cleanMsg, font);
-        const result = layout(prepared, safetyWidth, this.options.lineHeight);
+        // 設定寬度並測量
+        this.measureBuffer.style.width = `${width + 20}px`; // 加上 padding
+        this.measureTime.textContent = '[00:00:00] ';
+        this.measureMsg.textContent = cleanMsg;
 
-        // [FIX] 使用 Math.ceil 確保不因次像素四捨五入導致內容溢出容器
-        return Math.max(this.options.lineHeight, Math.ceil(result.height));
+        const h = Math.max(this.options.lineHeight, this.measureBuffer.offsetHeight);
+        this.measurementCache.set(cacheKey, h);
+        return h;
     }
 
     recalculateHeights() {
         const width = this.container.clientWidth - 20;
+        this.measurementCache.clear(); // 寬度改變，清空快取
         this.totalHeight = 0;
         this.cumulativeHeights = []; // [NEW] 重置累加高度
         this.itemHeights = this.logs.map((log) => {
@@ -201,6 +253,7 @@ export class VirtualLogViewer {
             return h;
         });
         this.scroller.style.height = `${this.totalHeight + this.paddingY}px`;
+        this.requestRender();
     }
 
     handleScroll() {
@@ -221,7 +274,7 @@ export class VirtualLogViewer {
         if (this.suspendAutoScroll && now - this.lastUserScrollAt > this.userScrollGraceMs) {
             this.suspendAutoScroll = false;
         }
-        this.render();
+        this.requestRender();
     }
 
     triggerUpdate() {
