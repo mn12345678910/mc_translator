@@ -69,6 +69,13 @@ repos:
     stages: [pre-commit, pre-push]
     pass_filenames: false
 
+  - id: check-ui-elements
+    name: check ui elements
+    entry: node tool/check_ui_elements.js
+    language: system
+    stages: [pre-commit, pre-push]
+    pass_filenames: false
+
   - id: pnpm-lint
     name: pnpm lint
     entry: pnpm lint
