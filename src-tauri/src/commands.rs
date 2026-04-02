@@ -10,7 +10,10 @@ use std::collections::HashMap;
 use tauri::{Emitter, Manager};
 
 #[tauri::command]
-pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, String> {
+pub async fn get_models_from_provider(
+    provider: String,
+    api_base_url: Option<String>,
+) -> Result<Vec<String>, String> {
     let api_key = mc_translator::config::encryption::get_api_key().unwrap_or_default();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
@@ -69,8 +72,13 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
+            let base_url = api_base_url
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| "https://api.openai.com".to_string())
+                .trim_end_matches('/')
+                .to_string();
             if let Ok(resp) = client
-                .get("https://api.openai.com/v1/models")
+                .get(format!("{}/v1/models", base_url))
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()
                 .await
@@ -98,8 +106,13 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
+            let base_url = api_base_url
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| "https://api.deepseek.com".to_string())
+                .trim_end_matches('/')
+                .to_string();
             if let Ok(resp) = client
-                .get("https://api.deepseek.com/models")
+                .get(format!("{}/v1/models", base_url))
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()
                 .await
@@ -119,6 +132,37 @@ pub async fn get_models_from_provider(provider: String) -> Result<Vec<String>, S
                 }
             }
             Err("err_deepseek_models".to_string())
+        }
+        "Mistral" => {
+            if api_key.is_empty() {
+                return Err("err_api_key_empty".to_string());
+            }
+            let base_url = api_base_url
+                .filter(|u| !u.is_empty())
+                .unwrap_or_else(|| "https://api.mistral.ai".to_string())
+                .trim_end_matches('/')
+                .to_string();
+            if let Ok(resp) = client
+                .get(format!("{}/v1/models", base_url))
+                .header("Authorization", format!("Bearer {}", api_key))
+                .send()
+                .await
+            {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    if let Some(models) = json.get("data").and_then(|m| m.as_array()) {
+                        let mut names = Vec::new();
+                        for m in models {
+                            if let Some(n) = m.get("id").and_then(|n| n.as_str()) {
+                                names.push(n.to_string());
+                            }
+                        }
+                        if !names.is_empty() {
+                            return Ok(names);
+                        }
+                    }
+                }
+            }
+            Err("err_mistral_models".to_string())
         }
         _ => Err("err_unsupported_provider".to_string()),
     }
