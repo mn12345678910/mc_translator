@@ -275,10 +275,15 @@ export function toggleFastConvertGroup() {
 
 export function toggleApiKeyVisibility() {
     const apiKeyGroup = document.getElementById('api-key-group');
+    const apiBaseUrlGroup = document.getElementById('api-base-url-group');
     const apiProvider = document.getElementById('api-provider');
     if (apiKeyGroup && apiProvider) {
         const noKeyProviders = ['Ollama', 'Google Free', '無'];
-        apiKeyGroup.style.display = noKeyProviders.includes(apiProvider.value) ? 'none' : 'block';
+        const isHidden = noKeyProviders.includes(apiProvider.value);
+        apiKeyGroup.style.display = isHidden ? 'none' : 'block';
+        if (apiBaseUrlGroup) {
+            apiBaseUrlGroup.style.display = isHidden ? 'none' : 'block';
+        }
     }
 }
 

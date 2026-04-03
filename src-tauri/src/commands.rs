@@ -45,11 +45,12 @@ pub async fn get_models_from_provider(
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
-            let url = format!(
-                "https://generativelanguage.googleapis.com/v1beta/models?key={}",
-                api_key
-            );
-            if let Ok(resp) = client.get(&url).send().await {
+            if let Ok(resp) = client
+                .get("https://generativelanguage.googleapis.com/v1beta/models")
+                .header("x-goog-api-key", &api_key)
+                .send()
+                .await
+            {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
                         let mut names = Vec::new();

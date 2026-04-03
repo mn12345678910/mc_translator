@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
+use zeroize::Zeroize;
 
 /// 翻譯任務的狀態枚舉
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
@@ -48,6 +49,13 @@ pub struct JobConfig {
     pub enable_debug_log: bool,
     pub excluded_paths: Vec<String>,
     pub fast_convert: bool,
+}
+
+impl JobConfig {
+    /// 清除敏感資料（在任務完成或取消時呼叫）
+    pub fn clear_sensitive(&mut self) {
+        self.api_key.zeroize();
+    }
 }
 
 /// 翻譯任務在執行過程中的共享狀態物件 (Arc<Mutex<...>>)

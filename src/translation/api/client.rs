@@ -325,8 +325,8 @@ async fn translate_with_gemini(
         config.api_base_url.trim_end_matches('/')
     };
     let url = format!(
-        "{}/v1beta/models/{}:generateContent?key={}",
-        base_url, config.selected_model, config.api_key
+        "{}/v1beta/models/{}:generateContent",
+        base_url, config.selected_model
     );
 
     translate_with_gemini_with_url(text, config, file_name, glossary, &url).await
@@ -357,6 +357,7 @@ async fn translate_with_gemini_with_url(
         let resp = CLIENT
             .post(url)
             .header("Content-Type", "application/json")
+            .header("x-goog-api-key", &config.api_key)
             .json(&body)
             .send()
             .await?;
@@ -649,14 +650,11 @@ async fn translate_with_deepl_with_url(
     url: &str,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let target_lang = map_lang_deepl(&config.target_lang).to_string();
-    let params = [
-        ("auth_key", config.api_key.clone()),
-        ("text", text.to_string()),
-        ("target_lang", target_lang),
-    ];
+    let params = [("text", text.to_string()), ("target_lang", target_lang)];
     let full_future = async {
         let resp = CLIENT
             .post(url)
+            .header("Authorization", format!("Bearer {}", config.api_key))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .form(&params)
             .send()

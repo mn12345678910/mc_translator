@@ -1,6 +1,6 @@
 {
   "name": "mc_translator",
-  "version": "0.9.13",
+  "version": "0.9.14",
   "description": "> [!NOTE] > 安全須知: > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。",
   "main": "index.js",
   "directories": {
