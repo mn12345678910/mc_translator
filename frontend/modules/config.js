@@ -236,8 +236,13 @@ export async function loadModels() {
             selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models || 'No models'}</option>`;
         }
     } catch (e) {
-        console.error(e);
-        selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models}</option>`;
+        console.error('無法載入模型清單:', e);
+        const errorLabel = typeof e === 'string' ? state.currentLabels[e] : null;
+        if (errorLabel && typeof errorLabel === 'string') {
+            selectedModel.innerHTML = `<option value="">${errorLabel}</option>`;
+        } else {
+            selectedModel.innerHTML = `<option value="">${state.currentLabels.label_no_models || '(無可用模型)'}</option>`;
+        }
     }
 }
 

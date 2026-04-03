@@ -208,6 +208,24 @@ describe('config.js 設定管理模組', () => {
             const selectModel = document.getElementById('selected-model');
             expect(selectModel.innerHTML).toContain('無可用模型');
         });
+
+        it('loadModels 失敗時若錯誤訊息在 currentLabels 中應顯示具體錯誤', async () => {
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_models_from_provider') throw 'err_api_key_empty';
+                return null;
+            });
+            stateModule.state.currentLabels = {
+                label_no_models: '無可用模型',
+                err_api_key_empty: 'API Key 為空，請先填入 API Key',
+            };
+            document.getElementById('api-provider').value = 'Gemini';
+            document.getElementById('api-base-url').value = '';
+
+            await configModule.loadModels();
+
+            const selectModel = document.getElementById('selected-model');
+            expect(selectModel.innerHTML).toContain('API Key 為空，請先填入 API Key');
+        });
     });
 
     describe('恢復預設完整性測試 (Dirty Check)', () => {

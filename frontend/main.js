@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const configInputs = [
         'api-key',
+        'api-base-url',
         'ollama-url',
         'batch-size',
         'batch-max-chars',
