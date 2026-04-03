@@ -125,12 +125,7 @@ export async function saveConfig() {
         const apiBaseUrl = document.getElementById('api-base-url');
         state.currentConfig.api_base_url = apiBaseUrl ? apiBaseUrl.value : '';
 
-        const saveResult = await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
-        if (saveResult !== undefined) {
-            const errorMsg = state.currentLabels.status_save_api_key_failed || '❌ 儲存 API 金鑰失敗: {}';
-            appendLog(errorMsg.replace('{}', saveResult));
-            throw new Error(saveResult);
-        }
+        await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
         state.currentConfig.model = selectedModel ? selectedModel.value : '';
         const old = state.currentConfig;
         const parseSafeInt = (v, f) => {
