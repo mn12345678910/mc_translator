@@ -140,7 +140,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         const inputEl = document.getElementById(id);
         if (inputEl) {
             inputEl.addEventListener('input', debouncedSaveConfig);
-            inputEl.addEventListener('blur', () => saveConfig()); // 立即儲存
+            if (id === 'api-key') {
+                inputEl.addEventListener('blur', async () => {
+                    await saveConfig();
+                    const loadModelsModule = await import('./modules/config.js').then((m) => m.loadModels);
+                    await loadModelsModule();
+                });
+            } else {
+                inputEl.addEventListener('blur', () => saveConfig()); // 立即儲存
+            }
         }
     });
 
