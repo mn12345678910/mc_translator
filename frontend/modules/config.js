@@ -47,6 +47,9 @@ export async function loadConfig() {
         const savedKey = await invoke('get_api_key_cmd');
         if (apiKey) apiKey.value = savedKey || '';
 
+        const apiBaseUrl = document.getElementById('api-base-url');
+        if (apiBaseUrl) apiBaseUrl.value = config.api_base_url || '';
+
         if (inputPath) inputPath.value = config.path || '';
 
         if (ollamaUrl) ollamaUrl.value = config.ollama_url;
@@ -118,7 +121,16 @@ export async function saveConfig() {
 
     try {
         state.currentConfig.api_provider = apiProvider ? apiProvider.value : '';
-        await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
+        // 讀取 API Base URL
+        const apiBaseUrl = document.getElementById('api-base-url');
+        state.currentConfig.api_base_url = apiBaseUrl ? apiBaseUrl.value : '';
+
+        const saveResult = await invoke('save_api_key_cmd', { key: apiKey ? apiKey.value : '' });
+        if (saveResult !== undefined) {
+            const errorMsg = state.currentLabels.status_save_api_key_failed || '❌ 儲存 API 金鑰失敗: {}';
+            appendLog(errorMsg.replace('{}', saveResult));
+            throw new Error(saveResult);
+        }
         state.currentConfig.model = selectedModel ? selectedModel.value : '';
         const old = state.currentConfig;
         const parseSafeInt = (v, f) => {
@@ -213,7 +225,9 @@ export async function loadModels() {
     const provider = apiProvider.value;
     selectedModel.innerHTML = `<option value="">${state.currentLabels.label_loading_models}</option>`;
     try {
-        const models = await invoke('get_models_from_provider', { provider });
+        const apiBaseUrl = document.getElementById('api-base-url');
+        const apiBaseUrlValue = apiBaseUrl ? apiBaseUrl.value : '';
+        const models = await invoke('get_models_from_provider', { provider, api_base_url: apiBaseUrlValue });
         selectedModel.innerHTML = `<option value="">${state.currentLabels.prompt_select_model}</option>`;
         if (Array.isArray(models)) {
             models.forEach((m) => {
@@ -300,6 +314,7 @@ export async function restoreDefaultConfig() {
         // 重新載入 UI
         const apiProvider = document.getElementById('api-provider');
         const apiKey = document.getElementById('api-key');
+        const apiBaseUrl = document.getElementById('api-base-url');
         const ollamaUrl = document.getElementById('ollama-url');
         const batchSize = document.getElementById('batch-size');
         const batchMaxChars = document.getElementById('batch-max-chars');
@@ -312,6 +327,7 @@ export async function restoreDefaultConfig() {
 
         if (apiProvider) apiProvider.value = state.currentConfig.api_provider;
         if (apiKey) apiKey.value = '';
+        if (apiBaseUrl) apiBaseUrl.value = state.currentConfig.api_base_url || '';
         if (ollamaUrl) ollamaUrl.value = state.currentConfig.ollama_url;
         if (batchSize) batchSize.value = state.currentConfig.batch_size;
         if (batchMaxChars) batchMaxChars.value = state.currentConfig.batch_max_chars;

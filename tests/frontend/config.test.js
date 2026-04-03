@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
 
 // Mock 外部模組防止交互副作用 (提升至頂層)
 vi.mock('../../frontend/modules/utils.js', () => ({
-    appendLog: vi.fn()
+    appendLog: vi.fn(),
 }));
 vi.mock('../../frontend/modules/i18n.js', () => ({
-    updateUiLanguage: vi.fn()
+    updateUiLanguage: vi.fn(),
 }));
 
 describe('config.js 設定管理模組', () => {
@@ -18,8 +18,8 @@ describe('config.js 設定管理模組', () => {
         mockInvoke = vi.fn();
         globalThis.window = {
             __TAURI__: {
-                core: { invoke: mockInvoke }
-            }
+                core: { invoke: mockInvoke },
+            },
         };
 
         // 2. 動態載入
@@ -56,6 +56,9 @@ describe('config.js 設定管理模組', () => {
             <input id="input-path" />
             <div id="ollama-url-group" style="display:none"></div>
             <div id="api-key-group" style="display:block"></div>
+            <div id="api-base-url-group" style="display:block">
+                <input id="api-base-url" />
+            </div>
             <button id="btn-translate"></button>
         `;
 
@@ -73,6 +76,7 @@ describe('config.js 設定管理模組', () => {
             api_provider: 'Ollama',
             path: '/test/input',
             ollama_url: 'http://localhost:12345',
+            api_base_url: 'https://api.custom-endpoint.com',
             batch_size: 200,
             batch_max_chars: 4000,
             timeout: 90,
@@ -87,7 +91,7 @@ describe('config.js 設定管理模組', () => {
             skip_jar: false,
             skip_book: false,
             enable_llm_log: true,
-            model: 'llama3'
+            model: 'llama3',
         };
 
         mockInvoke.mockImplementation(async (cmd) => {
@@ -99,9 +103,9 @@ describe('config.js 設定管理模組', () => {
 
         await configModule.loadConfig();
 
-        // 驗證 DOM 是否帶入正確數值
         expect(document.getElementById('api-provider').value).toBe('Ollama');
         expect(document.getElementById('api-key').value).toBe('test-key-123');
+        expect(document.getElementById('api-base-url').value).toBe('https://api.custom-endpoint.com');
         expect(document.getElementById('input-path').value).toBe('/test/input');
         expect(document.getElementById('ollama-url').value).toBe('http://localhost:12345');
         expect(document.getElementById('batch-size').value).toBe('200');
@@ -118,7 +122,6 @@ describe('config.js 設定管理模組', () => {
         expect(document.getElementById('chk-skip-jar').checked).toBe(false);
         expect(document.getElementById('chk-llm-log').checked).toBe(true);
 
-        // 驗證 Ollama 顯示切換
         expect(document.getElementById('ollama-url-group').style.display).toBe('block');
     });
 
@@ -135,15 +138,18 @@ describe('config.js 設定管理模組', () => {
 
         // 驗證 invoke 呼叫次數與內容
         expect(mockInvoke).toHaveBeenCalledWith('save_api_key_cmd', { key: 'new-gemini-key' });
-        expect(mockInvoke).toHaveBeenCalledWith('save_config', expect.objectContaining({
-            config: expect.objectContaining({
-                api_provider: 'Gemini',
-                path: '/new/input',
-                batch_size: 50,
-                skip_json: false,
-                skip_jar: true
+        expect(mockInvoke).toHaveBeenCalledWith(
+            'save_config',
+            expect.objectContaining({
+                config: expect.objectContaining({
+                    api_provider: 'Gemini',
+                    path: '/new/input',
+                    batch_size: 50,
+                    skip_json: false,
+                    skip_jar: true,
+                }),
             })
-        }));
+        );
     });
 
     it('loadModels 應該獲取模型清單並動態渲染 <option>', async () => {
@@ -151,11 +157,12 @@ describe('config.js 設定管理模組', () => {
         stateModule.state.currentLabels = { prompt_select_model: '請選取模型' };
 
         document.getElementById('api-provider').value = 'Gemini';
+        document.getElementById('api-base-url').value = '';
 
         await configModule.loadModels();
 
         const selectModel = document.getElementById('selected-model');
-        expect(selectModel.options.length).toBe(3); // 1預設 + 2模型
+        expect(selectModel.options.length).toBe(3);
         expect(selectModel.options[1].value).toBe('gemini-1.5-pro');
         expect(selectModel.options[2].value).toBe('gemini-1.5-flash');
     });
@@ -194,6 +201,7 @@ describe('config.js 設定管理模組', () => {
             });
             stateModule.state.currentLabels = { label_no_models: '無可用模型' };
             document.getElementById('api-provider').value = 'Gemini';
+            document.getElementById('api-base-url').value = '';
 
             await configModule.loadModels();
 
@@ -215,8 +223,10 @@ describe('config.js 設定管理模組', () => {
             timeout: 60,
             pack_format: 15,
             glossary_priority: 'official',
-            system_prompt: '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。',
-            user_prompt: '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
+            system_prompt:
+                '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。',
+            user_prompt:
+                '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
             excluded_paths: [
                 'kubejs/data/',
                 'packmenu/',
@@ -252,11 +262,8 @@ describe('config.js 設定管理模組', () => {
             viewer_y: 100.0,
             viewer_width: 800.0,
             viewer_height: 600.0,
-            fast_convert: false
+            fast_convert: false,
         };
-
-
-
 
         beforeEach(() => {
             // 💡 關鍵：載入真實的 HTML，確保能偵測到未來新增的欄位
@@ -273,10 +280,12 @@ describe('config.js 設定管理模組', () => {
             });
 
             // 防止 fetch 引發連線錯誤 (例如 Ollama 清單獲取)
-            global.fetch = vi.fn(() => Promise.resolve({
-                 ok: true,
-                 json: () => Promise.resolve([])
-            }));
+            global.fetch = vi.fn(() =>
+                Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([]),
+                })
+            );
         });
 
         it('API 面板重置：應能重置面板內所有元件，且不干涉開發者面板', async () => {
@@ -287,15 +296,21 @@ describe('config.js 設定管理模組', () => {
             const devInputs = Array.from(devPanel.querySelectorAll('input, select, textarea'));
 
             // 1. 全部設為髒值 (Dirty)
-            apiInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_API'; });
-            devInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_DEV'; });
+            apiInputs.forEach((el) => {
+                if (el.type === 'checkbox') el.checked = true;
+                else el.value = 'DIRTY_API';
+            });
+            devInputs.forEach((el) => {
+                if (el.type === 'checkbox') el.checked = true;
+                else el.value = 'DIRTY_DEV';
+            });
 
             // 2. 執行 API 重置
             await configModule.restoreDefaultConfig();
 
             // 3. 自動檢查 API 面板中的每一個元件是否都已「不再是髒值」
             const missingIds = [];
-            apiInputs.forEach(el => {
+            apiInputs.forEach((el) => {
                 if (el.id === 'api-key' || el.id === 'ui-lang') return;
 
                 // 元件 ID 與 Config Key 的對應邏輯
@@ -303,10 +318,10 @@ describe('config.js 設定管理模組', () => {
                 if (el.id === 'timeout-sec') configKey = 'timeout'; // 特殊映射範例
 
                 if (el.type === 'checkbox') {
-                     // 如果預設是 false，重置後應該是 false，不應該還是 true
-                     if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
+                    // 如果預設是 false，重置後應該是 false，不應該還是 true
+                    if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
                 } else if (el.value === 'DIRTY_API') {
-                     missingIds.push(el.id);
+                    missingIds.push(el.id);
                 }
             });
 
@@ -323,19 +338,22 @@ describe('config.js 設定管理模組', () => {
             const devInputs = Array.from(devPanel.querySelectorAll('input, select, textarea'));
 
             // 1. 全部設為髒值
-            devInputs.forEach(el => { if (el.type === 'checkbox') el.checked = true; else el.value = 'DIRTY_DEV'; });
+            devInputs.forEach((el) => {
+                if (el.type === 'checkbox') el.checked = true;
+                else el.value = 'DIRTY_DEV';
+            });
 
             // 2. 執行開發者重置
             await configModule.restoreDevDefaults();
 
             // 3. 自動檢查有無漏網之魚
             const missingIds = [];
-            devInputs.forEach(el => {
+            devInputs.forEach((el) => {
                 if (el.type === 'checkbox') {
-                     let configKey = el.id.replace('chk-', '').replace(/-/g, '_');
-                     if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
+                    let configKey = el.id.replace('chk-', '').replace(/-/g, '_');
+                    if (el.checked === true && !mockDefaultConfig[configKey]) missingIds.push(el.id);
                 } else if (el.value === 'DIRTY_DEV') {
-                     missingIds.push(el.id);
+                    missingIds.push(el.id);
                 }
             });
 
