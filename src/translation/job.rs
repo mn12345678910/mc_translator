@@ -135,7 +135,7 @@ impl JobConfig {
     /// 從 AppConfig 和 CommonLabels 建立 JobConfig
     pub fn from_app_config_and_i18n(config: &AppConfig, i18n: &CommonLabels) -> Self {
         Self {
-            api_key: config.api_key.clone().into(),
+            api_key: config.api_key.clone(),
             api_provider: config.api_provider.clone(),
             selected_model: config.model.clone(),
             ollama_url: config.ollama_url.clone(),
