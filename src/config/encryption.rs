@@ -1,6 +1,7 @@
 //! # 安全儲存模組 (Keyring)
 //!
 //! 使用系統憑證管理員 (如 Windows Credential Manager, macOS Keychain) 安全地儲存 API 金鑰。
+//! 傳入空字串至 `save_api_key` 會清空已儲存的憑證。
 
 use keyring::Entry;
 
@@ -8,18 +9,20 @@ const SERVICE_NAME: &str = "mc_translator";
 const ACCOUNT_NAME: &str = "api_key";
 
 /// 儲存 API 金鑰至系統憑證管理員
-/// 儲存 API 金鑰至系統憑證管理員
+/// 傳入空字串會清空已儲存的憑證。
 pub fn save_api_key(key: &str) -> Result<(), String> {
     save_api_key_with_args(key, SERVICE_NAME, ACCOUNT_NAME)
 }
 
 /// 儲存 API 金鑰至系統憑證管理員 (帶參數版本)
+/// 傳入空字串會清空已儲存的憑證。
 pub fn save_api_key_with_args(key: &str, service: &str, account: &str) -> Result<(), String> {
-    if key.is_empty() {
-        return Ok(());
-    }
     let entry =
         Entry::new(service, account).map_err(|e| format!("無法初始化 Keyring Entry: {}", e))?;
+    if key.is_empty() {
+        let _ = entry.delete_credential();
+        return Ok(());
+    }
     entry
         .set_password(key)
         .map_err(|e| format!("儲存金鑰失敗: {}", e))
@@ -51,14 +54,21 @@ mod tests {
 
         let entry = match Entry::new(test_service, test_account) {
             Ok(e) => e,
-            Err(_) => return, // 跳過無 keyring 環境
+            Err(e) => {
+                eprintln!("⚠️ 跳過 test_keyring_cycle：無法初始化 Keyring ({})", e);
+                return;
+            }
         };
-        if entry.set_password(original).is_err() {
-            return; // 跳過無法儲存的環境
+        if let Err(e) = entry.set_password(original) {
+            eprintln!("⚠️ 跳過 test_keyring_cycle：無法寫入 Keyring ({})", e);
+            return;
         }
         let fetched = match entry.get_password() {
             Ok(k) => k,
-            Err(_) => return,
+            Err(e) => {
+                eprintln!("⚠️ 跳過 test_keyring_cycle：無法讀取 Keyring ({})", e);
+                return;
+            }
         };
         assert_eq!(original, fetched);
 
@@ -71,12 +81,47 @@ mod tests {
         let service = "mc_translator_test_args_exec";
         let account = "api_key";
 
-        // 僅執行但不進行斷言（Windows 憑證管理員多實例並發常態性遲延，與 correctness 驗證區隔）
-        let _ = save_api_key_with_args(key, service, account);
-        let _ = get_api_key_with_args(service, account);
+        let entry = match Entry::new(service, account) {
+            Ok(e) => e,
+            Err(_) => {
+                eprintln!("⚠️ 跳過 test_save_get_api_key_with_args_success：無法初始化 Keyring");
+                return;
+            }
+        };
 
-        // 執行代理 Proxy 函式以滿足行覆蓋率（安全讀取與空寫入）
-        let _ = save_api_key(""); // 空字串安全返回
-        let _ = get_api_key(); // 唯讀安全
+        save_api_key_with_args(key, service, account).unwrap();
+        let fetched = get_api_key_with_args(service, account).unwrap();
+        assert_eq!(key, fetched);
+
+        // 清理
+        let _ = entry.delete_credential();
+    }
+
+    #[test]
+    fn test_save_empty_clears_keyring() {
+        let key = "temp_key_to_clear";
+        let service = "mc_translator_test_empty_clear";
+        let account = "api_key";
+
+        let entry = match Entry::new(service, account) {
+            Ok(e) => e,
+            Err(_) => {
+                eprintln!("⚠️ 跳過 test_save_empty_clears_keyring：無法初始化 Keyring");
+                return;
+            }
+        };
+
+        save_api_key_with_args(key, service, account).unwrap();
+        let fetched = get_api_key_with_args(service, account).unwrap();
+        assert_eq!(key, fetched);
+
+        // 儲存空字串應清空
+        save_api_key_with_args("", service, account).unwrap();
+        assert!(
+            get_api_key_with_args(service, account).is_err(),
+            "空字串儲存後應無法再讀取到 key"
+        );
+
+        let _ = entry.delete_credential();
     }
 }
