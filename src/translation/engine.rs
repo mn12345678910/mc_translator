@@ -5,6 +5,7 @@ use crate::utils::skip_rules::{should_skip_key, should_skip_value};
 use crate::utils::text_processing::{
     detect_loop, postprocess_text, preprocess_text, sync_formatting, validate_and_cleanup,
 };
+use secrecy::ExposeSecret;
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
@@ -49,7 +50,8 @@ pub async fn translate_json_recursive(
     *ctx.counter.lock().unwrap() = 0;
 
     let current_config = ctx.config.lock().unwrap().clone();
-    if (current_config.api_provider == "Ollama" || !current_config.api_key.is_empty())
+    if (current_config.api_provider == "Ollama"
+        || !current_config.api_key.expose_secret().is_empty())
         && unique_pending.len() > 1
         && current_config.batch_size > 1
     {

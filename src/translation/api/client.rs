@@ -1,6 +1,7 @@
 use crate::translation::glossary::TermType;
 use crate::translation::job::JobConfig;
 use once_cell::sync::Lazy;
+use secrecy::ExposeSecret;
 use std::collections::HashMap;
 
 // 移除硬編碼的 TECHNICAL_CONSTRAINTS 與 DEFAULT_SYSTEM_PROMPT，改由設定模組統一管理
@@ -135,14 +136,14 @@ pub async fn translate_one(
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     match config.api_provider.as_str() {
         "Gemini" => {
-            if config.api_key.is_empty() {
+            if config.api_key.expose_secret().is_empty() {
                 translate_free_google_with_config(text, config).await
             } else {
                 translate_with_gemini(text, config, file_name, glossary).await
             }
         }
         "OpenAI" | "DeepSeek" | "Mistral" => {
-            if config.api_key.is_empty() {
+            if config.api_key.expose_secret().is_empty() {
                 translate_free_google_with_config(text, config).await
             } else {
                 translate_with_openai_compatible(text, config, file_name, glossary).await
@@ -357,7 +358,7 @@ async fn translate_with_gemini_with_url(
         let resp = CLIENT
             .post(url)
             .header("Content-Type", "application/json")
-            .header("x-goog-api-key", &config.api_key)
+            .header("x-goog-api-key", config.api_key.expose_secret())
             .json(&body)
             .send()
             .await?;
@@ -590,7 +591,10 @@ async fn translate_with_openai_compatible_with_url(
     let full_future = async {
         let resp = CLIENT
             .post(url)
-            .header("Authorization", format!("Bearer {}", config.api_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", config.api_key.expose_secret()),
+            )
             .header("Content-Type", "application/json")
             .json(&body)
             .send()
@@ -654,7 +658,10 @@ async fn translate_with_deepl_with_url(
     let full_future = async {
         let resp = CLIENT
             .post(url)
-            .header("Authorization", format!("Bearer {}", config.api_key))
+            .header(
+                "Authorization",
+                format!("Bearer {}", config.api_key.expose_secret()),
+            )
             .header("Content-Type", "application/x-www-form-urlencoded")
             .form(&params)
             .send()
@@ -718,6 +725,7 @@ pub fn log_llm_communication(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use secrecy::SecretString;
 
     #[test]
     fn test_extract_json_self_healing() {
@@ -932,7 +940,7 @@ mod tests {
             .await;
 
         let config = JobConfig {
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             selected_model: "gemini-1.5-pro".to_string(),
             timeout: 30,
             ..JobConfig::default()
@@ -972,7 +980,7 @@ mod tests {
 
         let config = JobConfig {
             api_provider: "OpenAI".to_string(),
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             timeout: 30,
             ..JobConfig::default()
         };
@@ -1008,7 +1016,7 @@ mod tests {
             .await;
 
         let config = JobConfig {
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             timeout: 30,
             ..JobConfig::default()
         };
@@ -1034,7 +1042,7 @@ mod tests {
             .await;
 
         let config = JobConfig {
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             selected_model: "gemini-1.5-pro".to_string(),
             timeout: 30,
             enable_llm_log: true,
@@ -1075,7 +1083,7 @@ mod tests {
 
         let config = JobConfig {
             api_provider: "OpenAI".to_string(),
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             timeout: 30,
             ..JobConfig::default()
         };
@@ -1113,7 +1121,7 @@ mod tests {
             .await;
 
         let config = JobConfig {
-            api_key: "test_key".to_string(),
+            api_key: SecretString::from("test_key".to_string()),
             timeout: 30,
             ..JobConfig::default()
         };
@@ -1194,7 +1202,7 @@ mod tests {
 
         let config = JobConfig {
             api_provider: "Gemini".to_string(),
-            api_key: "".to_string(),
+            api_key: SecretString::from("".to_string()),
             timeout: 1,
             ..JobConfig::default()
         };
@@ -1211,7 +1219,7 @@ mod tests {
 
         let config = JobConfig {
             api_provider: "OpenAI".to_string(),
-            api_key: "".to_string(),
+            api_key: SecretString::from("".to_string()),
             timeout: 1,
             ..JobConfig::default()
         };

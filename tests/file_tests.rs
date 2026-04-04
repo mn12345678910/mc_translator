@@ -7,10 +7,11 @@ use tempfile::tempdir;
 use mc_translator::file::json_handler::{apply_json_task, collect_json_task};
 use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::job::{JobConfig, JobSharedState};
+use secrecy::SecretString;
 
 fn create_mock_state(output_dir: String) -> JobSharedState {
     let config = JobConfig {
-        api_key: "".to_string(),
+        api_key: SecretString::from("".to_string()),
         api_provider: "Gemini".to_string(),
         selected_model: "gemini-1.5-pro".to_string(),
         ollama_url: "".to_string(),

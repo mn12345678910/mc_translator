@@ -764,8 +764,9 @@ pub fn update_active_job_config(config: AppConfig) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             if let Ok(mut job_cfg) = job.config.lock() {
-                job_cfg.api_key =
-                    mc_translator::config::encryption::get_api_key().unwrap_or_default();
+                job_cfg.api_key = mc_translator::config::encryption::get_api_key()
+                    .unwrap_or_default()
+                    .into();
                 job_cfg.api_provider = config.api_provider;
                 job_cfg.selected_model = config.model;
                 job_cfg.ollama_url = config.ollama_url;

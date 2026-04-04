@@ -1,5 +1,6 @@
 use mc_translator::translation::api::translate_with_ollama;
 use mc_translator::translation::job::JobConfig;
+use secrecy::SecretString;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -66,7 +67,7 @@ async fn test_ollama_api_server_error_500() {
 
 fn create_ollama_config(url: String) -> JobConfig {
     JobConfig {
-        api_key: "".to_string(),
+        api_key: SecretString::from("".to_string()),
         api_provider: "Ollama".to_string(),
         selected_model: "mock-model".to_string(),
         ollama_url: url,

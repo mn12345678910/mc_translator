@@ -4,12 +4,11 @@
 use crate::config::settings::AppConfig;
 use crate::i18n::CommonLabels;
 use crate::translation::LogEntry;
+use secrecy::SecretString;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32};
 use std::sync::{Arc, Mutex};
-
-use serde::{Deserialize, Serialize};
-use zeroize::Zeroize;
 
 /// 翻譯任務的狀態枚舉
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
@@ -23,7 +22,7 @@ pub enum JobStatus {
 /// 翻譯任務的靜態設定參數
 #[derive(Clone, Default)]
 pub struct JobConfig {
-    pub api_key: String,
+    pub api_key: SecretString,
     pub api_provider: String,
     pub selected_model: String,
     pub ollama_url: String,
@@ -49,13 +48,6 @@ pub struct JobConfig {
     pub enable_debug_log: bool,
     pub excluded_paths: Vec<String>,
     pub fast_convert: bool,
-}
-
-impl JobConfig {
-    /// 清除敏感資料（在任務完成或取消時呼叫）
-    pub fn clear_sensitive(&mut self) {
-        self.api_key.zeroize();
-    }
 }
 
 /// 翻譯任務在執行過程中的共享狀態物件 (Arc<Mutex<...>>)
@@ -111,7 +103,7 @@ impl JobConfig {
         fast_convert: bool,
     ) -> Self {
         Self {
-            api_key,
+            api_key: api_key.into(),
             api_provider,
             selected_model,
             ollama_url,
@@ -143,7 +135,7 @@ impl JobConfig {
     /// 從 AppConfig 和 CommonLabels 建立 JobConfig
     pub fn from_app_config_and_i18n(config: &AppConfig, i18n: &CommonLabels) -> Self {
         Self {
-            api_key: config.api_key.clone(),
+            api_key: config.api_key.clone().into(),
             api_provider: config.api_provider.clone(),
             selected_model: config.model.clone(),
             ollama_url: config.ollama_url.clone(),

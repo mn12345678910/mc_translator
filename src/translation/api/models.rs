@@ -92,12 +92,13 @@ async fn fetch_gemini_models(api_key: &str) -> Vec<String> {
 }
 
 async fn fetch_gemini_models_with_url(api_key: &str, base_url: &str) -> Vec<String> {
-    let url = format!(
-        "{}/v1beta/models?key={}",
-        base_url.trim_end_matches('/'),
-        api_key
-    );
-    if let Ok(resp) = CLIENT.get(&url).send().await {
+    let url = format!("{}/v1beta/models", base_url.trim_end_matches('/'));
+    if let Ok(resp) = CLIENT
+        .get(&url)
+        .header("x-goog-api-key", api_key)
+        .send()
+        .await
+    {
         if let Ok(json) = resp.json::<serde_json::Value>().await {
             if let Some(models) = json["models"].as_array() {
                 return models
