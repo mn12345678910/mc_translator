@@ -8,7 +8,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use super::{GlossaryEntry, TermType};
+use crate::translation::glossary::automaton::{GlossaryEntry, TermType};
 
 pub fn extract_display_path(path: &Path) -> String {
     let path_str = path.to_string_lossy().replace('\\', "/");

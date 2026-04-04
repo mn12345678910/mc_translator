@@ -10,15 +10,16 @@ use std::sync::{Arc, Mutex};
 
 use crate::config::AppConfig;
 use crate::i18n::CommonLabels;
+use crate::translation::glossary::analyzer::analyze_dictionary;
+use crate::translation::glossary::mc_lang::{load_mc_dicts, McLangFiles};
 use crate::translation::job::{JobConfig, JobSharedState, JobStatus};
 use crate::translation::{LogEntry, LogLevel};
-use crate::utils;
 use crate::utils::helpers::add_log_event;
 
 /// 載入並準備字典檔 (McLang 與推論字典)
 pub async fn load_and_prepare_dictionaries(
     config: &AppConfig,
-    mc_lang_arc: Arc<Mutex<Option<utils::McLangFiles>>>,
+    mc_lang_arc: Arc<Mutex<Option<McLangFiles>>>,
     exact_arc: Arc<Mutex<HashMap<String, String>>>,
     inferred_arc: Arc<Mutex<HashMap<String, String>>>,
     term_arc: Arc<Mutex<Vec<(String, String)>>>,
@@ -26,14 +27,14 @@ pub async fn load_and_prepare_dictionaries(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // 呼叫底層讀取
     let (files, exact, unfiltered) =
-        utils::load_mc_dicts(&config.source_lang, &config.target_lang).await?;
+        load_mc_dicts(&config.source_lang, &config.target_lang).await?;
 
     {
         let mut exact_map = exact_arc.lock().unwrap();
         *exact_map = exact.clone();
     }
 
-    let inferred = utils::analyze_dictionary(&exact);
+    let inferred = analyze_dictionary(&exact);
     {
         let mut inferred_map = inferred_arc.lock().unwrap();
         *inferred_map = inferred.clone();

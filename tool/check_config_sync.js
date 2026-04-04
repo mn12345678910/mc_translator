@@ -5,40 +5,64 @@ const path = require('path');
 const RUST_SETTINGS_PATH = path.join(__dirname, '../src/config/settings.rs');
 const JS_TEST_CONFIG_PATH = path.join(__dirname, '../tests/frontend/config.test.js');
 
+const RUST_DEFAULT_FN_MAP = {
+    default_api_provider: '無',
+    default_ollama_url: 'http://localhost:11434',
+    default_user_prompt:
+        '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。',
+    default_system_prompt: '',
+    default_batch_size: 150,
+    default_batch_max_chars: 3500,
+    default_timeout: 60,
+    default_glossary_priority: 'official',
+    default_source_lang: 'en_us',
+    default_target_lang: 'zh_tw',
+    default_ui_lang: 'zh_tw',
+    default_pack_format: 15,
+    default_true: true,
+    default_false: false,
+};
+
+function resolveRustDefaultFn(name) {
+    if (RUST_DEFAULT_FN_MAP[name] !== undefined) return RUST_DEFAULT_FN_MAP[name];
+    return name;
+}
+
 function parseRustDefaults(filePath) {
     const content = fs.readFileSync(filePath, 'utf8');
     const defaults = {};
 
-    // 尋找 impl Default for AppConfig 的範圍
-    const defaultMatch = content.match(/impl Default for AppConfig {([\s\S]*?)fn default\(\) -> Self {([\s\S]*?)}/);
+    const defaultMatch = content.match(
+        /impl Default for AppConfig {[\s\S]*?fn default\(\) -> Self {([\s\S]*?)\n    }\n}/
+    );
     if (!defaultMatch) {
         console.error('❌ 無法在 settings.rs 中找到 AppConfig 的 Default 實作');
         return null;
     }
 
-    const selfBlock = defaultMatch[2];
-
-    // 簡單正則提取 Key-Value
-    // 範例: api_provider: "無".to_string(),
-    // 範例: batch_size: 150,
+    const selfBlock = defaultMatch[1];
     const lines = selfBlock.split('\n');
-    lines.forEach(line => {
-        const match = line.match(/^\s*([a-z_]+):\s*(.*),$/);
+    lines.forEach((line) => {
+        const match = line.match(/^\s*([a-z_]+):\s*(.*?),$/);
         if (match) {
             let key = match[1];
             let value = match[2].trim();
 
-            // 處理 String::new()、.to_string() 與常數
-            if (value === 'String::new()' || value === '"".to_string()') {
+            const fnMatch = value.match(/^([a-z_]+)\(\)$/);
+            if (fnMatch) {
+                value = resolveRustDefaultFn(fnMatch[1]);
+            } else if (value === 'String::new()' || value === '"".to_string()') {
                 value = '';
             } else if (value.includes('.to_string()')) {
                 value = value.replace('.to_string()', '').replace(/"/g, '');
             } else if (value.startsWith('"') && value.endsWith('"')) {
                 value = value.replace(/"/g, '');
             } else if (value === 'DEFAULT_PROMPT') {
-                value = '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。';
+                value =
+                    '你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。';
+            } else if (value === 'DEFAULT_SYSTEM_PROMPT') {
+                value = '';
             } else if (value === 'false') {
-
                 value = false;
             } else if (value === 'true') {
                 value = true;
@@ -46,7 +70,6 @@ function parseRustDefaults(filePath) {
                 value = Number(value);
             }
 
-            // 特殊處理：排除 api_key (動態) 與 excluded_paths (陣列比較複雜，暫不比對具體內容)
             if (key !== 'api_key' && key !== 'excluded_paths' && key !== 'user_prompt' && key !== 'system_prompt') {
                 defaults[key] = value;
             }
@@ -70,7 +93,7 @@ function parseJsMockDefaults(filePath) {
     const lines = objBlock.split('\n');
     const mockDefaults = {};
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
         // 範例: batch_size: 150,
         const match = line.match(/^\s*([a-z_]+):\s*(.*?),?$/);
 
@@ -110,7 +133,7 @@ function syncCheck() {
     let hasError = false;
     const allKeys = new Set([...Object.keys(rustDefaults), ...Object.keys(jsDefaults)]);
 
-    allKeys.forEach(key => {
+    allKeys.forEach((key) => {
         if (!(key in rustDefaults)) {
             console.warn(`⚠️ [JS 獨有]: ${key} = ${jsDefaults[key]} (Rust 中無此預設值，可能已刪除)`);
         } else if (!(key in jsDefaults)) {
@@ -125,7 +148,9 @@ function syncCheck() {
     });
 
     if (hasError) {
-        console.error('\n🛑 同步檢查失敗！請確保 tests/frontend/config.test.js 中的 mockDefaultConfig 與 src/config/settings.rs 保持一致。');
+        console.error(
+            '\n🛑 同步檢查失敗！請確保 tests/frontend/config.test.js 中的 mockDefaultConfig 與 src/config/settings.rs 保持一致。'
+        );
         process.exit(1);
     } else {
         console.log('✅ 同步檢查通過！Rust 與 JS Mock 的關鍵預設值完全一致。');
