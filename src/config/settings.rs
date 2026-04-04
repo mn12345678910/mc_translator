@@ -1,6 +1,9 @@
 //! # 設定模組
 //! 負責 AppConfig 結構體定義、config.cfg 與系統憑證 (Keyring) 的讀寫邏輯。
 
+#[cfg(not(test))]
+use secrecy::ExposeSecret;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -16,7 +19,7 @@ pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯�
 pub struct AppConfig {
     /// API 金鑰（Gemini / OpenAI）
     #[serde(skip)]
-    pub api_key: String,
+    pub api_key: SecretString,
 
     // --- [核心 API 設定] ---
     pub api_provider: String,
@@ -632,7 +635,7 @@ impl StyleConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
-            api_key: String::new(),
+            api_key: SecretString::default(),
             api_provider: "無".to_string(),
             model: String::new(),
             ollama_url: "http://localhost:11434".to_string(),
@@ -690,7 +693,7 @@ impl AppConfig {
         // 避免測試過程中修改真實 Keyring
         #[cfg(not(test))]
         if let Ok(key) = get_api_key() {
-            config.api_key = key;
+            config.api_key = key.into();
         }
 
         config
@@ -739,7 +742,7 @@ impl AppConfig {
 
         // 避免測試過程中修改真實 Keyring
         #[cfg(not(test))]
-        let _ = save_api_key(&self.api_key);
+        let _ = save_api_key(self.api_key.expose_secret());
 
         let path = dir.join("config.cfg");
         if let Ok(json) = serde_json::to_string_pretty(self) {

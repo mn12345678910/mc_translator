@@ -1,6 +1,7 @@
 use clap::Parser;
 use dialoguer::{Input, Password, Select};
 use mc_translator::i18n::CliLabels;
+use secrecy::ExposeSecret;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -119,7 +120,7 @@ async fn run_main_with_args(
         config.model = m;
     }
     if let Some(k) = args.api_key.clone() {
-        config.api_key = k;
+        config.api_key = k.into();
     }
     if let Some(b) = args.batch_size {
         config.batch_size = b;
@@ -286,7 +287,7 @@ async fn run_main_with_args(
                             continue;
                         }
 
-                        let has_saved_key = !config.api_key.is_empty();
+                        let has_saved_key = !config.api_key.expose_secret().is_empty();
                         let key_prompt = if has_saved_key {
                             format!(
                                 "{} ({})",
@@ -307,7 +308,7 @@ async fn run_main_with_args(
                         }
 
                         if !key.trim().is_empty() {
-                            config.api_key = key.trim().to_string();
+                            config.api_key = key.trim().to_string().into();
                             config.save(); // 即時存入
                         }
                         status_history.push(3);
@@ -328,7 +329,7 @@ async fn run_main_with_args(
                         let mut items =
                             mc_translator::translation::api::models::fetch_dynamic_models(
                                 &config.api_provider,
-                                &config.api_key,
+                                config.api_key.expose_secret(),
                                 &config.ollama_url,
                                 &config.api_base_url,
                             )

@@ -24,6 +24,7 @@ repos:
     name: cargo clippy
     entry: cargo clippy --workspace --all-targets -- -D warnings
     language: system
+    stages: [pre-push]
     types: [rust]
     pass_filenames: false
 
@@ -38,7 +39,7 @@ repos:
     name: pnpm format
     entry: pnpm format
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-commit]
     pass_filenames: false
 
   - id: sync-version
@@ -66,35 +67,35 @@ repos:
     name: check tauri api
     entry: node tool/check_tauri_sync.js
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: check-ui-elements
     name: check ui elements
     entry: node tool/check_ui_elements.js
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: pnpm-lint
     name: pnpm lint
     entry: pnpm lint
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: pnpm-test
     name: pnpm test
     entry: pnpm test
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: cleanup-redundant-files
     name: cleanup redundant files
     entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log', 'miri_failure*.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator', 'dist' -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
 
   - id: check-config-sync
@@ -143,5 +144,5 @@ repos:
     name: check all versions
     entry: node tool/check_all_versions.js
     language: system
-    stages: [pre-commit, pre-push]
+    stages: [pre-push]
     pass_filenames: false
