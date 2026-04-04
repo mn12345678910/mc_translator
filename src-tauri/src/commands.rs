@@ -1,7 +1,7 @@
-use mc_translator::config::dictionary::{
-    get_official_dict_path, get_user_dict_path, load_dict, save_dict,
+use mc_translator::config::{
+    get_api_key, get_official_dict_path, get_user_dict_path, load_dict, save_api_key, save_dict,
+    AppConfig, StyleConfig,
 };
-use mc_translator::config::{settings::StyleConfig, AppConfig};
 use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::job::JobStatus;
 use mc_translator::translation::{LogEntry, LogLevel};
@@ -14,7 +14,7 @@ pub async fn get_models_from_provider(
     provider: String,
     api_base_url: Option<String>,
 ) -> Result<Vec<String>, String> {
-    let api_key = mc_translator::config::encryption::get_api_key().unwrap_or_default();
+    let api_key = get_api_key().unwrap_or_default();
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()
@@ -197,12 +197,12 @@ pub fn get_default_config() -> AppConfig {
 
 #[tauri::command]
 pub fn get_api_key_cmd() -> String {
-    mc_translator::config::encryption::get_api_key().unwrap_or_default()
+    get_api_key().unwrap_or_default()
 }
 
 #[tauri::command]
 pub fn save_api_key_cmd(key: String) -> Result<(), String> {
-    mc_translator::config::encryption::save_api_key(&key).map_err(|e| e.to_string())
+    save_api_key(&key).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -613,12 +613,11 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub fn get_available_translation_langs() -> Result<Vec<String>, String> {
-    Ok(mc_translator::config::dictionary::get_available_dict_langs())
+    Ok(mc_translator::config::get_available_dict_langs())
 }
 
 #[tauri::command]
 pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     let config = AppConfig::load();
     let path = if dict_type == "user" {
         get_user_dict_path(&config.ui_lang)
@@ -657,7 +656,6 @@ pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn clear_user_dictionary(app: tauri::AppHandle) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
@@ -675,7 +673,6 @@ pub fn clear_user_dictionary(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
@@ -702,8 +699,6 @@ pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Resul
 
 #[tauri::command]
 pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
-
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);
     let dict: std::collections::HashMap<String, String> = load_dict(&path);
@@ -764,9 +759,7 @@ pub fn update_active_job_config(config: AppConfig) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             if let Ok(mut job_cfg) = job.config.lock() {
-                job_cfg.api_key = mc_translator::config::encryption::get_api_key()
-                    .unwrap_or_default()
-                    .into();
+                job_cfg.api_key = get_api_key().unwrap_or_default().into();
                 job_cfg.api_provider = config.api_provider;
                 job_cfg.selected_model = config.model;
                 job_cfg.ollama_url = config.ollama_url;

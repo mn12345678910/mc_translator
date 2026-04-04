@@ -8,8 +8,7 @@ pub fn run() {
             let _ = mc_translator::i18n::GuiLabels::ensure_langs_exists();
 
             // 🟢 確保字典目錄與預設檔案存在
-            use mc_translator::config::dictionary::{ensure_dicts_dir, get_user_dict_path};
-            use mc_translator::config::AppConfig;
+            use mc_translator::config::{ensure_dicts_dir, get_user_dict_path, AppConfig};
             ensure_dicts_dir();
 
             let config = AppConfig::load();
