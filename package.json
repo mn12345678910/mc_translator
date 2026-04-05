@@ -1,52 +1,52 @@
 {
-  "name": "mc_translator",
-  "version": "0.9.14",
-  "description": "> [!NOTE] > 安全須知: > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs",
-    "test": "tests"
-  },
-  "scripts": {
-    "test": "vitest run",
-    "test:frontend": "vitest run",
-    "dev": "node tool/sync_frontend_langs.js && vite",
-    "build": "node tool/sync_frontend_langs.js && vite build",
-    "preview": "vite preview",
-    "tauri": "tauri",
-    "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
-    "lint": "eslint \"frontend/**/*.js\"",
-    "check-tauri": "node tool/check_tauri_sync.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mn12345678910/mc_translator.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/mn12345678910/mc_translator/issues"
-  },
-  "homepage": "https://github.com/mn12345678910/mc_translator#readme",
-  "devDependencies": {
-    "@chenglou/pretext": "^0.0.4",
-    "@tauri-apps/api": "^2.10.1",
-    "@tauri-apps/cli": "^2.10.1",
-    "@vitest/coverage-v8": "^4.1.2",
-    "autoprefixer": "^10.4.27",
-    "cssnano": "^7.1.4",
-    "eslint": "^10.1.0",
-    "happy-dom": "^20.8.8",
-    "postcss-nesting": "^14.0.0",
-    "prettier": "^3.3.3",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2"
-  },
-  "browserslist": [
-    "> 0.5%",
-    "last 2 versions",
-    "not dead"
-  ]
+    "name": "mc_translator",
+    "version": "1.0.0",
+    "description": "> [!NOTE] > 安全須知: > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存，免除本地明文落盤，提昇跨平台安全性。",
+    "main": "index.js",
+    "directories": {
+        "doc": "docs",
+        "test": "tests"
+    },
+    "scripts": {
+        "test": "vitest run",
+        "test:frontend": "vitest run",
+        "dev": "node tool/sync_frontend_langs.js && vite",
+        "build": "node tool/sync_frontend_langs.js && vite build",
+        "preview": "vite preview",
+        "tauri": "tauri",
+        "format": "prettier --write \"frontend/**/*.{html,js,css}\"",
+        "lint": "eslint \"frontend/**/*.js\"",
+        "check-tauri": "node tool/check_tauri_sync.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/mn12345678910/mc_translator.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/mn12345678910/mc_translator/issues"
+    },
+    "homepage": "https://github.com/mn12345678910/mc_translator#readme",
+    "devDependencies": {
+        "@chenglou/pretext": "^0.0.4",
+        "@tauri-apps/api": "^2.10.1",
+        "@tauri-apps/cli": "^2.10.1",
+        "@vitest/coverage-v8": "^4.1.2",
+        "autoprefixer": "^10.4.27",
+        "cssnano": "^7.1.4",
+        "eslint": "^10.1.0",
+        "happy-dom": "^20.8.8",
+        "postcss-nesting": "^14.0.0",
+        "prettier": "^3.3.3",
+        "vite": "^8.0.3",
+        "vitest": "^4.1.2"
+    },
+    "browserslist": [
+        "> 0.5%",
+        "last 2 versions",
+        "not dead"
+    ]
 }

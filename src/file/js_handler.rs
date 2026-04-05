@@ -1,13 +1,11 @@
-use crate::file::pipeline::{FileStatus, FileTask};
+use crate::file::pipeline::FileTask;
 use crate::translation::batching::GlobalBatchItem;
-use crate::translation::job::JobConfig;
 use crate::translation::LogLevel;
 use crate::utils::helpers::add_log_event;
 use crate::utils::skip_rules::should_skip_value;
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::LazyLock;
 
 pub static JS_INNER_SINGLE_RE: LazyLock<regex::Regex> =
     LazyLock::new(|| regex::Regex::new(r"(?s)'(.*?)'").unwrap());
@@ -133,6 +131,7 @@ pub async fn collect_js_task(
 mod tests {
     use super::*;
     use crate::translation::job::{JobConfig, JobSharedState};
+    use std::collections::HashMap;
     use std::sync::atomic::{AtomicBool, AtomicU32};
     use std::sync::{Arc, Mutex};
 

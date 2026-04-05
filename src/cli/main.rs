@@ -102,38 +102,6 @@ enum CliStep {
     Confirm,
 }
 
-impl CliStep {
-    fn as_usize(self) -> usize {
-        match self {
-            CliStep::Lang => 1,
-            CliStep::Provider => 2,
-            CliStep::ApiKey => 3,
-            CliStep::Model => 4,
-            CliStep::InputPath => 5,
-            CliStep::OutputPath => 6,
-            CliStep::Confirm => 7,
-        }
-    }
-
-    fn from_usize(n: usize) -> Option<Self> {
-        match n {
-            1 => Some(CliStep::Lang),
-            2 => Some(CliStep::Provider),
-            3 => Some(CliStep::ApiKey),
-            4 => Some(CliStep::Model),
-            5 => Some(CliStep::InputPath),
-            6 => Some(CliStep::OutputPath),
-            7 => Some(CliStep::Confirm),
-            _ => None,
-        }
-    }
-
-    fn is_final(self) -> bool {
-        matches!(self, CliStep::Confirm)
-    }
-}
-
-const CONFIRM_YES: usize = 0;
 const CONFIRM_ADVANCED: usize = 1;
 const CONFIRM_NO: usize = 2;
 const CONFIRM_BACK: usize = 3;

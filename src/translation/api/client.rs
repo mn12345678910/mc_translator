@@ -154,9 +154,7 @@ pub async fn translate_one(
         "Ollama" => translate_with_ollama(text, config, file_name, glossary).await,
         "DeepL" => translate_with_deepl(text, config).await,
         "Google Free" => translate_free_google_with_config(text, config).await,
-        _ => {
-            return Err(format!("UNSUPPORTED:不支援的 API 提供商 ({})", config.api_provider).into())
-        }
+        _ => Err(format!("UNSUPPORTED:不支援的 API 提供商 ({})", config.api_provider).into()),
     }
 }
 

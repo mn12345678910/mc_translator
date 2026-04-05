@@ -279,7 +279,7 @@ mod tests {
     use super::*;
     use crate::translation::job::{JobConfig, JobSharedState};
     use std::collections::HashMap;
-    use std::io::{Read, Write};
+    use std::io::Write;
     use std::sync::atomic::{AtomicBool, AtomicU32};
     use std::sync::{Arc, Mutex};
 
