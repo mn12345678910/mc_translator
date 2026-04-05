@@ -6,8 +6,7 @@ pub fn is_cjk(c: char) -> bool {
 }
 
 /// 推論結果黑名單
-pub const INFERENCE_BLACKLIST: &[&str] =
-    &["色", "色床", "的", "了", "是", "在", "有", "為", "牆上"];
+pub const INFERENCE_BLACKLIST: &[&str] = &["色", "的", "了", "是", "在", "有", "為", "牆上"];
 
 pub fn clean_inferred_zh(s: &str) -> Option<String> {
     let mut result = s.to_string();
