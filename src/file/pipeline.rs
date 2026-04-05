@@ -3,7 +3,6 @@ use crate::file::js_handler::collect_js_task;
 use crate::file::json_handler::collect_json_task;
 use crate::file::pack_gen::{output_resource_pack, write_to_temp_or_output};
 use crate::translation::batching::{translate_global_batches, GlobalBatchItem};
-use crate::translation::glossary::mc_lang::McLangFiles;
 use crate::translation::glossary::GlossaryAutomaton;
 use crate::translation::job::JobSharedState;
 use crate::translation::LogLevel;
@@ -76,7 +75,6 @@ impl FileTask {
 pub async fn process_all_files(
     paths: Vec<(std::path::PathBuf, String)>,
     state: JobSharedState,
-    _mc_lang_arc: Arc<Mutex<Option<McLangFiles>>>,
     term_arc: Arc<Mutex<Vec<(String, String)>>>,
     exact_arc: Arc<Mutex<HashMap<String, String>>>,
     inferred_arc: Arc<Mutex<HashMap<String, String>>>,

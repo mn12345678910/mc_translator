@@ -211,7 +211,6 @@ pub async fn start_translation_workflow(
     let res = crate::file::pipeline::process_all_files(
         expanded_input_paths,
         job_state.clone(),
-        mc_lang,
         term_replacements,
         exact_match_map,
         inferred_match_map,

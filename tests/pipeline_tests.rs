@@ -118,22 +118,12 @@ async fn test_process_all_files_multi_types() {
     ];
 
     use mc_translator::file::pipeline::process_all_files;
-    use mc_translator::translation::glossary::mc_lang::McLangFiles;
 
     let exact_arc = Arc::new(Mutex::new(HashMap::new()));
     let inferred_arc = Arc::new(Mutex::new(HashMap::new()));
-    let _mc_lang_arc: Arc<Mutex<Option<McLangFiles>>> = Arc::new(Mutex::new(None));
     let _term_arc = Arc::new(Mutex::new(Vec::new()));
 
-    let res = process_all_files(
-        paths,
-        state,
-        _mc_lang_arc,
-        _term_arc,
-        exact_arc,
-        inferred_arc,
-    )
-    .await;
+    let res = process_all_files(paths, state, _term_arc, exact_arc, inferred_arc).await;
 
     assert!(res.is_ok());
 
