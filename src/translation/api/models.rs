@@ -4,12 +4,14 @@ fn build_models_url(base_url: &str, default_url: &str) -> String {
     if base_url.is_empty() {
         return default_url.to_string();
     }
+    if base_url.ends_with("/models") {
+        return base_url.to_string();
+    }
     if base_url.ends_with("/chat/completions") {
         base_url.replace("/chat/completions", "/models")
     } else if base_url.ends_with("/v1") || base_url.ends_with("/v1/") {
         format!("{}/models", base_url.trim_end_matches('/'))
     } else {
-        // Fallback or generic append
         format!("{}/v1/models", base_url.trim_end_matches('/'))
     }
 }
@@ -305,9 +307,37 @@ mod tests {
         assert_eq!(version_to_pack_format("1.21.4"), 46);
         assert_eq!(version_to_pack_format("1.20.1"), 15);
         assert_eq!(version_to_pack_format("1.12.2"), 3);
-        assert_eq!(version_to_pack_format("1.9"), 2); // 補充覆蓋
-        assert_eq!(version_to_pack_format("1.6.1"), 1); // 補充覆蓋
+        assert_eq!(version_to_pack_format("1.9"), 2);
+        assert_eq!(version_to_pack_format("1.6.1"), 1);
         assert_eq!(version_to_pack_format("9.9.9"), 46);
+    }
+
+    #[test]
+    fn test_build_models_url() {
+        assert_eq!(
+            build_models_url("", "https://api.openai.com/v1/models"),
+            "https://api.openai.com/v1/models"
+        );
+        assert_eq!(
+            build_models_url("https://api.example.com/chat/completions", ""),
+            "https://api.example.com/models"
+        );
+        assert_eq!(
+            build_models_url("https://api.example.com/v1", ""),
+            "https://api.example.com/v1/models"
+        );
+        assert_eq!(
+            build_models_url("https://api.example.com/v1/", ""),
+            "https://api.example.com/v1/models"
+        );
+        assert_eq!(
+            build_models_url("https://api.example.com/v1/models", ""),
+            "https://api.example.com/v1/models"
+        );
+        assert_eq!(
+            build_models_url("https://api.example.com", ""),
+            "https://api.example.com/v1/models"
+        );
     }
 
     #[tokio::test]
