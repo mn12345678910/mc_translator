@@ -137,16 +137,16 @@ pub fn write_to_temp_or_output(
         if should_zip {
             let zip_temp_path = temp_dir.join(&final_path);
             if let Some(parent) = zip_temp_path.parent() {
-                let _ = fs::create_dir_all(parent);
+                fs::create_dir_all(parent)?;
             }
-            let _ = fs::write(&zip_temp_path, &content);
+            fs::write(&zip_temp_path, &content)?;
         } else {
             // 獨立檔案鏡像 (保持相對路徑)
             let fs_path = output_path.join(&final_path);
             if let Some(parent) = fs_path.parent() {
-                let _ = fs::create_dir_all(parent);
+                fs::create_dir_all(parent)?;
             }
-            let _ = fs::write(&fs_path, content);
+            fs::write(&fs_path, content)?;
         }
     }
     Ok(())
@@ -174,9 +174,7 @@ pub async fn output_resource_pack(
                 .any(|e| e.file_type().is_file());
 
             if !has_files {
-                if let Err(e) = fs::remove_dir_all(&temp_dir) {
-                    eprintln!("清理空目錄失敗: {}", e);
-                }
+                let _ = fs::remove_dir_all(&temp_dir);
                 return Ok(());
             }
 
@@ -219,7 +217,8 @@ pub async fn output_resource_pack(
             let zip_file = fs::File::create(&zip_path)?;
             let mut zip_out = zip::ZipWriter::new(zip_file);
             let options = zip::write::FileOptions::<()>::default()
-                .compression_method(zip::CompressionMethod::Deflated);
+                .compression_method(zip::CompressionMethod::Deflated)
+                .last_modified_time(zip::DateTime::default());
 
             for dir_entry in walkdir::WalkDir::new(&temp_dir) {
                 let entry = dir_entry.unwrap();
@@ -237,9 +236,7 @@ pub async fn output_resource_pack(
             }
             zip_out.finish()?;
 
-            if let Err(e) = fs::remove_dir_all(&temp_dir) {
-                eprintln!("清理暫存目錄失敗: {}", e);
-            }
+            let _ = fs::remove_dir_all(&temp_dir);
 
             add_log_event(
                 &log,
