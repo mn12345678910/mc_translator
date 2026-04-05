@@ -160,6 +160,8 @@ pub async fn translate_json_recursive(
                         || err_msg.starts_with("NETWORK_ERROR:")
                         || err_msg.starts_with("PARSE_ERROR:")
                         || err_msg.starts_with("UNSUPPORTED:")
+                        || err_msg.starts_with("EMPTY_RESPONSE:")
+                        || err_msg.starts_with("API_KEY_REQUIRED:")
                     {
                         return Err(e);
                     }
@@ -239,7 +241,14 @@ pub async fn translate_json_recursive(
             }
             Err(e) => {
                 let err_msg = e.to_string();
-                if err_msg.starts_with("TIMEOUT:") {
+                if err_msg.starts_with("TIMEOUT:")
+                    || err_msg.starts_with("API_ERROR:")
+                    || err_msg.starts_with("NETWORK_ERROR:")
+                    || err_msg.starts_with("PARSE_ERROR:")
+                    || err_msg.starts_with("UNSUPPORTED:")
+                    || err_msg.starts_with("EMPTY_RESPONSE:")
+                    || err_msg.starts_with("API_KEY_REQUIRED:")
+                {
                     return Err(e);
                 }
                 let config_locked = ctx.config.lock().unwrap();
@@ -331,22 +340,18 @@ pub fn collect_translatable_strings(
 
             if let Some(existing) = target_base.as_str() {
                 if !existing.is_empty() && existing != s {
-                    let has_diff = false;
-
-                    if !has_diff {
-                        let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
-                        ctx.translations
-                            .lock()
-                            .unwrap()
-                            .entry(key.clone())
-                            .or_default()
-                            .push(existing.to_string());
-                        ctx.prefilled
-                            .lock()
-                            .unwrap()
-                            .push((s.clone(), key, existing.to_string()));
-                        return;
-                    }
+                    let key = key_name.unwrap_or("__ARRAY_ELEMENT__").to_string();
+                    ctx.translations
+                        .lock()
+                        .unwrap()
+                        .entry(key.clone())
+                        .or_default()
+                        .push(existing.to_string());
+                    ctx.prefilled
+                        .lock()
+                        .unwrap()
+                        .push((s.clone(), key, existing.to_string()));
+                    return;
                 }
             }
 
@@ -372,7 +377,6 @@ pub fn collect_translatable_strings(
 }
 
 /// 遞迴計算一個 JSON 物件中需要翻譯的字串總數
-#[allow(dead_code)]
 pub fn count_strings(
     value: &serde_json::Value,
     key_name: Option<&str>,
@@ -443,7 +447,11 @@ async fn realtime_save_file_helper(
     translations_map: std::collections::HashMap<String, Vec<String>>,
 ) {
     let final_content = sync_formatting(&content, &translations_map);
-    let _ = tokio::task::spawn_blocking(move || std::fs::write(fs_path, final_content)).await;
+    if let Err(e) =
+        tokio::task::spawn_blocking(move || std::fs::write(fs_path, final_content)).await
+    {
+        eprintln!("即時儲存失敗: {}", e);
+    }
 }
 
 #[cfg(test)]
@@ -915,8 +923,8 @@ mod tests {
         )
         .await;
 
-        assert!(res.is_ok());
-        let logs = ctx.current_log.lock().unwrap();
-        assert!(!logs.is_empty(), "應該有單筆錯誤日誌記錄");
+        assert!(res.is_err(), "單筆 API 錯誤現在應提早返回 Err");
+        let err_msg = res.unwrap_err().to_string();
+        assert!(err_msg.contains("API_ERROR") || err_msg.contains("Ollama API Error"));
     }
 }
