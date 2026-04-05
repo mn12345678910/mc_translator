@@ -1,3 +1,4 @@
+use crate::translation::api::client::CLIENT;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -47,15 +48,16 @@ pub async fn load_mc_dicts_with_args(
 
     let mut files = McLangFiles::default();
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .user_agent("mc_translator") // GitHub API 必要 Header
-        .build()?;
-
     // 1. 取得目錄下的檔案清單 (優先透過 API 獲取所有官方支援字典)
     let mut available_langs = Vec::new();
 
-    if let Ok(resp) = client.get(api_url).send().await {
+    if let Ok(resp) = CLIENT
+        .get(api_url)
+        .timeout(std::time::Duration::from_secs(30))
+        .header("User-Agent", "mc_translator")
+        .send()
+        .await
+    {
         if resp.status().is_success() {
             if let Ok(items) = resp.json::<Vec<GithubContentItem>>().await {
                 for item in items {
@@ -67,7 +69,7 @@ pub async fn load_mc_dicts_with_args(
                         let cache_path = dict_dir.join(&item.name);
                         if !cache_path.exists() {
                             if let Some(dl_url) = item.download_url {
-                                if let Ok(dl_resp) = client.get(&dl_url).send().await {
+                                if let Ok(dl_resp) = CLIENT.get(&dl_url).send().await {
                                     if let Ok(txt) = dl_resp.text().await {
                                         let _ = fs::write(&cache_path, txt);
                                     }
