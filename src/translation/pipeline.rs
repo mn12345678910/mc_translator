@@ -229,6 +229,5 @@ pub async fn start_translation_workflow(
         *active = None;
     }
 
-    let i18n = crate::i18n::CommonLabels::load_or_default(&config.ui_lang);
     res.map_err(|e| format!("{}: {}", i18n.error_pipeline_failed, e).into())
 }
