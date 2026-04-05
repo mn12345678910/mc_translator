@@ -50,8 +50,8 @@ pub fn should_skip_value(val: &str) -> bool {
     }
     let trimmed = val.trim();
     if trimmed.is_empty() {
-        return false;
-    } // 只有空格的字串不應該被跳過
+        return true; // 只有空格的字串也應該被跳過
+    }
 
     let bytes = trimmed.as_bytes();
 
@@ -223,8 +223,8 @@ mod tests {
     #[test]
     fn test_should_skip_value_edge_cases() {
         // 空白與只有空格
-        assert!(should_skip_value("")); // 實務上為空應跳過
-        assert!(!should_skip_value("   ")); // 只有空格不應該被跳過
+        assert!(should_skip_value(""));
+        assert!(should_skip_value("   "));
 
         // Base64 規則：長度 >=8 且以 = 結尾 且不包含空格
         assert!(should_skip_value("aGVsbG8="));
