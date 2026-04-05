@@ -1,38 +1,15 @@
 use crate::file::pipeline::{FileStatus, FileTask};
+use crate::file::utils::flatten_json_values;
 use crate::translation::batching::GlobalBatchItem;
 use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
 use crate::translation::job::{JobConfig, JobSharedState};
+use crate::translation::LogLevel;
+use crate::utils::helpers::add_log_event;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-
-/// 遞迴遍歷 JSON，模擬 `engine::collect_translatable_strings` 的遍歷順序，
-/// 產生 (leaf_key, string_value) 序列，用於建立兄弟語言檔案的對照表。
-fn flatten_json_values(
-    value: &serde_json::Value,
-    key: Option<&str>,
-    out: &mut Vec<(String, String)>,
-) {
-    match value {
-        serde_json::Value::String(s) => {
-            let k = key.unwrap_or("__ARRAY_ELEMENT__").to_string();
-            out.push((k, s.clone()));
-        }
-        serde_json::Value::Object(map) => {
-            for (k, v) in map {
-                flatten_json_values(v, Some(k), out);
-            }
-        }
-        serde_json::Value::Array(arr) => {
-            for v in arr {
-                flatten_json_values(v, None, out);
-            }
-        }
-        _ => {}
-    }
-}
 
 pub async fn collect_json_task(
     file_id: usize,
@@ -70,16 +47,25 @@ pub async fn collect_json_task(
         serde_json::Value,
         HashMap<String, VecDeque<String>>,
     );
+    let log = state.log.clone();
+    let display_path = crate::utils::helpers::extract_display_path(path);
+    let enable_debug = {
+        let cfg = state.config.lock().unwrap();
+        cfg.enable_debug_log
+    };
     let (content, source_value, target_base, alt_map) = tokio::task::spawn_blocking(
         move || -> Result<JsonTaskData, Box<dyn std::error::Error + Send + Sync>> {
             let content = match fs::read_to_string(&path_clone) {
                 Ok(c) => c,
                 Err(e) => {
-                    eprintln!(
-                        "\x1b[31m[{}] [錯誤] 無法讀取 JSON 檔案 {:?}: {}\x1b[0m",
-                        chrono::Local::now().format("%H:%M:%S"),
-                        path_clone,
-                        e
+                    add_log_event(
+                        &log,
+                        LogLevel::Error,
+                        &format!("無法讀取 JSON 檔案 {:?}: {}", path_clone, e),
+                        &source_lang,
+                        &target_lang,
+                        &display_path,
+                        enable_debug,
                     );
                     return Err(e.into());
                 }
@@ -87,11 +73,14 @@ pub async fn collect_json_task(
             let source_value: serde_json::Value = match serde_json::from_str(&content) {
                 Ok(v) => v,
                 Err(e) => {
-                    eprintln!(
-                        "\x1b[31m[{}] [錯誤] JSON 格式錯誤 {:?}: {}\x1b[0m",
-                        chrono::Local::now().format("%H:%M:%S"),
-                        path_clone,
-                        e
+                    add_log_event(
+                        &log,
+                        LogLevel::Error,
+                        &format!("JSON 格式錯誤 {:?}: {}", path_clone, e),
+                        &source_lang,
+                        &target_lang,
+                        &display_path,
+                        enable_debug,
                     );
                     return Err(e.into());
                 }

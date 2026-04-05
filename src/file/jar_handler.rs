@@ -1,39 +1,16 @@
 use crate::file::pipeline::FileTask;
+use crate::file::utils::flatten_json_values;
 use crate::translation::batching::GlobalBatchItem;
 use crate::translation::context::{ContextOptions, TranslationContext};
 use crate::translation::engine;
 use crate::translation::job::JobSharedState;
+use crate::translation::LogLevel;
+use crate::utils::helpers::add_log_event;
 use std::collections::{HashMap, VecDeque};
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
-
-/// 遞迴遍歷 JSON，模擬 `engine::collect_translatable_strings` 的遍歷順序，
-/// 產生 (leaf_key, string_value) 序列，用於建立兄弟語言檔案的對照表。
-fn flatten_json_values_jar(
-    value: &serde_json::Value,
-    key: Option<&str>,
-    out: &mut Vec<(String, String)>,
-) {
-    match value {
-        serde_json::Value::String(s) => {
-            let k = key.unwrap_or("__ARRAY_ELEMENT__").to_string();
-            out.push((k, s.clone()));
-        }
-        serde_json::Value::Object(map) => {
-            for (k, v) in map {
-                flatten_json_values_jar(v, Some(k), out);
-            }
-        }
-        serde_json::Value::Array(arr) => {
-            for v in arr {
-                flatten_json_values_jar(v, None, out);
-            }
-        }
-        _ => {}
-    }
-}
 
 pub async fn collect_jar_tasks(
     start_file_id: usize,
@@ -72,6 +49,11 @@ pub async fn collect_jar_tasks(
         HashMap<String, VecDeque<String>>,
     );
     let state_clone = state.clone();
+    let log = state.log.clone();
+    let enable_debug = {
+        let cfg = state.config.lock().unwrap();
+        cfg.enable_debug_log
+    };
     let tasks_data = tokio::task::spawn_blocking(
         move || -> Result<Vec<JarTaskData>, Box<dyn std::error::Error + Send + Sync>> {
             let state = state_clone;
@@ -95,14 +77,18 @@ pub async fn collect_jar_tasks(
                     let mut zip_entry = match archive.by_index(i) {
                         Ok(e) => e,
                         Err(e) => {
-                            eprintln!(
-                                "\x1b[31m[{}] [ERROR] {}\x1b[0m",
-                                chrono::Local::now().format("%H:%M:%S"),
-                                state
+                            add_log_event(
+                                &log,
+                                LogLevel::Error,
+                                &state
                                     .i18n
                                     .error_read_jar_index
                                     .replace("{}", &i.to_string())
-                                    .replace("{}", &e.to_string())
+                                    .replace("{}", &e.to_string()),
+                                &source_lang,
+                                &target_lang,
+                                &path_clone.to_string_lossy(),
+                                enable_debug,
                             );
                             continue;
                         }
@@ -136,14 +122,18 @@ pub async fn collect_jar_tasks(
                     let mut content = String::new();
                     if is_target {
                         if let Err(e) = zip_entry.read_to_string(&mut content) {
-                            eprintln!(
-                                "\x1b[31m[{}] [ERROR] {}\x1b[0m",
-                                chrono::Local::now().format("%H:%M:%S"),
-                                state
+                            add_log_event(
+                                &log,
+                                LogLevel::Error,
+                                &state
                                     .i18n
                                     .error_read_jar_file
                                     .replace("{}", &name)
-                                    .replace("{}", &e.to_string())
+                                    .replace("{}", &e.to_string()),
+                                &source_lang,
+                                &target_lang,
+                                &path_clone.to_string_lossy(),
+                                enable_debug,
                             );
                         }
                     }
@@ -200,7 +190,7 @@ pub async fn collect_jar_tasks(
                                         serde_json::from_str::<serde_json::Value>(&alt_content)
                                     {
                                         let mut pairs = Vec::new();
-                                        flatten_json_values_jar(&alt_value, None, &mut pairs);
+                                        flatten_json_values(&alt_value, None, &mut pairs);
                                         for (k, v) in pairs {
                                             alt_map.entry(k).or_default().push_back(v);
                                         }
@@ -284,96 +274,12 @@ pub async fn collect_jar_tasks(
     Ok((file_tasks, global_items))
 }
 
-pub fn repack_jar(
-    source_path: &Path,
-    target_path: &Path,
-    translated_files: &HashMap<String, String>, // 現在直接接收記憶體中的翻譯內容
-    config: &crate::translation::job::JobConfig,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    if translated_files.is_empty() {
-        return Ok(());
-    }
-
-    // 確保目標資料夾存在
-    if let Some(parent) = target_path.parent() {
-        fs::create_dir_all(parent).unwrap_or(());
-    }
-
-    let temp_jar_path = target_path.with_extension("jar.tmp");
-
-    {
-        let temp_file = fs::File::create(&temp_jar_path)?;
-        let mut zip_out = zip::ZipWriter::new(temp_file);
-
-        let zip_in_file = fs::File::open(source_path)?;
-        let mut zip_in = zip::ZipArchive::new(zip_in_file)?;
-
-        let src_book_match = format!("/{}", config.source_lang);
-        let tgt_book_replace = format!("/{}", config.target_lang);
-        let src_suffix = format!("{}.json", config.source_lang);
-        let tgt_suffix = format!("{}.json", config.target_lang);
-
-        // 1. 建立目標檔案名稱集 (支援標準與 Patchouli 手冊路徑)
-        let mut target_names = std::collections::HashSet::new();
-        for name in translated_files.keys() {
-            let actual_name = if name.contains("patchouli_books/") {
-                name.replace(&src_book_match, &tgt_book_replace)
-            } else if name.ends_with(&src_suffix) {
-                name.replace(&src_suffix, &tgt_suffix)
-            } else {
-                name.clone()
-            };
-            target_names.insert(actual_name);
-        }
-
-        // 2. 串流式處理現有 Entry
-        for i in 0..zip_in.len() {
-            let mut entry = zip_in.by_index(i)?;
-            let name = entry.name().to_string();
-
-            if target_names.contains(&name) {
-                continue; // 跳過將被替換的檔案
-            }
-
-            let mut buffer = Vec::new();
-            entry.read_to_end(&mut buffer)?;
-
-            let options = zip::write::FileOptions::<()>::default()
-                .compression_method(zip::CompressionMethod::Deflated);
-
-            zip_out.start_file::<_, ()>(name, options)?;
-            zip_out.write_all(&buffer)?;
-        }
-
-        // 3. 寫入新的翻譯內容
-        for (name, content) in translated_files {
-            let actual_name = if name.contains("patchouli_books/") {
-                name.replace(&src_book_match, &tgt_book_replace)
-            } else if name.ends_with(&src_suffix) {
-                name.replace(&src_suffix, &tgt_suffix)
-            } else {
-                name.clone()
-            };
-            zip_out.start_file::<_, ()>(
-                actual_name,
-                zip::write::FileOptions::<()>::default()
-                    .compression_method(zip::CompressionMethod::Deflated),
-            )?;
-            zip_out.write_all(content.as_bytes())?;
-        }
-        zip_out.finish()?;
-    }
-
-    fs::rename(&temp_jar_path, target_path)?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::translation::job::{JobConfig, JobSharedState};
     use std::collections::HashMap;
-    use std::io::Read;
+    use std::io::{Read, Write};
     use std::sync::atomic::{AtomicBool, AtomicU32};
     use std::sync::{Arc, Mutex};
 
@@ -480,79 +386,6 @@ mod tests {
         // 驗證是否包含 patchouli 路徑或標準路徑
         let has_book = tasks.iter().any(|t| t.rel_path.contains("patchouli_books"));
         assert!(has_book);
-
-        let _ = std::fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
-    fn test_repack_jar() {
-        let temp_dir = std::env::temp_dir().join("mc_translator_jar_test_repack");
-        let _ = std::fs::remove_dir_all(&temp_dir);
-        std::fs::create_dir_all(&temp_dir).unwrap();
-
-        let source_path = temp_dir.join("source.jar");
-        let target_path = temp_dir.join("target.jar");
-
-        {
-            let file = std::fs::File::create(&source_path).unwrap();
-            let mut zip = zip::ZipWriter::new(file);
-            let options = zip::write::FileOptions::<()>::default();
-
-            zip.start_file::<_, ()>("assets/minecraft/lang/en_us.json", options)
-                .unwrap();
-            zip.write_all(r#"{"menu.play": "Play"}"#.as_bytes())
-                .unwrap();
-
-            // 增加 patchouli_books
-            zip.start_file::<_, ()>(
-                "assets/minecraft/patchouli_books/guide/en_us/book.json",
-                options,
-            )
-            .unwrap();
-            zip.write_all(r#"{"name": "Guide"}"#.as_bytes()).unwrap();
-
-            zip.finish().unwrap();
-        }
-
-        let config = JobConfig {
-            source_lang: "en_us".to_string(),
-            target_lang: "zh_tw".to_string(),
-            ..JobConfig::default()
-        };
-
-        let mut translated = HashMap::new();
-        translated.insert(
-            "assets/minecraft/lang/en_us.json".to_string(),
-            r#"{"menu.play": "遊玩"}"#.to_string(),
-        );
-        translated.insert(
-            "assets/minecraft/patchouli_books/guide/en_us/book.json".to_string(),
-            r#"{"name": "指南"}"#.to_string(),
-        );
-
-        let res = repack_jar(&source_path, &target_path, &translated, &config);
-        assert!(res.is_ok());
-        assert!(target_path.exists());
-
-        let target_file = std::fs::File::open(&target_path).unwrap();
-        let mut target_zip = zip::ZipArchive::new(target_file).unwrap();
-
-        {
-            let target_entry_name = "assets/minecraft/lang/zh_tw.json";
-            let mut zh_tw_f = target_zip.by_name(target_entry_name).unwrap();
-            let mut content = String::new();
-            zh_tw_f.read_to_string(&mut content).unwrap();
-            assert!(content.contains("遊玩"));
-        }
-
-        // 驗證 patchouli
-        {
-            let book_entry_name = "assets/minecraft/patchouli_books/guide/zh_tw/book.json";
-            let mut book_f = target_zip.by_name(book_entry_name).unwrap();
-            let mut book_content = String::new();
-            book_f.read_to_string(&mut book_content).unwrap();
-            assert!(book_content.contains("指南"));
-        }
 
         let _ = std::fs::remove_dir_all(&temp_dir);
     }
