@@ -174,6 +174,7 @@ export async function saveConfig() {
 
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();
+        validateCanTranslate();
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
@@ -349,10 +350,7 @@ export async function restoreDefaultConfig() {
 
         toggleOllamaGroup();
         toggleApiKeyVisibility();
-        toggleFastConvertGroup(
-            (state.currentConfig.source_lang === 'zh_cn' && state.currentConfig.target_lang === 'zh_tw') ||
-                (state.currentConfig.source_lang === 'zh_tw' && state.currentConfig.target_lang === 'zh_cn')
-        );
+        toggleFastConvertGroup();
 
         // 更新 Label 狀態 (切換開關的文字)
         ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
