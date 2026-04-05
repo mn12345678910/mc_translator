@@ -119,7 +119,7 @@ pub fn finalize_translation(
 }
 
 /// 全域共用的 HTTP 用戶端
-pub(crate) static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+pub static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .tcp_keepalive(Some(std::time::Duration::from_secs(60)))
         .pool_idle_timeout(Some(std::time::Duration::from_secs(90)))
