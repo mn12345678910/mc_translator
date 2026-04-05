@@ -2532,7 +2532,6 @@ dependencies = [
  "hanconv",
  "keyring",
  "lazy_static",
- "once_cell",
  "regex",
  "reqwest",
  "secrecy",

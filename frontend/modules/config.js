@@ -291,9 +291,13 @@ export function validateCanTranslate() {
     const btnTranslate = document.getElementById('btn-translate');
     const selectedModel = document.getElementById('selected-model');
     const apiProvider = document.getElementById('api-provider');
+    const apiKey = document.getElementById('api-key');
     if (btnTranslate && selectedModel && apiProvider) {
+        const noKeyProviders = ['Ollama', 'Google Free', '無'];
+        const needsKey = !noKeyProviders.includes(apiProvider.value);
+        const hasKey = needsKey ? apiKey && apiKey.value.trim() !== '' : true;
         btnTranslate.disabled =
-            !selectedModel.value && apiProvider.value !== 'Google Free' && apiProvider.value !== 'Ollama';
+            (!selectedModel.value && apiProvider.value !== 'Google Free' && apiProvider.value !== 'Ollama') || !hasKey;
     }
 }
 export async function restoreDefaultConfig() {

@@ -1,8 +1,8 @@
 use crate::translation::glossary::TermType;
 use crate::translation::job::JobConfig;
-use once_cell::sync::Lazy;
 use secrecy::ExposeSecret;
 use std::collections::HashMap;
+use std::sync::LazyLock;
 
 // 移除硬編碼的 TECHNICAL_CONSTRAINTS 與 DEFAULT_SYSTEM_PROMPT，改由設定模組統一管理
 
@@ -119,7 +119,7 @@ pub fn finalize_translation(
 }
 
 /// 全域共用的 HTTP 用戶端
-pub(crate) static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+pub(crate) static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .tcp_keepalive(Some(std::time::Duration::from_secs(60)))
         .pool_idle_timeout(Some(std::time::Duration::from_secs(90)))
@@ -137,21 +137,26 @@ pub async fn translate_one(
     match config.api_provider.as_str() {
         "Gemini" => {
             if config.api_key.expose_secret().is_empty() {
-                translate_free_google_with_config(text, config).await
-            } else {
-                translate_with_gemini(text, config, file_name, glossary).await
+                return Err("API_KEY_REQUIRED:Gemini 需要 API Key，請在設定中提供".into());
             }
+            translate_with_gemini(text, config, file_name, glossary).await
         }
         "OpenAI" | "DeepSeek" | "Mistral" => {
             if config.api_key.expose_secret().is_empty() {
-                translate_free_google_with_config(text, config).await
-            } else {
-                translate_with_openai_compatible(text, config, file_name, glossary).await
+                return Err(format!(
+                    "API_KEY_REQUIRED:{} 需要 API Key，請在設定中提供",
+                    config.api_provider
+                )
+                .into());
             }
+            translate_with_openai_compatible(text, config, file_name, glossary).await
         }
         "Ollama" => translate_with_ollama(text, config, file_name, glossary).await,
         "DeepL" => translate_with_deepl(text, config).await,
-        _ => translate_free_google_with_config(text, config).await,
+        "Google Free" => translate_free_google_with_config(text, config).await,
+        _ => {
+            return Err(format!("UNSUPPORTED:不支援的 API 提供商 ({})", config.api_provider).into())
+        }
     }
 }
 
@@ -196,7 +201,6 @@ async fn call_google_api_raw(
 }
 
 /// 批量翻譯
-#[allow(dead_code)]
 pub async fn translate_batch(
     texts: &[String],
     config: &JobConfig,
@@ -1197,7 +1201,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_translate_one_fallback_to_google_free() {
+    async fn test_translate_one_requires_api_key_gemini() {
         use crate::translation::job::JobConfig;
 
         let config = JobConfig {
@@ -1208,13 +1212,12 @@ mod tests {
         };
 
         let res = translate_one("hello", &config, "test.json", None).await;
-
-        // 我們只關心調用順利進去，不論網路成功或失敗(Error)，能執行過該分支即可增加覆蓋率。
-        assert!(res.is_err() || res.is_ok());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("API_KEY_REQUIRED"));
     }
 
     #[tokio::test]
-    async fn test_translate_one_fallback_to_google_free_openai() {
+    async fn test_translate_one_requires_api_key_openai() {
         use crate::translation::job::JobConfig;
 
         let config = JobConfig {
@@ -1225,7 +1228,7 @@ mod tests {
         };
 
         let res = translate_one("hello", &config, "test.json", None).await;
-
-        assert!(res.is_err() || res.is_ok());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().to_string().contains("API_KEY_REQUIRED"));
     }
 }
