@@ -4,7 +4,10 @@ use crate::translation::{LogEntry, LogLevel};
 use crate::utils::helpers::add_log_event;
 use crate::utils::text_processing::{postprocess_text, preprocess_text, validate_and_cleanup};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
+
+static BATCH_TAG_RE: LazyLock<regex::Regex> =
+    LazyLock::new(|| regex::Regex::new(r"\[i(\d+)\]").unwrap());
 
 /// 在全域模式下的一個翻譯項目
 #[derive(Debug, Clone)]
@@ -107,7 +110,6 @@ pub async fn translate_global_batches(
         progress,
         current_batch,
         total_batches,
-        counter: Arc::new(Mutex::new(0)),
         log,
         cancelled,
         paused,
@@ -129,7 +131,6 @@ pub struct RunBatchContext<'a> {
     pub progress: Arc<AtomicU32>,
     pub current_batch: Arc<AtomicU32>,
     pub total_batches: Arc<AtomicU32>,
-    pub counter: Arc<Mutex<usize>>,
     pub log: Arc<Mutex<Vec<LogEntry>>>,
     pub cancelled: Arc<AtomicBool>,
     pub paused: Arc<AtomicBool>,
@@ -152,7 +153,6 @@ pub async fn run_translation_batch(
     let progress = ctx.progress;
     let current_batch = ctx.current_batch;
     let total_batches = ctx.total_batches;
-    let _counter = ctx.counter;
     let log = ctx.log;
     let cancelled = ctx.cancelled;
     let paused = ctx.paused;
@@ -352,7 +352,6 @@ pub async fn run_translation_batch(
             batch_indices: batch_item_indices,
             config: &config,
             status_arc: &status,
-            _log: &log,
             glossary_automaton,
             i18n,
             file_name: &ctx.file_name,
@@ -421,20 +420,21 @@ pub async fn run_translation_batch(
         );
         let mut second_failed_indices = Vec::new();
 
-        for batch in retry_batches.iter() {
+        for (retry_idx, batch) in retry_batches.iter().enumerate() {
             if cancelled.load(Ordering::SeqCst) {
                 break;
             }
+            total_batches.store(retry_batches.len() as u32, Ordering::SeqCst);
+            current_batch.store((retry_idx + 1) as u32, Ordering::SeqCst);
             let res = process_one_global_batch(BatchContext {
                 all_items: items,
                 batch_indices: batch,
                 config: &config,
                 status_arc: &status,
-                _log: &log,
                 glossary_automaton,
                 i18n,
                 file_name: &ctx.file_name,
-                batch_idx: 0,
+                batch_idx: retry_idx,
                 total_batches: retry_batches.len(),
             })
             .await;
@@ -575,7 +575,6 @@ struct BatchContext<'a> {
     batch_indices: &'a [usize],
     config: &'a Arc<Mutex<JobConfig>>,
     status_arc: &'a Arc<Mutex<String>>,
-    _log: &'a Arc<Mutex<Vec<LogEntry>>>,
     glossary_automaton: &'a crate::translation::glossary::GlossaryAutomaton,
     i18n: &'a crate::i18n::CommonLabels,
     file_name: &'a str,
@@ -662,16 +661,18 @@ fn apply_batch_results(
     contains: &[String],
 ) -> bool {
     let mut resolved_any = false;
-    let tag_re = regex::Regex::new(r"\[i(\d+)\]").unwrap();
 
     for (orig_tagged, trans_tagged) in results_map {
-        if let Some(caps) = tag_re.captures(orig_tagged) {
+        if let Some(caps) = BATCH_TAG_RE.captures(orig_tagged) {
             if let Ok(relative_idx) = caps[1].parse::<usize>() {
                 if relative_idx < batch_indices.len() {
                     let abs_idx = batch_indices[relative_idx];
                     let target_preprocessed = all_items[abs_idx].preprocessed.clone();
 
-                    let clean_translated = tag_re.replace_all(trans_tagged, "").trim().to_string();
+                    let clean_translated = BATCH_TAG_RE
+                        .replace_all(trans_tagged, "")
+                        .trim()
+                        .to_string();
 
                     for &other_abs_idx in batch_indices {
                         if all_items[other_abs_idx].preprocessed == target_preprocessed {
@@ -737,7 +738,6 @@ mod tests {
         let progress = Arc::new(AtomicU32::new(0));
         let current_batch = Arc::new(AtomicU32::new(0));
         let total_batches = Arc::new(AtomicU32::new(0));
-        let counter = Arc::new(Mutex::new(0));
         let log = Arc::new(Mutex::new(Vec::new()));
         let cancelled = Arc::new(AtomicBool::new(false));
         let paused = Arc::new(AtomicBool::new(false));
@@ -755,7 +755,6 @@ mod tests {
             progress,
             current_batch,
             total_batches,
-            counter,
             log,
             cancelled,
             paused,
@@ -783,7 +782,6 @@ mod tests {
         let progress = Arc::new(AtomicU32::new(0));
         let current_batch = Arc::new(AtomicU32::new(0));
         let total_batches = Arc::new(AtomicU32::new(0));
-        let counter = Arc::new(Mutex::new(0));
         let log = Arc::new(Mutex::new(Vec::new()));
         let cancelled = Arc::new(AtomicBool::new(false));
         let paused = Arc::new(AtomicBool::new(false));
@@ -801,7 +799,6 @@ mod tests {
             progress: Arc::clone(&progress),
             current_batch,
             total_batches,
-            counter,
             log,
             cancelled,
             paused,
