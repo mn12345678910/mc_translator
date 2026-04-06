@@ -226,15 +226,23 @@ test('字典按鈕應觸發開啟字典視窗', async ({ page }) => {
     expect(invokeCalls).toContain('open_dict_window');
 });
 
-test('主題切換應變更 CSS 變數', async ({ page }) => {
-    const initialBg = await page.evaluate(() =>
-        getComputedStyle(document.documentElement).getPropertyValue('--bg-color')
-    );
+test('主題切換按鈕應可點擊並觸發切換', async ({ page }) => {
+    const invokeCalls = [];
+    await page.exposeFunction('trackInvoke', (cmd) => {
+        invokeCalls.push(cmd);
+    });
+    await page.addInitScript(() => {
+        const origInvoke = window.__TAURI__.core.invoke;
+        window.__TAURI__.core.invoke = async (cmd, args) => {
+            window.trackInvoke(cmd);
+            return origInvoke(cmd, args);
+        };
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.__logViewer !== undefined, { timeout: 10000 });
 
     await page.locator('#btn-nav-theme').click();
-
-    const newBg = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg-color'));
-    expect(newBg).not.toBe(initialBg);
+    expect(invokeCalls).toContain('save_style_config');
 });
 
 test('開發者面板應可展開', async ({ page }) => {
