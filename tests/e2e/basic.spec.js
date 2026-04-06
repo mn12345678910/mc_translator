@@ -43,7 +43,7 @@ const TAURI_MOCK = () => {
                 }
                 if (cmd === 'get_api_key_cmd') return '';
                 if (cmd === 'get_models_from_provider') return [];
-                if (cmd === 'get_i18n_labels')
+                if (cmd === 'get_i18n_labels') {
                     return {
                         btn_run: '翻譯',
                         btn_select_file: '選擇檔案',
@@ -147,14 +147,15 @@ const TAURI_MOCK = () => {
                         label_debug_total: '總計',
                         label_debug_memory: '記憶體',
                         label_fast_convert: '簡繁轉換',
+                        spec_area_dict: '字典區域',
                     };
+                }
                 if (cmd === 'get_style_config') {
                     return {
                         theme: 'dark',
                         dark_bg: [30, 30, 35],
                         dark_text: [255, 255, 255],
                         dark_btn_bg: [0, 100, 200],
-                        dark_text: [255, 255, 255],
                         dark_input_bg: [10, 20, 30],
                         dark_list_bg: [40, 50, 60],
                         dark_tab_active: [70, 80, 90],
@@ -174,6 +175,7 @@ const TAURI_MOCK = () => {
                 if (cmd === 'save_config') return {};
                 if (cmd === 'save_style_config') return {};
                 if (cmd === 'show_window') return {};
+                if (cmd === 'open_dict_window') return {};
                 return null;
             },
         },
@@ -205,26 +207,38 @@ test('設定面板應可展開並顯示配置', async ({ page }) => {
     await expect(page.locator('#batch-size')).toBeVisible();
 });
 
-test('字典對話框應可開啟並顯示內容', async ({ page }) => {
+test('字典按鈕應觸發開啟字典視窗', async ({ page }) => {
+    const invokeCalls = [];
+    await page.exposeFunction('trackInvoke', (cmd) => {
+        invokeCalls.push(cmd);
+    });
+    await page.addInitScript(() => {
+        const origInvoke = window.__TAURI__.core.invoke;
+        window.__TAURI__.core.invoke = async (cmd, args) => {
+            window.trackInvoke(cmd);
+            return origInvoke(cmd, args);
+        };
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.__logViewer !== undefined, { timeout: 10000 });
+
     await page.locator('#btn-nav-dict').click();
-    await expect(page.locator('#dict-dialog')).toBeVisible();
-    await expect(page.locator('#dict-search')).toBeVisible();
-    await expect(page.locator('#tab-user')).toBeVisible();
-    await expect(page.locator('#tab-official')).toBeVisible();
+    expect(invokeCalls).toContain('open_dict_window');
 });
 
-test('主題切換應可運作', async ({ page }) => {
-    const html = page.locator('html');
-    const initialClass = await html.getAttribute('class');
+test('主題切換應變更 CSS 變數', async ({ page }) => {
+    const initialBg = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--bg-color')
+    );
 
     await page.locator('#btn-nav-theme').click();
 
-    const newClass = await html.getAttribute('class');
-    expect(newClass).not.toBe(initialClass);
+    const newBg = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg-color'));
+    expect(newBg).not.toBe(initialBg);
 });
 
 test('開發者面板應可展開', async ({ page }) => {
     await page.locator('#btn-nav-dev').click();
-    await expect(page.locator('.developer-settings')).toHaveClass(/expanded/);
+    await page.waitForTimeout(500);
     await expect(page.locator('#excluded-paths')).toBeVisible();
 });
