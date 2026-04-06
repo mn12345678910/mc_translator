@@ -1,3 +1,5 @@
+<!-- 最後更新: 2026-04-06 | 對應版本: v1.0.0 -->
+
 # Minecraft Mod Auto-Translator (mc_translator)
 
 [![codecov](https://codecov.io/gh/mn12345678910/mc_translator/graph/badge.svg)](https://codecov.io/gh/mn12345678910/mc_translator)
@@ -198,23 +200,6 @@ CI 僅在 tag 版號 (`v*`) 時會產出以下檔名:
 
 詳細流程請參考: [release_artifacts](/docs/guides/release_artifacts.md) 與 [.github/workflows/ci.yml](/.github/workflows/ci.yml)
 
-## 文檔索引
+## 文檔
 
-- 架構總覽: [docs/architecture/overview.md](docs/architecture/overview.md)
-- 狀態管理: [docs/architecture/state_management.md](docs/architecture/state_management.md)
-- 錯誤處理: [docs/architecture/error_handling.md](docs/architecture/error_handling.md)
-- 邏輯流程圖: [docs/architecture/logic_diagrams.md](docs/architecture/logic_diagrams.md)
-- 翻譯核心: [docs/modules/translation_core.md](docs/modules/translation_core.md)
-- 檔案流水線: [docs/modules/file_pipeline.md](docs/modules/file_pipeline.md)
-- 術語系統: [docs/modules/glossary_system.md](docs/modules/glossary_system.md)
-- 翻譯記憶體: [docs/modules/translation_memory.md](docs/modules/translation_memory.md)
-- 增量比對策略: [docs/modules/translation_comparison.md](docs/modules/translation_comparison.md)
-- CLI 運作流程: [docs/modules/cli_user_flow.md](docs/modules/cli_user_flow.md)
-- 設定系統: [docs/modules/config_system.md](docs/modules/config_system.md)
-- 工具模組: [docs/modules/utils.md](docs/modules/utils.md)
-- UI 規格: [docs/ui/specs.md](docs/ui/specs.md)
-- UI 交互: [docs/ui/interactions.md](docs/ui/interactions.md)
-- 測試策略: [docs/guides/testing_strategy.md](docs/guides/testing_strategy.md)
-- 變數命名: [docs/guides/variable_naming.md](docs/guides/variable_naming.md)
-- CI 產物與 Release: [release_artifacts](docs/guides/release_artifacts.md)
-- Git 指南: [docs/guides/GIT_GITHUB_GUIDE.md](docs/guides/GIT_GITHUB_GUIDE.md)
+完整技術文檔請參閱 [docs/README.md](docs/README.md)。
