@@ -59,7 +59,7 @@ jobs:
               env:
                   RUSTC_WRAPPER: ''
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: 10
             - name: Setup Node.js
@@ -102,7 +102,7 @@ jobs:
               if: steps.install_sccache.outcome == 'success'
               run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: 10
             - name: Setup Node.js (for frontend tests if needed)
@@ -141,7 +141,7 @@ jobs:
         steps:
             - uses: actions/checkout@v6
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: 10
             - name: Setup Node.js
@@ -205,7 +205,7 @@ jobs:
               with:
                   fetch-depth: 0 # git-cliff needs full history
             - name: Setup pnpm
-              uses: pnpm/action-setup@v4
+              uses: pnpm/action-setup@v5
               with:
                   version: 10
             - name: Setup Node.js
