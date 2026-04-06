@@ -210,7 +210,11 @@ mod tests {
     #[test]
     fn test_get_available_dict_langs_scans_subdirs() {
         let _lock = TEST_LOCK.lock().unwrap();
-        setup_test_dir();
+        let _ = fs::remove_dir_all(DICT_DIR);
+        // 等待 Windows 釋放目錄
+        #[cfg(windows)]
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        ensure_dicts_dir();
 
         // 根目錄放一個（向後相容）
         fs::write(std::path::Path::new(DICT_DIR).join("zh_cn.json"), "{}").unwrap();
@@ -224,12 +228,31 @@ mod tests {
         fs::write(user.join("en_us.json"), "{}").unwrap();
 
         let langs = get_available_dict_langs();
-        assert!(langs.contains(&"zh_cn".to_string()));
-        assert!(langs.contains(&"zh_tw".to_string()));
-        assert!(langs.contains(&"en_us".to_string()));
-        assert_eq!(langs.len(), 3);
 
-        teardown_test_dir();
+        let _ = fs::remove_dir_all(DICT_DIR);
+
+        assert!(
+            langs.contains(&"zh_cn".to_string()),
+            "zh_cn not found in {:?}",
+            langs
+        );
+        assert!(
+            langs.contains(&"zh_tw".to_string()),
+            "zh_tw not found in {:?}",
+            langs
+        );
+        assert!(
+            langs.contains(&"en_us".to_string()),
+            "en_us not found in {:?}",
+            langs
+        );
+        assert_eq!(
+            langs.len(),
+            3,
+            "expected 3 langs, got {:?}: {:?}",
+            langs.len(),
+            langs
+        );
     }
 
     #[test]
