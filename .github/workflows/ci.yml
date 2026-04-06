@@ -125,7 +125,7 @@ jobs:
               run: cargo nextest run --workspace --all-targets --partition count:2/2
             - name: Run Frontend Tests (Vitest)
               if: matrix.os == 'ubuntu-latest'
-        run: pnpm vitest run --coverage
+              run: pnpm vitest run --coverage
 
     # 3. Scheduled Miri Analysis (Weekly)
     miri:
