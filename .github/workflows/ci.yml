@@ -1,222 +1,230 @@
 name: Unified CI/CD
 
 on:
-  push:
-    branches: [ main ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 0' # 每個週日午夜執行一次
+    push:
+        branches: [main]
+        tags: ['v*']
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+    schedule:
+        - cron: '0 0 * * 0' # 每個週日午夜執行一次
 
 env:
-  CARGO_TERM_COLOR: always
-  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
-  SCCACHE_GHA_ENABLED: "true"
+    CARGO_TERM_COLOR: always
+    CARGO_REGISTRIES_CRATES_IO_PROTOCOL: sparse
+    SCCACHE_GHA_ENABLED: 'true'
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  # 1. Fast Checks (Lint, Formatting, Security Audit)
-  lint-and-audit:
-    name: Lint & Security Audit
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      checks: write
-      issues: write
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
-      - name: Install Sccache
-        id: install_sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-        continue-on-error: true
-      - name: Setup Sccache Wrapper
-        if: steps.install_sccache.outcome == 'success'
-        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-      - name: Check Formatting
-        run: cargo fmt --all -- --check
-      - name: Run Clippy (Linter)
-        run: cargo clippy -- -D warnings
-      - name: Security Audit
-        uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: License & Duplicate Check (Deny)
-        uses: EmbarkStudios/cargo-deny-action@v2
-        env:
-          RUSTC_WRAPPER: ""
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'latest'
-          cache: 'pnpm'
-      - name: Frontend Lint
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm lint
-      - name: Tauri API Bridge Check
-        run: node tool/check_tauri_sync.js
-      - name: Version Consistency Check
-        run: node tool/check_all_versions.js
+    # 1. Fast Checks (Lint, Formatting, Security Audit)
+    lint-and-audit:
+        name: Lint & Security Audit
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            checks: write
+            issues: write
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup Rust Toolchain
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  components: rustfmt, clippy
+            - name: Install Linux dependencies
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
+            - name: Install Sccache
+              id: install_sccache
+              uses: mozilla-actions/sccache-action@v0.0.9
+              continue-on-error: true
+            - name: Setup Sccache Wrapper
+              if: steps.install_sccache.outcome == 'success'
+              run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+            - name: Check Formatting
+              run: cargo fmt --all -- --check
+            - name: Run Clippy (Linter)
+              run: cargo clippy -- -D warnings
+            - name: Security Audit
+              uses: rustsec/audit-check@v2
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+            - name: License & Duplicate Check (Deny)
+              uses: EmbarkStudios/cargo-deny-action@v2
+              env:
+                  RUSTC_WRAPPER: ''
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 'latest'
+                  cache: 'pnpm'
+            - name: Frontend Lint
+              run: |
+                  pnpm install --frozen-lockfile
+                  pnpm lint
+            - name: Tauri API Bridge Check
+              run: node tool/check_tauri_sync.js
+            - name: Version Consistency Check
+              run: node tool/check_all_versions.js
 
-  # 2. Multi-platform Core Testing
-  test:
-    name: Test on ${{ matrix.os }}
-    needs: lint-and-audit
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Setup Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
-      - name: Install Sccache
-        id: install_sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-        continue-on-error: true
-      - name: Setup Sccache Wrapper
-        if: steps.install_sccache.outcome == 'success'
-        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Setup Node.js (for frontend tests if needed)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'latest'
-          cache: 'pnpm'
-      - name: Install Node Dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Install Nextest
-        uses: taiki-e/install-action@nextest
-      - name: Run Rust Tests (Nextest)
-        run: cargo nextest run --workspace --all-targets
-      - name: Run Frontend Tests (Vitest)
-        if: matrix.os == 'ubuntu-latest'
+    # 2. Multi-platform Core Testing
+    test:
+        name: Test on ${{ matrix.os }}
+        needs: lint-and-audit
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: actions/checkout@v6
+            - name: Setup Rust Toolchain
+              uses: dtolnay/rust-toolchain@stable
+            - name: Install Linux dependencies
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
+            - name: Install Sccache
+              id: install_sccache
+              uses: mozilla-actions/sccache-action@v0.0.9
+              continue-on-error: true
+            - name: Setup Sccache Wrapper
+              if: steps.install_sccache.outcome == 'success'
+              run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+            - name: Setup Node.js (for frontend tests if needed)
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 'latest'
+                  cache: 'pnpm'
+            - name: Install Node Dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Install Nextest
+              uses: taiki-e/install-action@nextest
+            - name: Run Rust Tests (Nextest)
+              if: matrix.os == 'ubuntu-latest'
+              run: cargo nextest run --workspace --all-targets
+            - name: Run Rust Tests (Nextest, Windows partition 1/2)
+              if: matrix.os == 'windows-latest'
+              run: cargo nextest run --workspace --all-targets --partition count:1/2
+            - name: Run Rust Tests (Nextest, Windows partition 2/2)
+              if: matrix.os == 'windows-latest'
+              run: cargo nextest run --workspace --all-targets --partition count:2/2
+            - name: Run Frontend Tests (Vitest)
+              if: matrix.os == 'ubuntu-latest'
         run: pnpm vitest run --coverage
 
-  # 3. Scheduled Miri Analysis (Weekly)
-  miri:
-    name: Miri Analysis
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
-      - name: Install Rust (Nightly)
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          components: miri
-      - name: Run Miri
-        run: |
-          cargo miri test -p mc_translator --lib i18n
-          cargo miri test -p mc_translator --lib utils
-        env:
-          MIRIFLAGS: "-Zmiri-disable-isolation -Zmiri-ignore-leaks"
+    # 3. Scheduled Miri Analysis (Weekly)
+    miri:
+        name: Miri Analysis
+        runs-on: ubuntu-latest
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        steps:
+            - uses: actions/checkout@v6
+            - name: Install Linux dependencies
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
+            - name: Install Rust (Nightly)
+              uses: dtolnay/rust-toolchain@nightly
+              with:
+                  components: miri
+            - name: Run Miri
+              run: |
+                  cargo miri test -p mc_translator --lib i18n
+                  cargo miri test -p mc_translator --lib utils
+              env:
+                  MIRIFLAGS: '-Zmiri-disable-isolation -Zmiri-ignore-leaks'
 
-  # 4. Multi-platform Build & Release
-  build-and-release:
-    name: Build & Release on ${{ matrix.platform }}
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: 'ubuntu-22.04'
-          - platform: 'windows-latest'
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0 # git-cliff needs full history
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'latest'
-          cache: 'pnpm'
-      - name: Setup Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
-      - name: Install Sccache
-        id: install_sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
-        continue-on-error: true
-      - name: Setup Sccache Wrapper
-        if: steps.install_sccache.outcome == 'success'
-        run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
-      - name: Install Frontend Dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Build CLI & GUI
-        run: |
-          pnpm tauri build --no-bundle
-          cargo build --release --bin mc_translator_cli
-      - name: Rename Binaries (Windows)
-        if: matrix.platform == 'windows-latest'
-        shell: pwsh
-        run: |
-          if (Test-Path target/release/app.exe) { mv target/release/app.exe target/release/mc_translator_gui_win_x64.exe }
-          if (Test-Path target/release/mc_translator_cli.exe) { mv target/release/mc_translator_cli.exe target/release/mc_translator_cli_win_x64.exe }
-      - name: Rename Binaries (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          [ -f target/release/app ] && mv target/release/app target/release/mc_translator_gui_linux_x64 || echo "GUI not found"
-          [ -f target/release/mc_translator_cli ] && mv target/release/mc_translator_cli target/release/mc_translator_cli_linux_x64 || echo "CLI not found"
-      - name: Generate Changelog (git-cliff)
-        if: matrix.platform == 'windows-latest'
-        uses: orhun/git-cliff-action@v4
-        id: git-cliff
-        with:
-          config: cliff.toml
-          args: --verbose --latest --strip header
-        env:
-          OUTPUT: CHANGELOG.md
+    # 4. Multi-platform Build & Release
+    build-and-release:
+        name: Build & Release on ${{ matrix.platform }}
+        needs: test
+        if: startsWith(github.ref, 'refs/tags/v')
+        runs-on: ${{ matrix.platform }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - platform: 'ubuntu-22.04'
+                    - platform: 'windows-latest'
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0 # git-cliff needs full history
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 'latest'
+                  cache: 'pnpm'
+            - name: Setup Rust Toolchain
+              uses: dtolnay/rust-toolchain@stable
+            - name: Install Linux dependencies
+              if: matrix.platform == 'ubuntu-22.04'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
+            - name: Install Sccache
+              id: install_sccache
+              uses: mozilla-actions/sccache-action@v0.0.9
+              continue-on-error: true
+            - name: Setup Sccache Wrapper
+              if: steps.install_sccache.outcome == 'success'
+              run: echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+            - name: Install Frontend Dependencies
+              run: pnpm install --frozen-lockfile
+            - name: Build CLI & GUI
+              run: |
+                  pnpm tauri build --no-bundle
+                  cargo build --release --bin mc_translator_cli
+            - name: Rename Binaries (Windows)
+              if: matrix.platform == 'windows-latest'
+              shell: pwsh
+              run: |
+                  if (Test-Path target/release/app.exe) { mv target/release/app.exe target/release/mc_translator_gui_win_x64.exe }
+                  if (Test-Path target/release/mc_translator_cli.exe) { mv target/release/mc_translator_cli.exe target/release/mc_translator_cli_win_x64.exe }
+            - name: Rename Binaries (Linux)
+              if: matrix.platform == 'ubuntu-22.04'
+              run: |
+                  [ -f target/release/app ] && mv target/release/app target/release/mc_translator_gui_linux_x64 || echo "GUI not found"
+                  [ -f target/release/mc_translator_cli ] && mv target/release/mc_translator_cli target/release/mc_translator_cli_linux_x64 || echo "CLI not found"
+            - name: Generate Changelog (git-cliff)
+              if: matrix.platform == 'windows-latest'
+              uses: orhun/git-cliff-action@v4
+              id: git-cliff
+              with:
+                  config: cliff.toml
+                  args: --verbose --latest --strip header
+              env:
+                  OUTPUT: CHANGELOG.md
 
-      - name: Create or Update GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "mc_translator ${{ github.ref_name }}"
-          body: ${{ steps.git-cliff.outputs.content || 'Release standalone binaries' }}
-          files: |
-            target/release/mc_translator_*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Create or Update GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  name: 'mc_translator ${{ github.ref_name }}'
+                  body: ${{ steps.git-cliff.outputs.content || 'Release standalone binaries' }}
+                  files: |
+                      target/release/mc_translator_*
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
