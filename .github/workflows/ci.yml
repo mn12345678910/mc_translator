@@ -188,7 +188,7 @@ jobs:
 
     # 5. Multi-platform Build & Release
     build-and-release:
-        name: Build & Release on ${{ matrix.platform }}
+        name: Build & Release on ${{ matrix.name }}
         needs: [test, e2e]
         if: startsWith(github.ref, 'refs/tags/v')
         runs-on: ${{ matrix.platform }}
@@ -197,7 +197,9 @@ jobs:
             matrix:
                 include:
                     - platform: 'ubuntu-22.04'
+                      name: 'Linux'
                     - platform: 'windows-latest'
+                      name: 'Windows'
         steps:
             - uses: actions/checkout@v6
               with:
