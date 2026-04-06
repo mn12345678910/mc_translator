@@ -126,7 +126,7 @@ jobs:
             - name: Run Frontend Tests (Vitest)
               run: pnpm vitest run --coverage
             - name: Upload Coverage to Codecov
-              uses: codecov/codecov-action@v5
+              uses: codecov/codecov-action@v6
               with:
                   files: coverage/lcov.info
                   fail_ci_if_error: false
