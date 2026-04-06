@@ -1,14 +1,8 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
 
 export default defineConfig({
-    resolve: {
-        alias: {
-            '@tauri-apps/api/tauri': path.resolve(__dirname, 'tests/frontend/tauri_mock.js'),
-        },
-    },
     test: {
-        environment: 'happy-dom', // 模擬瀏覽器環境
+        environment: 'happy-dom',
         globals: true,
         include: ['tests/frontend/**/*.test.js'],
         setupFiles: ['./tests/frontend/setup.js'],
@@ -16,7 +10,12 @@ export default defineConfig({
         coverage: {
             provider: 'v8',
             reporter: ['text', 'json', 'lcov'],
+            thresholds: {
+                lines: 60,
+                branches: 55,
+                functions: 60,
+                statements: 60,
+            },
         },
-
     },
 });

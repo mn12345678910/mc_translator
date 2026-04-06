@@ -10,6 +10,10 @@
     "scripts": {
         "test": "vitest run",
         "test:frontend": "vitest run",
+        "test:rust": "cargo test --workspace",
+        "test:all": "pnpm test && pnpm test:rust",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
         "dev": "node tool/sync_frontend_langs.js && vite",
         "build": "node tool/sync_frontend_langs.js && vite build",
         "preview": "vite preview",
@@ -32,6 +36,7 @@
     "homepage": "https://github.com/mn12345678910/mc_translator#readme",
     "devDependencies": {
         "@chenglou/pretext": "^0.0.4",
+        "@playwright/test": "^1.52.0",
         "@tauri-apps/api": "^2.10.1",
         "@tauri-apps/cli": "^2.10.1",
         "@vitest/coverage-v8": "^4.1.2",

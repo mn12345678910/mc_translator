@@ -56,19 +56,35 @@ describe('VirtualLogViewer Performance Benchmark', () => {
 
     it('benchmarks with 10,000 logs', () => {
         const res = measureRender(10000);
-        console.log(`BENCHMARK_RESULT: [10k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`);
-        viewer.logs = []; viewer.itemHeights = []; // Clear for memory
+        console.log(
+            `BENCHMARK_RESULT: [10k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`
+        );
+        expect(res.startRender).toBeLessThan(100);
+        expect(res.endRender).toBeLessThan(100);
+        viewer.logs = [];
+        viewer.itemHeights = []; // Clear for memory
     });
 
     it('benchmarks with 30,000 logs', () => {
         const res = measureRender(30000);
-        console.log(`BENCHMARK_RESULT: [30k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`);
-        viewer.logs = []; viewer.itemHeights = [];
+        console.log(
+            `BENCHMARK_RESULT: [30k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`
+        );
+        expect(res.startRender).toBeLessThan(300);
+        expect(res.endRender).toBeLessThan(300);
+        viewer.logs = [];
+        viewer.itemHeights = [];
     });
 
     it('benchmarks with 100,000 logs', () => {
         const res = measureRender(100000);
-        console.log(`BENCHMARK_RESULT: [100k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`);
-        viewer.logs = []; viewer.itemHeights = []; viewer.cumulativeHeights = [];
+        console.log(
+            `BENCHMARK_RESULT: [100k] Start: ${res.startRender.toFixed(2)}ms, End: ${res.endRender.toFixed(2)}ms`
+        );
+        expect(res.startRender).toBeLessThan(1000);
+        expect(res.endRender).toBeLessThan(1000);
+        viewer.logs = [];
+        viewer.itemHeights = [];
+        viewer.cumulativeHeights = [];
     });
 });
