@@ -1,3 +1,5 @@
+<!-- 最後更新: 2026-04-06 | 對應版本: v1.0.0 -->
+
 # 錯誤處理
 
 本專案在翻譯流程中採「記錄日誌 + 保持流程可用」的策略，只有重大錯誤會中止流程。
@@ -5,13 +7,13 @@
 ## 錯誤分級
 
 - 可恢復: 例如單批次失敗，會進入降級重試
-- 不可恢復: 例如 API 重大錯誤或超時，會直接回傳 Err
+- 不可恢復: 例如 `TIMEOUT`、`API_ERROR`、`NETWORK_ERROR`、`PARSE_ERROR`、`UNSUPPORTED`、`EMPTY_RESPONSE`、`API_KEY_REQUIRED`，會直接回傳 Err
 
 ## 批次翻譯降級
 
 - 初次批次失敗 -> 批次大小與字元上限減半重試
 - 二次失敗 -> 單筆翻譯
-- 單筆失敗 -> 記錄錯誤日誌，流程繼續處理其餘項目
+- 單筆失敗 -> 若為 `TIMEOUT`、`API_ERROR`、`NETWORK_ERROR`、`PARSE_ERROR`、`UNSUPPORTED`、`EMPTY_RESPONSE`、`API_KEY_REQUIRED` 會提早返回；否則記錄錯誤日誌，流程繼續處理其餘項目
 
 ## 常見錯誤來源
 

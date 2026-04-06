@@ -72,66 +72,6 @@ pub struct JobSharedState {
 }
 
 impl JobConfig {
-    /// 根據傳入的個別參數建立 JobConfig
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        api_key: String,
-        api_provider: String,
-        selected_model: String,
-        ollama_url: String,
-        api_base_url: String,
-        cleanup_prefixes: Vec<String>,
-        cleanup_contains: Vec<String>,
-        user_prompt: String,
-        system_prompt: String,
-
-        timeout: u32,
-        batch_size: u32,
-        batch_max_chars: u32,
-        output_dir: String,
-        pack_format: u32,
-        glossary_priority: String,
-        skip_json: bool,
-        skip_js: bool,
-        skip_jar: bool,
-        skip_book: bool,
-        enable_llm_log: bool,
-        source_lang: String,
-        target_lang: String,
-        enable_debug_log: bool,
-        excluded_paths: Vec<String>,
-        fast_convert: bool,
-    ) -> Self {
-        Self {
-            api_key: api_key.into(),
-            api_provider,
-            selected_model,
-            ollama_url,
-            api_base_url,
-            cleanup_prefixes,
-            cleanup_contains,
-            user_prompt,
-            system_prompt,
-
-            timeout: timeout as u64,
-            batch_size,
-            batch_max_chars,
-            output_dir,
-            pack_format,
-            glossary_priority,
-            skip_json,
-            skip_js,
-            skip_jar,
-            skip_book,
-            enable_llm_log,
-            source_lang,
-            target_lang,
-            enable_debug_log,
-            excluded_paths,
-            fast_convert,
-        }
-    }
-
     /// 從 AppConfig 和 CommonLabels 建立 JobConfig
     pub fn from_app_config_and_i18n(config: &AppConfig, i18n: &CommonLabels) -> Self {
         Self {

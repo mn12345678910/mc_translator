@@ -8,12 +8,11 @@ pub fn run() {
             let _ = mc_translator::i18n::GuiLabels::ensure_langs_exists();
 
             // 🟢 確保字典目錄與預設檔案存在
-            use mc_translator::config::dictionary::{ensure_dicts_dir, get_user_dict_path};
-            use mc_translator::config::AppConfig;
+            use mc_translator::config::{ensure_dicts_dir, get_user_dict_path, AppConfig};
             ensure_dicts_dir();
 
             let config = AppConfig::load();
-            let user_dict = get_user_dict_path(&config.ui_lang);
+            let user_dict = get_user_dict_path(&config.target_lang);
 
             if !user_dict.exists() {
                 if let Some(p) = user_dict.parent() {
@@ -24,23 +23,26 @@ pub fn run() {
             // 🟢 背景啟動推論詞庫預生成 (量子提取)
             tauri::async_runtime::spawn(async move {
                 let config = AppConfig::load();
-                // 讀取本地字典檔跑一次分析 (強制定錨 en_us 以計算量子提取)
-                if let Ok((_files, exact, _unfiltered)) =
-                    mc_translator::translation::glossary::mc_lang::load_mc_dicts(
-                        "en_us",
-                        &config.ui_lang,
-                    )
-                    .await
+                match mc_translator::translation::glossary::mc_lang::load_mc_dicts(
+                    "en_us",
+                    &config.target_lang,
+                )
+                .await
                 {
-                    let inferred = mc_translator::translation::glossary::analyze_dictionary(&exact);
-                    let official_dict =
-                        mc_translator::config::get_official_dict_path(&config.ui_lang);
+                    Ok((_files, exact, _unfiltered)) => {
+                        let inferred =
+                            mc_translator::translation::glossary::analyze_dictionary(&exact);
+                        let official_dict =
+                            mc_translator::config::get_official_dict_path(&config.target_lang);
 
-                    // 確保父目錄存在
-                    if let Some(p) = official_dict.parent() {
-                        let _ = std::fs::create_dir_all(p);
+                        if let Some(p) = official_dict.parent() {
+                            let _ = std::fs::create_dir_all(p);
+                        }
+                        mc_translator::config::save_dict(&official_dict, &inferred);
                     }
-                    mc_translator::config::save_dict(&official_dict, &inferred);
+                    Err(e) => {
+                        eprintln!("[推論詞庫] 載入字典失敗: {}", e);
+                    }
                 }
             });
 
@@ -56,7 +58,6 @@ pub fn run() {
             use tauri::Manager;
 
             if let Some(window) = app.get_webview_window("main") {
-                let config = AppConfig::load();
                 if config.main_width > 200.0 && config.main_height > 200.0 {
                     let _ = window.set_size(tauri::PhysicalSize::new(
                         config.main_width as u32,

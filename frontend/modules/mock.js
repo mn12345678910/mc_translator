@@ -149,14 +149,15 @@ export async function initMockTools() {
                             // 模擬進度事件
                             setTimeout(() => {
                                 window.__TAURI_EMIT__('translation-progress', {
-                                    progress: 0.1,
-                                    status: '正在處理: zh_cn -> zh_tw',
+                                    current: 10,
+                                    total: 100,
+                                    msg: '正在處理: zh_cn -> zh_tw',
                                 });
                             }, 500);
 
                             setTimeout(() => {
-                                // 模擬日誌事件，展示「下界巖 -> 地獄巖」的修復效果
-                                window.__TAURI_EMIT__('log-event', {
+                                // 模擬日誌事件
+                                window.__TAURI_EMIT__('translation-log', {
                                     level: 'Success',
                                     message: isFast
                                         ? '[Fast Convert] tag.block.netherrack: 「下界巖」 -> 「地獄巖」'
@@ -166,9 +167,15 @@ export async function initMockTools() {
                                     group_dir: 'tags/blocks',
                                 });
                                 window.__TAURI_EMIT__('translation-progress', {
-                                    progress: 1.0,
-                                    status: '翻譯完成',
+                                    current: 100,
+                                    total: 100,
+                                    msg: '翻譯完成',
                                 });
+                                window.__TAURI_EMIT__('translation-finished', {
+                                    success: true,
+                                    msg: '翻譯完成',
+                                });
+                                window.__TAURI_EMIT__('job-state-changed', 'IDLE');
                             }, 1500);
                         },
                         pause_translation: null,

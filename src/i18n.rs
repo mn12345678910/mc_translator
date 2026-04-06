@@ -5,6 +5,47 @@ use std::path::Path;
 
 pub const DEFAULT_LANG: &str = "zh_tw";
 
+// --- 共用載入輔助函數 ---
+fn load_i18n<T: serde::de::DeserializeOwned>(
+    lang: &str,
+    dir: &Path,
+    default_en_json: &str,
+) -> Option<T> {
+    let lang_path = dir.join(format!("{}.json", lang));
+    if let Ok(file_content) = fs::read_to_string(&lang_path) {
+        let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
+        let mut default_json: serde_json::Value = serde_json::from_str(default_en_json).ok()?;
+        if let (Some(lang_obj), Some(default_obj)) =
+            (lang_json.as_object(), default_json.as_object_mut())
+        {
+            for (k, v) in lang_obj {
+                default_obj.insert(k.clone(), v.clone());
+            }
+        }
+        if let Ok(labels) = serde_json::from_value::<T>(default_json) {
+            return Some(labels);
+        }
+    }
+    None
+}
+
+fn load_or_default_i18n<T: serde::de::DeserializeOwned>(
+    lang: &str,
+    dir: &Path,
+    default_en_json: &str,
+    default_zh_tw: impl FnOnce() -> T,
+) -> T {
+    if let Some(l) = load_i18n(lang, dir, default_en_json) {
+        return l;
+    }
+    if lang != "en_us" {
+        if let Some(e) = load_i18n("en_us", dir, default_en_json) {
+            return e;
+        }
+    }
+    default_zh_tw()
+}
+
 // --- 重構後之共通結構體 ---
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 #[serde(default)]
@@ -111,24 +152,7 @@ pub struct CommonLabels {
 
 impl CommonLabels {
     pub fn load_from_file(lang: &str) -> Option<Self> {
-        let dir = get_langs_dir("gui");
-        let lang_path = dir.join(format!("{}.json", lang));
-        if let Ok(file_content) = fs::read_to_string(&lang_path) {
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
-            let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
-            if let (Some(lang_obj), Some(default_obj)) =
-                (lang_json.as_object(), default_json.as_object_mut())
-            {
-                for (k, v) in lang_obj {
-                    default_obj.insert(k.clone(), v.clone());
-                }
-            }
-            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
-                return Some(labels);
-            }
-        }
-        None
+        Self::load_from_file_with_dir(lang, &get_langs_dir("gui"))
     }
 
     pub fn load_or_default(lang: &str) -> Self {
@@ -136,35 +160,16 @@ impl CommonLabels {
     }
 
     fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
-        if let Some(l) = Self::load_from_file_with_dir(lang, dir) {
-            return l;
-        }
-        if lang != "en_us" {
-            if let Some(e) = Self::load_from_file_with_dir("en_us", dir) {
-                return e;
-            }
-        }
-        Self::default_zh_tw()
+        load_or_default_i18n(
+            lang,
+            dir,
+            include_str!("i18n_assets/gui/en_us.json"),
+            Self::default_zh_tw,
+        )
     }
 
     fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
-        let lang_path = dir.join(format!("{}.json", lang));
-        if let Ok(file_content) = fs::read_to_string(&lang_path) {
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
-            let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
-            if let (Some(lang_obj), Some(default_obj)) =
-                (lang_json.as_object(), default_json.as_object_mut())
-            {
-                for (k, v) in lang_obj {
-                    default_obj.insert(k.clone(), v.clone());
-                }
-            }
-            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
-                return Some(labels);
-            }
-        }
-        None
+        load_i18n(lang, dir, include_str!("i18n_assets/gui/en_us.json"))
     }
 
     pub fn default_zh_tw() -> Self {
@@ -355,23 +360,7 @@ impl GuiLabels {
     }
 
     fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
-        let lang_path = dir.join(format!("{}.json", lang));
-        if let Ok(file_content) = fs::read_to_string(&lang_path) {
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
-            let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/gui/en_us.json")).ok()?;
-            if let (Some(lang_obj), Some(default_obj)) =
-                (lang_json.as_object(), default_json.as_object_mut())
-            {
-                for (k, v) in lang_obj {
-                    default_obj.insert(k.clone(), v.clone());
-                }
-            }
-            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
-                return Some(labels);
-            }
-        }
-        None
+        load_i18n(lang, dir, include_str!("i18n_assets/gui/en_us.json"))
     }
 
     pub fn load_or_default(lang: &str) -> Self {
@@ -379,10 +368,12 @@ impl GuiLabels {
     }
 
     fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
-        if let Some(loaded) = Self::load_from_file_with_dir(lang, dir) {
-            return loaded;
-        }
-        Self::default_zh_tw()
+        load_or_default_i18n(
+            lang,
+            dir,
+            include_str!("i18n_assets/gui/en_us.json"),
+            Self::default_zh_tw,
+        )
     }
 
     pub fn default_zh_tw() -> Self {
@@ -502,23 +493,7 @@ impl CliLabels {
     }
 
     fn load_from_file_with_dir(lang: &str, dir: &Path) -> Option<Self> {
-        let lang_path = dir.join(format!("{}.json", lang));
-        if let Ok(file_content) = fs::read_to_string(&lang_path) {
-            let lang_json: serde_json::Value = serde_json::from_str(&file_content).ok()?;
-            let mut default_json: serde_json::Value =
-                serde_json::from_str(include_str!("i18n_assets/cli/en_us.json")).ok()?;
-            if let (Some(lang_obj), Some(default_obj)) =
-                (lang_json.as_object(), default_json.as_object_mut())
-            {
-                for (k, v) in lang_obj {
-                    default_obj.insert(k.clone(), v.clone());
-                }
-            }
-            if let Ok(labels) = serde_json::from_value::<Self>(default_json) {
-                return Some(labels);
-            }
-        }
-        None
+        load_i18n(lang, dir, include_str!("i18n_assets/cli/en_us.json"))
     }
 
     pub fn load_or_default(lang: &str) -> Self {
@@ -526,10 +501,12 @@ impl CliLabels {
     }
 
     fn load_or_default_with_dir(lang: &str, dir: &Path) -> Self {
-        if let Some(loaded) = Self::load_from_file_with_dir(lang, dir) {
-            return loaded;
-        }
-        Self::default_zh_tw()
+        load_or_default_i18n(
+            lang,
+            dir,
+            include_str!("i18n_assets/cli/en_us.json"),
+            Self::default_zh_tw,
+        )
     }
 
     pub fn default_zh_tw() -> Self {

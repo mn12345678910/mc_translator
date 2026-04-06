@@ -1,12 +1,14 @@
-use mc_translator::config::dictionary::{
-    get_official_dict_path, get_user_dict_path, load_dict, save_dict,
+use mc_translator::config::{
+    get_api_key, get_official_dict_path, get_user_dict_path, load_dict, save_api_key, save_dict,
+    AppConfig, StyleConfig,
 };
-use mc_translator::config::{settings::StyleConfig, AppConfig};
 use mc_translator::i18n::CommonLabels;
+use mc_translator::translation::api::client::CLIENT;
 use mc_translator::translation::job::JobStatus;
 use mc_translator::translation::{LogEntry, LogLevel};
 use mc_translator::utils::helpers::add_log_event;
 use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 use tauri::{Emitter, Manager};
 
 #[tauri::command]
@@ -14,17 +16,13 @@ pub async fn get_models_from_provider(
     provider: String,
     api_base_url: Option<String>,
 ) -> Result<Vec<String>, String> {
-    let api_key = mc_translator::config::encryption::get_api_key().unwrap_or_default();
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()
-        .unwrap_or_else(|_| reqwest::Client::new());
+    let api_key = get_api_key().unwrap_or_default();
 
     match provider.as_str() {
         "Ollama" => {
             let config = AppConfig::load();
             let url = format!("{}/api/tags", config.ollama_url.trim_end_matches('/'));
-            if let Ok(resp) = client.get(&url).send().await {
+            if let Ok(resp) = CLIENT.get(&url).send().await {
                 if let Ok(json) = resp.json::<serde_json::Value>().await {
                     if let Some(models) = json.get("models").and_then(|m| m.as_array()) {
                         let mut names = Vec::new();
@@ -45,7 +43,7 @@ pub async fn get_models_from_provider(
             if api_key.is_empty() {
                 return Err("err_api_key_empty".to_string());
             }
-            if let Ok(resp) = client
+            if let Ok(resp) = CLIENT
                 .get("https://generativelanguage.googleapis.com/v1beta/models")
                 .header("x-goog-api-key", &api_key)
                 .send()
@@ -56,9 +54,7 @@ pub async fn get_models_from_provider(
                         let mut names = Vec::new();
                         for m in models {
                             if let Some(n) = m.get("name").and_then(|n| n.as_str()) {
-                                if n.contains("gemini") {
-                                    names.push(n.trim_start_matches("models/").to_string());
-                                }
+                                names.push(n.trim_start_matches("models/").to_string());
                             }
                         }
                         if !names.is_empty() {
@@ -78,7 +74,7 @@ pub async fn get_models_from_provider(
                 .unwrap_or_else(|| "https://api.openai.com".to_string())
                 .trim_end_matches('/')
                 .to_string();
-            if let Ok(resp) = client
+            if let Ok(resp) = CLIENT
                 .get(format!("{}/v1/models", base_url))
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()
@@ -89,9 +85,7 @@ pub async fn get_models_from_provider(
                         let mut names = Vec::new();
                         for m in models {
                             if let Some(n) = m.get("id").and_then(|n| n.as_str()) {
-                                if n.starts_with("gpt-") {
-                                    names.push(n.to_string());
-                                }
+                                names.push(n.to_string());
                             }
                         }
                         names.sort();
@@ -112,7 +106,7 @@ pub async fn get_models_from_provider(
                 .unwrap_or_else(|| "https://api.deepseek.com".to_string())
                 .trim_end_matches('/')
                 .to_string();
-            if let Ok(resp) = client
+            if let Ok(resp) = CLIENT
                 .get(format!("{}/v1/models", base_url))
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()
@@ -143,7 +137,7 @@ pub async fn get_models_from_provider(
                 .unwrap_or_else(|| "https://api.mistral.ai".to_string())
                 .trim_end_matches('/')
                 .to_string();
-            if let Ok(resp) = client
+            if let Ok(resp) = CLIENT
                 .get(format!("{}/v1/models", base_url))
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()
@@ -197,12 +191,12 @@ pub fn get_default_config() -> AppConfig {
 
 #[tauri::command]
 pub fn get_api_key_cmd() -> String {
-    mc_translator::config::encryption::get_api_key().unwrap_or_default()
+    get_api_key().unwrap_or_default()
 }
 
 #[tauri::command]
 pub fn save_api_key_cmd(key: String) -> Result<(), String> {
-    mc_translator::config::encryption::save_api_key(&key).map_err(|e| e.to_string())
+    save_api_key(&key).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -334,17 +328,13 @@ pub fn get_default_style_config() -> StyleConfig {
 }
 
 // 觸發重新編譯以抓取新的 include_str! JSON 檔案
-use std::sync::{Mutex, OnceLock};
 
 struct DictCache {
     path: String,
     items: Vec<(String, String)>,
 }
 
-fn dict_cache() -> &'static Mutex<Option<DictCache>> {
-    static CACHE: OnceLock<Mutex<Option<DictCache>>> = OnceLock::new();
-    CACHE.get_or_init(|| Mutex::new(None))
-}
+static DICT_CACHE: OnceLock<Mutex<Option<DictCache>>> = OnceLock::new();
 
 #[tauri::command]
 pub fn query_dictionary(
@@ -364,7 +354,10 @@ pub fn query_dictionary(
 
     let path_str = path.to_string_lossy().to_string();
 
-    let mut cache = dict_cache().lock().expect("Failed to lock dict cache");
+    let mut cache = DICT_CACHE
+        .get_or_init(|| Mutex::new(None))
+        .lock()
+        .expect("Failed to lock dict cache");
     let items = if let Some(c) = cache.as_ref() {
         if c.path == path_str {
             c.items.clone()
@@ -431,7 +424,7 @@ pub fn edit_dictionary_item(
     save_dict(&path, &dict);
 
     // 🔧 清除快取，迫使下次查詢重新載入
-    if let Ok(mut cache) = dict_cache().lock() {
+    if let Ok(mut cache) = DICT_CACHE.get_or_init(|| Mutex::new(None)).lock() {
         *cache = None;
     }
 
@@ -613,12 +606,11 @@ pub fn get_available_langs() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub fn get_available_translation_langs() -> Result<Vec<String>, String> {
-    Ok(mc_translator::config::dictionary::get_available_dict_langs())
+    Ok(mc_translator::config::get_available_dict_langs())
 }
 
 #[tauri::command]
 pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     let config = AppConfig::load();
     let path = if dict_type == "user" {
         get_user_dict_path(&config.ui_lang)
@@ -657,13 +649,12 @@ pub fn open_dictionary_location(dict_type: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn clear_user_dictionary(app: tauri::AppHandle) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);
     save_dict(&path, &HashMap::<String, String>::new());
-    if let Ok(mut cache) = dict_cache().lock() {
+    if let Ok(mut cache) = DICT_CACHE.get_or_init(|| Mutex::new(None)).lock() {
         *cache = None;
     }
 
@@ -675,7 +666,6 @@ pub fn clear_user_dictionary(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
     use std::collections::HashMap;
 
     let config = AppConfig::load();
@@ -690,7 +680,7 @@ pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Resul
         current_dict.insert(k, v);
     }
     save_dict(&user_path, &current_dict);
-    if let Ok(mut cache) = dict_cache().lock() {
+    if let Ok(mut cache) = DICT_CACHE.get_or_init(|| Mutex::new(None)).lock() {
         *cache = None;
     }
 
@@ -702,8 +692,6 @@ pub fn import_user_dictionary(app: tauri::AppHandle, file_path: String) -> Resul
 
 #[tauri::command]
 pub fn export_user_dictionary(file_path: String) -> Result<(), String> {
-    use mc_translator::config::settings::AppConfig;
-
     let config = AppConfig::load();
     let path = get_user_dict_path(&config.ui_lang);
     let dict: std::collections::HashMap<String, String> = load_dict(&path);
@@ -741,7 +729,7 @@ pub async fn open_dict_window(app: tauri::AppHandle) -> Result<(), String> {
             .min_inner_size(800.0, 600.0)
             .resizable(true)
             .visible(true)
-            .devtools(true)
+            .devtools(cfg!(debug_assertions))
             .build();
 
         match dict_window {
@@ -764,9 +752,7 @@ pub fn update_active_job_config(config: AppConfig) -> Result<(), String> {
     if let Ok(active) = mc_translator::translation::ACTIVE_JOB.lock() {
         if let Some(job) = active.as_ref() {
             if let Ok(mut job_cfg) = job.config.lock() {
-                job_cfg.api_key = mc_translator::config::encryption::get_api_key()
-                    .unwrap_or_default()
-                    .into();
+                job_cfg.api_key = get_api_key().unwrap_or_default().into();
                 job_cfg.api_provider = config.api_provider;
                 job_cfg.selected_model = config.model;
                 job_cfg.ollama_url = config.ollama_url;

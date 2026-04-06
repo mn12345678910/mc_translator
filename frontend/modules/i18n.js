@@ -1,16 +1,16 @@
 // frontend/modules/i18n.js
 import { state } from './state.js';
 import { loadTranslationLangs } from './config.js';
+import { dom } from './dom.js';
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 export async function loadUiLangs() {
-    const uiLang = document.getElementById('ui-lang');
-    if (!uiLang) return;
+    if (!dom.uiLang) return;
     try {
         const rawLangs = await invoke('get_available_langs');
         const langs = Array.isArray(rawLangs) ? rawLangs : [];
-        uiLang.innerHTML = '';
+        dom.uiLang.innerHTML = '';
         const allLangs = Array.from(new Set([...langs, 'zh_tw', 'zh_cn', 'en_us', 'ja_jp']));
         allLangs.forEach((l) => {
             const opt = document.createElement('option');
@@ -25,11 +25,11 @@ export async function loadUiLangs() {
                         : l === 'ja_jp'
                           ? state.currentLabels.lang_ja_jp
                           : l;
-            uiLang.appendChild(opt);
+            dom.uiLang.appendChild(opt);
         });
 
-        if (uiLang && state.currentConfig && state.currentConfig.ui_lang) {
-            uiLang.value = state.currentConfig.ui_lang;
+        if (dom.uiLang && state.currentConfig && state.currentConfig.ui_lang) {
+            dom.uiLang.value = state.currentConfig.ui_lang;
         }
     } catch (e) {
         console.error('無法載入語言清單', e);
@@ -37,15 +37,8 @@ export async function loadUiLangs() {
 }
 
 export async function updateUiLanguage() {
-    const uiLang = document.getElementById('ui-lang');
-    const btnNavApi = document.getElementById('btn-nav-api');
-    const btnNavDict = document.getElementById('btn-nav-dict');
-    const btnNavPalette = document.getElementById('btn-nav-palette');
-    const btnNavTheme = document.getElementById('btn-nav-theme');
-    const btnNavDev = document.getElementById('btn-nav-dev');
-
     try {
-        const labels = await invoke('get_i18n_labels', { lang: uiLang ? uiLang.value : undefined });
+        const labels = await invoke('get_i18n_labels', { lang: dom.uiLang ? dom.uiLang.value : undefined });
         if (!labels) return;
         const oldLabels = { ...state.currentLabels };
         state.currentLabels = { ...labels };
@@ -53,8 +46,8 @@ export async function updateUiLanguage() {
         // 先更新 UI 語言下拉顯示文字（需要 labels 就緒）
         await loadUiLangs();
 
-        if (uiLang && uiLang.value) {
-            document.documentElement.lang = uiLang.value.replace('_', '-');
+        if (dom.uiLang && dom.uiLang.value) {
+            document.documentElement.lang = dom.uiLang.value.replace('_', '-');
         }
 
         // 🟢 更新 <title> 標籤
@@ -62,7 +55,6 @@ export async function updateUiLanguage() {
 
         const titleNode = document.querySelector('h1 span') || document.querySelector('h1');
         if (titleNode && labels.app_title) titleNode.textContent = labels.app_title;
-        // 🟡 舊有 Mapping 映射已移除，全面採用屬性驅動
 
         // 🟢 1. 執行屬性驅動的通用映射 (textContent)
         document.querySelectorAll('[data-i18n]').forEach((el) => {
@@ -88,29 +80,22 @@ export async function updateUiLanguage() {
             if (labels[key]) el.title = labels[key];
         });
 
-        // 移除原有的手動 optionMapping 循環
-
-        // 已在函式開頭宣告過，直接使用
-
-        if (labels.btn_nav_settings && btnNavApi) btnNavApi.title = labels.btn_nav_settings;
-        if (labels.btn_nav_dict && btnNavDict) btnNavDict.title = labels.btn_nav_dict;
-        if (labels.btn_nav_palette && btnNavPalette) btnNavPalette.title = labels.btn_nav_palette;
-        if (labels.btn_nav_theme && btnNavTheme) btnNavTheme.title = labels.btn_nav_theme;
-        if (labels.btn_nav_dev && btnNavDev) btnNavDev.title = labels.btn_nav_dev;
+        if (labels.btn_nav_settings && dom.btnNavApi) dom.btnNavApi.title = labels.btn_nav_settings;
+        if (labels.btn_nav_dict && dom.btnNavDict) dom.btnNavDict.title = labels.btn_nav_dict;
+        if (labels.btn_nav_palette && dom.btnNavPalette) dom.btnNavPalette.title = labels.btn_nav_palette;
+        if (labels.btn_nav_theme && dom.btnNavTheme) dom.btnNavTheme.title = labels.btn_nav_theme;
+        if (labels.btn_nav_dev && dom.btnNavDev) dom.btnNavDev.title = labels.btn_nav_dev;
 
         // 🟢 彈窗標題 (Header) 翻譯
-        const dictHeader = document.getElementById('header-dict-mgr');
-        if (dictHeader && labels.header_dict_mgr) {
-            dictHeader.textContent = labels.header_dict_mgr;
+        if (dom.headerDictMgr && labels.header_dict_mgr) {
+            dom.headerDictMgr.textContent = labels.header_dict_mgr;
         }
 
         // 🟢 額外懸停提示 (Tooltip) 翻譯
-        const btnOpenJson = document.getElementById('btn-dict-open-json');
-        if (btnOpenJson && labels.btn_dict_open_json) btnOpenJson.title = labels.btn_dict_open_json;
+        if (dom.btnDictOpenJson && labels.btn_dict_open_json) dom.btnDictOpenJson.title = labels.btn_dict_open_json;
 
-        const chkGlossary = document.getElementById('chk-glossary-priority');
-        if (chkGlossary && chkGlossary.parentElement && labels.glossary_priority_hover) {
-            chkGlossary.parentElement.title = labels.glossary_priority_hover;
+        if (dom.chkGlossaryPriority && dom.chkGlossaryPriority.parentElement && labels.glossary_priority_hover) {
+            dom.chkGlossaryPriority.parentElement.title = labels.glossary_priority_hover;
         }
 
         document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach((el) => {
@@ -129,11 +114,8 @@ export async function updateUiLanguage() {
             else if (labels[key]) el.placeholder = labels[key];
         });
 
-        // NOTE: UI 語系切換不再影響使用者/系統提示
-
-        const selectedModel = document.getElementById('selected-model');
-        if (selectedModel && selectedModel.options.length > 0) {
-            const firstOpt = selectedModel.options[0];
+        if (dom.selectedModel && dom.selectedModel.options.length > 0) {
+            const firstOpt = dom.selectedModel.options[0];
             if (firstOpt.value === '') {
                 const oldSelect = oldLabels.prompt_select_model;
                 const oldLoading = oldLabels.label_loading_models;
@@ -166,10 +148,10 @@ export async function updateUiLanguage() {
         });
 
         if (window.__TAURI__ && window.__TAURI__.event) {
-            window.__TAURI__.event.emit('ui-lang-changed', uiLang ? uiLang.value : undefined);
+            window.__TAURI__.event.emit('ui-lang-changed', dom.uiLang ? dom.uiLang.value : undefined);
         }
 
-        // 🟢 重新渲染翻譯語言下拉標籤 (由於語系變換需要顯示各語系的翻譯名稱)
+        // 🟢 重新渲染翻譯語言下拉標籤
         await loadTranslationLangs();
     } catch (err) {
         console.error('Failed to update UI language:', err);
@@ -180,7 +162,7 @@ export async function updateUiLanguage() {
 export function updateToggleStateLabel(id, checked) {
     const labels = (typeof state !== 'undefined' && state.currentLabels) || {};
 
-    // 🔴 [FIX] 針對 chk-fast-convert 特殊處理，因其標籤 ID 是 label-fast-convert-state
+    // 🔴 [FIX] 針對 chk-fast-convert 特殊處理
     if (id === 'chk-fast-convert') {
         const stateEl = document.getElementById('label-fast-convert-state');
         if (stateEl) {

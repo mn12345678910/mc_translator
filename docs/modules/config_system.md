@@ -1,3 +1,5 @@
+<!-- 最後更新: 2026-04-06 | 對應版本: v1.0.0 -->
+
 # 設定系統
 
 本文件說明 AppConfig 與 StyleConfig 的載入、預設值與儲存位置。
@@ -33,7 +35,9 @@
 
 - `AppConfig::load` 與 `StyleConfig::load` 會建立 `settings/` 目錄
 - 讀取失敗會回退到預設值
+- **反序列化防護**: 所有欄位都設有 `#[serde(default)]` 或 `#[serde(default = "...")]`，部分缺失的設定檔不會導致整個檔案失效
 - 儲存時會先進行 `validate` 驗證
+- **載入後驗證**: `load` 完成後會自動呼叫 `validate()` 校正數值範圍與空字串
 - API Key 透過 Keyring 儲存與讀取
 
 ## 流程圖
@@ -42,15 +46,16 @@
 flowchart TD
     A[Load Config] --> B{檔案存在?}
     B -- 否 --> C[使用預設值]
-    B -- 是 --> D[反序列化]
+    B -- 是 --> D[反序列化 (含 serde default 防護)]
     D --> E{成功?}
     E -- 否 --> C
-    E -- 是 --> F[進行 validate]
+    E -- 是 --> F[進行 validate (載入後校正)]
     F --> G[回傳 Config]
     G --> H[Save Config]
     H --> I[validate + 寫入檔案]
     H --> J[API Key 寫入 Keyring]
 ```
+
 ## 相關檔案
 
 - [src/config/settings.rs](/src/config/settings.rs)

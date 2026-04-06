@@ -1,3 +1,5 @@
+<!-- 最後更新: 2026-04-06 | 對應版本: v1.0.0 -->
+
 # 術語系統
 
 本系統用於提供翻譯提示，不直接替換原文。
@@ -5,8 +7,8 @@
 ## 資料來源
 
 - 官方詞庫: `dicts/en_us.json` + `dicts/zh_tw.json`
-- 推論詞庫: 由官方詞庫推論後寫入 `dicts/official/{ui_lang}.json`
-- 使用者詞庫: `dicts/user/{ui_lang}.json`
+- 推論詞庫: 由官方詞庫推論後寫入 `dicts/official/{target_lang}.json`
+- 使用者詞庫: `dicts/user/{target_lang}.json`
 
 ## 流程圖
 
@@ -24,7 +26,7 @@ flowchart TD
 
 ## 推論規則
 
-- 只在 `en_us -> zh_tw` 時啟用
+- 基於目標語言 (`target_lang`) 啟用，不限於特定語言組合
 - 以詞頻與 CJK 字元比例推論常見中文片語
 - 黑名單詞彙會被剔除
 
@@ -42,6 +44,7 @@ flowchart TD
 ## 快速簡繁轉換模式 (Fast Chinese Conversion)
 
 當啟用快速簡繁轉換時：
+
 - **優先級提升**：術語表不再僅作為「提示」，而是作為「強制替換規則」。
 - **邏輯分流**：先以 `Glossary Automaton` 進行術語優先替換，其餘內容才執行字元級轉換 (`hanconv`)。
 - **支援對象**：目前專為 `zh_cn` (簡體) 與 `zh_tw` (繁體) 之間的互轉設計。

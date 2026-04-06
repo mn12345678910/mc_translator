@@ -103,6 +103,9 @@ impl GlossaryAutomaton {
 
     pub fn extract(&self, texts: &[String]) -> HashMap<String, (String, TermType)> {
         let mut result = HashMap::new();
+        if self.entries.is_empty() {
+            return result;
+        }
         for text in texts {
             for mat in self.ac.find_iter(text) {
                 let entry = &self.entries[mat.pattern().as_usize()];

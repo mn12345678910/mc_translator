@@ -1,148 +1,148 @@
 repos:
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.6.0
-  hooks:
-  - id: trailing-whitespace
-  - id: end-of-file-fixer
-  - id: check-yaml
-  - id: check-toml
-  - id: check-json
-  - id: check-merge-conflict
-  - id: detect-private-key
-  - id: check-added-large-files
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v4.6.0
+      hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-yaml
+          - id: check-toml
+          - id: check-json
+          - id: check-merge-conflict
+          - id: detect-private-key
+          - id: check-added-large-files
 
-- repo: local
-  hooks:
-  - id: cargo-fmt
-    name: cargo fmt
-    entry: cargo fmt --all
-    language: system
-    types: [rust]
-    pass_filenames: false
+    - repo: local
+      hooks:
+          - id: cargo-fmt
+            name: cargo fmt
+            entry: cargo fmt --all
+            language: system
+            types: [rust]
+            pass_filenames: false
 
-  - id: cargo-clippy
-    name: cargo clippy
-    entry: cargo clippy --workspace --all-targets -- -D warnings
-    language: system
-    stages: [pre-push]
-    types: [rust]
-    pass_filenames: false
+          - id: cargo-clippy
+            name: cargo clippy
+            entry: cargo clippy --workspace --all-targets -- -D warnings
+            language: system
+            stages: [pre-commit]
+            types: [rust]
+            pass_filenames: false
 
-  - id: cargo-test
-    name: cargo test
-    entry: cargo test --all-features
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: cargo-test
+            name: cargo test
+            entry: cargo test --all-features
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: pnpm-format
-    name: pnpm format
-    entry: pnpm format
-    language: system
-    stages: [pre-commit]
-    pass_filenames: false
+          - id: pnpm-format
+            name: pnpm format
+            entry: pnpm format
+            language: system
+            stages: [pre-commit]
+            pass_filenames: false
 
-  - id: sync-version
-    name: sync version
-    entry: node tool/sync_version.js
-    language: system
-    files: (Cargo\.toml|tauri\.conf\.json)$
-    pass_filenames: false
+          - id: sync-version
+            name: sync version
+            entry: node tool/sync_version.js
+            language: system
+            files: (Cargo\.toml|tauri\.conf\.json)$
+            pass_filenames: false
 
-  - id: i18n-scaffold
-    name: i18n scaffold
-    entry: node tool/i18n_scaffold.js
-    language: system
-    files: \.json$
-    pass_filenames: false
+          - id: i18n-scaffold
+            name: i18n scaffold
+            entry: node tool/i18n_scaffold.js
+            language: system
+            files: \.json$
+            pass_filenames: false
 
-  - id: check-i18n-keys
-    name: check i18n keys
-    entry: node tool/check_i18n_keys.js
-    language: system
-    files: \.json$
-    pass_filenames: false
+          - id: check-i18n-keys
+            name: check i18n keys
+            entry: node tool/check_i18n_keys.js
+            language: system
+            files: \.json$
+            pass_filenames: false
 
-  - id: check-tauri-api
-    name: check tauri api
-    entry: node tool/check_tauri_sync.js
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: check-tauri-api
+            name: check tauri api
+            entry: node tool/check_tauri_sync.js
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: check-ui-elements
-    name: check ui elements
-    entry: node tool/check_ui_elements.js
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: check-ui-elements
+            name: check ui elements
+            entry: node tool/check_ui_elements.js
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: pnpm-lint
-    name: pnpm lint
-    entry: pnpm lint
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: pnpm-lint
+            name: pnpm lint
+            entry: pnpm lint
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: pnpm-test
-    name: pnpm test
-    entry: pnpm test
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: pnpm-test
+            name: pnpm test
+            entry: pnpm test
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: cleanup-redundant-files
-    name: cleanup redundant files
-    entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log', 'miri_failure*.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator', 'dist' -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: cleanup-redundant-files
+            name: cleanup redundant files
+            entry: pwsh -Command "Remove-Item -Path 'repro_serde.rs', 'ci_log.txt', 'job_log.txt', 'ci_failure.log', 'miri_failure*.log' -ErrorAction SilentlyContinue; Remove-Item -Path 'LLMTranslator', 'dist' -Recurse -Force -ErrorAction SilentlyContinue; exit 0"
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: check-config-sync
-    name: check config sync
-    entry: node tool/check_config_sync.js
-    language: system
-    files: (settings\.rs|config\.test\.js)$
-    pass_filenames: false
+          - id: check-config-sync
+            name: check config sync
+            entry: node tool/check_config_sync.js
+            language: system
+            files: (settings\.rs|config\.test\.js)$
+            pass_filenames: false
 
-  - id: check-md-links
-    name: check md links
-    entry: node tool/check_md_links.js
-    language: system
-    stages: [pre-push]
-    files: \.md$
-    pass_filenames: false
+          - id: check-md-links
+            name: check md links
+            entry: node tool/check_md_links.js
+            language: system
+            stages: [pre-push]
+            files: \.md$
+            pass_filenames: false
 
-  - id: cleanup-assets
-    name: cleanup assets
-    entry: node tool/cleanup_assets.js
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: cleanup-assets
+            name: cleanup assets
+            entry: node tool/cleanup_assets.js
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: check-commit-msg
-    name: check commit message
-    entry: node tool/check_commit_msg.js
-    language: system
-    stages: [commit-msg]
+          - id: check-commit-msg
+            name: check commit message
+            entry: node tool/check_commit_msg.js
+            language: system
+            stages: [commit-msg]
 
-  - id: check-dirty-worktree
-    name: check dirty worktree
-    entry: "pwsh -Command \"$s = git status --porcelain; if ($s) { echo '❌ ERROR: Working directory is dirty. Please commit or stash changes before pushing.'; exit 1 } else { exit 0 }\""
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: check-dirty-worktree
+            name: check dirty worktree
+            entry: 'pwsh -Command "$s = git status --porcelain; if ($s) { echo ''❌ ERROR: Working directory is dirty. Please commit or stash changes before pushing.''; exit 1 } else { exit 0 }"'
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: check-tag-sync
-    name: check tag sync
-    entry: node tool/check_tag_sync.js
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: check-tag-sync
+            name: check tag sync
+            entry: node tool/check_tag_sync.js
+            language: system
+            stages: [pre-push]
+            pass_filenames: false
 
-  - id: check-all-versions
-    name: check all versions
-    entry: node tool/check_all_versions.js
-    language: system
-    stages: [pre-push]
-    pass_filenames: false
+          - id: check-all-versions
+            name: check all versions
+            entry: node tool/check_all_versions.js
+            language: system
+            stages: [pre-push]
+            pass_filenames: false

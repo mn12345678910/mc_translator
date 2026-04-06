@@ -18,6 +18,7 @@ import { loadStyle, saveStyle, restoreDefaultStyle, applyColors, updatePaletteVa
 import { initDictionary, loadDictionary } from './modules/dictionary.js';
 import { initTranslation } from './modules/translation.js';
 import { VirtualLogViewer } from './modules/virtual_log.js';
+import { dom } from './modules/dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流 (支援 Vite 瀏覽器偵錯)
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
@@ -41,8 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadTranslationLangs(); // 根據 labels 填充翻譯選單
     await loadModels(); // 根據 labels 填充模型選單
     if (state.currentConfig.model) {
-        const sm = document.getElementById('selected-model');
-        if (sm) sm.value = state.currentConfig.model;
+        if (dom.selectedModel) dom.selectedModel.value = state.currentConfig.model;
     }
     await loadStyle(); // 載入視覺樣式
     await loadDictionary(); // 載入辭典快取
@@ -54,32 +54,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. 初始化子模組事件綁定
     window.__logViewer = new VirtualLogViewer('log-output', {
         onUpdate: (stats) => {
-            const elRendered = document.getElementById('debug-rendered-count');
-            const elLocked = document.getElementById('debug-scroll-locked');
-            const elTotal = document.getElementById('debug-total-logs');
-            const elMem = document.getElementById('debug-memory-est');
-            if (elRendered) elRendered.textContent = stats.rendered;
-            if (elLocked) elLocked.textContent = stats.isLocked ? 'True' : 'False';
-            if (elTotal) elTotal.textContent = stats.total.toLocaleString();
-            if (elMem) {
+            if (dom.debugRenderedCount) dom.debugRenderedCount.textContent = stats.rendered;
+            if (dom.debugScrollLocked) dom.debugScrollLocked.textContent = stats.isLocked ? 'True' : 'False';
+            if (dom.debugTotalLogs) dom.debugTotalLogs.textContent = stats.total.toLocaleString();
+            if (dom.debugMemoryEst) {
                 const estMB = Math.round((stats.total * 300) / (1024 * 1024));
-                elMem.textContent = `~${estMB} MB`;
+                dom.debugMemoryEst.textContent = `~${estMB} MB`;
             }
         },
     });
 
     initDictionary();
-    initDictionary();
     initTranslation();
 
     // 3. 基礎按鈕點擊綁定 ( browse 等 )
-    const btnBrowseFile = document.getElementById('btn-browse-file');
-    const btnBrowseDir = document.getElementById('btn-browse-dir');
-    const btnBrowseOutput = document.getElementById('btn-browse-output');
-    const btnBrowseOutputOpen = document.getElementById('btn-browse-output-open');
-    const inputPath = document.getElementById('input-path');
-    const outputDir = document.getElementById('output-dir');
-
     async function browsePath(type, targetEl) {
         try {
             const path = await invoke('open_path_dialog', { diagType: type });
@@ -90,13 +78,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    if (btnBrowseFile) btnBrowseFile.addEventListener('click', () => browsePath('file', inputPath));
-    if (btnBrowseDir) btnBrowseDir.addEventListener('click', () => browsePath('dir', inputPath));
-    if (btnBrowseOutput) btnBrowseOutput.addEventListener('click', () => browsePath('dir', outputDir));
+    if (dom.btnBrowseFile) dom.btnBrowseFile.addEventListener('click', () => browsePath('file', dom.inputPath));
+    if (dom.btnBrowseDir) dom.btnBrowseDir.addEventListener('click', () => browsePath('dir', dom.inputPath));
+    if (dom.btnBrowseOutput) dom.btnBrowseOutput.addEventListener('click', () => browsePath('dir', dom.outputDir));
 
-    if (btnBrowseOutputOpen) {
-        btnBrowseOutputOpen.addEventListener('click', async () => {
-            const target = outputDir ? outputDir.value.trim() : '';
+    if (dom.btnBrowseOutputOpen) {
+        dom.btnBrowseOutputOpen.addEventListener('click', async () => {
+            const target = dom.outputDir ? dom.outputDir.value.trim() : '';
             try {
                 await invoke('open_folder', { path: target });
             } catch (e) {
@@ -106,9 +94,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 4. 下拉選單與防抖自動儲存
-    const apiProvider = document.getElementById('api-provider');
-    if (apiProvider) {
-        apiProvider.addEventListener('change', async () => {
+    if (dom.apiProvider) {
+        dom.apiProvider.addEventListener('change', async () => {
             toggleOllamaGroup();
             toggleApiKeyVisibility();
             const loadModelsModule = await import('./modules/config.js').then((m) => m.loadModels);
@@ -196,13 +183,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const targetLang = builtInLangs.includes(lang) ? lang : 'en_us';
                     try {
                         const labels = await invoke('get_i18n_labels', { lang: targetLang });
-                        const userPrompt = document.getElementById('user-prompt');
-                        const systemPrompt = document.getElementById('system-prompt');
-                        if (userPrompt && labels.default_user_prompt) {
-                            userPrompt.value = labels.default_user_prompt;
+                        if (dom.userPrompt && labels.default_user_prompt) {
+                            dom.userPrompt.value = labels.default_user_prompt;
                         }
-                        if (systemPrompt && labels.default_system_prompt) {
-                            systemPrompt.value = labels.default_system_prompt;
+                        if (dom.systemPrompt && labels.default_system_prompt) {
+                            dom.systemPrompt.value = labels.default_system_prompt;
                         }
                     } catch (e) {
                         console.error('載入預設 Prompts 失敗:', e);
@@ -214,19 +199,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 移除重複的 target-lang 監聽器
-
     const styleSelects = ['chk-btn-rounding', 'chk-pulse', 'progress-style'];
     styleSelects.forEach((id) => {
         const selectEl = document.getElementById(id);
         if (selectEl) selectEl.addEventListener('change', debouncedSaveStyle);
     });
 
-    const uiLang = document.getElementById('ui-lang');
-    if (uiLang) {
-        uiLang.addEventListener('change', async () => {
-            state.currentConfig.ui_lang = uiLang.value;
-            document.documentElement.lang = uiLang.value.replace('_', '-');
+    if (dom.uiLang) {
+        dom.uiLang.addEventListener('change', async () => {
+            state.currentConfig.ui_lang = dom.uiLang.value;
+            document.documentElement.lang = dom.uiLang.value.replace('_', '-');
             await invoke('save_config', { config: state.currentConfig });
             await updateUiLanguage();
         });
@@ -235,10 +217,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 移除舊的重複監聽器區塊
 
     // 5. 導覽面板控制
-    const btnNavApi = document.getElementById('btn-nav-api');
-    const btnNavDev = document.getElementById('btn-nav-dev');
-    const btnNavPalette = document.getElementById('btn-nav-palette');
-    const btnNavTheme = document.getElementById('btn-nav-theme');
     const panelApi = document.querySelector('.api-settings');
     const panelDev = document.querySelector('.developer-settings');
     const panelTheme = document.querySelector('.theme-settings');
@@ -256,8 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    if (btnNavApi) {
-        btnNavApi.addEventListener('click', async () => {
+    if (dom.btnNavApi) {
+        dom.btnNavApi.addEventListener('click', async () => {
             state.currentConfig.show_api_settings = !state.currentConfig.show_api_settings;
             if (state.currentConfig.show_api_settings) {
                 state.currentConfig.show_developer_mode = false;
@@ -267,8 +245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await invoke('save_config', { config: state.currentConfig });
         });
     }
-    if (btnNavDev) {
-        btnNavDev.addEventListener('click', async () => {
+    if (dom.btnNavDev) {
+        dom.btnNavDev.addEventListener('click', async () => {
             state.currentConfig.show_developer_mode = !state.currentConfig.show_developer_mode;
             if (state.currentConfig.show_developer_mode) {
                 state.currentConfig.show_api_settings = false;
@@ -278,8 +256,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await invoke('save_config', { config: state.currentConfig });
         });
     }
-    if (btnNavPalette) {
-        btnNavPalette.addEventListener('click', async () => {
+    if (dom.btnNavPalette) {
+        dom.btnNavPalette.addEventListener('click', async () => {
             state.currentStyle.show_palette_settings = !state.currentStyle.show_palette_settings;
             if (state.currentStyle.show_palette_settings) {
                 state.currentConfig.show_api_settings = false;
@@ -289,8 +267,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             await invoke('save_config', { config: state.currentConfig });
         });
     }
-    if (btnNavTheme) {
-        btnNavTheme.addEventListener('click', async () => {
+    if (dom.btnNavTheme) {
+        dom.btnNavTheme.addEventListener('click', async () => {
             state.currentStyle.theme = state.currentStyle.theme === 'dark' ? 'light' : 'dark';
             applyColors(state.currentStyle);
             await invoke('save_style_config', { config: state.currentStyle });
@@ -298,36 +276,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // palette components ( 綁定 )
-    const paletteTargetType = document.getElementById('palette-target-type');
-    const paletteTargetItem = document.getElementById('palette-target-item');
-    const paletteProperty = document.getElementById('palette-property');
-    const paletteNumber = document.getElementById('palette-number');
-    const paletteColor = document.getElementById('palette-color');
-
-    if (paletteTargetType) {
-        paletteTargetType.addEventListener('change', () => {
-            const isSpecific = paletteTargetType.value === 'specific';
+    if (dom.paletteTargetType) {
+        dom.paletteTargetType.addEventListener('change', () => {
+            const isSpecific = dom.paletteTargetType.value === 'specific';
             const groupGlobal = document.getElementById('group-global');
             const groupSpecific = document.getElementById('group-specific');
             if (groupGlobal) groupGlobal.classList.toggle('hidden', isSpecific);
             if (groupSpecific) groupSpecific.classList.toggle('hidden', !isSpecific);
-            if (paletteTargetItem) paletteTargetItem.value = isSpecific ? 'btn-translate' : 'dark_bg';
+            if (dom.paletteTargetItem) dom.paletteTargetItem.value = isSpecific ? 'btn-translate' : 'dark_bg';
             updatePaletteValue();
         });
     }
-    if (paletteTargetItem) paletteTargetItem.addEventListener('change', updatePaletteValue);
-    if (paletteProperty) paletteProperty.addEventListener('change', updatePaletteValue);
+    if (dom.paletteTargetItem) dom.paletteTargetItem.addEventListener('change', updatePaletteValue);
+    if (dom.paletteProperty) dom.paletteProperty.addEventListener('change', updatePaletteValue);
 
     const debouncedSavePalette = debounce(async () => {
         await invoke('save_style_config', { config: state.currentStyle });
     }, 400);
 
-    if (paletteColor) {
-        paletteColor.addEventListener('input', () => {
-            const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
-            let target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
-            const prop = paletteProperty ? paletteProperty.value : 'bg'; // bg or text
-            const hex = paletteColor.value;
+    if (dom.paletteColor) {
+        dom.paletteColor.addEventListener('input', () => {
+            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
+            let target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
+            const prop = dom.paletteProperty ? dom.paletteProperty.value : 'bg'; // bg or text
+            const hex = dom.paletteColor.value;
             if (!hex.startsWith('#')) return;
             const bigint = parseInt(hex.slice(1), 16);
             const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
@@ -354,11 +326,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    if (paletteNumber) {
-        paletteNumber.addEventListener('input', () => {
-            const isSpecific = paletteTargetType ? paletteTargetType.value === 'specific' : false;
-            const target = paletteTargetItem ? paletteTargetItem.value : 'dark_bg';
-            const val = parseFloat(paletteNumber.value) || 0;
+    if (dom.paletteNumber) {
+        dom.paletteNumber.addEventListener('input', () => {
+            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
+            const target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
+            const val = parseFloat(dom.paletteNumber.value) || 0;
             if (isSpecific) {
                 if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
                 if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
@@ -373,12 +345,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 6. 清除覆寫事件
-    const btnPaletteClearItem = document.getElementById('btn-palette-clear-item');
-
-    if (btnPaletteClearItem) {
-        btnPaletteClearItem.addEventListener('click', async () => {
-            if (!paletteTargetType || paletteTargetType.value !== 'specific' || !paletteTargetItem) return;
-            const target = paletteTargetItem.value;
+    if (dom.btnPaletteClearItem) {
+        dom.btnPaletteClearItem.addEventListener('click', async () => {
+            if (!dom.paletteTargetType || dom.paletteTargetType.value !== 'specific' || !dom.paletteTargetItem) return;
+            const target = dom.paletteTargetItem.value;
 
             try {
                 if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
@@ -389,7 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 applyColors(state.currentStyle);
                 await invoke('save_style_config', { config: state.currentStyle });
 
-                const targetName = paletteTargetItem.options[paletteTargetItem.selectedIndex].text;
+                const targetName = dom.paletteTargetItem.options[dom.paletteTargetItem.selectedIndex].text;
                 appendLog(state.currentLabels.status_palette_clear_item.replace('{}', targetName));
             } catch (e) {
                 console.error(e);
@@ -400,16 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 7. 初始化面板展開狀態 (解決初次點擊無反應或誤開啟問題)
     updatePanelVisibility();
 
-    const btnRestoreApi = document.getElementById('btn-restore-api');
-    if (btnRestoreApi) {
-        btnRestoreApi.addEventListener('click', restoreDefaultConfig);
-    }
-    const btnRestoreDev = document.getElementById('btn-restore-dev');
-    if (btnRestoreDev) {
-        btnRestoreDev.addEventListener('click', restoreDevDefaults);
-    }
-    const btnRestorePalette = document.getElementById('btn-restore-palette');
-    if (btnRestorePalette) {
-        btnRestorePalette.addEventListener('click', restoreDefaultStyle);
-    }
+    if (dom.btnRestoreApi) dom.btnRestoreApi.addEventListener('click', restoreDefaultConfig);
+    if (dom.btnRestoreDev) dom.btnRestoreDev.addEventListener('click', restoreDevDefaults);
+    if (dom.btnRestorePalette) dom.btnRestorePalette.addEventListener('click', restoreDefaultStyle);
 });

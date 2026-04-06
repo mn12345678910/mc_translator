@@ -50,7 +50,6 @@ async fn test_fast_convert_bypass_llm() {
         progress: Arc::new(AtomicU32::new(0)),
         current_batch: Arc::new(AtomicU32::new(0)),
         total_batches: Arc::new(AtomicU32::new(0)),
-        counter: Arc::new(Mutex::new(0)),
         log: log.clone(),
         cancelled: Arc::new(AtomicBool::new(false)),
         paused: Arc::new(AtomicBool::new(false)),
@@ -99,6 +98,9 @@ async fn test_fast_convert_with_glossary_priority() {
 
     let mut items = vec![GlobalBatchItem::new("下界", 0, "test.json", "key1")];
 
+    let log = Arc::new(Mutex::new(Vec::new()));
+    let i18n = CommonLabels::default();
+
     let ctx = RunBatchContext {
         items: &mut items,
         config: Arc::new(Mutex::new(config)),
@@ -106,13 +108,12 @@ async fn test_fast_convert_with_glossary_priority() {
         progress: Arc::new(AtomicU32::new(0)),
         current_batch: Arc::new(AtomicU32::new(0)),
         total_batches: Arc::new(AtomicU32::new(0)),
-        counter: Arc::new(Mutex::new(0)),
-        log: Arc::new(Mutex::new(Vec::new())),
+        log: log.clone(),
         cancelled: Arc::new(AtomicBool::new(false)),
         paused: Arc::new(AtomicBool::new(false)),
         pause_notifier: Arc::new(tokio::sync::Notify::new()),
         glossary_automaton: &glossary,
-        i18n: &CommonLabels::default(),
+        i18n: &i18n,
         file_name: "test.json".to_string(),
         group_dir: "".to_string(),
         group_file_count: 1,
@@ -160,7 +161,6 @@ async fn test_fast_convert_disabled_uses_llm() {
         progress: Arc::new(AtomicU32::new(0)),
         current_batch: Arc::new(AtomicU32::new(0)),
         total_batches: Arc::new(AtomicU32::new(0)),
-        counter: Arc::new(Mutex::new(0)),
         log: log.clone(),
         cancelled: Arc::new(AtomicBool::new(false)),
         paused: Arc::new(AtomicBool::new(false)),
@@ -242,7 +242,6 @@ async fn test_fast_convert_glossary_phrase_replacement() {
         progress: Arc::new(AtomicU32::new(0)),
         current_batch: Arc::new(AtomicU32::new(0)),
         total_batches: Arc::new(AtomicU32::new(0)),
-        counter: Arc::new(Mutex::new(0)),
         log: log.clone(),
         cancelled: Arc::new(AtomicBool::new(false)),
         paused: Arc::new(AtomicBool::new(false)),

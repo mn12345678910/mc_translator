@@ -1,3 +1,5 @@
+<!-- 最後更新: 2026-04-06 | 對應版本: v1.0.0 -->
+
 # AI Context: mc_translator_rs 快速接手說明
 
 這份文件以目前程式碼為準，提供維護者可快速對照的「事實版」行為摘要。
@@ -27,8 +29,8 @@
 ## 字典與術語
 
 - 官方詞庫: 由 `dicts/en_us.json` 與 `dicts/zh_tw.json` 對照建立精確匹配
-- 推論詞庫: 由官方詞庫推論，寫入 `dicts/official/{ui_lang}.json`
-- 使用者詞庫: `dicts/user/{ui_lang}.json`，由 GUI 建議詞管理器維護
+- 推論詞庫: 由官方詞庫推論，寫入 `dicts/official/{target_lang}.json`
+- 使用者詞庫: `dicts/user/{target_lang}.json`，由 GUI 建議詞管理器維護
 - Glossary 僅作提示，不直接替換原文
 - Glossary 優先序由 `glossary_priority` 決定 (official 或 user)
 
@@ -47,8 +49,14 @@
 
 - 設定檔: `settings/config.cfg` 與 `settings/style.cfg`
 - API Key: 僅使用 OS Keyring，不寫入 `config.cfg`
-- `api_base_url` 可在 `config.cfg` 中手動設定，用於 OpenAI 相容端點
+- `api_base_url` 可在 GUI 設定面板中直接修改
 - StyleConfig 支援 `instance_overrides`，可針對單一元件覆寫主題顏色或圓角
+
+## 翻譯 API 行為
+
+- 空 API Key 時會返回明確錯誤 (`API_KEY_REQUIRED`)，不會靜默 fallback 到 Google Free
+- 前端會鎖定翻譯按鈕直到 API Key 填入
+- CLI headless 模式下空 key 會導致翻譯失敗
 
 ## 日誌
 
@@ -62,4 +70,5 @@
 - 背景任務以 `tokio::spawn` 併發
 
 ---
+
 此文件僅記錄「目前程式確定存在的行為」。若功能變更，請同步更新本文檔。

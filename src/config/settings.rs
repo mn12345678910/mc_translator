@@ -1,7 +1,7 @@
 //! # 設定模組
 //! 負責 AppConfig 結構體定義、config.cfg 與系統憑證 (Keyring) 的讀寫邏輯。
 
-#[cfg(not(test))]
+#[allow(unused_imports)]
 use secrecy::ExposeSecret;
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,11 @@ use super::encryption::{get_api_key, save_api_key};
 
 pub const DEFAULT_PROMPT: &str = "你是一位專業的 Minecraft 模組翻譯員。現在請將以下模組字串翻譯為「繁體中文 (zh_tw)」。\n保持專業的遊戲術語風格（如方塊、實體、附魔）。";
 
+pub const DEFAULT_SYSTEM_PROMPT: &str = "\n\n[內部技術指令 - 請務必遵守]\n\
+1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
+2. 嚴禁在此類標籤（%%...%%）之外自行臆造、增加或移動任何格式標籤。若原文無標籤，譯文亦不可有標籤。\n\
+3. 其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。";
+
 /// 核心功能設定檔 (config.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
@@ -22,30 +27,41 @@ pub struct AppConfig {
     pub api_key: SecretString,
 
     // --- [核心 API 設定] ---
+    #[serde(default = "default_api_provider")]
     pub api_provider: String,
     pub model: String,
+    #[serde(default = "default_ollama_url")]
     pub ollama_url: String,
     #[serde(default)]
     pub api_base_url: String,
 
     // --- [Prompt 集] ---
+    #[serde(default = "default_user_prompt")]
     pub user_prompt: String,
+    #[serde(default = "default_system_prompt")]
     pub system_prompt: String,
 
     // --- [翻譯參數] ---
+    #[serde(default = "default_batch_size")]
     pub batch_size: u32,
+    #[serde(default = "default_batch_max_chars")]
     pub batch_max_chars: u32,
+    #[serde(default = "default_timeout")]
     pub timeout: u32,
+    #[serde(default = "default_glossary_priority")]
     pub glossary_priority: String,
 
     // --- [語言設定] ---
+    #[serde(default = "default_source_lang")]
     pub source_lang: String,
+    #[serde(default = "default_target_lang")]
     pub target_lang: String,
     #[serde(default = "default_ui_lang")]
     pub ui_lang: String,
 
     // --- [輸出與路徑] ---
     pub output_dir: String,
+    #[serde(default = "default_pack_format")]
     pub pack_format: u32,
 
     // --- [效能與面板狀態] ---
@@ -99,11 +115,159 @@ pub fn default_excluded_paths() -> Vec<String> {
     ]
 }
 
+// === Default 函數 (AppConfig) ===
+fn default_api_provider() -> String {
+    "無".to_string()
+}
+fn default_ollama_url() -> String {
+    "http://localhost:11434".to_string()
+}
+fn default_user_prompt() -> String {
+    DEFAULT_PROMPT.to_string()
+}
+fn default_system_prompt() -> String {
+    DEFAULT_SYSTEM_PROMPT.to_string()
+}
+fn default_batch_size() -> u32 {
+    150
+}
+fn default_batch_max_chars() -> u32 {
+    3500
+}
+fn default_timeout() -> u32 {
+    60
+}
+fn default_glossary_priority() -> String {
+    "official".to_string()
+}
+fn default_source_lang() -> String {
+    "en_us".to_string()
+}
+fn default_target_lang() -> String {
+    "zh_tw".to_string()
+}
+fn default_pack_format() -> u32 {
+    15
+}
+fn default_ui_lang() -> String {
+    "zh_tw".to_string()
+}
+
+// === Default 函數 (StyleConfig 關鍵欄位) ===
+fn default_theme() -> String {
+    "dark".to_string()
+}
+fn default_font_size() -> f32 {
+    15.0
+}
+fn default_true() -> bool {
+    true
+}
+
+// === Macro 輔助：減少樣板代碼 ===
+macro_rules! default_color {
+    ($name:ident, $r:expr, $g:expr, $b:expr) => {
+        fn $name() -> [u8; 3] {
+            [$r, $g, $b]
+        }
+    };
+}
+
+macro_rules! default_float {
+    ($name:ident, $val:expr) => {
+        fn $name() -> f32 {
+            $val
+        }
+    };
+}
+
+macro_rules! default_string {
+    ($name:ident, $val:expr) => {
+        fn $name() -> String {
+            $val.to_string()
+        }
+    };
+}
+
+// 調色盤
+default_color!(default_dark_bg, 30, 30, 35);
+default_color!(default_dark_text, 200, 160, 100);
+default_color!(default_light_bg, 252, 252, 253);
+default_color!(default_light_text, 30, 30, 35);
+default_color!(default_dark_label, 200, 160, 100);
+default_color!(default_light_label, 30, 30, 35);
+default_color!(default_dark_text_muted, 170, 170, 170);
+default_color!(default_light_text_muted, 102, 102, 102);
+default_color!(default_dark_btn_bg, 45, 45, 50);
+default_color!(default_dark_btn_text, 220, 220, 220);
+default_color!(default_light_btn_bg, 240, 240, 245);
+default_color!(default_light_btn_text, 45, 45, 50);
+default_color!(default_dark_input_bg, 20, 20, 25);
+default_color!(default_light_input_bg, 255, 255, 255);
+default_color!(default_dark_list_bg, 25, 25, 30);
+default_color!(default_light_list_bg, 250, 250, 252);
+default_color!(default_dark_tab_active, 60, 60, 70);
+default_color!(default_dark_tab_inactive, 35, 35, 40);
+default_color!(default_light_tab_active, 230, 235, 245);
+default_color!(default_light_tab_inactive, 245, 245, 250);
+default_color!(default_dark_header_bg, 37, 37, 43);
+default_color!(default_light_header_bg, 235, 235, 240);
+default_color!(default_dark_border_color, 60, 60, 66);
+default_color!(default_light_border_color, 210, 210, 220);
+default_color!(default_dark_hover_bg, 56, 56, 64);
+default_color!(default_light_hover_bg, 225, 235, 250);
+default_color!(default_dark_slider_bg, 42, 42, 48);
+default_color!(default_light_slider_bg, 220, 220, 210);
+default_color!(default_dark_slider_thumb, 224, 224, 224);
+default_color!(default_light_slider_thumb, 80, 80, 80);
+default_color!(default_dark_switch_bg, 26, 26, 31);
+default_color!(default_light_switch_bg, 230, 230, 220);
+default_color!(default_dark_progress_bg, 51, 51, 51);
+default_color!(default_light_progress_bg, 235, 235, 240);
+default_color!(default_dark_accent, 212, 175, 55);
+default_color!(default_light_accent, 0, 120, 212);
+default_color!(default_dark_danger, 170, 17, 17);
+default_color!(default_light_danger, 170, 17, 17);
+
+// 日誌色彩
+default_color!(default_dark_log_info, 200, 200, 200);
+default_color!(default_light_log_info, 30, 30, 35);
+default_color!(default_dark_log_warn, 217, 119, 6);
+default_color!(default_light_log_warn, 180, 100, 0);
+default_color!(default_dark_log_error, 255, 85, 85);
+default_color!(default_light_log_error, 170, 17, 17);
+default_color!(default_dark_log_success, 60, 180, 120);
+default_color!(default_light_log_success, 5, 150, 105);
+default_color!(default_dark_log_dir, 212, 175, 55);
+default_color!(default_light_log_dir, 150, 110, 0);
+default_color!(default_dark_log_file, 85, 255, 255);
+default_color!(default_light_log_file, 0, 120, 212);
+
+// 透明度與間距
+default_float!(default_alpha_border, 0.15);
+default_float!(default_alpha_panel, 0.03);
+default_float!(default_alpha_backdrop, 0.6);
+default_float!(default_space_sm, 10.0);
+default_float!(default_space_md, 15.0);
+default_float!(default_space_lg, 20.0);
+default_float!(default_rounding, 4.0);
+default_float!(default_pulse_speed, 1.0);
+
+// 特效
+default_color!(default_aurora_1, 255, 0, 127);
+default_color!(default_aurora_2, 127, 0, 255);
+default_color!(default_aurora_3, 0, 255, 255);
+default_color!(default_neon_color, 0, 255, 204);
+
+default_string!(default_progress_style, "default");
+
 /// 外觀與視覺設定檔 (style.cfg)
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct StyleConfig {
+    #[serde(default = "default_theme")]
     pub theme: String,
+    #[serde(default = "default_font_size")]
     pub font_size: f32,
 
     // --- [自定義調色盤] ---
@@ -248,7 +412,7 @@ pub struct StyleConfig {
     pub space_lg: f32,
 
     // --- [造型與動畫] ---
-    #[serde(default)]
+    #[serde(default = "default_true")]
     pub btn_rounding_enabled: bool,
     #[serde(default = "default_rounding")]
     pub btn_rounding_value: f32,
@@ -290,227 +454,11 @@ pub struct ComponentStyle {
     pub rounding: Option<f32>,
 }
 
-fn default_dark_bg() -> [u8; 3] {
-    [30, 30, 35]
-}
-fn default_dark_text() -> [u8; 3] {
-    [200, 160, 100]
-}
-fn default_light_bg() -> [u8; 3] {
-    [252, 252, 253] // 清爽白
-}
-fn default_light_text() -> [u8; 3] {
-    [30, 30, 35] // 深灰色
-}
-
-fn default_dark_label() -> [u8; 3] {
-    [200, 160, 100]
-}
-fn default_light_label() -> [u8; 3] {
-    [30, 30, 35]
-}
-
-fn default_dark_text_muted() -> [u8; 3] {
-    [170, 170, 170]
-}
-fn default_light_text_muted() -> [u8; 3] {
-    [102, 102, 102]
-}
-
-fn default_dark_btn_bg() -> [u8; 3] {
-    [45, 45, 50]
-}
-fn default_dark_btn_text() -> [u8; 3] {
-    [220, 220, 220]
-}
-fn default_light_btn_bg() -> [u8; 3] {
-    [240, 240, 245] // 按鈕淺灰
-}
-fn default_light_btn_text() -> [u8; 3] {
-    [45, 45, 50]
-}
-
-fn default_dark_input_bg() -> [u8; 3] {
-    [20, 20, 25]
-}
-fn default_light_input_bg() -> [u8; 3] {
-    [255, 255, 255] // 純白輸入框
-}
-
-fn default_dark_list_bg() -> [u8; 3] {
-    [25, 25, 30]
-}
-fn default_light_list_bg() -> [u8; 3] {
-    [250, 250, 252] // 淺灰日誌背景
-}
-
-fn default_dark_tab_active() -> [u8; 3] {
-    [60, 60, 70]
-}
-fn default_dark_tab_inactive() -> [u8; 3] {
-    [35, 35, 40]
-}
-fn default_light_tab_active() -> [u8; 3] {
-    [230, 235, 245]
-}
-fn default_light_tab_inactive() -> [u8; 3] {
-    [245, 245, 250]
-}
-
-fn default_dark_header_bg() -> [u8; 3] {
-    [37, 37, 43]
-}
-fn default_light_header_bg() -> [u8; 3] {
-    [235, 235, 240]
-}
-fn default_dark_border_color() -> [u8; 3] {
-    [60, 60, 66]
-}
-fn default_light_border_color() -> [u8; 3] {
-    [210, 210, 220] // 增強邊框對比
-}
-fn default_dark_hover_bg() -> [u8; 3] {
-    [56, 56, 64]
-}
-fn default_light_hover_bg() -> [u8; 3] {
-    [225, 235, 250] // 藍色懸停感
-}
-fn default_dark_slider_bg() -> [u8; 3] {
-    [42, 42, 48]
-}
-fn default_light_slider_bg() -> [u8; 3] {
-    [220, 220, 210]
-}
-fn default_dark_slider_thumb() -> [u8; 3] {
-    [224, 224, 224]
-}
-fn default_light_slider_thumb() -> [u8; 3] {
-    [80, 80, 80]
-}
-fn default_dark_switch_bg() -> [u8; 3] {
-    [26, 26, 31]
-}
-fn default_light_switch_bg() -> [u8; 3] {
-    [230, 230, 220]
-}
-fn default_dark_progress_bg() -> [u8; 3] {
-    [51, 51, 51]
-}
-fn default_light_progress_bg() -> [u8; 3] {
-    [235, 235, 240]
-}
-
-fn default_dark_accent() -> [u8; 3] {
-    [212, 175, 55]
-}
-fn default_light_accent() -> [u8; 3] {
-    [0, 120, 212]
-}
-fn default_dark_danger() -> [u8; 3] {
-    [170, 17, 17]
-}
-fn default_light_danger() -> [u8; 3] {
-    [170, 17, 17]
-}
-
-// --- [日誌預設色] ---
-fn default_dark_log_info() -> [u8; 3] {
-    [200, 200, 200]
-}
-fn default_light_log_info() -> [u8; 3] {
-    [30, 30, 35]
-}
-
-fn default_dark_log_warn() -> [u8; 3] {
-    [217, 119, 6] // 暗金色
-}
-fn default_light_log_warn() -> [u8; 3] {
-    [180, 100, 0]
-}
-
-fn default_dark_log_error() -> [u8; 3] {
-    [255, 85, 85] // 亮紅
-}
-fn default_light_log_error() -> [u8; 3] {
-    [170, 17, 17]
-}
-
-fn default_dark_log_success() -> [u8; 3] {
-    [60, 180, 120] // 翠綠
-}
-fn default_light_log_success() -> [u8; 3] {
-    [5, 150, 105]
-}
-
-fn default_dark_log_dir() -> [u8; 3] {
-    [212, 175, 55] // 跟 Accent 同樣的金色感
-}
-fn default_light_log_dir() -> [u8; 3] {
-    [150, 110, 0]
-}
-
-fn default_dark_log_file() -> [u8; 3] {
-    [85, 255, 255] // 水藍
-}
-fn default_light_log_file() -> [u8; 3] {
-    [0, 120, 212]
-}
-
-fn default_alpha_border() -> f32 {
-    0.15
-}
-fn default_alpha_panel() -> f32 {
-    0.03
-}
-fn default_alpha_backdrop() -> f32 {
-    0.6
-}
-
-fn default_space_sm() -> f32 {
-    10.0
-}
-fn default_space_md() -> f32 {
-    15.0
-}
-fn default_space_lg() -> f32 {
-    20.0
-}
-
-fn default_rounding() -> f32 {
-    4.0
-}
-fn default_pulse_speed() -> f32 {
-    1.0
-}
-fn default_progress_style() -> String {
-    "default".to_string()
-}
-fn default_true() -> bool {
-    true
-}
-
-fn default_aurora_1() -> [u8; 3] {
-    [255, 0, 127]
-}
-fn default_aurora_2() -> [u8; 3] {
-    [127, 0, 255]
-}
-fn default_aurora_3() -> [u8; 3] {
-    [0, 255, 255]
-}
-fn default_neon_color() -> [u8; 3] {
-    [0, 255, 204]
-}
-
-fn default_ui_lang() -> String {
-    "zh_tw".to_string()
-}
-
 impl Default for StyleConfig {
     fn default() -> Self {
         Self {
-            theme: "dark".to_string(),
-            font_size: 15.0,
+            theme: default_theme(),
+            font_size: default_font_size(),
             dark_bg: default_dark_bg(),
             dark_text: default_dark_text(),
             light_bg: default_light_bg(),
@@ -571,9 +519,9 @@ impl Default for StyleConfig {
             space_sm: default_space_sm(),
             space_md: default_space_md(),
             space_lg: default_space_lg(),
-            btn_rounding_enabled: true,
+            btn_rounding_enabled: default_true(),
             btn_rounding_value: default_rounding(),
-            progress_pulse_enabled: true,
+            progress_pulse_enabled: default_true(),
             progress_pulse_speed: default_pulse_speed(),
             progress_style: default_progress_style(),
             instance_overrides: HashMap::new(),
@@ -589,12 +537,13 @@ impl StyleConfig {
     pub fn load_with_path(dir: &std::path::Path) -> Self {
         let _ = fs::create_dir_all(dir);
         let path = dir.join("style.cfg");
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(config) = serde_json::from_str::<Self>(&content) {
-                return config;
-            }
-        }
-        Self::default()
+        let mut config = if let Ok(content) = fs::read_to_string(&path) {
+            serde_json::from_str::<Self>(&content).unwrap_or_else(|_| Self::default())
+        } else {
+            Self::default()
+        };
+        config.validate();
+        config
     }
 
     pub fn save(&mut self) {
@@ -617,8 +566,12 @@ impl StyleConfig {
         self.space_md = self.space_md.clamp(0.0, 100.0);
         self.space_lg = self.space_lg.clamp(0.0, 100.0);
 
+        // --- [字串欄位防護] ---
+        if self.theme.is_empty() {
+            self.theme = default_theme();
+        }
         if self.progress_style.is_empty() {
-            self.progress_style = "default".to_string();
+            self.progress_style = default_progress_style();
         }
     }
 
@@ -636,25 +589,22 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             api_key: SecretString::default(),
-            api_provider: "無".to_string(),
+            api_provider: default_api_provider(),
             model: String::new(),
-            ollama_url: "http://localhost:11434".to_string(),
+            ollama_url: default_ollama_url(),
             api_base_url: String::new(),
 
-            user_prompt: DEFAULT_PROMPT.to_string(),
-            system_prompt: "\n\n[內部技術指令 - 請務必遵守]\n\
-1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n\
-2. 嚴禁在此類標籤（%%...%%）之外自行臆造、增加或移動任何格式標籤。若原文無標籤，譯文亦不可有標籤。\n\
-3. 其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。".to_string(),
-            batch_size: 150,
-            batch_max_chars: 3500,
-            timeout: 60,
-            glossary_priority: "official".to_string(),
-            source_lang: "en_us".to_string(),
-            target_lang: "zh_tw".to_string(),
-            ui_lang: "zh_tw".to_string(),
+            user_prompt: default_user_prompt(),
+            system_prompt: default_system_prompt(),
+            batch_size: default_batch_size(),
+            batch_max_chars: default_batch_max_chars(),
+            timeout: default_timeout(),
+            glossary_priority: default_glossary_priority(),
+            source_lang: default_source_lang(),
+            target_lang: default_target_lang(),
+            ui_lang: default_ui_lang(),
             output_dir: String::new(),
-            pack_format: 15,
+            pack_format: default_pack_format(),
             show_api_settings: false,
             show_developer_mode: false,
             show_debug_tools: false,
@@ -701,12 +651,13 @@ impl AppConfig {
 
     fn load_from_config_cfg_path(dir: &std::path::Path) -> Self {
         let path = dir.join("config.cfg");
-        if let Ok(content) = fs::read_to_string(&path) {
-            if let Ok(config) = serde_json::from_str::<Self>(&content) {
-                return config;
-            }
-        }
-        Self::default()
+        let mut config = if let Ok(content) = fs::read_to_string(&path) {
+            serde_json::from_str::<Self>(&content).unwrap_or_else(|_| Self::default())
+        } else {
+            Self::default()
+        };
+        config.validate();
+        config
     }
 
     pub fn save(&mut self) {
@@ -716,24 +667,47 @@ impl AppConfig {
     pub fn validate(&mut self) {
         // --- [核心參數校正] ---
         if self.batch_size == 0 {
-            self.batch_size = 150;
+            self.batch_size = default_batch_size();
         }
         self.batch_size = self.batch_size.clamp(1, 500);
 
         if self.batch_max_chars == 0 {
-            self.batch_max_chars = 3500;
+            self.batch_max_chars = default_batch_max_chars();
         }
         self.batch_max_chars = self.batch_max_chars.clamp(1, 20000);
 
         if self.timeout == 0 {
-            self.timeout = 60;
+            self.timeout = default_timeout();
         }
         self.timeout = self.timeout.clamp(1, 300);
 
         if self.pack_format == 0 {
-            self.pack_format = 15;
+            self.pack_format = default_pack_format();
         }
         self.pack_format = self.pack_format.clamp(1, 128);
+
+        // --- [字串欄位防護] ---
+        if self.api_provider.is_empty() {
+            self.api_provider = default_api_provider();
+        }
+        if self.ollama_url.is_empty() {
+            self.ollama_url = default_ollama_url();
+        }
+        if self.source_lang.is_empty() {
+            self.source_lang = default_source_lang();
+        }
+        if self.target_lang.is_empty() {
+            self.target_lang = default_target_lang();
+        }
+        if self.user_prompt.is_empty() {
+            self.user_prompt = default_user_prompt();
+        }
+        if self.system_prompt.is_empty() {
+            self.system_prompt = default_system_prompt();
+        }
+        if self.glossary_priority.is_empty() {
+            self.glossary_priority = default_glossary_priority();
+        }
     }
 
     pub fn save_with_path(&mut self, dir: &std::path::Path) {
@@ -829,10 +803,10 @@ mod tests {
             ..AppConfig::default()
         };
         app.validate();
-        assert_eq!(app.batch_size, 500); // 上限 500
-        assert_eq!(app.timeout, 60); // 0 重設為預設 60 並通過 clamp (或 1)
-        assert_eq!(app.batch_max_chars, 20000); // 上限 20000
-        assert_eq!(app.pack_format, 128); // 上限 128
+        assert_eq!(app.batch_size, 500);
+        assert_eq!(app.timeout, 60);
+        assert_eq!(app.batch_max_chars, 20000);
+        assert_eq!(app.pack_format, 128);
 
         // 2. StyleConfig 驗證
         let mut style = StyleConfig {
@@ -844,10 +818,87 @@ mod tests {
             ..StyleConfig::default()
         };
         style.validate();
-        assert_eq!(style.font_size, 12.0); // 下限 12.0
-        assert_eq!(style.btn_rounding_value, 100.0); // 上限 100.0
-        assert_eq!(style.progress_pulse_speed, 10.0); // 上限 10.0
-        assert_eq!(style.border_alpha, 0.01); // 下限 0.01
-        assert_eq!(style.space_sm, 0.0); // 下限 0.0
+        assert_eq!(style.font_size, 12.0);
+        assert_eq!(style.btn_rounding_value, 100.0);
+        assert_eq!(style.progress_pulse_speed, 10.0);
+        assert_eq!(style.border_alpha, 0.01);
+        assert_eq!(style.space_sm, 0.0);
+    }
+
+    #[test]
+    fn test_app_config_partial_deserialization() {
+        // 缺少 api_provider, ollama_url, source_lang, target_lang 等關鍵欄位
+        let json = r#"{"model": "test", "batch_size": 50}"#;
+        let config: AppConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.api_provider, "無");
+        assert_eq!(config.ollama_url, "http://localhost:11434");
+        assert_eq!(config.source_lang, "en_us");
+        assert_eq!(config.target_lang, "zh_tw");
+        assert_eq!(config.user_prompt, DEFAULT_PROMPT);
+        assert_eq!(config.system_prompt, DEFAULT_SYSTEM_PROMPT);
+        assert_eq!(config.batch_size, 50);
+        assert_eq!(config.glossary_priority, "official");
+        assert_eq!(config.pack_format, 15);
+    }
+
+    #[test]
+    fn test_style_config_partial_deserialization() {
+        // 缺少 theme, font_size, btn_rounding_enabled
+        let json = r#"{"dark_bg": [10, 10, 10]}"#;
+        let config: StyleConfig = serde_json::from_str(json).unwrap();
+        assert_eq!(config.theme, "dark");
+        assert_eq!(config.font_size, 15.0);
+        assert!(config.btn_rounding_enabled);
+        assert_eq!(config.dark_bg, [10, 10, 10]);
+    }
+
+    #[test]
+    fn test_validate_corrects_empty_strings() {
+        let mut app = AppConfig {
+            api_provider: String::new(),
+            ollama_url: String::new(),
+            source_lang: String::new(),
+            target_lang: String::new(),
+            user_prompt: String::new(),
+            system_prompt: String::new(),
+            glossary_priority: String::new(),
+            ..AppConfig::default()
+        };
+        app.validate();
+        assert_eq!(app.api_provider, "無");
+        assert_eq!(app.ollama_url, "http://localhost:11434");
+        assert_eq!(app.source_lang, "en_us");
+        assert_eq!(app.target_lang, "zh_tw");
+        assert_eq!(app.user_prompt, DEFAULT_PROMPT);
+        assert_eq!(app.system_prompt, DEFAULT_SYSTEM_PROMPT);
+        assert_eq!(app.glossary_priority, "official");
+    }
+
+    #[test]
+    fn test_style_validate_corrects_empty_theme() {
+        let mut style = StyleConfig {
+            theme: String::new(),
+            ..StyleConfig::default()
+        };
+        style.validate();
+        assert_eq!(style.theme, "dark");
+    }
+
+    #[test]
+    fn test_load_validates_on_load() {
+        let temp_dir = std::env::temp_dir().join("mc_translator_settings_validate_on_load");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        // 寫入一個缺少關鍵欄位的設定檔
+        let json = r#"{"batch_size": 0, "api_provider": ""}"#;
+        fs::write(temp_dir.join("config.cfg"), json).unwrap();
+
+        let config = AppConfig::load_with_path(&temp_dir);
+        // validate() 應該在 load 時被呼叫，校正空字串與 0 值
+        assert_eq!(config.api_provider, "無");
+        assert_eq!(config.batch_size, 150);
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

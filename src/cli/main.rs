@@ -91,6 +91,21 @@ struct Args {
     fast_convert: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CliStep {
+    Lang,
+    Provider,
+    ApiKey,
+    Model,
+    InputPath,
+    OutputPath,
+    Confirm,
+}
+
+const CONFIRM_ADVANCED: usize = 1;
+const CONFIRM_NO: usize = 2;
+const CONFIRM_BACK: usize = 3;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -110,17 +125,17 @@ async fn run_main_with_args(
     println!("{}", i18n.cli_banner_title);
 
     // --- 參數覆蓋設定檔 (Parity Mapping) ---
-    if let Some(o) = args.output.clone() {
-        config.output_dir = o;
+    if let Some(ref o) = args.output {
+        config.output_dir = o.clone();
     }
-    if let Some(p) = args.provider.clone() {
-        config.api_provider = p;
+    if let Some(ref p) = args.provider {
+        config.api_provider = p.clone();
     }
-    if let Some(m) = args.model.clone() {
-        config.model = m;
+    if let Some(ref m) = args.model {
+        config.model = m.clone();
     }
-    if let Some(k) = args.api_key.clone() {
-        config.api_key = k.into();
+    if let Some(ref k) = args.api_key {
+        config.api_key = k.clone().into();
     }
     if let Some(b) = args.batch_size {
         config.batch_size = b;
@@ -131,14 +146,14 @@ async fn run_main_with_args(
     if let Some(t) = args.timeout {
         config.timeout = t;
     }
-    if let Some(g) = args.glossary_priority.clone() {
-        config.glossary_priority = g;
+    if let Some(ref g) = args.glossary_priority {
+        config.glossary_priority = g.clone();
     }
-    if let Some(s) = args.source_lang.clone() {
-        config.source_lang = s;
+    if let Some(ref s) = args.source_lang {
+        config.source_lang = s.clone();
     }
-    if let Some(t) = args.target_lang.clone() {
-        config.target_lang = t;
+    if let Some(ref t) = args.target_lang {
+        config.target_lang = t.clone();
     }
     if args.skip_json {
         config.skip_json = true;
@@ -183,6 +198,7 @@ async fn run_main_with_args(
         }
 
         // 參數已於全域套用
+        config.validate();
 
         println!("{}", i18n.cli_detect_headless);
         println!(
@@ -215,17 +231,17 @@ async fn run_main_with_args(
     } else {
         println!("{}", i18n.cli_mode_interactive);
 
-        let mut next_step = 1;
-        let mut initial_history: Vec<usize> = Vec::new();
+        let mut next_step = CliStep::Lang;
+        let mut initial_history: Vec<CliStep> = Vec::new();
 
         loop {
             let mut status_history = initial_history.clone();
             let mut step = next_step;
             let mut input_path = PathBuf::new();
 
-            while step <= 7 {
+            loop {
                 match step {
-                    1 => {
+                    CliStep::Lang => {
                         // --- Step 1: 介面語言 ---
                         let langs = CliLabels::get_available_ui_langs();
                         let default_idx =
@@ -235,16 +251,16 @@ async fn run_main_with_args(
 
                         config.ui_lang = langs[idx].clone();
                         i18n = CliLabels::load_or_default(&config.ui_lang);
-                        config.save(); // 即時存入
+                        config.save(); // 語言切換需要立即生效
 
                         print!("\x1B[2J\x1B[1;1H"); // 清空畫面
                         println!("{}", i18n.cli_banner_title);
                         println!("{}", i18n.cli_mode_interactive);
 
-                        status_history.push(1);
-                        step = 2;
+                        status_history.push(CliStep::Lang);
+                        step = CliStep::Provider;
                     }
-                    2 => {
+                    CliStep::Provider => {
                         // --- Step 2: API 提供商 ---
                         let providers = [
                             "Gemini",
@@ -270,20 +286,19 @@ async fn run_main_with_args(
                         )?;
 
                         if idx == items.len() - 1 {
-                            step = status_history.pop().unwrap_or(1);
+                            step = status_history.pop().unwrap_or(CliStep::Lang);
                             continue;
                         }
 
                         config.api_provider = providers[idx].to_string();
-                        config.save(); // 即時存入
-                        status_history.push(2);
-                        step = 3;
+                        status_history.push(CliStep::Provider);
+                        step = CliStep::ApiKey;
                     }
-                    3 => {
+                    CliStep::ApiKey => {
                         // --- Step 3: API Key ---
                         if config.api_provider == "Ollama" || config.api_provider == "Google Free" {
-                            status_history.push(3);
-                            step = 4;
+                            status_history.push(CliStep::ApiKey);
+                            step = CliStep::Model;
                             continue;
                         }
 
@@ -303,22 +318,21 @@ async fn run_main_with_args(
                         let key = interact.password(&key_prompt)?;
 
                         if key == "<" {
-                            step = status_history.pop().unwrap_or(1);
+                            step = status_history.pop().unwrap_or(CliStep::Lang);
                             continue;
                         }
 
                         if !key.trim().is_empty() {
                             config.api_key = key.trim().to_string().into();
-                            config.save(); // 即時存入
                         }
-                        status_history.push(3);
-                        step = 4;
+                        status_history.push(CliStep::ApiKey);
+                        step = CliStep::Model;
                     }
-                    4 => {
+                    CliStep::Model => {
                         // --- Step 4: 模型名稱 ---
                         if config.api_provider == "Google Free" {
-                            status_history.push(4);
-                            step = 5;
+                            status_history.push(CliStep::Model);
+                            step = CliStep::InputPath;
                             continue;
                         }
 
@@ -363,9 +377,9 @@ async fn run_main_with_args(
                             if config.api_provider == "Ollama"
                                 || config.api_provider == "Google Free"
                             {
-                                step = 2; // 跳過不適用的 APIKey 步驟
+                                step = CliStep::Provider; // 跳過不適用的 APIKey 步驟
                             } else {
-                                step = status_history.pop().unwrap_or(1);
+                                step = status_history.pop().unwrap_or(CliStep::Lang);
                             }
                             continue;
                         }
@@ -381,20 +395,19 @@ async fn run_main_with_args(
                         } else {
                             config.model = items[idx].to_string();
                         }
-                        config.save(); // 即時存入
-                        status_history.push(4);
-                        step = 5;
+                        status_history.push(CliStep::Model);
+                        step = CliStep::InputPath;
                     }
-                    5 => {
+                    CliStep::InputPath => {
                         // --- Step 5: 輸入路徑 ---
                         let input_prompt = &i18n.cli_input_path_prompt;
                         let input_path_str = interact.input(input_prompt, false)?;
 
                         if input_path_str == "<" {
                             if config.api_provider == "Google Free" {
-                                step = 2; // Google Free 同時跳過 3 與 4
+                                step = CliStep::Provider; // Google Free 同時跳過 3 與 4
                             } else {
-                                step = status_history.pop().unwrap_or(1);
+                                step = status_history.pop().unwrap_or(CliStep::Lang);
                             }
                             continue;
                         }
@@ -406,10 +419,10 @@ async fn run_main_with_args(
                         }
 
                         input_path = path;
-                        status_history.push(5);
-                        step = 6;
+                        status_history.push(CliStep::InputPath);
+                        step = CliStep::OutputPath;
                     }
-                    6 => {
+                    CliStep::OutputPath => {
                         // --- Step 6: 輸出資料夾 ---
                         let default_output = if config.output_dir.is_empty() {
                             "LLMTranslator"
@@ -423,18 +436,17 @@ async fn run_main_with_args(
                         let output_dir = interact.input(&output_prompt, true)?;
 
                         if output_dir == "<" {
-                            step = status_history.pop().unwrap_or(1);
+                            step = status_history.pop().unwrap_or(CliStep::Lang);
                             continue;
                         }
 
                         if !output_dir.trim().is_empty() {
                             config.output_dir = output_dir.trim().to_string();
                         }
-                        config.save(); // 即時存入
-                        status_history.push(6);
-                        step = 7;
+                        status_history.push(CliStep::OutputPath);
+                        step = CliStep::Confirm;
                     }
-                    7 => {
+                    CliStep::Confirm => {
                         // --- Step 7: 確定 / 進階與取消 ---
                         let items = vec![
                             i18n.label_yes_confirm_cli.clone(),
@@ -445,30 +457,31 @@ async fn run_main_with_args(
 
                         let start = interact.select(&i18n.prompt_confirm_start_cli, &items, 0)?;
 
-                        if start == 3 {
+                        if start == CONFIRM_BACK {
                             // 回上一步
-                            step = status_history.pop().unwrap_or(1);
+                            step = status_history.pop().unwrap_or(CliStep::Lang);
                             continue;
-                        } else if start == 2 {
+                        } else if start == CONFIRM_NO {
                             // 取消離開
                             println!("{}", i18n.cli_op_cancelled);
                             return Ok(());
-                        } else if start == 1 {
+                        } else if start == CONFIRM_ADVANCED {
                             // 進階參數
                             // 簡易進階切換，此處可以彈出單次輸入或不彈，若使用者只要跟GUI對等，
                             // 這邊可加入簡單 skips 或批次量 Input，為了保持結構先讓它一律過!
                             println!("{}", i18n.cli_adv_settings_synced);
                         }
 
-                        break; // 離開 while 循環發起 Pipeline
+                        break; // 離開循環發起 Pipeline
                     }
-                    _ => break,
                 }
             }
 
             println!("{}", i18n.cli_starting_pipeline);
-            config.save();
-            let _ = run_translation(config.clone(), input_path).await; // 忽略單次錯誤
+            config.save(); // 確認後統一儲存所有變更
+            if let Err(e) = run_translation(config.clone(), input_path).await {
+                eprintln!("{}: {}", i18n.cli_pipeline_failed.replace("{}", ""), e);
+            }
 
             let choice = interact.select(
                 &i18n.prompt_task_finished_cli,
@@ -487,13 +500,18 @@ async fn run_main_with_args(
             println!("===          {}           ===", i18n.prompt_new_task_cli);
             println!("=========================================\n");
 
-            next_step = 5;
+            next_step = CliStep::InputPath;
             if config.api_provider == "Google Free" {
-                initial_history = vec![1, 2];
+                initial_history = vec![CliStep::Lang, CliStep::Provider];
             } else if config.api_provider == "Ollama" {
-                initial_history = vec![1, 2, 4];
+                initial_history = vec![CliStep::Lang, CliStep::Provider, CliStep::Model];
             } else {
-                initial_history = vec![1, 2, 3, 4]; // 確保 Step 5 按上一步確實回到模型 (4)
+                initial_history = vec![
+                    CliStep::Lang,
+                    CliStep::Provider,
+                    CliStep::ApiKey,
+                    CliStep::Model,
+                ];
             }
         }
     }
@@ -550,11 +568,15 @@ async fn run_translation(
     println!("{}", i18n.cli_pipeline_ended);
 
     match res {
-        Ok(_) => println!("{}", i18n.cli_pipeline_success),
-        Err(e) => println!("{}", i18n.cli_pipeline_failed.replace("{}", &e.to_string())),
+        Ok(_) => {
+            println!("{}", i18n.cli_pipeline_success);
+            Ok(())
+        }
+        Err(e) => {
+            println!("{}", i18n.cli_pipeline_failed.replace("{}", &e.to_string()));
+            Err(e)
+        }
     }
-
-    Ok(())
 }
 
 pub trait CliInteract {
@@ -647,7 +669,7 @@ mod tests {
         assert_eq!(args.timeout.unwrap(), 120);
     }
 
-    pub struct MockCliInteract {
+    struct MockCliInteract {
         pub select_answers: std::cell::RefCell<Vec<usize>>,
         pub input_answers: std::cell::RefCell<Vec<String>>,
         pub password_answers: std::cell::RefCell<Vec<String>>,
