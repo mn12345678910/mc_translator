@@ -2,6 +2,7 @@
 import { state } from './state.js';
 import { appendLog, escapeHtml } from './utils.js';
 import { updateToggleStateLabel } from './i18n.js';
+import { dom } from './dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
@@ -11,32 +12,25 @@ let dictPageSize = 10;
 let dictType = 'user';
 
 export async function loadDictionary() {
-    const dictSearch = document.getElementById('dict-search');
-    const pageInfo = document.getElementById('page-info');
-    const pagePrev = document.getElementById('page-prev');
-    const pageNext = document.getElementById('page-next');
-    const dictTableContainer = document.getElementById('dict-table-container');
-
     try {
         const [items, totalPages] = await invoke('query_dictionary', {
             dictType: dictType,
             page: dictPage,
             pageSize: dictPageSize,
-            searchKey: dictSearch ? dictSearch.value.trim() : '',
+            searchKey: dom.dictSearch ? dom.dictSearch.value.trim() : '',
         });
 
-        if (pageInfo) {
+        if (dom.pageInfo) {
             const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';
             const parts = mask.split('{}');
             if (parts.length >= 3) {
-                pageInfo.textContent = `${parts[0]}${dictPage + 1}${parts[1]}${totalPages || 1}${parts[2]}`;
+                dom.pageInfo.textContent = `${parts[0]}${dictPage + 1}${parts[1]}${totalPages || 1}${parts[2]}`;
             } else {
-                // 退回機制
-                pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
+                dom.pageInfo.textContent = mask.replace('{}', dictPage + 1).replace('{}', totalPages || 1);
             }
         }
-        if (pagePrev) pagePrev.disabled = dictPage === 0;
-        if (pageNext) pageNext.disabled = totalPages === 0 || dictPage + 1 >= totalPages;
+        if (dom.pagePrev) dom.pagePrev.disabled = dictPage === 0;
+        if (dom.pageNext) dom.pageNext.disabled = totalPages === 0 || dictPage + 1 >= totalPages;
 
         const colKey = (state.currentLabels.glossary_key || '原文').replace(':', '');
         const colVal = (state.currentLabels.glossary_value || '翻譯').replace(':', '');
@@ -59,7 +53,7 @@ export async function loadDictionary() {
             });
         }
         html += '</tbody></table>';
-        if (dictTableContainer) dictTableContainer.innerHTML = html;
+        if (dom.dictTableContainer) dom.dictTableContainer.innerHTML = html;
 
         document.querySelectorAll('.dict-input').forEach((dictInputEl) => {
             dictInputEl.addEventListener('change', async () => {
@@ -89,26 +83,8 @@ export async function loadDictionary() {
 }
 
 export function initDictionary() {
-    const btnNavDict = document.getElementById('btn-nav-dict');
-    const tabUser = document.getElementById('tab-user');
-    const tabOfficial = document.getElementById('tab-official');
-    const dictSearch = document.getElementById('dict-search');
-    const pagePrev = document.getElementById('page-prev');
-    const pageNext = document.getElementById('page-next');
-    const dictUserControls = document.getElementById('dict-user-controls');
-
-    // Actions
-    const btnDictAdd = document.getElementById('btn-dict-add');
-    const btnDictReplace = document.getElementById('btn-dict-replace');
-    const dictInputKey = document.getElementById('dict-input-key');
-    const dictInputValue = document.getElementById('dict-input-value');
-    const btnDictClear = document.getElementById('btn-dict-clear');
-    const btnDictImport = document.getElementById('btn-dict-import');
-    const btnDictExport = document.getElementById('btn-dict-export');
-    const btnDictOpenJson = document.getElementById('btn-dict-open-json');
-
-    if (btnNavDict) {
-        btnNavDict.addEventListener('click', async () => {
+    if (dom.btnNavDict) {
+        dom.btnNavDict.addEventListener('click', async () => {
             try {
                 await invoke('open_dict_window');
             } catch (e) {
@@ -123,67 +99,66 @@ export function initDictionary() {
             loadDictionary();
         });
     }
-    if (tabUser)
-        tabUser.addEventListener('click', () => {
+    if (dom.tabUser)
+        dom.tabUser.addEventListener('click', () => {
             dictType = 'user';
-            tabUser.classList.add('active');
-            if (tabOfficial) tabOfficial.classList.remove('active');
+            dom.tabUser.classList.add('active');
+            if (dom.tabOfficial) dom.tabOfficial.classList.remove('active');
             dictPage = 0;
             loadDictionary();
 
             // 顯示使用者編輯元件
-            if (dictUserControls) dictUserControls.classList.toggle('hidden', false);
+            if (dom.dictUserControls) dom.dictUserControls.classList.toggle('hidden', false);
         });
-    if (tabOfficial)
-        tabOfficial.addEventListener('click', () => {
+    if (dom.tabOfficial)
+        dom.tabOfficial.addEventListener('click', () => {
             dictType = 'official';
-            tabOfficial.classList.add('active');
-            if (tabUser) tabUser.classList.remove('active');
+            dom.tabOfficial.classList.add('active');
+            if (dom.tabUser) dom.tabUser.classList.remove('active');
             dictPage = 0;
             loadDictionary();
 
             // 隱藏使用者編輯元件 (官方不可直接編輯)
-            if (dictUserControls) dictUserControls.classList.toggle('hidden', true);
+            if (dom.dictUserControls) dom.dictUserControls.classList.toggle('hidden', true);
         });
-    if (dictSearch)
-        dictSearch.addEventListener('input', () => {
+    if (dom.dictSearch)
+        dom.dictSearch.addEventListener('input', () => {
             dictPage = 0;
             loadDictionary();
         });
 
-    const chkPriority = document.getElementById('chk-glossary-priority');
-    if (chkPriority) {
-        chkPriority.addEventListener('change', () => {
+    if (dom.chkGlossaryPriority) {
+        dom.chkGlossaryPriority.addEventListener('change', () => {
             dictPage = 0; // 重置頁碼
             if (typeof updateToggleStateLabel === 'function') {
-                updateToggleStateLabel('chk-glossary-priority', chkPriority.checked);
+                updateToggleStateLabel('chk-glossary-priority', dom.chkGlossaryPriority.checked);
             }
             loadDictionary();
         });
     }
-    if (pagePrev)
-        pagePrev.addEventListener('click', () => {
+    if (dom.pagePrev)
+        dom.pagePrev.addEventListener('click', () => {
             if (dictPage > 0) {
                 dictPage--;
                 loadDictionary();
             }
         });
-    if (pageNext)
-        pageNext.addEventListener('click', () => {
+    if (dom.pageNext)
+        dom.pageNext.addEventListener('click', () => {
             dictPage++;
             loadDictionary();
         });
 
-    if (btnDictAdd && dictInputKey && dictInputValue) {
-        btnDictAdd.addEventListener('click', async () => {
-            const dictKey = dictInputKey.value.trim();
-            const dictValue = dictInputValue.value.trim();
+    if (dom.btnDictAdd && dom.dictInputKey && dom.dictInputValue) {
+        dom.btnDictAdd.addEventListener('click', async () => {
+            const dictKey = dom.dictInputKey.value.trim();
+            const dictValue = dom.dictInputValue.value.trim();
             if (!dictKey) return alert(state.currentLabels.status_dict_key_empty);
             try {
                 await invoke('edit_dictionary_item', { key: dictKey, value: dictValue, delete: false });
                 appendLog(state.currentLabels.status_dict_add_success.replace('{}', dictKey).replace('{}', dictValue));
-                dictInputKey.value = '';
-                dictInputValue.value = '';
+                dom.dictInputKey.value = '';
+                dom.dictInputValue.value = '';
                 loadDictionary();
             } catch (e) {
                 appendLog(state.currentLabels.status_dict_add_failed.replace('{}', state.currentLabels[e] || e));
@@ -191,17 +166,17 @@ export function initDictionary() {
         });
     }
 
-    if (btnDictReplace && dictInputKey && dictInputValue) {
-        btnDictReplace.addEventListener('click', async () => {
-            const oldV = dictInputKey.value.trim();
-            const newV = dictInputValue.value.trim();
+    if (dom.btnDictReplace && dom.dictInputKey && dom.dictInputValue) {
+        dom.btnDictReplace.addEventListener('click', async () => {
+            const oldV = dom.dictInputKey.value.trim();
+            const newV = dom.dictInputValue.value.trim();
             if (!oldV || !newV) return alert(state.currentLabels.status_dict_replace_empty);
             if (confirm(state.currentLabels.status_dict_replace_confirm.replace('{}', oldV).replace('{}', newV))) {
                 try {
                     await invoke('edit_dictionary_item', { key: oldV, value: newV, delete: false });
                     appendLog(state.currentLabels.status_dict_replace_sent.replace('{}', oldV).replace('{}', newV));
-                    dictInputKey.value = '';
-                    dictInputValue.value = '';
+                    dom.dictInputKey.value = '';
+                    dom.dictInputValue.value = '';
                     loadDictionary();
                 } catch (e) {
                     appendLog(
@@ -212,8 +187,8 @@ export function initDictionary() {
         });
     }
 
-    if (btnDictClear) {
-        btnDictClear.addEventListener('click', async () => {
+    if (dom.btnDictClear) {
+        dom.btnDictClear.addEventListener('click', async () => {
             if (dictType !== 'user') return;
             if (confirm(state.currentLabels.glossary_clear_title)) {
                 try {
@@ -229,8 +204,8 @@ export function initDictionary() {
         });
     }
 
-    if (btnDictImport) {
-        btnDictImport.addEventListener('click', async () => {
+    if (dom.btnDictImport) {
+        dom.btnDictImport.addEventListener('click', async () => {
             if (dictType !== 'user') return;
             try {
                 const path = await invoke('open_path_dialog', { diagType: 'file' });
@@ -245,8 +220,8 @@ export function initDictionary() {
         });
     }
 
-    if (btnDictExport) {
-        btnDictExport.addEventListener('click', async () => {
+    if (dom.btnDictExport) {
+        dom.btnDictExport.addEventListener('click', async () => {
             try {
                 const path = await invoke('open_path_dialog', { diagType: 'save_file' });
                 if (path) {
@@ -260,10 +235,9 @@ export function initDictionary() {
         });
     }
 
-    if (btnDictOpenJson) {
-        btnDictOpenJson.addEventListener('click', async () => {
+    if (dom.btnDictOpenJson) {
+        dom.btnDictOpenJson.addEventListener('click', async () => {
             try {
-                // dictType 在模組頂部有宣告
                 await invoke('open_dictionary_location', { dictType: dictType });
             } catch (e) {
                 appendLog(state.currentLabels.status_open_path_failed.replace('{}', e));

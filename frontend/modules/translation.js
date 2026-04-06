@@ -1,6 +1,7 @@
 // frontend/modules/translation.js
 import { state } from './state.js';
 import { appendLog } from './utils.js';
+import { dom } from './dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
@@ -19,27 +20,27 @@ const UI_STATUS = {
 function getFormConfig() {
     return {
         ...state.currentConfig,
-        api_provider: document.getElementById('api-provider')?.value || '無',
-        api_base_url: document.getElementById('api-base-url')?.value || '',
-        ollama_url: document.getElementById('ollama-url')?.value || 'http://localhost:11434',
-        model: document.getElementById('selected-model')?.value || '',
-        source_lang: document.getElementById('source-lang')?.value || 'en_us',
-        target_lang: document.getElementById('target-lang')?.value || 'zh_tw',
-        batch_size: parseInt(document.getElementById('batch-size')?.value || '10'),
-        batch_max_chars: parseInt(document.getElementById('batch-max-chars')?.value || '1000'),
-        timeout: parseInt(document.getElementById('timeout-sec')?.value || '30'),
-        output_dir: document.getElementById('output-dir')?.value || '',
-        pack_format: parseInt(document.getElementById('pack-format')?.value || '15'),
-        user_prompt: document.getElementById('user-prompt')?.value || '',
-        system_prompt: document.getElementById('system-prompt')?.value || '',
-        glossary_priority: document.getElementById('chk-glossary-priority')?.checked ? 'user' : 'official',
-        skip_json: document.getElementById('chk-skip-json')?.checked || false,
-        skip_js: document.getElementById('chk-skip-js')?.checked || false,
-        skip_jar: document.getElementById('chk-skip-jar')?.checked || false,
-        skip_book: document.getElementById('chk-skip-book')?.checked || false,
-        enable_llm_log: document.getElementById('chk-llm-log')?.checked || false,
-        enable_debug_log: document.getElementById('chk-debug-log')?.checked || false,
-        ui_lang: document.getElementById('ui-lang')?.value || 'zh_tw',
+        api_provider: dom.apiProvider?.value || '無',
+        api_base_url: dom.apiBaseUrl?.value || '',
+        ollama_url: dom.ollamaUrl?.value || 'http://localhost:11434',
+        model: dom.selectedModel?.value || '',
+        source_lang: dom.sourceLang?.value || 'en_us',
+        target_lang: dom.targetLang?.value || 'zh_tw',
+        batch_size: parseInt(dom.batchSize?.value || '10'),
+        batch_max_chars: parseInt(dom.batchMaxChars?.value || '1000'),
+        timeout: parseInt(dom.timeoutSec?.value || '30'),
+        output_dir: dom.outputDir?.value || '',
+        pack_format: parseInt(dom.packFormat?.value || '15'),
+        user_prompt: dom.userPrompt?.value || '',
+        system_prompt: dom.systemPrompt?.value || '',
+        glossary_priority: dom.chkGlossaryPriority?.checked ? 'user' : 'official',
+        skip_json: dom.chkSkipJson?.checked || false,
+        skip_js: dom.chkSkipJs?.checked || false,
+        skip_jar: dom.chkSkipJar?.checked || false,
+        skip_book: dom.chkSkipBook?.checked || false,
+        enable_llm_log: dom.chkLlmLog?.checked || false,
+        enable_debug_log: dom.chkDebugLog?.checked || false,
+        ui_lang: dom.uiLang?.value || 'zh_tw',
     };
 }
 
@@ -52,7 +53,6 @@ export function updateUiState(status) {
     const isIdle = status === UI_STATUS.IDLE;
 
     // 1. 元件鎖定 (嚴格對齊對照表)
-    // 鎖定範圍：API 設定、參數、開發者選項、路徑輸入框
     const lockedSelectors = [
         '#input-path',
         '.action-btn',
@@ -70,20 +70,14 @@ export function updateUiState(status) {
 
     const elementsToLock = document.querySelectorAll(lockedSelectors);
     elementsToLock.forEach((el) => {
-        // 唯有在 RUNNING 時鎖定，IDLE 與 PAUSED 皆開放
         el.disabled = isRunning;
     });
 
     // 2. 按鈕顯隱控制
-    const btnTranslate = document.getElementById('btn-translate');
-    const btnPause = document.getElementById('btn-pause');
-    const btnResume = document.getElementById('btn-resume');
-    const btnStop = document.getElementById('btn-stop');
-
-    if (btnTranslate) btnTranslate.style.display = isIdle ? 'inline-block' : 'none';
-    if (btnPause) btnPause.style.display = isRunning ? 'inline-block' : 'none';
-    if (btnResume) btnResume.style.display = isPaused ? 'inline-block' : 'none';
-    if (btnStop) btnStop.style.display = isPaused ? 'inline-block' : 'none';
+    if (dom.btnTranslate) dom.btnTranslate.style.display = isIdle ? 'inline-block' : 'none';
+    if (dom.btnPause) dom.btnPause.style.display = isRunning ? 'inline-block' : 'none';
+    if (dom.btnResume) dom.btnResume.style.display = isPaused ? 'inline-block' : 'none';
+    if (dom.btnStop) dom.btnStop.style.display = isPaused ? 'inline-block' : 'none';
 
     // 3. 暫停提示訊息
     let notice = document.getElementById('pause-notice');
@@ -110,10 +104,8 @@ export function updateUiState(status) {
 
     if (isIdle) {
         // 重置狀態標籤
-        const batchText = document.getElementById('batch-status-text');
-        if (batchText) batchText.textContent = '';
-        const currentStatusLabel = document.getElementById('current-status-label');
-        if (currentStatusLabel) currentStatusLabel.textContent = '';
+        if (dom.batchStatusText) dom.batchStatusText.textContent = '';
+        if (dom.currentStatusLabel) dom.currentStatusLabel.textContent = '';
     }
 }
 
@@ -123,30 +115,21 @@ export function setRunningState(isRunning) {
 }
 
 export function initTranslation() {
-    const btnTranslate = document.getElementById('btn-translate');
-    const btnPause = document.getElementById('btn-pause');
-    const btnResume = document.getElementById('btn-resume');
-    const btnStop = document.getElementById('btn-stop');
-    const progressBar = document.getElementById('progress-bar');
-    const statusText = document.getElementById('status-text');
-
-    if (btnTranslate) {
-        btnTranslate.addEventListener('click', async () => {
-            const inputPath = document.getElementById('input-path');
-            if (inputPath && inputPath.value.trim() === '') {
+    if (dom.btnTranslate) {
+        dom.btnTranslate.addEventListener('click', async () => {
+            if (dom.inputPath && dom.inputPath.value.trim() === '') {
                 return alert(state.currentLabels.status_input_path_empty || '請先選擇輸入路徑');
             }
             try {
                 // 更新當前 Config Snapshot
                 state.currentConfig = getFormConfig();
-                state.currentConfig.path = inputPath.value;
+                state.currentConfig.path = dom.inputPath.value;
 
                 updateUiState(UI_STATUS.RUNNING);
 
-                if (progressBar) progressBar.style.width = '0%';
-                const batchProgress = document.getElementById('batch-progress-bar');
-                if (batchProgress) batchProgress.style.width = '0%';
-                if (statusText) statusText.textContent = state.currentLabels.status_trans_starting;
+                if (dom.progressBar) dom.progressBar.style.width = '0%';
+                if (dom.batchProgressBar) dom.batchProgressBar.style.width = '0%';
+                if (dom.statusText) dom.statusText.textContent = state.currentLabels.status_trans_starting;
 
                 await invoke('start_translation', {
                     config: state.currentConfig,
@@ -163,19 +146,19 @@ export function initTranslation() {
         });
     }
 
-    if (btnPause) {
-        btnPause.addEventListener('click', async () => {
+    if (dom.btnPause) {
+        dom.btnPause.addEventListener('click', async () => {
             try {
                 await invoke('pause_translation');
-                if (statusText) statusText.textContent = state.currentLabels.status_trans_paused;
+                if (dom.statusText) dom.statusText.textContent = state.currentLabels.status_trans_paused;
             } catch (e) {
                 console.error('Pause failed:', e);
             }
         });
     }
 
-    if (btnResume) {
-        btnResume.addEventListener('click', async () => {
+    if (dom.btnResume) {
+        dom.btnResume.addEventListener('click', async () => {
             try {
                 // 1. 先同步 UI 修改至後端
                 const latestConfig = getFormConfig();
@@ -183,21 +166,20 @@ export function initTranslation() {
 
                 // 2. 執行恢復
                 await invoke('resume_translation');
-                if (statusText) statusText.textContent = state.currentLabels.status_trans_resumed;
+                if (dom.statusText) dom.statusText.textContent = state.currentLabels.status_trans_resumed;
             } catch (e) {
                 console.error('Resume failed:', e);
             }
         });
     }
 
-    if (btnStop) {
-        btnStop.addEventListener('click', async () => {
-            // 彈出確認對話框
+    if (dom.btnStop) {
+        dom.btnStop.addEventListener('click', async () => {
             const confirmed = window.confirm(state.currentLabels.text_confirm_stop || '確定要停止翻譯嗎？');
             if (confirmed) {
                 try {
                     await invoke('stop_translation');
-                    if (statusText) statusText.textContent = state.currentLabels.status_trans_stopping;
+                    if (dom.statusText) dom.statusText.textContent = state.currentLabels.status_trans_stopping;
                 } catch (e) {
                     console.error('Stop failed:', e);
                 }
@@ -215,15 +197,14 @@ export function initTranslation() {
 
         listen('translation-progress', (event) => {
             const data = event.payload;
-            if (progressBar && data.total > 0) {
+            if (dom.progressBar && data.total > 0) {
                 const pct = (data.current / data.total) * 100;
-                progressBar.style.width = `${pct}%`;
+                dom.progressBar.style.width = `${pct}%`;
             }
-            const currentStatusLabel = document.getElementById('current-status-label');
-            if (currentStatusLabel && data.msg) {
-                currentStatusLabel.textContent = data.msg;
+            if (dom.currentStatusLabel && data.msg) {
+                dom.currentStatusLabel.textContent = data.msg;
             }
-            if (statusText && data.total > 0) {
+            if (dom.statusText && data.total > 0) {
                 const pct = (data.current / data.total) * 100;
                 let progressText = `${Math.round(pct)}%`;
                 if (state.currentLabels.status_progress_detailed_mask) {
@@ -232,7 +213,7 @@ export function initTranslation() {
                         .replace('{}', data.total)
                         .replace('{}', `${Math.round(pct)}%`);
                 }
-                statusText.textContent = progressText;
+                dom.statusText.textContent = progressText;
             }
         });
 
@@ -240,13 +221,12 @@ export function initTranslation() {
             const data = event.payload;
             // updateUiState 會由 job-state-changed: IDLE 觸發，此處僅做掃尾
             if (data.success) {
-                if (progressBar) progressBar.style.width = '100%';
-                const batchProgress = document.getElementById('batch-progress-bar');
-                if (batchProgress) batchProgress.style.width = '100%';
+                if (dom.progressBar) dom.progressBar.style.width = '100%';
+                if (dom.batchProgressBar) dom.batchProgressBar.style.width = '100%';
             }
 
-            if (statusText)
-                statusText.textContent = data.success
+            if (dom.statusText)
+                dom.statusText.textContent = data.success
                     ? state.currentLabels.status_finished
                     : state.currentLabels.status_failed_or_cancelled;
 
@@ -259,18 +239,18 @@ export function initTranslation() {
 
         listen('translation-batch-update', (event) => {
             const data = event.payload;
-            const batchProgress = document.getElementById('batch-progress-bar');
-            const batchText = document.getElementById('batch-status-text');
-            if (batchProgress && data.total_batches > 0) {
+            if (dom.batchProgressBar && data.total_batches > 0) {
                 const pct = (data.batch_index / data.total_batches) * 100;
-                batchProgress.style.width = `${pct}%`;
-                if (batchProgress.nextElementSibling) {
-                    batchProgress.nextElementSibling.style.animation = 'pulse 1.5s infinite';
+                dom.batchProgressBar.style.width = `${pct}%`;
+                if (dom.batchProgressBar.nextElementSibling) {
+                    dom.batchProgressBar.nextElementSibling.style.animation = 'pulse 1.5s infinite';
                 }
             }
-            if (batchText) {
+            if (dom.batchStatusText) {
                 const mask = state.currentLabels.status_batch_mask || '批次 {}/{}';
-                batchText.textContent = mask.replace('{}', data.batch_index).replace('{}', data.total_batches);
+                dom.batchStatusText.textContent = mask
+                    .replace('{}', data.batch_index)
+                    .replace('{}', data.total_batches);
             }
         });
 

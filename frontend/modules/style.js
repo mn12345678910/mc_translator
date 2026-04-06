@@ -1,6 +1,7 @@
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 import { state } from './state.js';
+import { dom } from './dom.js';
 
 // 輔助函數：RGB 轉 Hex
 function rgbToHexStr(arr) {
@@ -125,15 +126,13 @@ export function applyColors(style) {
     }
 
     // --- [動畫與進度條] ---
-    const progressBar = document.getElementById('progress-bar');
-    const batchProgressBar = document.getElementById('batch-progress-bar');
-    if (style.progress_pulse_enabled && progressBar) {
-        progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, style.progress_pulse_speed)}s infinite`;
-    } else if (progressBar) {
-        progressBar.style.animation = 'none';
+    if (style.progress_pulse_enabled && dom.progressBar) {
+        dom.progressBar.style.animation = `pulse ${2.0 / Math.max(0.1, style.progress_pulse_speed)}s infinite`;
+    } else if (dom.progressBar) {
+        dom.progressBar.style.animation = 'none';
     }
 
-    const bars = [progressBar, batchProgressBar];
+    const bars = [dom.progressBar, dom.batchProgressBar];
     bars.forEach((bar) => {
         if (!bar) return;
         bar.classList.remove('style-aurora', 'style-neon');
@@ -159,63 +158,51 @@ export function applyColors(style) {
 }
 
 export function updatePaletteValue() {
-    const paletteTargetType = document.getElementById('palette-target-type');
-    const paletteTargetItem = document.getElementById('palette-target-item');
-    const paletteProperty = document.getElementById('palette-property');
-    const palettePropertyGroup = document.getElementById('palette-property-group');
-    const paletteColorGroup = document.getElementById('palette-color-group');
-    const paletteNumberGroup = document.getElementById('palette-number-group');
-    const paletteClearGroup = document.getElementById('palette-clear-group');
-    const paletteNumber = document.getElementById('palette-number');
-    const paletteColor = document.getElementById('palette-color');
-    const labelPaletteNumber = document.getElementById('label-palette-number');
-    const labelPaletteColor = document.getElementById('label-palette-color');
+    if (!dom.paletteTargetType || !dom.paletteTargetItem || !dom.paletteProperty) return;
 
-    if (!paletteTargetType || !paletteTargetItem || !paletteProperty) return;
-
-    const isSpecific = paletteTargetType.value === 'specific';
-    const target = paletteTargetItem.value;
-    const prop = paletteProperty.value;
+    const isSpecific = dom.paletteTargetType.value === 'specific';
+    const target = dom.paletteTargetItem.value;
+    const prop = dom.paletteProperty.value;
 
     // 更新群組顯示狀態
-    if (paletteClearGroup) paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
-    if (palettePropertyGroup) palettePropertyGroup.style.display = isSpecific ? 'block' : 'none';
+    if (dom.paletteClearGroup) dom.paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
+    if (dom.palettePropertyGroup) dom.palettePropertyGroup.style.display = isSpecific ? 'block' : 'none';
 
     // 判斷是否為數值型項目
     const isNumberItem =
         target.startsWith('space_') ||
         target.endsWith('_alpha') ||
         target === 'font_size' ||
-        target.includes('log_') || // [NEW] 日誌顏色項目依舊是顏色型，但需在此排除
+        target.includes('log_') ||
         (isSpecific && prop === 'rounding');
 
     // 重新修正：日誌顏色不屬於數值型，是顏色型
     const isLogColor = target.includes('log_');
     const finalIsNumber = isNumberItem && !isLogColor;
 
-    if (paletteColorGroup) paletteColorGroup.style.display = finalIsNumber ? 'none' : 'block';
-    if (paletteNumberGroup) paletteNumberGroup.style.display = finalIsNumber ? 'block' : 'none';
+    if (dom.paletteColorGroup) dom.paletteColorGroup.style.display = finalIsNumber ? 'none' : 'block';
+    if (dom.paletteNumberGroup) dom.paletteNumberGroup.style.display = finalIsNumber ? 'block' : 'none';
 
     if (isNumberItem) {
         // 設定 Label 與數值
-        if (labelPaletteNumber) {
+        if (dom.labelPaletteNumber) {
             if (target.startsWith('space_')) {
-                labelPaletteNumber.textContent =
+                dom.labelPaletteNumber.textContent =
                     state.currentLabels && state.currentLabels.palette_label_spacing
                         ? state.currentLabels.palette_label_spacing
                         : 'Spacing (px)';
             } else if (target.endsWith('_alpha')) {
-                labelPaletteNumber.textContent =
+                dom.labelPaletteNumber.textContent =
                     state.currentLabels && state.currentLabels.palette_label_alpha
                         ? state.currentLabels.palette_label_alpha
                         : 'Alpha (0.0-1.0)';
             } else if (target === 'font_size') {
-                labelPaletteNumber.textContent =
+                dom.labelPaletteNumber.textContent =
                     state.currentLabels && state.currentLabels.label_font_size
                         ? state.currentLabels.label_font_size
                         : 'Font Size (px)';
             } else {
-                labelPaletteNumber.textContent =
+                dom.labelPaletteNumber.textContent =
                     state.currentLabels && state.currentLabels.palette_label_rounding
                         ? state.currentLabels.palette_label_rounding
                         : 'Rounding (px)';
@@ -229,14 +216,14 @@ export function updatePaletteValue() {
         } else {
             val = state.currentStyle[target] || 0;
         }
-        if (paletteNumber) {
-            paletteNumber.value = val;
-            paletteNumber.step = target.endsWith('_alpha') ? '0.01' : '1';
+        if (dom.paletteNumber) {
+            dom.paletteNumber.value = val;
+            dom.paletteNumber.step = target.endsWith('_alpha') ? '0.01' : '1';
         }
     } else {
         // 設定顏色預覽
-        if (labelPaletteColor) {
-            labelPaletteColor.textContent =
+        if (dom.labelPaletteColor) {
+            dom.labelPaletteColor.textContent =
                 prop === 'bg'
                     ? state.currentLabels && state.currentLabels.label_bg_color
                         ? state.currentLabels.label_bg_color
@@ -260,18 +247,18 @@ export function updatePaletteValue() {
         } else {
             color = state.currentStyle[target];
         }
-        if (paletteColor) paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';
+        if (dom.paletteColor) dom.paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';
     }
 
     // 處理特定元件的文字選項隱藏
     const noTextItems = ['progress-bar', 'batch-progress-bar'];
     if (isSpecific) {
-        Array.from(paletteProperty.options).forEach((opt) => {
+        Array.from(dom.paletteProperty.options).forEach((opt) => {
             if (opt.value === 'text') {
                 const hidden = noTextItems.includes(target);
                 opt.style.display = hidden ? 'none' : 'block';
                 opt.disabled = hidden;
-                if (hidden && paletteProperty.value === 'text') paletteProperty.value = 'bg';
+                if (hidden && dom.paletteProperty.value === 'text') dom.paletteProperty.value = 'bg';
             }
         });
     }
@@ -326,19 +313,12 @@ export async function loadStyle() {
 
 export async function saveStyle() {
     try {
-        const fontSize = document.getElementById('font-size');
-        const chkBtnRounding = document.getElementById('chk-btn-rounding');
-        const btnRoundingValue = document.getElementById('btn-rounding-value');
-        const chkPulse = document.getElementById('chk-pulse');
-        const pulseSpeed = document.getElementById('pulse-speed');
-        const progressStyle = document.getElementById('progress-style');
-
-        if (fontSize) state.currentStyle.font_size = parseInt(fontSize.value) || 16;
-        if (chkBtnRounding) state.currentStyle.btn_rounding_enabled = chkBtnRounding.checked;
-        if (btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(btnRoundingValue.value) || 4.0;
-        if (chkPulse) state.currentStyle.progress_pulse_enabled = chkPulse.checked;
-        if (pulseSpeed) state.currentStyle.progress_pulse_speed = parseFloat(pulseSpeed.value) || 1.0;
-        if (progressStyle) state.currentStyle.progress_style = progressStyle.value || 'default';
+        if (dom.fontSize) state.currentStyle.font_size = parseInt(dom.fontSize.value) || 16;
+        if (dom.chkBtnRounding) state.currentStyle.btn_rounding_enabled = dom.chkBtnRounding.checked;
+        if (dom.btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(dom.btnRoundingValue.value) || 4.0;
+        if (dom.chkPulse) state.currentStyle.progress_pulse_enabled = dom.chkPulse.checked;
+        if (dom.pulseSpeed) state.currentStyle.progress_pulse_speed = parseFloat(dom.pulseSpeed.value) || 1.0;
+        if (dom.progressStyle) state.currentStyle.progress_style = dom.progressStyle.value || 'default';
 
         // --- 讀取 Legacy 顏色 (僅當存在時) ---
         const colorMaps = {
@@ -373,19 +353,12 @@ export async function restoreDefaultStyle() {
         applyColors(state.currentStyle);
         await invoke('save_style_config', { config: state.currentStyle });
 
-        const fontSize = document.getElementById('font-size');
-        const chkBtnRounding = document.getElementById('chk-btn-rounding');
-        const btnRoundingValue = document.getElementById('btn-rounding-value');
-        const chkPulse = document.getElementById('chk-pulse');
-        const pulseSpeed = document.getElementById('pulse-speed');
-        const progressStyle = document.getElementById('progress-style');
-
-        if (fontSize) fontSize.value = state.currentStyle.font_size;
-        if (chkBtnRounding) chkBtnRounding.checked = state.currentStyle.btn_rounding_enabled;
-        if (btnRoundingValue) btnRoundingValue.value = state.currentStyle.btn_rounding_value;
-        if (chkPulse) chkPulse.checked = state.currentStyle.progress_pulse_enabled;
-        if (pulseSpeed) pulseSpeed.value = state.currentStyle.progress_pulse_speed;
-        if (progressStyle) progressStyle.value = state.currentStyle.progress_style || 'default';
+        if (dom.fontSize) dom.fontSize.value = state.currentStyle.font_size;
+        if (dom.chkBtnRounding) dom.chkBtnRounding.checked = state.currentStyle.btn_rounding_enabled;
+        if (dom.btnRoundingValue) dom.btnRoundingValue.value = state.currentStyle.btn_rounding_value;
+        if (dom.chkPulse) dom.chkPulse.checked = state.currentStyle.progress_pulse_enabled;
+        if (dom.pulseSpeed) dom.pulseSpeed.value = state.currentStyle.progress_pulse_speed;
+        if (dom.progressStyle) dom.progressStyle.value = state.currentStyle.progress_style || 'default';
 
         if (typeof updatePaletteValue === 'function') {
             updatePaletteValue();
