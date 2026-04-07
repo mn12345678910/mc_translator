@@ -114,9 +114,14 @@ jobs:
               run: pnpm install --frozen-lockfile
             - name: Install Nextest
               uses: taiki-e/install-action@nextest
-            - name: Run Rust Tests (Nextest)
+            - name: Install cargo-llvm-cov
               if: matrix.os == 'ubuntu-latest'
-              run: cargo nextest run --workspace --all-targets
+              uses: taiki-e/install-action@cargo-llvm-cov
+            - name: Run Rust Tests with Coverage (Ubuntu)
+              if: matrix.os == 'ubuntu-latest'
+              run: |
+                  cargo llvm-cov --no-report --workspace
+                  cargo llvm-cov report --lcov --output-path coverage/rust-lcov.info
             - name: Run Rust Tests (Nextest, Windows partition 1/2)
               if: matrix.os == 'windows-latest'
               run: cargo nextest run --workspace --all-targets --partition count:1/2
@@ -125,10 +130,21 @@ jobs:
               run: cargo nextest run --workspace --all-targets --partition count:2/2
             - name: Run Frontend Tests (Vitest)
               run: pnpm vitest run --coverage
-            - name: Upload Coverage to Codecov
+            - name: Upload Rust Coverage to Codecov
+              if: matrix.os == 'ubuntu-latest'
+              uses: codecov/codecov-action@v6
+              with:
+                  files: coverage/rust-lcov.info
+                  flags: rust
+                  fail_ci_if_error: false
+                  verbose: true
+              env:
+                  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+            - name: Upload Frontend Coverage to Codecov
               uses: codecov/codecov-action@v6
               with:
                   files: coverage/lcov.info
+                  flags: javascript
                   fail_ci_if_error: false
                   verbose: true
               env:
