@@ -18,8 +18,9 @@
 - [src/translation/api/client.rs](/src/translation/api/client.rs): 回應解析與容錯
 - [src/file/](/src/file/): JSON/JS/JAR 解析與輸出
 - [src/translation/](/src/translation/): 批次翻譯與降級重試
-- [tests/](/tests/): 整合測試與流程測試
+- [tests/](/tests/): 整合測試與流程測試（位於 `tests/integration/`）
 - [tests/frontend/](/tests/frontend/): 前端 DOM 與 Tauri invoke 行為
+- [tests/e2e/](/tests/e2e/): Playwright 瀏覽器端對端測試
 
 ## 測試工具鏈
 
@@ -37,11 +38,12 @@
 ## 測試位置
 
 - 單元測試在各模組 `mod tests` 內
-- 整合測試在 `tests/` 目錄
+- 整合測試在 `tests/integration/` 目錄
 - 前端測試在 [tests/frontend/](/tests/frontend/)
+- E2E 測試在 [tests/e2e/](/tests/e2e/)
 
 ## 注意事項
 
 - 需網路的測試應避免依賴真實服務，使用 mock server
 - 需檔案 I/O 的測試請使用臨時目錄
-- i18n 一致性由 [tests/i18n_consistency.rs](/tests/i18n_consistency.rs) 驗證
+- i18n 一致性由 [tests/integration/i18n_consistency.rs](/tests/integration/i18n_consistency.rs) 驗證
