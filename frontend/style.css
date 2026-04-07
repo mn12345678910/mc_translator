@@ -219,6 +219,66 @@ input[type='number'] {
         box-shadow 0.2s;
 }
 
+/* 🔒 元件鎖定樣式 (翻譯運行中 - 遮罩覆蓋層效果) */
+input:disabled,
+select:disabled,
+textarea:disabled {
+    opacity: 0.45;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.08) 10px,
+        rgba(0, 0, 0, 0.08) 20px
+    );
+    cursor: not-allowed;
+    pointer-events: none;
+    border-color: rgba(128, 128, 128, 0.3);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    transform: none !important;
+    box-shadow: none !important;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.1) 10px,
+        rgba(0, 0, 0, 0.1) 20px
+    );
+}
+
+button:disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Switch/Toggle 鎖定樣式 */
+.switch input:disabled + .slider {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 6px,
+        rgba(0, 0, 0, 0.15) 6px,
+        rgba(0, 0, 0, 0.15) 12px
+    );
+}
+
+.switch-group:has(input:disabled) {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.switch-group:has(input:disabled):hover {
+    background-color: var(--switch-bg);
+}
+
 /* 💎 全域元件聚焦效果 (更明顯的雙層發光環) */
 button:focus,
 input:focus,

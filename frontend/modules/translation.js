@@ -55,15 +55,19 @@ export function updateUiState(status) {
     // 1. 元件鎖定 (嚴格對齊對照表)
     const lockedSelectors = [
         '#input-path',
-        '.action-btn',
+        '#btn-browse-file',
+        '#btn-browse-dir',
+        '#btn-browse-output',
+        '.input-row .clear-btn',
         '#output-dir',
         '.api-settings input',
         '.api-settings select',
         '.trans-params input',
         '.trans-params select',
         '.trans-params textarea',
-        '.dev-settings input',
-        '.dev-settings textarea',
+        '#developer-settings input',
+        '#developer-settings select',
+        '#developer-settings textarea',
         '#user-prompt',
         '#system-prompt',
     ].join(',');
