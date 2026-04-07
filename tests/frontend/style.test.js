@@ -12,8 +12,8 @@ describe('style.js 樣式與主題管理模組', () => {
         globalThis.window = {
             __TAURI__: {
                 core: { invoke: mockInvoke },
-                event: { listen: vi.fn(() => Promise.resolve(() => {})) }
-            }
+                event: { listen: vi.fn(() => Promise.resolve(() => {})) },
+            },
         };
         styleModule = await import('../../frontend/modules/style.js');
         stateModule = await import('../../frontend/modules/state.js');
@@ -82,9 +82,8 @@ describe('style.js 樣式與主題管理模組', () => {
                 dark_list_bg: [40, 50, 60],
                 dark_tab_active: [70, 80, 90],
                 dark_tab_inactive: [100, 110, 120],
-                dark_label: [130, 140, 150]
+                dark_label: [130, 140, 150],
             };
-
 
             styleModule.applyColors(fakeStyle);
 
@@ -96,8 +95,8 @@ describe('style.js 樣式與主題管理模組', () => {
             const fakeStyle = {
                 theme: 'dark',
                 instance_overrides: {
-                    'btn-translate': { dark_bg: [255, 0, 0], dark_text: [0, 0, 0], rounding: 8 }
-                }
+                    'btn-translate': { dark_bg: [255, 0, 0], dark_text: [0, 0, 0], rounding: 8 },
+                },
             };
 
             styleModule.applyColors(fakeStyle);
@@ -109,14 +108,14 @@ describe('style.js 樣式與主題管理模組', () => {
         });
 
         it('切換主題時應該正確選擇對應的主題覆寫色', () => {
-             const fakeStyle = {
+            const fakeStyle = {
                 theme: 'light',
                 instance_overrides: {
                     'btn-translate': {
                         dark_bg: [0, 0, 0],
-                        light_bg: [255, 255, 255]
-                    }
-                }
+                        light_bg: [255, 255, 255],
+                    },
+                },
             };
 
             styleModule.applyColors(fakeStyle);
@@ -132,7 +131,7 @@ describe('style.js 樣式與主題管理模組', () => {
                 dark_bg: [30, 30, 35],
                 font_size: 16,
                 btn_rounding_enabled: true,
-                btn_rounding_value: 5.0
+                btn_rounding_value: 5.0,
             };
             mockInvoke.mockResolvedValue(fakeStyle);
 
@@ -148,7 +147,7 @@ describe('style.js 樣式與主題管理模組', () => {
     describe('updatePaletteValue', () => {
         it('非指定元件（全域）時，應隱含屬性選單並正確帶入顏色', () => {
             stateModule.state.currentStyle = {
-                dark_bg: [15, 15, 20]
+                dark_bg: [15, 15, 20],
             };
 
             const targetType = document.getElementById('palette-target-type');
@@ -215,7 +214,7 @@ describe('style.js 樣式與主題管理模組', () => {
 
             styleModule.updatePaletteValue();
 
-            const textOpt = Array.from(property.options).find(opt => opt.value === 'text');
+            const textOpt = Array.from(property.options).find((opt) => opt.value === 'text');
             expect(textOpt.style.display).toBe('none');
         });
 
@@ -251,6 +250,76 @@ describe('style.js 樣式與主題管理模組', () => {
             styleModule.applyColors(fakeStyle);
             const progressBar = document.getElementById('progress-bar');
             expect(progressBar.style.animation).toContain('pulse');
+        });
+
+        it('應該在啟用脈動但進度條不存在時不拋出異常', () => {
+            const fakeStyle = { theme: 'dark', progress_pulse_enabled: true, progress_pulse_speed: 2.0 };
+            document.getElementById('progress-bar').remove();
+            expect(() => styleModule.applyColors(fakeStyle)).not.toThrow();
+        });
+    });
+
+    describe('loadStyle 異常處理', () => {
+        it('invoke 失敗時應該捕獲異常並輸出錯誤', async () => {
+            mockInvoke.mockRejectedValue(new Error('Style fetch failed'));
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await styleModule.loadStyle();
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            consoleErrorSpy.mockRestore();
+        });
+    });
+
+    describe('saveStyle 顏色讀取', () => {
+        it('應該從顏色選擇器讀取 hex 並轉換為 RGB', async () => {
+            stateModule.state.currentStyle = { theme: 'dark' };
+            document.getElementById('color-bg').value = '#ff0000';
+            document.getElementById('color-text').value = '#00ff00';
+
+            await styleModule.saveStyle();
+
+            expect(stateModule.state.currentStyle.dark_bg).toEqual([255, 0, 0]);
+            expect(stateModule.state.currentStyle.dark_text).toEqual([0, 255, 0]);
+        });
+    });
+
+    describe('restoreDefaultStyle', () => {
+        it('應該從後端獲取預設樣式並套用', async () => {
+            const defaultStyle = {
+                theme: 'light',
+                font_size: 14,
+                btn_rounding_enabled: true,
+                btn_rounding_value: 4,
+                progress_pulse_enabled: false,
+                progress_pulse_speed: 1,
+                progress_style: 'default',
+                dark_bg: [30, 30, 35],
+                dark_text: [255, 255, 255],
+                dark_accent: [0, 100, 200],
+                dark_danger: [200, 0, 0],
+            };
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_default_style_config') return defaultStyle;
+                return {};
+            });
+            stateModule.state.currentStyle = { show_palette_settings: true };
+
+            await styleModule.restoreDefaultStyle();
+
+            expect(stateModule.state.currentStyle.font_size).toBe(14);
+            expect(stateModule.state.currentStyle.show_palette_settings).toBe(true);
+            expect(mockInvoke).toHaveBeenCalledWith('save_style_config', { config: expect.any(Object) });
+        });
+
+        it('invoke 失敗時應該捕獲異常', async () => {
+            mockInvoke.mockRejectedValue(new Error('Restore failed'));
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await styleModule.restoreDefaultStyle();
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            consoleErrorSpy.mockRestore();
         });
     });
 });

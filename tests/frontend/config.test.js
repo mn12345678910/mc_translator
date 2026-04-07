@@ -380,4 +380,37 @@ describe('config.js 設定管理模組', () => {
             }
         });
     });
+
+    describe('loadTranslationLangs 異常處理', () => {
+        it('invoke 失敗時應該捕獲異常並輸出錯誤', async () => {
+            document.body.innerHTML += `
+                <select id="source-lang"></select>
+                <select id="target-lang"></select>
+            `;
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'get_available_translation_langs') throw 'lang-fetch-failed';
+                return null;
+            });
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            await configModule.loadTranslationLangs();
+
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            consoleErrorSpy.mockRestore();
+        });
+    });
+
+    describe('loadModels 非陣列回傳處理', () => {
+        it('當 models 不是陣列時應該顯示 label_no_models', async () => {
+            mockInvoke.mockResolvedValue('not-an-array');
+            stateModule.state.currentLabels = { label_no_models: '無可用模型', prompt_select_model: '請選取模型' };
+            document.getElementById('api-provider').value = 'Gemini';
+            document.getElementById('api-base-url').value = '';
+
+            await configModule.loadModels();
+
+            const selectModel = document.getElementById('selected-model');
+            expect(selectModel.innerHTML).toContain('無可用模型');
+        });
+    });
 });

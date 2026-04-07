@@ -68,7 +68,7 @@ describe('utils.js 工具模組', () => {
         beforeEach(() => {
             // 模擬全域 __logViewer
             window.__logViewer = {
-                appendLog: vi.fn()
+                appendLog: vi.fn(),
             };
         });
 
@@ -86,9 +86,19 @@ describe('utils.js 工具模組', () => {
             utilsModule.appendLog({
                 level: 'Success',
                 message: '完成',
-                timestamp: Date.now()
+                timestamp: Date.now(),
             });
             expect(window.__logViewer.appendLog).toHaveBeenCalledWith('完成', 'success', expect.any(String));
+        });
+
+        it('當 __logViewer 未初始化時應輸出警告並回傳', () => {
+            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+            const orig = window.__logViewer;
+            delete window.__logViewer;
+            utilsModule.appendLog('test');
+            expect(warnSpy).toHaveBeenCalledWith('Log viewer not yet initialized');
+            window.__logViewer = orig;
+            warnSpy.mockRestore();
         });
     });
 

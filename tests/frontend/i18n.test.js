@@ -10,8 +10,8 @@ describe('i18n.js 介面語言模組', () => {
         mockInvoke = vi.fn();
         globalThis.window = {
             __TAURI__: {
-                core: { invoke: mockInvoke }
-            }
+                core: { invoke: mockInvoke },
+            },
         };
 
         // 2. 動態載入相關模組
@@ -77,7 +77,8 @@ describe('i18n.js 介面語言模組', () => {
 
         const promptArea = document.getElementById('user-prompt');
         // 加入含有「风格」的簡體中文提示字串（已被我們修好的狀態）
-        const original = '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。';
+        const original =
+            '你是一位专业的 Minecraft 模组翻译员。现在请将以下模组字串翻译为「简体中文 (zh_cn)」。\n保持专业的游戏术语风格（如方块、实体、附魔）。';
         promptArea.value = original;
 
         await i18nModule.updateUiLanguage();
@@ -178,7 +179,7 @@ describe('i18n.js 介面語言模組', () => {
             placeholder_input_path: 'Input Path...',
             header_dict_mgr: 'Mgr',
             glossary_priority_hover: 'Hover',
-            title_some_key: 'Tooltip Title'
+            title_some_key: 'Tooltip Title',
         };
 
         mockInvoke.mockResolvedValue(mockLabels);
@@ -254,7 +255,8 @@ describe('i18n.js 介面語言模組', () => {
 
             document.body.innerHTML += `<textarea id="system-prompt"></textarea>`;
             const promptArea = document.getElementById('system-prompt');
-            const original = '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。';
+            const original =
+                '\n\n[內部技術指令 - 請務必遵守]\n1. 僅針對 %%VAR_n%%, %%MC_n%%, %%HEX_n%% 等技術佔位符執行「保持原樣」操作（不可修改、翻譯或增刪標籤）。\n2. 除上述佔位符外的其餘文本內容均「必須」按要求翻譯，絕對不可將全文原樣輸出。';
             promptArea.value = original;
 
             await i18nModule.updateUiLanguage();
@@ -285,8 +287,8 @@ describe('i18n.js 介面語言模組', () => {
             };
 
             const ids = ['chk-skip-json', 'chk-skip-js', 'chk-skip-jar', 'chk-skip-book'];
-            ids.forEach(id => {
-                 document.body.innerHTML += `<div id="label-${id.replace('chk-', '')}"></div>`;
+            ids.forEach((id) => {
+                document.body.innerHTML += `<div id="label-${id.replace('chk-', '')}"></div>`;
             });
 
             i18nModule.updateToggleStateLabel('chk-skip-json', true);
@@ -303,6 +305,40 @@ describe('i18n.js 介面語言模組', () => {
 
             i18nModule.updateToggleStateLabel('chk-skip-book', true);
             expect(document.getElementById('label-skip-book').textContent).toBe('Skip Book ON');
+        });
+
+        it('updateToggleStateLabel 應該處理 chk-fast-convert 特殊情況', () => {
+            stateModule.state.currentLabels = {
+                label_fast_convert_on: '開啟',
+                label_fast_convert_off: '關閉',
+            };
+            document.body.innerHTML += `<div id="label-fast-convert-state"></div>`;
+
+            i18nModule.updateToggleStateLabel('chk-fast-convert', true);
+            expect(document.getElementById('label-fast-convert-state').textContent).toBe('開啟');
+
+            i18nModule.updateToggleStateLabel('chk-fast-convert', false);
+            expect(document.getElementById('label-fast-convert-state').textContent).toBe('關閉');
+        });
+
+        it('updateToggleStateLabel 當 label 元素不存在時應該直接回傳', () => {
+            expect(() => i18nModule.updateToggleStateLabel('chk-nonexistent', true)).not.toThrow();
+        });
+
+        it('updateToggleStateLabel 應該處理 chk-debug-log 和 chk-debug-tools', () => {
+            stateModule.state.currentLabels = {
+                label_enable_debug_log: 'Debug Log ON',
+                label_disable_debug_log: 'Debug Log OFF',
+                label_hide_debug_tools: 'Hide Tools',
+                label_show_debug_tools: 'Show Tools',
+            };
+            document.body.innerHTML += `<div id="label-debug-log"></div><div id="label-debug-tools"></div>`;
+
+            i18nModule.updateToggleStateLabel('chk-debug-log', true);
+            expect(document.getElementById('label-debug-log').textContent).toBe('Debug Log ON');
+
+            i18nModule.updateToggleStateLabel('chk-debug-tools', false);
+            expect(document.getElementById('label-debug-tools').textContent).toBe('Show Tools');
         });
     });
 });
