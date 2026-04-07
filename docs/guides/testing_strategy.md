@@ -46,4 +46,4 @@
 
 - 需網路的測試應避免依賴真實服務，使用 mock server
 - 需檔案 I/O 的測試請使用臨時目錄
-- i18n 一致性由 [tests/integration/i18n_consistency.rs](/tests/integration/i18n_consistency.rs) 驗證
+- i18n 一致性由 [tests/i18n_consistency.rs](/tests/i18n_consistency.rs) 驗證
