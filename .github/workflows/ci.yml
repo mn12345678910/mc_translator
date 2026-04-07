@@ -120,6 +120,7 @@ jobs:
             - name: Run Rust Tests with Coverage (Ubuntu)
               if: matrix.os == 'ubuntu-latest'
               run: |
+                  mkdir -p coverage
                   cargo llvm-cov --no-report --workspace
                   cargo llvm-cov report --lcov --output-path coverage/rust-lcov.info
             - name: Run Rust Tests (Nextest, Windows partition 1/2)
