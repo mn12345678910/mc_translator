@@ -92,8 +92,6 @@ export async function updateUiLanguage() {
         }
 
         // 🟢 額外懸停提示 (Tooltip) 翻譯
-        if (dom.btnDictOpenJson && labels.btn_dict_open_json) dom.btnDictOpenJson.title = labels.btn_dict_open_json;
-
         if (dom.chkGlossaryPriority && dom.chkGlossaryPriority.parentElement && labels.glossary_priority_hover) {
             dom.chkGlossaryPriority.parentElement.title = labels.glossary_priority_hover;
         }
