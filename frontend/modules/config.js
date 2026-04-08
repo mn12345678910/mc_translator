@@ -251,7 +251,7 @@ export async function restoreDefaultConfig() {
 
         ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(el);
+            if (el) updateToggleStateLabel(id, el.checked);
         });
 
         await loadModels();
@@ -297,7 +297,7 @@ export async function restoreDevDefaults() {
             'chk-debug-tools',
         ].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(el);
+            if (el) updateToggleStateLabel(id, el.checked);
         });
 
         await invoke('save_config', { config: state.currentConfig });

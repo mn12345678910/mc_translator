@@ -176,6 +176,18 @@ export const dom = {
     get btnBrowseOutputOpen() {
         return document.getElementById('btn-browse-output-open');
     },
+    get btnRestoreApi() {
+        return document.getElementById('btn-restore-api');
+    },
+    get btnRestoreDev() {
+        return document.getElementById('btn-restore-dev');
+    },
+    get btnRestorePalette() {
+        return document.getElementById('btn-restore-palette');
+    },
+    get btnPaletteClearItem() {
+        return document.getElementById('btn-palette-clear-item');
+    },
 
     // 字典管理
     get dictSearch() {
