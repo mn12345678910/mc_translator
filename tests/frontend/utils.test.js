@@ -74,12 +74,17 @@ describe('utils.js 工具模組', () => {
 
         it('應將訊息轉送給全域的 __logViewer', () => {
             utilsModule.appendLog('測試一則訊息');
-            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('測試一則訊息', 'info', expect.any(String));
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith(
+                '測試一則訊息',
+                'info',
+                expect.any(String),
+                []
+            );
         });
 
         it('當訊息包含 ❌ 或 Error 時，應自動識別為 error 等級', () => {
             utilsModule.appendLog('❌ 發生錯誤');
-            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('❌ 發生錯誤', 'error', expect.any(String));
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('❌ 發生錯誤', 'error', expect.any(String), []);
         });
 
         it('應正確處理對象形式的 entry', () => {
@@ -87,8 +92,11 @@ describe('utils.js 工具模組', () => {
                 level: 'Success',
                 message: '完成',
                 timestamp: Date.now(),
+                segments: [{ kind: 'text', text: '完成' }],
             });
-            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('完成', 'success', expect.any(String));
+            expect(window.__logViewer.appendLog).toHaveBeenCalledWith('完成', 'success', expect.any(String), [
+                { kind: 'text', text: '完成' },
+            ]);
         });
 
         it('當 __logViewer 未初始化時應輸出警告並回傳', () => {

@@ -97,30 +97,9 @@ export async function initMockTools() {
                                     return json;
                                 }
                             } catch (e) {
-                                console.error('[MOCK] Failed to fetch real i18n JSON, using fallback.', e);
+                                console.error('[MOCK] Failed to fetch real i18n JSON.', e);
                             }
-
-                            // Fallback 基礎內容確保 UI 不會白屏
-                            const fallback = {
-                                app_title: 'Minecraft 模組翻譯器 (Mock)',
-                                label_current_status: '目前狀態',
-                                status_idle: '待機中',
-                                label_input_path: '輸入路徑',
-                                btn_select_file: '選擇檔案',
-                                btn_nav_dev: '開發人員',
-                                cat_all_bg: '全部背景',
-                                lang_zh_tw: '繁體中文 (zh_tw)',
-                                lang_zh_cn: '簡體中文 (zh_cn)',
-                                lang_en_us: 'English (en_us)',
-                                lang_ja_jp: '日本語 (ja_jp)',
-                                label_fast_convert: '快速簡繁轉換',
-                                btn_run_trans: '▶ 執行',
-                                btn_pause_trans: '⏸ 暫停',
-                                btn_stop_trans: '⏹ 停止',
-                                page_title: 'Minecraft 模組翻譯器',
-                            };
-                            state.currentLabels = fallback;
-                            return fallback;
+                            return state.currentLabels || {};
                         },
                         get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
                         query_dictionary: [[], 1],

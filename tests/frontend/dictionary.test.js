@@ -90,11 +90,10 @@ describe('dictionary.js 字典管理模組', () => {
 
 
     it('loadDictionary 應該獲取字典條目並渲染成 HTML 表格', async () => {
-        // 模擬 Query 回傳：[ items, totalPages ]
-        mockInvoke.mockResolvedValue([
-            [['apple', '蘋果'], ['banana', '香蕉']],
-            2 // 總頁數
-        ]);
+        mockInvoke.mockResolvedValue({
+            items: [['apple', '蘋果'], ['banana', '香蕉']],
+            total_pages: 2
+        });
 
         await dictionaryModule.loadDictionary();
 
@@ -110,7 +109,7 @@ describe('dictionary.js 字典管理模組', () => {
     });
 
     it('點擊表格內的儲存按鈕應該觸發 edit_dictionary_item', async () => {
-        mockInvoke.mockResolvedValue([[['apple', '蘋果']], 1]);
+        mockInvoke.mockResolvedValue({ items: [['apple', '蘋果']], total_pages: 1 });
 
         await dictionaryModule.loadDictionary();
 
@@ -145,7 +144,7 @@ describe('dictionary.js 字典管理模組', () => {
 
     it('切換 Tab 應異動面板顯示狀態', async () => {
         // 模擬切換 Tab 時加載字典不報錯
-        mockInvoke.mockResolvedValue([[], 1]);
+        mockInvoke.mockResolvedValue({ items: [], total_pages: 1 });
         stateModule.state.currentLabels.status_dict_load_failed = '讀取失敗 {}';
 
         dictionaryModule.initDictionary();
@@ -163,7 +162,7 @@ describe('dictionary.js 字典管理模組', () => {
         expect(controls.classList.contains('hidden')).toBe(false);
     });
     it('表格不應顯示操作欄位或刪除按鈕', async () => {
-        mockInvoke.mockResolvedValue([[['apple', '蘋果']], 1]);
+        mockInvoke.mockResolvedValue({ items: [['apple', '蘋果']], total_pages: 1 });
 
         await dictionaryModule.loadDictionary();
 
@@ -242,7 +241,7 @@ describe('dictionary.js 字典管理模組', () => {
         });
 
         it('搜尋框輸入應重置頁碼並加載字典', async () => {
-            mockInvoke.mockResolvedValue([[], 1]);
+            mockInvoke.mockResolvedValue({ items: [], total_pages: 1 });
 
             dictionaryModule.initDictionary();
 
@@ -250,7 +249,7 @@ describe('dictionary.js 字典管理模組', () => {
             searchInput.value = 'test';
             await searchInput.dispatchEvent(new Event('input'));
 
-            expect(mockInvoke).toHaveBeenCalledWith('query_dictionary', expect.objectContaining({
+            expect(mockInvoke).toHaveBeenCalledWith('get_dictionary_page', expect.objectContaining({
                 searchKey: 'test',
                 page: 0
             }));
@@ -259,7 +258,7 @@ describe('dictionary.js 字典管理模組', () => {
         it('點擊分頁上一頁應遞減頁碼並加載字典', async () => {
              // 假設當前在第二頁 (page 1)
              // 為了設定 page，我們先模擬 next 的點擊
-             mockInvoke.mockResolvedValue([[['A', 'B']], 3]);
+             mockInvoke.mockResolvedValue({ items: [['A', 'B']], total_pages: 3 });
 
              await dictionaryModule.loadDictionary();
 
@@ -271,7 +270,7 @@ describe('dictionary.js 字典管理模組', () => {
              // 模擬 page-prev 的 EventListener 運作
              await prevBtn.dispatchEvent(new Event('click'));
 
-             expect(mockInvoke).toHaveBeenLastCalledWith('query_dictionary', expect.objectContaining({
+             expect(mockInvoke).toHaveBeenLastCalledWith('get_dictionary_page', expect.objectContaining({
                   page: 0
              }));
         });
@@ -292,7 +291,7 @@ describe('dictionary.js 字典管理模組', () => {
              mockInvoke.mockImplementation(async (cmd) => {
                   if (cmd === 'open_path_dialog') return 'C:/some.json';
                   if (cmd === 'import_user_dictionary') throw 'import-failed';
-                  if (cmd === 'query_dictionary') return [[], 1]; // 避免 loadDictionary 拋出 TypeError
+                  if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1 }; // 避免 loadDictionary 拋出 TypeError
                   return null;
              });
 
@@ -313,7 +312,7 @@ describe('dictionary.js 字典管理模組', () => {
              mockInvoke.mockImplementation(async (cmd) => {
                   if (cmd === 'open_path_dialog') return 'C:/export.json';
                   if (cmd === 'export_user_dictionary') throw 'export-failed';
-                  if (cmd === 'query_dictionary') return [[], 1]; // 預留 fallback
+                  if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1 }; // 預留 fallback
                   return null;
              });
 
@@ -329,7 +328,7 @@ describe('dictionary.js 字典管理模組', () => {
 
         it('優先級開關切換時應重置頁碼並加載字典', async () => {
             document.body.innerHTML += `<input id="chk-glossary-priority" type="checkbox" />`;
-            mockInvoke.mockResolvedValue([[], 1]);
+            mockInvoke.mockResolvedValue({ items: [], total_pages: 1 });
 
             dictionaryModule.initDictionary();
 
@@ -337,7 +336,7 @@ describe('dictionary.js 字典管理模組', () => {
             chk.checked = true;
             await chk.dispatchEvent(new Event('change'));
 
-            expect(mockInvoke).toHaveBeenCalledWith('query_dictionary', expect.objectContaining({
+            expect(mockInvoke).toHaveBeenCalledWith('get_dictionary_page', expect.objectContaining({
                  page: 0
             }));
         });
@@ -345,7 +344,7 @@ describe('dictionary.js 字典管理模組', () => {
         it('新增條目拋出異常時應捕獲異常並讀取錯誤狀態', async () => {
              mockInvoke.mockImplementation(async (cmd) => {
                   if (cmd === 'edit_dictionary_item') throw 'add-failed';
-                  if (cmd === 'query_dictionary') return [[], 1];
+                  if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1 };
                   return null;
              });
              dictionaryModule.initDictionary();
@@ -361,7 +360,7 @@ describe('dictionary.js 字典管理模組', () => {
         it('清除字典拋出異常時應捕獲異常並讀取錯誤狀態', async () => {
              mockInvoke.mockImplementation(async (cmd) => {
                   if (cmd === 'clear_user_dictionary') throw 'clear-failed';
-                  if (cmd === 'query_dictionary') return [[], 1];
+                  if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1 };
                   return null;
              });
              globalThis.confirm.mockReturnValue(true);
@@ -377,7 +376,7 @@ describe('dictionary.js 字典管理模組', () => {
         it('開啟 JSON 位置拋出異常時應捕獲異常並讀取錯誤狀態', async () => {
              mockInvoke.mockImplementation(async (cmd) => {
                   if (cmd === 'open_dictionary_location') throw 'open-failed';
-                  if (cmd === 'query_dictionary') return [[], 1];
+                  if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1 };
                   return null;
              });
              document.body.innerHTML += `<button id="btn-dict-open-json"></button>`;
@@ -392,7 +391,7 @@ describe('dictionary.js 字典管理模組', () => {
 
         it('當 label_page_info 格式不符合預期應採取 fallback 行為', async () => {
             stateModule.state.currentLabels.label_page_info = '第 {} 頁';
-            mockInvoke.mockResolvedValue([[['apple', '蘋果']], 2]);
+            mockInvoke.mockResolvedValue({ items: [['apple', '蘋果']], total_pages: 2 });
 
             await dictionaryModule.loadDictionary();
 
@@ -401,7 +400,7 @@ describe('dictionary.js 字典管理模組', () => {
         });
 
         it('點擊導航欄字典按鈕應開啟 Dialog 並加載字典', async () => {
-            mockInvoke.mockResolvedValue([[], 1]);
+            mockInvoke.mockResolvedValue({ items: [], total_pages: 1 });
             dictionaryModule.initDictionary();
 
             const btnNavDict = document.getElementById('btn-nav-dict');

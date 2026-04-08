@@ -24,14 +24,43 @@ import { dom } from './modules/dom.js';
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const applyCssVars = (cssVars) => {
+        if (!cssVars || typeof cssVars !== 'object') return;
+        const root = document.documentElement;
+        Object.entries(cssVars).forEach(([key, value]) => {
+            root.style.setProperty(key, value);
+        });
+    };
+
+    // Rust-first init snapshot: keep frontend as thin renderer.
+    try {
+        const initState = await invoke('get_gui_init_state');
+        if (initState && typeof initState === 'object') {
+            if (initState.config) state.currentConfig = initState.config;
+            if (initState.style) state.currentStyle = initState.style;
+            if (initState.labels) state.currentLabels = initState.labels;
+            applyCssVars(initState.css_vars);
+        }
+    } catch (e) {
+        console.warn('Failed to load Rust GUI init state, fallback to legacy startup:', e);
+    }
+
     // [NEW] 1. 優先在開發模式下載入 Mock 工具，確保後續 invoke 正常
     if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
-        try {
-            const { initMockTools } = await import('./modules/mock.js');
-            await initMockTools();
-            console.log('[DEBUG] Mock tools initialized before config load.');
-        } catch (e) {
-            console.error('Failed to pre-load mock tools:', e);
+        if (window.__TAURI__) {
+            try {
+                await invoke('setup_dev_mock');
+            } catch (e) {
+                console.warn('Failed to setup Rust dev mock:', e);
+            }
+        } else {
+            try {
+                const { initMockTools } = await import('./modules/mock.js');
+                await initMockTools();
+                console.log('[DEBUG] Browser mock tools initialized before config load.');
+            } catch (e) {
+                console.error('Failed to pre-load browser mock tools:', e);
+            }
         }
     }
 
@@ -182,12 +211,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const builtInLangs = ['zh_tw', 'zh_cn', 'ja_jp', 'en_us'];
                     const targetLang = builtInLangs.includes(lang) ? lang : 'en_us';
                     try {
-                        const labels = await invoke('get_i18n_labels', { lang: targetLang });
-                        if (dom.userPrompt && labels.default_user_prompt) {
-                            dom.userPrompt.value = labels.default_user_prompt;
+                        const prompts = await invoke('derive_default_prompts', { lang: targetLang });
+                        if (dom.userPrompt && prompts.default_user_prompt) {
+                            dom.userPrompt.value = prompts.default_user_prompt;
                         }
-                        if (dom.systemPrompt && labels.default_system_prompt) {
-                            dom.systemPrompt.value = labels.default_system_prompt;
+                        if (dom.systemPrompt && prompts.default_system_prompt) {
+                            dom.systemPrompt.value = prompts.default_system_prompt;
                         }
                     } catch (e) {
                         console.error('載入預設 Prompts 失敗:', e);
@@ -221,50 +250,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelDev = document.querySelector('.developer-settings');
     const panelTheme = document.querySelector('.theme-settings');
 
-    function updatePanelVisibility() {
-        if (!state.currentConfig || !state.currentStyle) return; // [SAFETY]
-        if (panelApi) panelApi.classList.toggle('expanded', !!state.currentConfig.show_api_settings);
-        if (panelDev) panelDev.classList.toggle('expanded', !!state.currentConfig.show_developer_mode);
-        if (panelTheme) panelTheme.classList.toggle('expanded', !!state.currentStyle.show_palette_settings);
+    function updatePanelVisibility(panelState) {
+        const showApi = panelState ? panelState.show_api_settings : !!state.currentConfig.show_api_settings;
+        const showDev = panelState ? panelState.show_developer_mode : !!state.currentConfig.show_developer_mode;
+        const showPalette = panelState ? panelState.show_palette_settings : !!state.currentStyle.show_palette_settings;
+
+        if (panelApi) panelApi.classList.toggle('expanded', showApi);
+        if (panelDev) panelDev.classList.toggle('expanded', showDev);
+        if (panelTheme) panelTheme.classList.toggle('expanded', showPalette);
 
         // 控制偵錯工具開關的顯示 (僅在開發者模式展開時才顯示開關本身)
         const groupDebugTools = document.getElementById('group-debug-tools');
         if (groupDebugTools) {
-            groupDebugTools.style.display = state.currentConfig.show_developer_mode ? 'flex' : 'none';
+            groupDebugTools.style.display = showDev ? 'flex' : 'none';
         }
+    }
+
+    async function applyPanelAction(action) {
+        const panelState = await invoke('derive_panel_state_cmd', {
+            action,
+            current: {
+                show_api_settings: !!state.currentConfig.show_api_settings,
+                show_developer_mode: !!state.currentConfig.show_developer_mode,
+                show_palette_settings: !!state.currentStyle.show_palette_settings,
+            },
+        });
+        state.currentConfig.show_api_settings = !!panelState.show_api_settings;
+        state.currentConfig.show_developer_mode = !!panelState.show_developer_mode;
+        state.currentStyle.show_palette_settings = !!panelState.show_palette_settings;
+        updatePanelVisibility(panelState);
+        await invoke('save_config', { config: state.currentConfig });
     }
 
     if (dom.btnNavApi) {
         dom.btnNavApi.addEventListener('click', async () => {
-            state.currentConfig.show_api_settings = !state.currentConfig.show_api_settings;
-            if (state.currentConfig.show_api_settings) {
-                state.currentConfig.show_developer_mode = false;
-                state.currentStyle.show_palette_settings = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_api');
         });
     }
     if (dom.btnNavDev) {
         dom.btnNavDev.addEventListener('click', async () => {
-            state.currentConfig.show_developer_mode = !state.currentConfig.show_developer_mode;
-            if (state.currentConfig.show_developer_mode) {
-                state.currentConfig.show_api_settings = false;
-                state.currentStyle.show_palette_settings = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_dev');
         });
     }
     if (dom.btnNavPalette) {
         dom.btnNavPalette.addEventListener('click', async () => {
-            state.currentStyle.show_palette_settings = !state.currentStyle.show_palette_settings;
-            if (state.currentStyle.show_palette_settings) {
-                state.currentConfig.show_api_settings = false;
-                state.currentConfig.show_developer_mode = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_palette');
         });
     }
     if (dom.btnNavTheme) {

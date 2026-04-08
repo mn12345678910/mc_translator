@@ -64,6 +64,22 @@ describe('config.js 設定管理模組', () => {
 
         // 重設 Mock
         mockInvoke.mockReset();
+        mockInvoke.mockImplementation(async (cmd, args) => {
+            if (cmd === 'derive_config_ui_state_cmd') {
+                const provider = args?.provider || '無';
+                const noKeyProviders = ['Ollama', 'Google Free', '無'];
+                const hideKey = noKeyProviders.includes(provider);
+                return {
+                    show_ollama_url: provider === 'Ollama',
+                    show_api_key: !hideKey,
+                    show_api_base_url: !hideKey,
+                    show_fast_convert: false,
+                    can_translate: true,
+                };
+            }
+            if (cmd === 'normalize_form_config_cmd') return args?.config || {};
+            return null;
+        });
         vi.clearAllMocks();
 
         // 重設 State
@@ -98,6 +114,16 @@ describe('config.js 設定管理模組', () => {
             if (cmd === 'get_config') return fakeConfig;
             if (cmd === 'get_api_key_cmd') return 'test-key-123';
             if (cmd === 'get_models_from_provider') return ['llama3', 'mistral'];
+            if (cmd === 'derive_config_ui_state_cmd') {
+                return {
+                    show_ollama_url: true,
+                    show_api_key: false,
+                    show_api_base_url: false,
+                    show_fast_convert: false,
+                    can_translate: true,
+                };
+            }
+            if (cmd === 'normalize_form_config_cmd') return args?.config || {};
             return null;
         });
 

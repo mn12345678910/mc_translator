@@ -158,35 +158,25 @@ export async function updateUiLanguage() {
 
 // 🟢 依照開關撥動狀態，點按時動態且立即更新對應文字 Label
 export function updateToggleStateLabel(id, checked) {
-    const labels = (typeof state !== 'undefined' && state.currentLabels) || {};
+    const cfg = { ...(state.currentConfig || {}) };
+    if (id === 'chk-glossary-priority') cfg.glossary_priority = checked ? 'user' : 'official';
+    if (id === 'chk-llm-log') cfg.enable_llm_log = !!checked;
+    if (id === 'chk-skip-json') cfg.skip_json = !!checked;
+    if (id === 'chk-skip-js') cfg.skip_js = !!checked;
+    if (id === 'chk-skip-jar') cfg.skip_jar = !!checked;
+    if (id === 'chk-skip-book') cfg.skip_book = !!checked;
+    if (id === 'chk-debug-log') cfg.enable_debug_log = !!checked;
+    if (id === 'chk-debug-tools') cfg.show_debug_tools = !!checked;
+    if (id === 'chk-fast-convert') cfg.fast_convert = !!checked;
 
-    // 🔴 [FIX] 針對 chk-fast-convert 特殊處理
-    if (id === 'chk-fast-convert') {
-        const stateEl = document.getElementById('label-fast-convert-state');
-        if (stateEl) {
-            stateEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
+    Promise.resolve(invoke('derive_toggle_labels_cmd', { config: cfg, lang: dom.uiLang?.value })).then((map) => {
+        if (!map || typeof map !== 'object') return;
+        if (id === 'chk-fast-convert') {
+            const stateEl = document.getElementById('label-fast-convert-state');
+            if (stateEl && map[id]) stateEl.textContent = map[id];
+            return;
         }
-        return;
-    }
-
-    const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
-    if (!labelEl) return;
-
-    if (id === 'chk-glossary-priority') {
-        labelEl.textContent = checked ? labels.glossary_priority_user : labels.glossary_priority_official;
-    } else if (id === 'chk-llm-log') {
-        labelEl.textContent = checked ? labels.label_enable_log : labels.label_disable_log;
-    } else if (id === 'chk-skip-json') {
-        labelEl.textContent = checked ? labels.label_skip_json : labels.label_no_skip_json;
-    } else if (id === 'chk-skip-js') {
-        labelEl.textContent = checked ? labels.label_skip_js : labels.label_no_skip_js;
-    } else if (id === 'chk-skip-jar') {
-        labelEl.textContent = checked ? labels.label_skip_jar : labels.label_no_skip_jar;
-    } else if (id === 'chk-skip-book') {
-        labelEl.textContent = checked ? labels.label_skip_book : labels.label_no_skip_book;
-    } else if (id === 'chk-debug-log') {
-        labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
-    } else if (id === 'chk-debug-tools') {
-        labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
-    }
+        const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+        if (labelEl && map[id]) labelEl.textContent = map[id];
+    });
 }

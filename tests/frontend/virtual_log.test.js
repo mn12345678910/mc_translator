@@ -116,7 +116,16 @@ describe('VirtualLogViewer 完整覆蓋', () => {
     describe('renderSlice 標籤解析', () => {
         it('應該正確解析 <dir> 標籤並套用 log-dir class', () => {
             viewer.logs = [
-                { message: '<dir>path/to/dir</dir> some text', level: 'info', timeStr: '00:00:00', height: 20 },
+                {
+                    message: '<dir>path/to/dir</dir> some text',
+                    level: 'info',
+                    timeStr: '00:00:00',
+                    height: 20,
+                    segments: [
+                        { kind: 'dir', text: 'path/to/dir' },
+                        { kind: 'text', text: ' some text' },
+                    ],
+                },
             ];
             viewer.itemHeights = [20];
             viewer.cumulativeHeights = [20];
@@ -131,7 +140,16 @@ describe('VirtualLogViewer 完整覆蓋', () => {
 
         it('應該正確解析 <file> 標籤並套用 log-file class', () => {
             viewer.logs = [
-                { message: '<file>config.json</file> loaded', level: 'info', timeStr: '00:00:00', height: 20 },
+                {
+                    message: '<file>config.json</file> loaded',
+                    level: 'info',
+                    timeStr: '00:00:00',
+                    height: 20,
+                    segments: [
+                        { kind: 'file', text: 'config.json' },
+                        { kind: 'text', text: ' loaded' },
+                    ],
+                },
             ];
             viewer.itemHeights = [20];
             viewer.cumulativeHeights = [20];
@@ -151,6 +169,13 @@ describe('VirtualLogViewer 完整覆蓋', () => {
                     level: 'info',
                     timeStr: '00:00:00',
                     height: 20,
+                    segments: [
+                        { kind: 'text', text: 'Start ' },
+                        { kind: 'dir', text: 'src/' },
+                        { kind: 'text', text: ' and ' },
+                        { kind: 'file', text: 'main.js' },
+                        { kind: 'text', text: ' end' },
+                    ],
                 },
             ];
             viewer.itemHeights = [20];

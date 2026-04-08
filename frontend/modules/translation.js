@@ -47,12 +47,14 @@ function getFormConfig() {
 /**
  * 核心：根據狀態更新 UI 元件鎖定與顯示
  */
-export function updateUiState(status) {
-    const isRunning = status === UI_STATUS.RUNNING;
-    const isPaused = status === UI_STATUS.PAUSED;
-    const isIdle = status === UI_STATUS.IDLE;
+function applyUiPatch(patch) {
+    const lockControls = !!patch.lock_controls;
+    const showTranslate = !!patch.show_translate;
+    const showPause = !!patch.show_pause;
+    const showResume = !!patch.show_resume;
+    const showStop = !!patch.show_stop;
 
-    // 1. 元件鎖定 (嚴格對齊對照表)
+    // 1. 元件鎖定
     const lockedSelectors = [
         '#input-path',
         '#btn-browse-file',
@@ -74,18 +76,16 @@ export function updateUiState(status) {
 
     const elementsToLock = document.querySelectorAll(lockedSelectors);
     elementsToLock.forEach((el) => {
-        el.disabled = isRunning;
+        el.disabled = lockControls;
     });
 
-    // 2. 按鈕顯隱控制
-    if (dom.btnTranslate) dom.btnTranslate.style.display = isIdle ? 'inline-block' : 'none';
-    if (dom.btnPause) dom.btnPause.style.display = isRunning ? 'inline-block' : 'none';
-    if (dom.btnResume) dom.btnResume.style.display = isPaused ? 'inline-block' : 'none';
-    if (dom.btnStop) dom.btnStop.style.display = isPaused ? 'inline-block' : 'none';
+    if (dom.btnTranslate) dom.btnTranslate.style.display = showTranslate ? 'inline-block' : 'none';
+    if (dom.btnPause) dom.btnPause.style.display = showPause ? 'inline-block' : 'none';
+    if (dom.btnResume) dom.btnResume.style.display = showResume ? 'inline-block' : 'none';
+    if (dom.btnStop) dom.btnStop.style.display = showStop ? 'inline-block' : 'none';
 
-    // 3. 暫停提示訊息
     let notice = document.getElementById('pause-notice');
-    if (!notice && (isRunning || isPaused)) {
+    if (!notice && (showPause || showResume || showStop)) {
         notice = document.createElement('div');
         notice.id = 'pause-notice';
         notice.style.fontSize = '12px';
@@ -96,21 +96,26 @@ export function updateUiState(status) {
         if (ctrlPanel) ctrlPanel.appendChild(notice);
     }
     if (notice) {
-        notice.textContent = isPaused ? '* 修改設定將在恢復後的下一個批次生效' : '';
-        notice.style.opacity = isPaused ? '1' : '0';
+        notice.textContent = patch.pause_notice || '';
+        notice.style.opacity = patch.pause_notice ? '1' : '0';
     }
 
-    // 4. 動畫與狀態清理
-    if (isIdle || isPaused) {
+    if (patch.status !== UI_STATUS.RUNNING) {
         const pulses = document.querySelectorAll('.pulse-glow, [style*="pulse"]');
         pulses.forEach((el) => (el.style.animation = 'none'));
     }
 
-    if (isIdle) {
-        // 重置狀態標籤
+    if (patch.clear_batch_status) {
         if (dom.batchStatusText) dom.batchStatusText.textContent = '';
+    }
+    if (patch.clear_current_status) {
         if (dom.currentStatusLabel) dom.currentStatusLabel.textContent = '';
     }
+}
+
+export async function updateUiState(status) {
+    const patch = await invoke('derive_ui_state', { status, lang: dom.uiLang?.value });
+    applyUiPatch(patch || { status });
 }
 
 // 舊函式相容性包裝
@@ -128,6 +133,7 @@ export function initTranslation() {
                 // 更新當前 Config Snapshot
                 state.currentConfig = getFormConfig();
                 state.currentConfig.path = dom.inputPath.value;
+                state.currentConfig = await invoke('normalize_form_config_cmd', { config: state.currentConfig });
 
                 updateUiState(UI_STATUS.RUNNING);
 
@@ -166,7 +172,8 @@ export function initTranslation() {
             try {
                 // 1. 先同步 UI 修改至後端
                 const latestConfig = getFormConfig();
-                await invoke('update_active_job_config', { config: latestConfig });
+                const normalizedConfig = await invoke('normalize_form_config_cmd', { config: latestConfig });
+                await invoke('update_active_job_config', { config: normalizedConfig });
 
                 // 2. 執行恢復
                 await invoke('resume_translation');

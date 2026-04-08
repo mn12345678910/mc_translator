@@ -13,12 +13,14 @@ let dictType = 'user';
 
 export async function loadDictionary() {
     try {
-        const [items, totalPages] = await invoke('query_dictionary', {
+        const pageData = await invoke('get_dictionary_page', {
             dictType: dictType,
             page: dictPage,
             pageSize: dictPageSize,
             searchKey: dom.dictSearch ? dom.dictSearch.value.trim() : '',
         });
+        const items = pageData?.items || [];
+        const totalPages = pageData?.total_pages || 0;
 
         if (dom.pageInfo) {
             const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';

@@ -157,105 +157,39 @@ export function applyColors(style) {
     }
 }
 
-export function updatePaletteValue() {
+export async function updatePaletteValue() {
     if (!dom.paletteTargetType || !dom.paletteTargetItem || !dom.paletteProperty) return;
 
-    const isSpecific = dom.paletteTargetType.value === 'specific';
-    const target = dom.paletteTargetItem.value;
-    const prop = dom.paletteProperty.value;
+    const paletteState = await invoke('derive_palette_state_cmd', {
+        input: {
+            target_type: dom.paletteTargetType.value,
+            target_item: dom.paletteTargetItem.value,
+            property: dom.paletteProperty.value,
+        },
+        style: state.currentStyle,
+        lang: dom.uiLang?.value,
+    });
 
-    // 更新群組顯示狀態
-    if (dom.paletteClearGroup) dom.paletteClearGroup.style.display = isSpecific ? 'flex' : 'none';
-    if (dom.palettePropertyGroup) dom.palettePropertyGroup.style.display = isSpecific ? 'block' : 'none';
-
-    // 判斷是否為數值型項目
-    const isNumberItem =
-        target.startsWith('space_') ||
-        target.endsWith('_alpha') ||
-        target === 'font_size' ||
-        target.includes('log_') ||
-        (isSpecific && prop === 'rounding');
-
-    // 重新修正：日誌顏色不屬於數值型，是顏色型
-    const isLogColor = target.includes('log_');
-    const finalIsNumber = isNumberItem && !isLogColor;
-
-    if (dom.paletteColorGroup) dom.paletteColorGroup.style.display = finalIsNumber ? 'none' : 'block';
-    if (dom.paletteNumberGroup) dom.paletteNumberGroup.style.display = finalIsNumber ? 'block' : 'none';
-
-    if (isNumberItem) {
-        // 設定 Label 與數值
-        if (dom.labelPaletteNumber) {
-            if (target.startsWith('space_')) {
-                dom.labelPaletteNumber.textContent =
-                    state.currentLabels && state.currentLabels.palette_label_spacing
-                        ? state.currentLabels.palette_label_spacing
-                        : 'Spacing (px)';
-            } else if (target.endsWith('_alpha')) {
-                dom.labelPaletteNumber.textContent =
-                    state.currentLabels && state.currentLabels.palette_label_alpha
-                        ? state.currentLabels.palette_label_alpha
-                        : 'Alpha (0.0-1.0)';
-            } else if (target === 'font_size') {
-                dom.labelPaletteNumber.textContent =
-                    state.currentLabels && state.currentLabels.label_font_size
-                        ? state.currentLabels.label_font_size
-                        : 'Font Size (px)';
-            } else {
-                dom.labelPaletteNumber.textContent =
-                    state.currentLabels && state.currentLabels.palette_label_rounding
-                        ? state.currentLabels.palette_label_rounding
-                        : 'Rounding (px)';
-            }
-        }
-
-        let val = 0;
-        if (isSpecific) {
-            const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
-            val = ov ? ov.rounding || 4 : 4;
-        } else {
-            val = state.currentStyle[target] || 0;
-        }
-        if (dom.paletteNumber) {
-            dom.paletteNumber.value = val;
-            dom.paletteNumber.step = target.endsWith('_alpha') ? '0.01' : '1';
-        }
-    } else {
-        // 設定顏色預覽
-        if (dom.labelPaletteColor) {
-            dom.labelPaletteColor.textContent =
-                prop === 'bg'
-                    ? state.currentLabels && state.currentLabels.label_bg_color
-                        ? state.currentLabels.label_bg_color
-                        : 'Background'
-                    : state.currentLabels && state.currentLabels.label_text_color
-                      ? state.currentLabels.label_text_color
-                      : 'Text';
-        }
-
-        let color = null;
-        if (isSpecific) {
-            const ov = state.currentStyle.instance_overrides ? state.currentStyle.instance_overrides[target] : null;
-            if (ov) {
-                const isDark = state.currentStyle.theme !== 'light';
-                if (prop === 'bg') {
-                    color = isDark ? ov.dark_bg : ov.light_bg;
-                } else {
-                    color = isDark ? ov.dark_text : ov.light_text;
-                }
-            }
-        } else {
-            color = state.currentStyle[target];
-        }
-        if (dom.paletteColor) dom.paletteColor.value = color ? rgbToHexStr(color) : '#ffffff';
+    if (dom.paletteClearGroup) dom.paletteClearGroup.style.display = paletteState.show_clear_group ? 'flex' : 'none';
+    if (dom.palettePropertyGroup)
+        dom.palettePropertyGroup.style.display = paletteState.show_property_group ? 'block' : 'none';
+    if (dom.paletteColorGroup) dom.paletteColorGroup.style.display = paletteState.show_color_group ? 'block' : 'none';
+    if (dom.paletteNumberGroup)
+        dom.paletteNumberGroup.style.display = paletteState.show_number_group ? 'block' : 'none';
+    if (dom.labelPaletteNumber) dom.labelPaletteNumber.textContent = paletteState.label_palette_number || '';
+    if (dom.labelPaletteColor) dom.labelPaletteColor.textContent = paletteState.label_palette_color || '';
+    if (dom.paletteNumber) {
+        dom.paletteNumber.value = paletteState.number_value ?? 0;
+        dom.paletteNumber.step = `${paletteState.number_step ?? 1}`;
     }
+    if (dom.paletteColor) dom.paletteColor.value = paletteState.color_value || '#ffffff';
 
     // 處理特定元件的文字選項隱藏
     const noTextItems = ['progress-bar', 'batch-progress-bar'];
-    if (isSpecific) {
+    if (dom.paletteTargetType.value === 'specific') {
         Array.from(dom.paletteProperty.options).forEach((opt) => {
             if (opt.value === 'text') {
-                const hidden = noTextItems.includes(target);
+                const hidden = noTextItems.includes(dom.paletteTargetItem.value);
                 opt.style.display = hidden ? 'none' : 'block';
                 opt.disabled = hidden;
                 if (hidden && dom.paletteProperty.value === 'text') dom.paletteProperty.value = 'bg';
@@ -269,6 +203,11 @@ export async function loadStyle() {
         const style = (await invoke('get_style_config')) || {};
         state.currentStyle = style;
         applyColors(style);
+        const cssVars = await invoke('get_gui_css_vars', { config: style });
+        if (cssVars && typeof cssVars === 'object') {
+            const root = document.documentElement;
+            Object.entries(cssVars).forEach(([k, v]) => root.style.setProperty(k, v));
+        }
 
         // --- 同步常規控制項 ---
         const controls = {

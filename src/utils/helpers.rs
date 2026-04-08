@@ -97,6 +97,7 @@ pub fn add_log_event(
         level: level.clone(),
         message: full_msg.clone(),
         timestamp: timestamp_ms,
+        segments: crate::gui::parse_log_segments(&full_msg),
     });
 
     if enable_persistence {

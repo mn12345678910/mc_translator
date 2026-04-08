@@ -33,6 +33,26 @@ describe('i18n.js 介面語言模組', () => {
 
         // 重設 Mock 控制器
         mockInvoke.mockReset();
+        mockInvoke.mockImplementation(async (cmd, args) => {
+            if (cmd === 'derive_toggle_labels_cmd') {
+                const cfg = args?.config || {};
+                const labels = stateModule.state.currentLabels || {};
+                return {
+                    'chk-glossary-priority':
+                        cfg.glossary_priority === 'user' ? labels.glossary_priority_user : labels.glossary_priority_official,
+                    'chk-llm-log': cfg.enable_llm_log ? labels.label_enable_log : labels.label_disable_log,
+                    'chk-skip-json': cfg.skip_json ? labels.label_skip_json : labels.label_no_skip_json,
+                    'chk-skip-js': cfg.skip_js ? labels.label_skip_js : labels.label_no_skip_js,
+                    'chk-skip-jar': cfg.skip_jar ? labels.label_skip_jar : labels.label_no_skip_jar,
+                    'chk-skip-book': cfg.skip_book ? labels.label_skip_book : labels.label_no_skip_book,
+                    'chk-debug-log':
+                        cfg.enable_debug_log ? labels.label_enable_debug_log : labels.label_disable_debug_log,
+                    'chk-debug-tools': cfg.show_debug_tools ? labels.label_hide_debug_tools : labels.label_show_debug_tools,
+                    'chk-fast-convert': cfg.fast_convert ? labels.label_fast_convert_on : labels.label_fast_convert_off,
+                };
+            }
+            return null;
+        });
         stateModule.state.currentLabels = {}; // 清空 State
     });
 
@@ -113,7 +133,7 @@ describe('i18n.js 介面語言模組', () => {
         expect(labelEl.textContent).toBe('Provider');
     });
 
-    it('updateToggleStateLabel 應該正確更新所有開關文字', () => {
+    it('updateToggleStateLabel 應該正確更新所有開關文字', async () => {
         stateModule.state.currentLabels = {
             glossary_priority_user: 'User First',
             glossary_priority_official: 'Official First',
@@ -127,13 +147,19 @@ describe('i18n.js 介面語言模組', () => {
         `;
 
         i18nModule.updateToggleStateLabel('chk-glossary-priority', true);
-        expect(document.getElementById('label-glossary-priority').textContent).toBe('User First');
+        await vi.waitFor(() => {
+            expect(document.getElementById('label-glossary-priority').textContent).toBe('User First');
+        });
 
         i18nModule.updateToggleStateLabel('chk-glossary-priority', false);
-        expect(document.getElementById('label-glossary-priority').textContent).toBe('Official First');
+        await vi.waitFor(() => {
+            expect(document.getElementById('label-glossary-priority').textContent).toBe('Official First');
+        });
 
         i18nModule.updateToggleStateLabel('chk-llm-log', true);
-        expect(document.getElementById('label-llm-log').textContent).toBe('Log On');
+        await vi.waitFor(() => {
+            expect(document.getElementById('label-llm-log').textContent).toBe('Log On');
+        });
     });
     it('updateUiLanguage 應該更新輸入框的 Placeholder', async () => {
         const mockLabels = {
@@ -274,7 +300,7 @@ describe('i18n.js 介面語言模組', () => {
             consoleErrorSpy.mockRestore();
         });
 
-        it('updateToggleStateLabel 應該正確更新剩餘的跳過開關文字', () => {
+        it('updateToggleStateLabel 應該正確更新剩餘的跳過開關文字', async () => {
             stateModule.state.currentLabels = {
                 label_skip_json: 'Skip JSON ON',
                 label_no_skip_json: 'Skip JSON OFF',
@@ -292,22 +318,32 @@ describe('i18n.js 介面語言模組', () => {
             });
 
             i18nModule.updateToggleStateLabel('chk-skip-json', true);
-            expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON ON');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON ON');
+            });
 
             i18nModule.updateToggleStateLabel('chk-skip-json', false);
-            expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON OFF');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-skip-json').textContent).toBe('Skip JSON OFF');
+            });
 
             i18nModule.updateToggleStateLabel('chk-skip-js', true);
-            expect(document.getElementById('label-skip-js').textContent).toBe('Skip JS ON');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-skip-js').textContent).toBe('Skip JS ON');
+            });
 
             i18nModule.updateToggleStateLabel('chk-skip-jar', true);
-            expect(document.getElementById('label-skip-jar').textContent).toBe('Skip JAR ON');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-skip-jar').textContent).toBe('Skip JAR ON');
+            });
 
             i18nModule.updateToggleStateLabel('chk-skip-book', true);
-            expect(document.getElementById('label-skip-book').textContent).toBe('Skip Book ON');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-skip-book').textContent).toBe('Skip Book ON');
+            });
         });
 
-        it('updateToggleStateLabel 應該處理 chk-fast-convert 特殊情況', () => {
+        it('updateToggleStateLabel 應該處理 chk-fast-convert 特殊情況', async () => {
             stateModule.state.currentLabels = {
                 label_fast_convert_on: '開啟',
                 label_fast_convert_off: '關閉',
@@ -315,17 +351,21 @@ describe('i18n.js 介面語言模組', () => {
             document.body.innerHTML += `<div id="label-fast-convert-state"></div>`;
 
             i18nModule.updateToggleStateLabel('chk-fast-convert', true);
-            expect(document.getElementById('label-fast-convert-state').textContent).toBe('開啟');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-fast-convert-state').textContent).toBe('開啟');
+            });
 
             i18nModule.updateToggleStateLabel('chk-fast-convert', false);
-            expect(document.getElementById('label-fast-convert-state').textContent).toBe('關閉');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-fast-convert-state').textContent).toBe('關閉');
+            });
         });
 
         it('updateToggleStateLabel 當 label 元素不存在時應該直接回傳', () => {
             expect(() => i18nModule.updateToggleStateLabel('chk-nonexistent', true)).not.toThrow();
         });
 
-        it('updateToggleStateLabel 應該處理 chk-debug-log 和 chk-debug-tools', () => {
+        it('updateToggleStateLabel 應該處理 chk-debug-log 和 chk-debug-tools', async () => {
             stateModule.state.currentLabels = {
                 label_enable_debug_log: 'Debug Log ON',
                 label_disable_debug_log: 'Debug Log OFF',
@@ -335,10 +375,14 @@ describe('i18n.js 介面語言模組', () => {
             document.body.innerHTML += `<div id="label-debug-log"></div><div id="label-debug-tools"></div>`;
 
             i18nModule.updateToggleStateLabel('chk-debug-log', true);
-            expect(document.getElementById('label-debug-log').textContent).toBe('Debug Log ON');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-debug-log').textContent).toBe('Debug Log ON');
+            });
 
             i18nModule.updateToggleStateLabel('chk-debug-tools', false);
-            expect(document.getElementById('label-debug-tools').textContent).toBe('Show Tools');
+            await vi.waitFor(() => {
+                expect(document.getElementById('label-debug-tools').textContent).toBe('Show Tools');
+            });
         });
     });
 });

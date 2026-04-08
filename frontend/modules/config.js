@@ -7,6 +7,38 @@ import { dom } from './dom.js';
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
+function applyConfigUiState(ui) {
+    if (!ui || typeof ui !== 'object') return;
+
+    if (dom.ollamaUrlGroup) {
+        dom.ollamaUrlGroup.style.display = ui.show_ollama_url ? 'block' : 'none';
+    }
+    if (dom.apiKeyGroup) {
+        dom.apiKeyGroup.style.display = ui.show_api_key ? 'block' : 'none';
+    }
+    if (dom.apiBaseUrlGroup) {
+        dom.apiBaseUrlGroup.style.display = ui.show_api_base_url ? 'block' : 'none';
+    }
+    if (dom.groupFastConvert) {
+        dom.groupFastConvert.style.display = ui.show_fast_convert ? 'block' : 'none';
+    }
+    if (dom.btnTranslate) {
+        dom.btnTranslate.disabled = !ui.can_translate;
+    }
+}
+
+export function refreshConfigUiState() {
+    Promise.resolve(
+        invoke('derive_config_ui_state_cmd', {
+            provider: dom.apiProvider ? dom.apiProvider.value : '無',
+            selectedModel: dom.selectedModel ? dom.selectedModel.value : '',
+            apiKey: dom.apiKey ? dom.apiKey.value : '',
+            sourceLang: dom.sourceLang ? dom.sourceLang.value : 'en_us',
+            targetLang: dom.targetLang ? dom.targetLang.value : 'zh_tw',
+        })
+    ).then((ui) => applyConfigUiState(ui));
+}
+
 export async function loadConfig() {
     try {
         const config = await invoke('get_config');
@@ -60,9 +92,7 @@ export async function loadConfig() {
             dom.excludedPaths.value = config.excluded_paths.join('\n');
         }
 
-        toggleOllamaGroup();
-        toggleApiKeyVisibility();
-        validateCanTranslate();
+        refreshConfigUiState();
     } catch (e) {
         const mask = state.currentLabels.status_load_config_failed || '❌ 載入配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
@@ -121,9 +151,10 @@ export async function saveConfig() {
                   .filter((s) => s !== '')
             : [];
 
+        state.currentConfig = await invoke('normalize_form_config_cmd', { config: state.currentConfig });
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();
-        validateCanTranslate();
+        refreshConfigUiState();
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
@@ -153,7 +184,7 @@ export async function loadTranslationLangs() {
         populate(dom.sourceLang, state.currentConfig.source_lang);
         populate(dom.targetLang, state.currentConfig.target_lang);
 
-        toggleFastConvertGroup();
+        refreshConfigUiState();
     } catch (e) {
         console.error('無法載入翻譯語言清單:', e);
     }
@@ -190,47 +221,20 @@ export async function loadModels() {
 }
 
 export function toggleOllamaGroup() {
-    if (dom.ollamaUrlGroup && dom.apiProvider) {
-        dom.ollamaUrlGroup.style.display = dom.apiProvider.value === 'Ollama' ? 'block' : 'none';
-    }
+    refreshConfigUiState();
 }
 
 /** 當目標語言為中文（zh_cn 或 zh_tw）時顯示快速轉換開關 */
 export function toggleFastConvertGroup() {
-    if (!dom.groupFastConvert || !dom.sourceLang || !dom.targetLang) {
-        return;
-    }
-
-    const src = dom.sourceLang.value;
-    const tgt = dom.targetLang.value;
-    const isTargetChinese = tgt === 'zh_cn' || tgt === 'zh_tw';
-    const shouldShow = isTargetChinese && src !== tgt;
-
-    dom.groupFastConvert.style.display = shouldShow ? 'block' : 'none';
+    refreshConfigUiState();
 }
 
 export function toggleApiKeyVisibility() {
-    if (dom.apiKeyGroup && dom.apiProvider) {
-        const noKeyProviders = ['Ollama', 'Google Free', '無'];
-        const isHidden = noKeyProviders.includes(dom.apiProvider.value);
-        dom.apiKeyGroup.style.display = isHidden ? 'none' : 'block';
-        if (dom.apiBaseUrlGroup) {
-            dom.apiBaseUrlGroup.style.display = isHidden ? 'none' : 'block';
-        }
-    }
+    refreshConfigUiState();
 }
 
 export function validateCanTranslate() {
-    if (dom.btnTranslate && dom.selectedModel && dom.apiProvider) {
-        const noKeyProviders = ['Ollama', 'Google Free', '無'];
-        const needsKey = !noKeyProviders.includes(dom.apiProvider.value);
-        const hasKey = needsKey ? dom.apiKey && dom.apiKey.value.trim() !== '' : true;
-        dom.btnTranslate.disabled =
-            (!dom.selectedModel.value &&
-                dom.apiProvider.value !== 'Google Free' &&
-                dom.apiProvider.value !== 'Ollama') ||
-            !hasKey;
-    }
+    refreshConfigUiState();
 }
 export async function restoreDefaultConfig() {
     try {
