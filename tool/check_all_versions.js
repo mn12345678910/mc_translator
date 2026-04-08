@@ -19,7 +19,11 @@ function getLatestTag() {
  * 返回: 1 (v1 > v2), -1 (v1 < v2), 0 (v1 == v2)
  */
 function compareVersions(v1, v2) {
-    const clean = (v) => v.replace(/^v/, '').split('.').map((n) => parseInt(n, 10) || 0);
+    const clean = (v) =>
+        v
+            .replace(/^v/, '')
+            .split('.')
+            .map((n) => parseInt(n, 10) || 0);
     const parts1 = clean(v1);
     const parts2 = clean(v2);
 
@@ -36,6 +40,24 @@ function compareVersions(v1, v2) {
  * 驗證專案中所有版本號設定是否一致，且不落後於 Git 標籤
  */
 function checkAllVersions() {
+    // === 檢查是否為 Tag 推送 ===
+    const isTagPush = (() => {
+        try {
+            const input = fs.readFileSync(0, 'utf8').trim();
+            if (!input) return false;
+            const lines = input.split('\n');
+            for (const line of lines) {
+                const [localRef] = line.split(' ');
+                if (localRef && localRef.startsWith('refs/tags/')) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (e) {
+            return false;
+        }
+    })();
+
     const rootDir = path.join(__dirname, '..');
     const files = [
         { path: 'Cargo.toml', type: 'toml' },
@@ -91,22 +113,26 @@ function checkAllVersions() {
     const currentVersion = uniqueVersions[0];
     console.log(`✅ 檔案版本號一致: ${currentVersion}`);
 
-    // 2. 檢查是否落後於 Git 已發佈標籤
-    const latestTag = getLatestTag();
-    if (latestTag) {
-        const compareResult = compareVersions(currentVersion, latestTag);
+    // 2. 只在 Tag 推送時檢查是否落後於 Git 已發佈標籤
+    if (isTagPush) {
+        const latestTag = getLatestTag();
+        if (latestTag) {
+            const compareResult = compareVersions(currentVersion, latestTag);
 
-        if (compareResult < 0) {
-            console.error(`\n❌ [版本號落後] 檔案版本 (${currentVersion}) 低於 Git 最新發佈標籤 (${latestTag})。`);
-            console.error('💡 這是為了防止誤將過舊版本推送。請更新所有 manifest 檔案的版本號後再開啟 Commit。\n');
-            process.exit(1);
-        } else if (compareResult === 0) {
-            console.log(`✅ 標籤同步驗證通過: 版本號等於最新標籤 (${latestTag})。`);
+            if (compareResult < 0) {
+                console.error(`\n❌ [版本號落後] 檔案版本 (${currentVersion}) 低於 Git 最新發佈標籤 (${latestTag})。`);
+                console.error('💡 這是為了防止誤將過舊版本推送。請更新所有 manifest 檔案的版本號後再開啟 Commit。\n');
+                process.exit(1);
+            } else if (compareResult === 0) {
+                console.log(`✅ 標籤同步驗證通過: 版本號等於最新標籤 (${latestTag})。`);
+            } else {
+                console.log(`✅ 標籤同步驗證通過: 版本號 (${currentVersion}) 高於最新標籤 (${latestTag})。`);
+            }
         } else {
-            console.log(`✅ 標籤同步驗證通過: 版本號 (${currentVersion}) 高於最新標籤 (${latestTag})。`);
+            console.log('ℹ️ 未發現任何 Git 標籤，跳過標籤對比。');
         }
     } else {
-        console.log('ℹ️ 未發現任何 Git 標籤，跳過標籤對比。');
+        console.log('ℹ️ 非 Tag 推送，跳過版本 vs 標籤檢查。');
     }
 
     process.exit(0);
