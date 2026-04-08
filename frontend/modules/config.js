@@ -101,57 +101,37 @@ export async function loadConfig() {
 
 export async function saveConfig() {
     try {
-        state.currentConfig.api_provider = dom.apiProvider ? dom.apiProvider.value : '';
-        state.currentConfig.api_base_url = dom.apiBaseUrl ? dom.apiBaseUrl.value : '';
-
         await invoke('save_api_key_cmd', { key: dom.apiKey ? dom.apiKey.value : '' });
-        state.currentConfig.model = dom.selectedModel ? dom.selectedModel.value : '';
-        const old = state.currentConfig;
-        const parseSafeInt = (v, f) => {
-            let p = parseInt(v);
-            return isNaN(p) ? f : p;
-        };
-
-        state.currentConfig.ollama_url = dom.ollamaUrl ? dom.ollamaUrl.value : '';
-        state.currentConfig.batch_size = dom.batchSize ? parseSafeInt(dom.batchSize.value, old.batch_size || 150) : 150;
-        state.currentConfig.batch_max_chars = dom.batchMaxChars
-            ? parseSafeInt(dom.batchMaxChars.value, old.batch_max_chars || 3500)
-            : 3500;
-        state.currentConfig.timeout = dom.timeoutSec ? parseSafeInt(dom.timeoutSec.value, old.timeout || 60) : 60;
-        if (dom.uiLang) state.currentConfig.ui_lang = dom.uiLang.value;
-        if (dom.sourceLang) state.currentConfig.source_lang = dom.sourceLang.value;
-        if (dom.targetLang) state.currentConfig.target_lang = dom.targetLang.value;
-        state.currentConfig.pack_format = dom.packFormat
-            ? parseSafeInt(dom.packFormat.value, old.pack_format || 15)
-            : 15;
-        state.currentConfig.glossary_priority =
-            dom.chkGlossaryPriority && dom.chkGlossaryPriority.checked ? 'user' : 'official';
-        state.currentConfig.ui_lang = dom.uiLang ? dom.uiLang.value : state.currentConfig.ui_lang || 'zh_tw';
-        state.currentConfig.output_dir = dom.outputDir ? dom.outputDir.value : '';
-        state.currentConfig.path = dom.inputPath ? dom.inputPath.value : '';
-
-        state.currentConfig.system_prompt = dom.systemPrompt ? dom.systemPrompt.value : '';
-        state.currentConfig.user_prompt = dom.userPrompt ? dom.userPrompt.value : '';
-
-        state.currentConfig.skip_json = dom.chkSkipJson ? dom.chkSkipJson.checked : false;
-        state.currentConfig.skip_js = dom.chkSkipJs ? dom.chkSkipJs.checked : false;
-        state.currentConfig.skip_jar = dom.chkSkipJar ? dom.chkSkipJar.checked : false;
-        state.currentConfig.skip_book = dom.chkSkipBook ? dom.chkSkipBook.checked : false;
-        state.currentConfig.enable_llm_log = dom.chkLlmLog ? dom.chkLlmLog.checked : false;
-        state.currentConfig.enable_debug_log = dom.chkDebugLog ? dom.chkDebugLog.checked : false;
-        state.currentConfig.show_debug_tools = dom.chkDebugTools ? dom.chkDebugTools.checked : false;
-        if (dom.chkFastConvert) {
-            state.currentConfig.fast_convert = dom.chkFastConvert.checked;
-        }
-
-        state.currentConfig.excluded_paths = dom.excludedPaths
-            ? dom.excludedPaths.value
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .filter((s) => s !== '')
-            : [];
-
-        state.currentConfig = await invoke('normalize_form_config_cmd', { config: state.currentConfig });
+        state.currentConfig = await invoke('build_form_config_cmd', {
+            base: state.currentConfig,
+            input: {
+                api_provider: dom.apiProvider ? dom.apiProvider.value : '',
+                api_base_url: dom.apiBaseUrl ? dom.apiBaseUrl.value : '',
+                ollama_url: dom.ollamaUrl ? dom.ollamaUrl.value : '',
+                model: dom.selectedModel ? dom.selectedModel.value : '',
+                source_lang: dom.sourceLang ? dom.sourceLang.value : 'en_us',
+                target_lang: dom.targetLang ? dom.targetLang.value : 'zh_tw',
+                batch_size: dom.batchSize ? dom.batchSize.value : '',
+                batch_max_chars: dom.batchMaxChars ? dom.batchMaxChars.value : '',
+                timeout: dom.timeoutSec ? dom.timeoutSec.value : '',
+                output_dir: dom.outputDir ? dom.outputDir.value : '',
+                pack_format: dom.packFormat ? dom.packFormat.value : '',
+                user_prompt: dom.userPrompt ? dom.userPrompt.value : '',
+                system_prompt: dom.systemPrompt ? dom.systemPrompt.value : '',
+                glossary_priority: dom.chkGlossaryPriority && dom.chkGlossaryPriority.checked ? 'user' : 'official',
+                skip_json: dom.chkSkipJson ? dom.chkSkipJson.checked : false,
+                skip_js: dom.chkSkipJs ? dom.chkSkipJs.checked : false,
+                skip_jar: dom.chkSkipJar ? dom.chkSkipJar.checked : false,
+                skip_book: dom.chkSkipBook ? dom.chkSkipBook.checked : false,
+                enable_llm_log: dom.chkLlmLog ? dom.chkLlmLog.checked : false,
+                enable_debug_log: dom.chkDebugLog ? dom.chkDebugLog.checked : false,
+                show_debug_tools: dom.chkDebugTools ? dom.chkDebugTools.checked : false,
+                ui_lang: dom.uiLang ? dom.uiLang.value : state.currentConfig.ui_lang || 'zh_tw',
+                path: dom.inputPath ? dom.inputPath.value : '',
+                fast_convert: dom.chkFastConvert ? dom.chkFastConvert.checked : false,
+                excluded_paths_text: dom.excludedPaths ? dom.excludedPaths.value : '',
+            },
+        });
         await invoke('save_config', { config: state.currentConfig });
         updateUiLanguage();
         refreshConfigUiState();

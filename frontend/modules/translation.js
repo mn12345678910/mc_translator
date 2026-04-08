@@ -14,34 +14,37 @@ const UI_STATUS = {
     PAUSED: 'PAUSED',
 };
 
-/**
- * 從 DOM 獲取當前所有的表單配置值
- */
-function getFormConfig() {
-    return {
-        ...state.currentConfig,
-        api_provider: dom.apiProvider?.value || '無',
-        api_base_url: dom.apiBaseUrl?.value || '',
-        ollama_url: dom.ollamaUrl?.value || 'http://localhost:11434',
-        model: dom.selectedModel?.value || '',
-        source_lang: dom.sourceLang?.value || 'en_us',
-        target_lang: dom.targetLang?.value || 'zh_tw',
-        batch_size: parseInt(dom.batchSize?.value || '10'),
-        batch_max_chars: parseInt(dom.batchMaxChars?.value || '1000'),
-        timeout: parseInt(dom.timeoutSec?.value || '30'),
-        output_dir: dom.outputDir?.value || '',
-        pack_format: parseInt(dom.packFormat?.value || '15'),
-        user_prompt: dom.userPrompt?.value || '',
-        system_prompt: dom.systemPrompt?.value || '',
-        glossary_priority: dom.chkGlossaryPriority?.checked ? 'user' : 'official',
-        skip_json: dom.chkSkipJson?.checked || false,
-        skip_js: dom.chkSkipJs?.checked || false,
-        skip_jar: dom.chkSkipJar?.checked || false,
-        skip_book: dom.chkSkipBook?.checked || false,
-        enable_llm_log: dom.chkLlmLog?.checked || false,
-        enable_debug_log: dom.chkDebugLog?.checked || false,
-        ui_lang: dom.uiLang?.value || 'zh_tw',
-    };
+async function getFormConfig() {
+    return invoke('build_form_config_cmd', {
+        base: state.currentConfig,
+        input: {
+            api_provider: dom.apiProvider?.value || '無',
+            api_base_url: dom.apiBaseUrl?.value || '',
+            ollama_url: dom.ollamaUrl?.value || 'http://localhost:11434',
+            model: dom.selectedModel?.value || '',
+            source_lang: dom.sourceLang?.value || 'en_us',
+            target_lang: dom.targetLang?.value || 'zh_tw',
+            batch_size: dom.batchSize?.value || '',
+            batch_max_chars: dom.batchMaxChars?.value || '',
+            timeout: dom.timeoutSec?.value || '',
+            output_dir: dom.outputDir?.value || '',
+            pack_format: dom.packFormat?.value || '',
+            user_prompt: dom.userPrompt?.value || '',
+            system_prompt: dom.systemPrompt?.value || '',
+            glossary_priority: dom.chkGlossaryPriority?.checked ? 'user' : 'official',
+            skip_json: dom.chkSkipJson?.checked || false,
+            skip_js: dom.chkSkipJs?.checked || false,
+            skip_jar: dom.chkSkipJar?.checked || false,
+            skip_book: dom.chkSkipBook?.checked || false,
+            enable_llm_log: dom.chkLlmLog?.checked || false,
+            enable_debug_log: dom.chkDebugLog?.checked || false,
+            show_debug_tools: dom.chkDebugTools?.checked || false,
+            ui_lang: dom.uiLang?.value || 'zh_tw',
+            path: dom.inputPath?.value || '',
+            fast_convert: dom.chkFastConvert?.checked || false,
+            excluded_paths_text: dom.excludedPaths?.value || '',
+        },
+    });
 }
 
 /**
@@ -131,9 +134,8 @@ export function initTranslation() {
             }
             try {
                 // 更新當前 Config Snapshot
-                state.currentConfig = getFormConfig();
-                state.currentConfig.path = dom.inputPath.value;
-                state.currentConfig = await invoke('normalize_form_config_cmd', { config: state.currentConfig });
+                state.currentConfig = await getFormConfig();
+                const inputPath = dom.inputPath.value;
 
                 updateUiState(UI_STATUS.RUNNING);
 
@@ -143,7 +145,7 @@ export function initTranslation() {
 
                 await invoke('start_translation', {
                     config: state.currentConfig,
-                    inputPaths: [state.currentConfig.path],
+                    inputPaths: [inputPath],
                 });
             } catch (e) {
                 appendLog({
@@ -171,9 +173,8 @@ export function initTranslation() {
         dom.btnResume.addEventListener('click', async () => {
             try {
                 // 1. 先同步 UI 修改至後端
-                const latestConfig = getFormConfig();
-                const normalizedConfig = await invoke('normalize_form_config_cmd', { config: latestConfig });
-                await invoke('update_active_job_config', { config: normalizedConfig });
+                const latestConfig = await getFormConfig();
+                await invoke('update_active_job_config', { config: latestConfig });
 
                 // 2. 執行恢復
                 await invoke('resume_translation');

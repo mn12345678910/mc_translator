@@ -207,11 +207,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // 目標語言變更時載入預設 Prompt
                 if (id === 'target-lang') {
-                    const lang = selectEl.value;
-                    const builtInLangs = ['zh_tw', 'zh_cn', 'ja_jp', 'en_us'];
-                    const targetLang = builtInLangs.includes(lang) ? lang : 'en_us';
                     try {
-                        const prompts = await invoke('derive_default_prompts', { lang: targetLang });
+                        const prompts = await invoke('derive_default_prompts', { lang: selectEl.value });
                         if (dom.userPrompt && prompts.default_user_prompt) {
                             dom.userPrompt.value = prompts.default_user_prompt;
                         }
@@ -299,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (dom.btnNavTheme) {
         dom.btnNavTheme.addEventListener('click', async () => {
-            state.currentStyle.theme = state.currentStyle.theme === 'dark' ? 'light' : 'dark';
+            state.currentStyle = await invoke('toggle_theme_style_cmd', { style: state.currentStyle });
             applyColors(state.currentStyle);
             await invoke('save_style_config', { config: state.currentStyle });
         });
@@ -325,50 +322,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 400);
 
     if (dom.paletteColor) {
-        dom.paletteColor.addEventListener('input', () => {
-            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
-            let target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
-            const prop = dom.paletteProperty ? dom.paletteProperty.value : 'bg'; // bg or text
-            const hex = dom.paletteColor.value;
-            if (!hex.startsWith('#')) return;
-            const bigint = parseInt(hex.slice(1), 16);
-            const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-
-            const isDark = state.currentStyle.theme !== 'light';
-
-            if (!isSpecific) {
-                // 全域類別：處理 dark_/light_ 前綴
-                if (target.startsWith('dark_') || target.startsWith('light_')) {
-                    const baseKey = target.substring(target.indexOf('_') + 1);
-                    target = (isDark ? 'dark_' : 'light_') + baseKey;
-                }
-                state.currentStyle[target] = rgb;
-            } else {
-                // 特定組件：根據目前主題決定存入 dark_... 或 light_...
-                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-
-                const themedProp = (isDark ? 'dark_' : 'light_') + prop;
-                state.currentStyle.instance_overrides[target][themedProp] = rgb;
-            }
+        dom.paletteColor.addEventListener('input', async () => {
+            state.currentStyle = await invoke('apply_palette_mutation_cmd', {
+                style: state.currentStyle,
+                input: {
+                    target_type: dom.paletteTargetType ? dom.paletteTargetType.value : 'global',
+                    target_item: dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg',
+                    property: dom.paletteProperty ? dom.paletteProperty.value : 'bg',
+                    color_hex: dom.paletteColor.value,
+                    number_value: null,
+                },
+            });
             applyColors(state.currentStyle);
             debouncedSavePalette();
         });
     }
 
     if (dom.paletteNumber) {
-        dom.paletteNumber.addEventListener('input', () => {
-            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
-            const target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
-            const val = parseFloat(dom.paletteNumber.value) || 0;
-            if (isSpecific) {
-                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-                state.currentStyle.instance_overrides[target].rounding = val;
-            } else {
-                // 如果是全域類別（例如 layout 分組中的屬性）
-                state.currentStyle[target] = val;
-            }
+        dom.paletteNumber.addEventListener('input', async () => {
+            state.currentStyle = await invoke('apply_palette_mutation_cmd', {
+                style: state.currentStyle,
+                input: {
+                    target_type: dom.paletteTargetType ? dom.paletteTargetType.value : 'global',
+                    target_item: dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg',
+                    property: dom.paletteProperty ? dom.paletteProperty.value : 'rounding',
+                    color_hex: null,
+                    number_value: parseFloat(dom.paletteNumber.value) || 0,
+                },
+            });
             applyColors(state.currentStyle);
             debouncedSavePalette();
         });
@@ -381,9 +362,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const target = dom.paletteTargetItem.value;
 
             try {
-                if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
-                    delete state.currentStyle.instance_overrides[target];
-                }
+                state.currentStyle = await invoke('clear_palette_override_cmd', {
+                    style: state.currentStyle,
+                    target,
+                });
 
                 updatePaletteValue();
                 applyColors(state.currentStyle);

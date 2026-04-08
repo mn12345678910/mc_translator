@@ -3,9 +3,11 @@ use mc_translator::config::{
     AppConfig, StyleConfig,
 };
 use mc_translator::gui::{
-    build_gui_init_state, derive_config_ui_state, derive_css_vars, derive_palette_state,
+    apply_palette_mutation, build_form_config, build_gui_init_state, build_style_from_form,
+    clear_palette_override, derive_config_ui_state, derive_css_vars, derive_palette_state,
     derive_panel_state, derive_toggle_labels, derive_ui_patch, normalize_form_config,
-    DictionaryPageData, PaletteInput, PanelState, UiStatus,
+    toggle_style_theme, ConfigFormInput, DictionaryPageData, PaletteInput, PaletteMutationInput,
+    PanelState, StyleFormInput, UiStatus,
 };
 use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::api::client::CLIENT;
@@ -227,7 +229,11 @@ pub fn derive_palette_state_cmd(
 
 #[tauri::command]
 pub fn derive_default_prompts(lang: String) -> HashMap<String, String> {
-    let labels = mc_translator::i18n::GuiLabels::load_or_default(&lang);
+    let target_lang = match lang.as_str() {
+        "zh_tw" | "zh_cn" | "ja_jp" | "en_us" => lang,
+        _ => "en_us".to_string(),
+    };
+    let labels = mc_translator::i18n::GuiLabels::load_or_default(&target_lang);
     let mut out = HashMap::new();
     out.insert(
         "default_user_prompt".to_string(),
@@ -253,6 +259,31 @@ pub fn derive_panel_state_cmd(action: String, current: PanelState) -> PanelState
 #[tauri::command]
 pub fn normalize_form_config_cmd(config: AppConfig) -> AppConfig {
     normalize_form_config(config)
+}
+
+#[tauri::command]
+pub fn build_form_config_cmd(base: AppConfig, input: ConfigFormInput) -> AppConfig {
+    build_form_config(base, input)
+}
+
+#[tauri::command]
+pub fn build_style_from_form_cmd(base: StyleConfig, input: StyleFormInput) -> StyleConfig {
+    build_style_from_form(base, input)
+}
+
+#[tauri::command]
+pub fn toggle_theme_style_cmd(style: StyleConfig) -> StyleConfig {
+    toggle_style_theme(style)
+}
+
+#[tauri::command]
+pub fn apply_palette_mutation_cmd(style: StyleConfig, input: PaletteMutationInput) -> StyleConfig {
+    apply_palette_mutation(style, input)
+}
+
+#[tauri::command]
+pub fn clear_palette_override_cmd(style: StyleConfig, target: String) -> StyleConfig {
+    clear_palette_override(style, &target)
 }
 
 #[tauri::command]

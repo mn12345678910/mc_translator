@@ -77,6 +77,24 @@ describe('config.js 設定管理模組', () => {
                     can_translate: true,
                 };
             }
+            if (cmd === 'build_form_config_cmd') {
+                const toNum = (v, fallback) => {
+                    const n = parseInt(v, 10);
+                    return Number.isNaN(n) ? fallback : n;
+                };
+                return {
+                    ...(args?.base || {}),
+                    ...(args?.input || {}),
+                    batch_size: toNum(args?.input?.batch_size, args?.base?.batch_size || 150),
+                    batch_max_chars: toNum(args?.input?.batch_max_chars, args?.base?.batch_max_chars || 3500),
+                    timeout: toNum(args?.input?.timeout, args?.base?.timeout || 60),
+                    pack_format: toNum(args?.input?.pack_format, args?.base?.pack_format || 15),
+                    excluded_paths: (args?.input?.excluded_paths_text || '')
+                        .split('\n')
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                };
+            }
             if (cmd === 'normalize_form_config_cmd') return args?.config || {};
             return null;
         });
@@ -123,7 +141,9 @@ describe('config.js 設定管理模組', () => {
                     can_translate: true,
                 };
             }
-            if (cmd === 'normalize_form_config_cmd') return args?.config || {};
+            if (cmd === 'build_form_config_cmd') {
+                return { ...fakeConfig };
+            }
             return null;
         });
 

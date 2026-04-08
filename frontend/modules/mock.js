@@ -29,6 +29,22 @@ export const allMockCommands = [
     'open_dictionary_location',
     'open_path_dialog',
     'open_folder',
+    'get_gui_init_state',
+    'setup_dev_mock',
+    'derive_default_prompts',
+    'derive_panel_state_cmd',
+    'derive_config_ui_state_cmd',
+    'derive_toggle_labels_cmd',
+    'derive_palette_state_cmd',
+    'derive_ui_state',
+    'get_gui_css_vars',
+    'get_dictionary_page',
+    'normalize_form_config_cmd',
+    'build_form_config_cmd',
+    'build_style_from_form_cmd',
+    'toggle_theme_style_cmd',
+    'apply_palette_mutation_cmd',
+    'clear_palette_override_cmd',
 ];
 
 export async function initMockTools() {
@@ -125,7 +141,29 @@ export async function initMockTools() {
                             default_user_prompt: 'Mock user prompt',
                             default_system_prompt: 'Mock system prompt',
                         },
-                        derive_panel_state_cmd: ({ current }) => current || {},
+                        derive_panel_state_cmd: ({ action, current }) => {
+                            const next = { ...(current || {}) };
+                            if (action === 'toggle_api') {
+                                next.show_api_settings = !next.show_api_settings;
+                                if (next.show_api_settings) {
+                                    next.show_developer_mode = false;
+                                    next.show_palette_settings = false;
+                                }
+                            } else if (action === 'toggle_dev') {
+                                next.show_developer_mode = !next.show_developer_mode;
+                                if (next.show_developer_mode) {
+                                    next.show_api_settings = false;
+                                    next.show_palette_settings = false;
+                                }
+                            } else if (action === 'toggle_palette') {
+                                next.show_palette_settings = !next.show_palette_settings;
+                                if (next.show_palette_settings) {
+                                    next.show_api_settings = false;
+                                    next.show_developer_mode = false;
+                                }
+                            }
+                            return next;
+                        },
                         derive_config_ui_state_cmd: ({ provider, selectedModel, apiKey, sourceLang, targetLang }) => {
                             const noKeyProviders = ['Ollama', 'Google Free', '無'];
                             const hideKey = noKeyProviders.includes(provider);
@@ -142,6 +180,120 @@ export async function initMockTools() {
                             };
                         },
                         normalize_form_config_cmd: ({ config }) => config || {},
+                        build_form_config_cmd: ({ base, input }) => {
+                            const toNum = (v, f) => {
+                                const n = parseInt(v, 10);
+                                return Number.isNaN(n) ? f : n;
+                            };
+                            return {
+                                ...(base || {}),
+                                api_provider: input?.api_provider || '無',
+                                api_base_url: input?.api_base_url || '',
+                                ollama_url: input?.ollama_url || '',
+                                model: input?.model || '',
+                                source_lang: input?.source_lang || 'en_us',
+                                target_lang: input?.target_lang || 'zh_tw',
+                                batch_size: toNum(input?.batch_size, base?.batch_size || 150),
+                                batch_max_chars: toNum(input?.batch_max_chars, base?.batch_max_chars || 3500),
+                                timeout: toNum(input?.timeout, base?.timeout || 60),
+                                output_dir: input?.output_dir || '',
+                                pack_format: toNum(input?.pack_format, base?.pack_format || 15),
+                                user_prompt: input?.user_prompt || '',
+                                system_prompt: input?.system_prompt || '',
+                                glossary_priority: input?.glossary_priority || 'official',
+                                skip_json: !!input?.skip_json,
+                                skip_js: !!input?.skip_js,
+                                skip_jar: !!input?.skip_jar,
+                                skip_book: !!input?.skip_book,
+                                enable_llm_log: !!input?.enable_llm_log,
+                                enable_debug_log: !!input?.enable_debug_log,
+                                show_debug_tools: !!input?.show_debug_tools,
+                                ui_lang: input?.ui_lang || 'zh_tw',
+                                path: input?.path || '',
+                                fast_convert: !!input?.fast_convert,
+                                excluded_paths: (input?.excluded_paths_text || '')
+                                    .split('\n')
+                                    .map((s) => s.trim())
+                                    .filter(Boolean),
+                            };
+                        },
+                        build_style_from_form_cmd: ({ base, input }) => {
+                            const toFloat = (v, f) => {
+                                const n = parseFloat(v);
+                                return Number.isNaN(n) ? f : n;
+                            };
+                            const hexToRgb = (hex) => {
+                                if (!hex || !hex.startsWith('#') || hex.length !== 7) return null;
+                                return [
+                                    parseInt(hex.slice(1, 3), 16),
+                                    parseInt(hex.slice(3, 5), 16),
+                                    parseInt(hex.slice(5, 7), 16),
+                                ];
+                            };
+                            const next = {
+                                ...(base || {}),
+                                font_size: toFloat(input?.font_size, base?.font_size || 15),
+                                btn_rounding_enabled: !!input?.btn_rounding_enabled,
+                                btn_rounding_value: toFloat(input?.btn_rounding_value, base?.btn_rounding_value || 4),
+                                progress_pulse_enabled: !!input?.progress_pulse_enabled,
+                                progress_pulse_speed: toFloat(
+                                    input?.progress_pulse_speed,
+                                    base?.progress_pulse_speed || 1
+                                ),
+                                progress_style: input?.progress_style || base?.progress_style || 'default',
+                            };
+                            const bg = hexToRgb(input?.color_bg);
+                            const text = hexToRgb(input?.color_text);
+                            const accent = hexToRgb(input?.color_accent);
+                            const danger = hexToRgb(input?.color_danger);
+                            if (bg) next.dark_bg = bg;
+                            if (text) next.dark_text = text;
+                            if (accent) next.dark_accent = accent;
+                            if (danger) next.dark_danger = danger;
+                            return next;
+                        },
+                        toggle_theme_style_cmd: ({ style }) => ({
+                            ...(style || {}),
+                            theme: (style?.theme || 'dark') === 'dark' ? 'light' : 'dark',
+                        }),
+                        apply_palette_mutation_cmd: ({ style, input }) => {
+                            const next = { ...(style || {}) };
+                            const isSpecific = input?.target_type === 'specific';
+                            const target = input?.target_item || 'dark_bg';
+                            const isDark = (next.theme || 'dark') !== 'light';
+                            const hex = input?.color_hex;
+                            if (hex && typeof hex === 'string' && hex.startsWith('#') && hex.length === 7) {
+                                const rgb = [
+                                    parseInt(hex.slice(1, 3), 16),
+                                    parseInt(hex.slice(3, 5), 16),
+                                    parseInt(hex.slice(5, 7), 16),
+                                ];
+                                if (!isSpecific) {
+                                    next[target] = rgb;
+                                } else {
+                                    next.instance_overrides = next.instance_overrides || {};
+                                    next.instance_overrides[target] = next.instance_overrides[target] || {};
+                                    const key = `${isDark ? 'dark' : 'light'}_${input?.property || 'bg'}`;
+                                    next.instance_overrides[target][key] = rgb;
+                                }
+                            }
+                            if (typeof input?.number_value === 'number') {
+                                if (isSpecific) {
+                                    next.instance_overrides = next.instance_overrides || {};
+                                    next.instance_overrides[target] = next.instance_overrides[target] || {};
+                                    next.instance_overrides[target].rounding = input.number_value;
+                                } else {
+                                    next[target] = input.number_value;
+                                }
+                            }
+                            return next;
+                        },
+                        clear_palette_override_cmd: ({ style, target }) => {
+                            const next = { ...(style || {}) };
+                            next.instance_overrides = { ...(next.instance_overrides || {}) };
+                            delete next.instance_overrides[target];
+                            return next;
+                        },
                         get_dictionary_page: { items: [], total_pages: 1, page: 0, page_size: 10 },
                         derive_toggle_labels_cmd: {
                             'chk-glossary-priority': 'official',

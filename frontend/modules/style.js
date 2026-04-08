@@ -252,26 +252,21 @@ export async function loadStyle() {
 
 export async function saveStyle() {
     try {
-        if (dom.fontSize) state.currentStyle.font_size = parseInt(dom.fontSize.value) || 16;
-        if (dom.chkBtnRounding) state.currentStyle.btn_rounding_enabled = dom.chkBtnRounding.checked;
-        if (dom.btnRoundingValue) state.currentStyle.btn_rounding_value = parseFloat(dom.btnRoundingValue.value) || 4.0;
-        if (dom.chkPulse) state.currentStyle.progress_pulse_enabled = dom.chkPulse.checked;
-        if (dom.pulseSpeed) state.currentStyle.progress_pulse_speed = parseFloat(dom.pulseSpeed.value) || 1.0;
-        if (dom.progressStyle) state.currentStyle.progress_style = dom.progressStyle.value || 'default';
-
-        // --- 讀取 Legacy 顏色 (僅當存在時) ---
-        const colorMaps = {
-            'color-bg': 'dark_bg',
-            'color-text': 'dark_text',
-            'color-accent': 'dark_accent',
-            'color-danger': 'dark_danger',
-        };
-        for (const [id, key] of Object.entries(colorMaps)) {
-            const el = document.getElementById(id);
-            if (el && el.value) {
-                state.currentStyle[key] = hexToRgbArr(el.value);
-            }
-        }
+        state.currentStyle = await invoke('build_style_from_form_cmd', {
+            base: state.currentStyle,
+            input: {
+                font_size: dom.fontSize ? dom.fontSize.value : '',
+                btn_rounding_enabled: dom.chkBtnRounding ? dom.chkBtnRounding.checked : true,
+                btn_rounding_value: dom.btnRoundingValue ? dom.btnRoundingValue.value : '',
+                progress_pulse_enabled: dom.chkPulse ? dom.chkPulse.checked : true,
+                progress_pulse_speed: dom.pulseSpeed ? dom.pulseSpeed.value : '',
+                progress_style: dom.progressStyle ? dom.progressStyle.value : 'default',
+                color_bg: document.getElementById('color-bg')?.value || null,
+                color_text: document.getElementById('color-text')?.value || null,
+                color_accent: document.getElementById('color-accent')?.value || null,
+                color_danger: document.getElementById('color-danger')?.value || null,
+            },
+        });
 
         applyColors(state.currentStyle);
         await invoke('save_style_config', { config: state.currentStyle });

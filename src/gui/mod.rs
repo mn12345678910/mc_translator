@@ -1,3 +1,4 @@
+use crate::config::settings::ComponentStyle;
 use crate::config::{AppConfig, StyleConfig};
 use crate::i18n::GuiLabels;
 use crate::translation::LogSegment;
@@ -86,6 +87,58 @@ pub struct PaletteInput {
     pub target_type: String,
     pub target_item: String,
     pub property: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ConfigFormInput {
+    pub api_provider: String,
+    pub api_base_url: String,
+    pub ollama_url: String,
+    pub model: String,
+    pub source_lang: String,
+    pub target_lang: String,
+    pub batch_size: String,
+    pub batch_max_chars: String,
+    pub timeout: String,
+    pub output_dir: String,
+    pub pack_format: String,
+    pub user_prompt: String,
+    pub system_prompt: String,
+    pub glossary_priority: String,
+    pub skip_json: bool,
+    pub skip_js: bool,
+    pub skip_jar: bool,
+    pub skip_book: bool,
+    pub enable_llm_log: bool,
+    pub enable_debug_log: bool,
+    pub show_debug_tools: bool,
+    pub ui_lang: String,
+    pub path: String,
+    pub fast_convert: bool,
+    pub excluded_paths_text: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct StyleFormInput {
+    pub font_size: String,
+    pub btn_rounding_enabled: bool,
+    pub btn_rounding_value: String,
+    pub progress_pulse_enabled: bool,
+    pub progress_pulse_speed: String,
+    pub progress_style: String,
+    pub color_bg: Option<String>,
+    pub color_text: Option<String>,
+    pub color_accent: Option<String>,
+    pub color_danger: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct PaletteMutationInput {
+    pub target_type: String,
+    pub target_item: String,
+    pub property: String,
+    pub color_hex: Option<String>,
+    pub number_value: Option<f32>,
 }
 
 pub fn derive_ui_patch(status: UiStatus, labels: &GuiLabels) -> UiPatch {
@@ -480,6 +533,122 @@ pub fn normalize_form_config(mut config: AppConfig) -> AppConfig {
     config
 }
 
+pub fn build_form_config(mut base: AppConfig, input: ConfigFormInput) -> AppConfig {
+    base.api_provider = input.api_provider;
+    base.api_base_url = input.api_base_url;
+    base.ollama_url = input.ollama_url;
+    base.model = input.model;
+    base.source_lang = input.source_lang;
+    base.target_lang = input.target_lang;
+    base.batch_size = parse_u32_or(&input.batch_size, base.batch_size);
+    base.batch_max_chars = parse_u32_or(&input.batch_max_chars, base.batch_max_chars);
+    base.timeout = parse_u32_or(&input.timeout, base.timeout);
+    base.output_dir = input.output_dir;
+    base.pack_format = parse_u32_or(&input.pack_format, base.pack_format);
+    base.user_prompt = input.user_prompt;
+    base.system_prompt = input.system_prompt;
+    base.glossary_priority = input.glossary_priority;
+    base.skip_json = input.skip_json;
+    base.skip_js = input.skip_js;
+    base.skip_jar = input.skip_jar;
+    base.skip_book = input.skip_book;
+    base.enable_llm_log = input.enable_llm_log;
+    base.enable_debug_log = input.enable_debug_log;
+    base.show_debug_tools = input.show_debug_tools;
+    base.ui_lang = input.ui_lang;
+    base.fast_convert = input.fast_convert;
+    base.excluded_paths = input
+        .excluded_paths_text
+        .lines()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(ToString::to_string)
+        .collect();
+    base.validate();
+    base
+}
+
+pub fn build_style_from_form(mut base: StyleConfig, input: StyleFormInput) -> StyleConfig {
+    base.font_size = parse_f32_or(&input.font_size, base.font_size);
+    base.btn_rounding_enabled = input.btn_rounding_enabled;
+    base.btn_rounding_value = parse_f32_or(&input.btn_rounding_value, base.btn_rounding_value);
+    base.progress_pulse_enabled = input.progress_pulse_enabled;
+    base.progress_pulse_speed =
+        parse_f32_or(&input.progress_pulse_speed, base.progress_pulse_speed);
+    if !input.progress_style.trim().is_empty() {
+        base.progress_style = input.progress_style;
+    }
+
+    if let Some(hex) = input.color_bg.as_deref().and_then(parse_hex_color) {
+        base.dark_bg = hex;
+    }
+    if let Some(hex) = input.color_text.as_deref().and_then(parse_hex_color) {
+        base.dark_text = hex;
+    }
+    if let Some(hex) = input.color_accent.as_deref().and_then(parse_hex_color) {
+        base.dark_accent = hex;
+    }
+    if let Some(hex) = input.color_danger.as_deref().and_then(parse_hex_color) {
+        base.dark_danger = hex;
+    }
+    base.validate();
+    base
+}
+
+pub fn toggle_style_theme(mut style: StyleConfig) -> StyleConfig {
+    style.theme = if style.theme == "dark" {
+        "light".to_string()
+    } else {
+        "dark".to_string()
+    };
+    style.validate();
+    style
+}
+
+pub fn apply_palette_mutation(mut style: StyleConfig, input: PaletteMutationInput) -> StyleConfig {
+    let is_specific = input.target_type == "specific";
+    let mut target = input.target_item;
+    let is_dark = style.theme != "light";
+
+    if let Some(rgb) = input.color_hex.as_deref().and_then(parse_hex_color) {
+        if !is_specific {
+            if target.starts_with("dark_") || target.starts_with("light_") {
+                let base_key = target
+                    .split_once('_')
+                    .map(|(_, key)| key)
+                    .unwrap_or(target.as_str());
+                target = format!("{}_{}", if is_dark { "dark" } else { "light" }, base_key);
+            }
+            let _ = set_global_color(&mut style, &target, rgb);
+        } else {
+            let entry = style.instance_overrides.entry(target.clone()).or_default();
+            let prop = format!(
+                "{}_{}",
+                if is_dark { "dark" } else { "light" },
+                input.property
+            );
+            set_component_color(entry, &prop, rgb);
+        }
+    }
+
+    if let Some(number) = input.number_value {
+        if is_specific {
+            let entry = style.instance_overrides.entry(target.clone()).or_default();
+            entry.rounding = Some(number);
+        } else {
+            let _ = set_global_number(&mut style, &target, number);
+        }
+    }
+
+    style.validate();
+    style
+}
+
+pub fn clear_palette_override(mut style: StyleConfig, target: &str) -> StyleConfig {
+    style.instance_overrides.remove(target);
+    style
+}
+
 pub fn parse_log_segments(message: &str) -> Vec<LogSegment> {
     let mut segments = Vec::new();
     let mut rest = message;
@@ -683,6 +852,112 @@ fn pick_global_color(style: &StyleConfig, target: &str, is_dark: bool) -> Option
     }
 }
 
+fn parse_u32_or(raw: &str, fallback: u32) -> u32 {
+    raw.trim().parse::<u32>().unwrap_or(fallback)
+}
+
+fn parse_f32_or(raw: &str, fallback: f32) -> f32 {
+    raw.trim().parse::<f32>().unwrap_or(fallback)
+}
+
+fn parse_hex_color(raw: &str) -> Option<[u8; 3]> {
+    let hex = raw.trim();
+    if hex.len() != 7 || !hex.starts_with('#') {
+        return None;
+    }
+    let r = u8::from_str_radix(&hex[1..3], 16).ok()?;
+    let g = u8::from_str_radix(&hex[3..5], 16).ok()?;
+    let b = u8::from_str_radix(&hex[5..7], 16).ok()?;
+    Some([r, g, b])
+}
+
+fn set_component_color(component: &mut ComponentStyle, prop: &str, rgb: [u8; 3]) {
+    match prop {
+        "dark_bg" => component.dark_bg = Some(rgb),
+        "dark_text" => component.dark_text = Some(rgb),
+        "light_bg" => component.light_bg = Some(rgb),
+        "light_text" => component.light_text = Some(rgb),
+        _ => {}
+    }
+}
+
+fn set_global_color(style: &mut StyleConfig, target: &str, rgb: [u8; 3]) -> bool {
+    match target {
+        "dark_bg" => style.dark_bg = rgb,
+        "light_bg" => style.light_bg = rgb,
+        "dark_text" => style.dark_text = rgb,
+        "light_text" => style.light_text = rgb,
+        "dark_accent" => style.dark_accent = rgb,
+        "light_accent" => style.light_accent = rgb,
+        "dark_danger" => style.dark_danger = rgb,
+        "light_danger" => style.light_danger = rgb,
+        "dark_label" => style.dark_label = rgb,
+        "light_label" => style.light_label = rgb,
+        "dark_text_muted" => style.dark_text_muted = rgb,
+        "light_text_muted" => style.light_text_muted = rgb,
+        "dark_header_bg" => style.dark_header_bg = rgb,
+        "light_header_bg" => style.light_header_bg = rgb,
+        "dark_btn_bg" => style.dark_btn_bg = rgb,
+        "light_btn_bg" => style.light_btn_bg = rgb,
+        "dark_btn_text" => style.dark_btn_text = rgb,
+        "light_btn_text" => style.light_btn_text = rgb,
+        "dark_input_bg" => style.dark_input_bg = rgb,
+        "light_input_bg" => style.light_input_bg = rgb,
+        "dark_list_bg" => style.dark_list_bg = rgb,
+        "light_list_bg" => style.light_list_bg = rgb,
+        "dark_tab_active" => style.dark_tab_active = rgb,
+        "light_tab_active" => style.light_tab_active = rgb,
+        "dark_tab_inactive" => style.dark_tab_inactive = rgb,
+        "light_tab_inactive" => style.light_tab_inactive = rgb,
+        "dark_border_color" => style.dark_border_color = rgb,
+        "light_border_color" => style.light_border_color = rgb,
+        "dark_hover_bg" => style.dark_hover_bg = rgb,
+        "light_hover_bg" => style.light_hover_bg = rgb,
+        "dark_slider_bg" => style.dark_slider_bg = rgb,
+        "light_slider_bg" => style.light_slider_bg = rgb,
+        "dark_slider_thumb" => style.dark_slider_thumb = rgb,
+        "light_slider_thumb" => style.light_slider_thumb = rgb,
+        "dark_switch_bg" => style.dark_switch_bg = rgb,
+        "light_switch_bg" => style.light_switch_bg = rgb,
+        "dark_progress_bg" => style.dark_progress_bg = rgb,
+        "light_progress_bg" => style.light_progress_bg = rgb,
+        "dark_log_info" => style.dark_log_info = rgb,
+        "light_log_info" => style.light_log_info = rgb,
+        "dark_log_warn" => style.dark_log_warn = rgb,
+        "light_log_warn" => style.light_log_warn = rgb,
+        "dark_log_error" => style.dark_log_error = rgb,
+        "light_log_error" => style.light_log_error = rgb,
+        "dark_log_success" => style.dark_log_success = rgb,
+        "light_log_success" => style.light_log_success = rgb,
+        "dark_log_dir" => style.dark_log_dir = rgb,
+        "light_log_dir" => style.light_log_dir = rgb,
+        "dark_log_file" => style.dark_log_file = rgb,
+        "light_log_file" => style.light_log_file = rgb,
+        "aurora_1" => style.aurora_1 = rgb,
+        "aurora_2" => style.aurora_2 = rgb,
+        "aurora_3" => style.aurora_3 = rgb,
+        "neon_color" => style.neon_color = rgb,
+        _ => return false,
+    }
+    true
+}
+
+fn set_global_number(style: &mut StyleConfig, target: &str, value: f32) -> bool {
+    match target {
+        "font_size" => style.font_size = value,
+        "space_sm" => style.space_sm = value,
+        "space_md" => style.space_md = value,
+        "space_lg" => style.space_lg = value,
+        "border_alpha" => style.border_alpha = value,
+        "panel_alpha" => style.panel_alpha = value,
+        "backdrop_alpha" => style.backdrop_alpha = value,
+        "btn_rounding_value" => style.btn_rounding_value = value,
+        "progress_pulse_speed" => style.progress_pulse_speed = value,
+        _ => return false,
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -703,5 +978,21 @@ mod tests {
         assert!(vars.contains_key("--bg-color"));
         assert!(vars.contains_key("--accent-color"));
         assert!(vars.contains_key("--font-size"));
+    }
+
+    #[test]
+    fn apply_palette_mutation_updates_global_color() {
+        let style = StyleConfig::default();
+        let next = apply_palette_mutation(
+            style,
+            PaletteMutationInput {
+                target_type: "global".to_string(),
+                target_item: "dark_bg".to_string(),
+                property: "bg".to_string(),
+                color_hex: Some("#112233".to_string()),
+                number_value: None,
+            },
+        );
+        assert_eq!(next.dark_bg, [17, 34, 51]);
     }
 }

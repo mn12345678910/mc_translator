@@ -80,6 +80,19 @@ describe('style.js 樣式與主題管理模組', () => {
                     color_value: '#ffffff',
                 };
             }
+            if (cmd === 'build_style_from_form_cmd') {
+                return {
+                    ...(stateModule.state.currentStyle || {}),
+                    font_size: parseFloat(document.getElementById('font-size')?.value || '16'),
+                    btn_rounding_enabled: !!document.getElementById('chk-btn-rounding')?.checked,
+                    btn_rounding_value: parseFloat(document.getElementById('btn-rounding-value')?.value || '4'),
+                    progress_pulse_enabled: !!document.getElementById('chk-pulse')?.checked,
+                    progress_pulse_speed: parseFloat(document.getElementById('pulse-speed')?.value || '1'),
+                    progress_style: document.getElementById('progress-style')?.value || 'default',
+                    dark_bg: document.getElementById('color-bg')?.value === '#ff0000' ? [255, 0, 0] : [30, 30, 35],
+                    dark_text: document.getElementById('color-text')?.value === '#00ff00' ? [0, 255, 0] : [255, 255, 255],
+                };
+            }
             if (cmd === 'get_gui_css_vars') return {};
             return null;
         });
