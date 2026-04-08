@@ -134,7 +134,7 @@ h2 {
     justify-content: space-between;
     align-items: center;
     padding: 10px 15px;
-    background-color: var(--header-bg);
+    background-color: transparent;
     border-bottom: 1px solid var(--border-light);
     border-radius: var(--border-radius);
     margin-bottom: 15px;

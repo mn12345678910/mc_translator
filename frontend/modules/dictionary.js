@@ -34,21 +34,17 @@ export async function loadDictionary() {
 
         const colKey = (state.currentLabels.glossary_key || '原文').replace(':', '');
         const colVal = (state.currentLabels.glossary_value || '翻譯').replace(':', '');
-        const colAct = state.currentLabels.glossary_col_actions || '操作';
         const emptyText = state.currentLabels.glossary_empty || '無資料';
 
-        let html = `<table class="dict-table"><thead><tr><th>${colKey}</th><th>${colVal}</th><th>${colAct}</th></tr></thead><tbody>`;
+        let html = `<table class="dict-table"><thead><tr><th>${colKey}</th><th>${colVal}</th></tr></thead><tbody>`;
         if (!items || items.length === 0) {
-            html += `<tr><td colspan="3" style="text-align:center;">${emptyText}</td></tr>`;
+            html += `<tr><td colspan="2" style="text-align:center;">${emptyText}</td></tr>`;
         } else {
             items.forEach(([k, v]) => {
                 const attrK = k.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                 html += `<tr>
                     <td>${escapeHtml(k)}</td>
                     <td><input type="text" value="${escapeHtml(v)}" data-key="${attrK}" class="dict-input" style="width:100%; box-sizing:border-box; background:transparent; color:inherit; border:1px solid #555; padding:4px;" autocomplete="off"></td>
-                    <td>
-                        ${dictType === 'user' ? `<button class="small-btn delete-item" data-key="${attrK}" style="background-color:#aa1111; color:#fff; padding:4px 8px;">🗑</button>` : ''}
-                    </td>
                 </tr>`;
             });
         }
@@ -65,17 +61,6 @@ export async function loadDictionary() {
                 loadDictionary();
             });
         });
-
-        document.querySelectorAll('.delete-item').forEach((b) =>
-            b.addEventListener('click', async (e) => {
-                const key = e.currentTarget.getAttribute('data-key');
-                const confirmMask = state.currentLabels.status_dict_item_delete_confirm;
-                if (confirm(confirmMask.replace('{}', key))) {
-                    await invoke('edit_dictionary_item', { key: key, value: '', delete: true });
-                    loadDictionary();
-                }
-            })
-        );
     } catch (e) {
         const mask = state.currentLabels.status_dict_load_failed || '讀取字典失敗 {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));

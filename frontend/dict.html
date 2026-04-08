@@ -47,31 +47,6 @@
         </style>
     </head>
     <body>
-        <div class="dialog-header">
-            <!-- 術語優先級切換開關 -->
-            <div
-                class="switch-group"
-                style="
-                    background: transparent;
-                    border: none;
-                    padding: 0;
-                    margin-left: auto;
-                    margin-right: 15px;
-                    gap: 8px;
-                    display: flex;
-                    align-items: center;
-                "
-            >
-                <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem"
-                    >Priority:</span
-                >
-                <label class="switch" data-i18n-title="glossary_priority_hover">
-                    <input type="checkbox" id="chk-glossary-priority" />
-                    <span class="slider round"></span>
-                </label>
-            </div>
-        </div>
-
         <div class="dialog-body">
             <!-- 分頁與按鈕行 -->
             <div class="tabs flex-between" style="display: flex; justify-content: space-between; align-items: center">
@@ -81,16 +56,38 @@
                         Official Glossary
                     </button>
                 </div>
-                <!-- 按鈕群組 -->
-                <div id="dict-user-buttons" class="flex-wrap" style="display: flex; gap: 8px">
-                    <button id="btn-dict-add" class="action-btn" data-i18n-title="btn_dict_add">➕</button>
-                    <button id="btn-dict-replace" class="action-btn" data-i18n-title="btn_dict_replace">🔄</button>
-                    <button id="btn-dict-import" class="action-btn" data-i18n-title="btn_dict_import">📥</button>
-                    <button id="btn-dict-export" class="action-btn" data-i18n-title="btn_dict_export">📤</button>
-                    <button id="btn-dict-open-json" class="action-btn" data-i18n-title="btn_dict_open_json">
-                        📂 .json
-                    </button>
-                    <button id="btn-dict-clear" class="action-btn" data-i18n-title="btn_dict_clear">🗑</button>
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 12px">
+                    <!-- 按鈕群組 -->
+                    <div id="dict-user-buttons" class="flex-wrap" style="display: flex; gap: 8px">
+                        <button id="btn-dict-add" class="action-btn" data-i18n-title="btn_dict_add">➕</button>
+                        <button id="btn-dict-replace" class="action-btn" data-i18n-title="btn_dict_replace">🔄</button>
+                        <button id="btn-dict-import" class="action-btn" data-i18n-title="btn_dict_import">📥</button>
+                        <button id="btn-dict-export" class="action-btn" data-i18n-title="btn_dict_export">📤</button>
+                        <button id="btn-dict-open-json" class="action-btn" data-i18n-title="btn_dict_open_json">
+                            📂 .json
+                        </button>
+                        <button id="btn-dict-clear" class="action-btn" data-i18n-title="btn_dict_clear">🗑</button>
+                    </div>
+                    <!-- 術語優先級切換開關 -->
+                    <div
+                        class="switch-group"
+                        style="
+                            background: transparent;
+                            border: none;
+                            padding: 0;
+                            gap: 8px;
+                            display: flex;
+                            align-items: center;
+                        "
+                    >
+                        <span id="label-glossary-priority" data-i18n="label_glossary_priority" style="font-size: 0.9rem"
+                            >Priority:</span
+                        >
+                        <label class="switch" data-i18n-title="glossary_priority_hover">
+                            <input type="checkbox" id="chk-glossary-priority" />
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
