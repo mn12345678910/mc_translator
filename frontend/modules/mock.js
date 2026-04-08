@@ -132,7 +132,17 @@ export async function initMockTools() {
                                 clear_current_status: true,
                                 clear_batch_status: true,
                             },
-                            toggle_labels: {},
+                            toggle_labels: {
+                                'chk-glossary-priority': '使用者優先',
+                                'chk-llm-log': '啟用日誌',
+                                'chk-skip-json': '跳過 JSON',
+                                'chk-skip-js': '跳過 JS',
+                                'chk-skip-jar': '跳過 JAR',
+                                'chk-skip-book': '跳過 Book',
+                                'chk-debug-log': '啟用除錯',
+                                'chk-debug-tools': '顯示工具',
+                                'chk-fast-convert': '簡轉繁',
+                            },
                         }),
                         setup_dev_mock: true,
                         derive_default_prompts: {

@@ -128,8 +128,8 @@ export async function updateUiLanguage() {
             }
         }
 
-        // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
-        const allSwitches = [
+        // 🟢 直接使用本地 toggleLabels 更新 DOM（從 initState 載入）
+        const switchIds = [
             'chk-glossary-priority',
             'chk-skip-json',
             'chk-skip-js',
@@ -140,9 +140,16 @@ export async function updateUiLanguage() {
             'chk-debug-tools',
             'chk-fast-convert',
         ];
-        allSwitches.forEach((id) => {
-            const toggleEl = document.getElementById(id);
-            if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
+        switchIds.forEach((id) => {
+            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+            if (labelEl && state.toggleLabels?.[id]) {
+                if (id === 'chk-fast-convert') {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                } else {
+                    labelEl.textContent = state.toggleLabels[id];
+                }
+            }
         });
 
         if (window.__TAURI__ && window.__TAURI__.event) {
@@ -154,29 +161,4 @@ export async function updateUiLanguage() {
     } catch (err) {
         console.error('Failed to update UI language:', err);
     }
-}
-
-// 🟢 依照開關撥動狀態，點按時動態且立即更新對應文字 Label
-export function updateToggleStateLabel(id, checked) {
-    const cfg = { ...(state.currentConfig || {}) };
-    if (id === 'chk-glossary-priority') cfg.glossary_priority = checked ? 'user' : 'official';
-    if (id === 'chk-llm-log') cfg.enable_llm_log = !!checked;
-    if (id === 'chk-skip-json') cfg.skip_json = !!checked;
-    if (id === 'chk-skip-js') cfg.skip_js = !!checked;
-    if (id === 'chk-skip-jar') cfg.skip_jar = !!checked;
-    if (id === 'chk-skip-book') cfg.skip_book = !!checked;
-    if (id === 'chk-debug-log') cfg.enable_debug_log = !!checked;
-    if (id === 'chk-debug-tools') cfg.show_debug_tools = !!checked;
-    if (id === 'chk-fast-convert') cfg.fast_convert = !!checked;
-
-    Promise.resolve(invoke('derive_toggle_labels_cmd', { config: cfg, lang: dom.uiLang?.value })).then((map) => {
-        if (!map || typeof map !== 'object') return;
-        if (id === 'chk-fast-convert') {
-            const stateEl = document.getElementById('label-fast-convert-state');
-            if (stateEl && map[id]) stateEl.textContent = map[id];
-            return;
-        }
-        const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
-        if (labelEl && map[id]) labelEl.textContent = map[id];
-    });
 }

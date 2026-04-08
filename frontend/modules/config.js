@@ -1,7 +1,6 @@
 // frontend/modules/config.js
 import { state } from './state.js';
 import { appendLog } from './utils.js';
-import { updateUiLanguage, updateToggleStateLabel } from './i18n.js';
 import { dom } from './dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
@@ -84,7 +83,10 @@ export async function loadConfig() {
         if (config.fast_convert !== undefined) {
             if (dom.chkFastConvert) {
                 dom.chkFastConvert.checked = config.fast_convert;
-                updateToggleStateLabel('chk-fast-convert', dom.chkFastConvert.checked);
+                if (state.toggleLabels?.['chk-fast-convert']) {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels['chk-fast-convert'];
+                }
             }
         }
         toggleFastConvertGroup();
@@ -133,7 +135,6 @@ export async function saveConfig() {
             },
         });
         await invoke('save_config', { config: state.currentConfig });
-        updateUiLanguage();
         refreshConfigUiState();
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
@@ -251,7 +252,15 @@ export async function restoreDefaultConfig() {
 
         ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(id, el.checked);
+            if (el && state.toggleLabels?.[id]) {
+                if (id === 'chk-fast-convert') {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                } else {
+                    const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+                    if (labelEl) labelEl.textContent = state.toggleLabels[id];
+                }
+            }
         });
 
         await loadModels();
@@ -296,8 +305,10 @@ export async function restoreDevDefaults() {
             'chk-debug-log',
             'chk-debug-tools',
         ].forEach((id) => {
-            const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(id, el.checked);
+            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+            if (labelEl && state.toggleLabels?.[id]) {
+                labelEl.textContent = state.toggleLabels[id];
+            }
         });
 
         await invoke('save_config', { config: state.currentConfig });

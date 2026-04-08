@@ -675,6 +675,7 @@ tr:hover {
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    gap: 10px;
     background-color: var(--switch-bg);
     padding: 0 14px;
     height: 41px;

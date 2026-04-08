@@ -3,4 +3,5 @@ export const state = {
     currentConfig: {},
     currentStyle: {},
     currentLabels: {},
+    toggleLabels: {},
 };

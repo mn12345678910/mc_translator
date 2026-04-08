@@ -261,6 +261,7 @@ const TAURI_MOCK = () => {
         },
         event: {
             listen: async () => () => {},
+            emit: async () => {},
         },
     };
 };
@@ -329,4 +330,60 @@ test('開發者面板應可展開', async ({ page }) => {
     await page.locator('#btn-nav-dev').click();
     await page.waitForTimeout(500);
     await expect(page.locator('#excluded-paths')).toBeVisible();
+});
+
+test('開發者面板切換開關時不應影響其他開關，也不應觸發整頁語系刷新', async ({ page }) => {
+    await page.locator('#btn-nav-dev').click();
+    await expect(page.locator('#chk-skip-json')).toBeVisible();
+
+    const i18nCallsBefore = await page.evaluate(() => {
+        const invoke = window.__TAURI__.core.invoke;
+        let count = 0;
+        window.__TAURI__.core.invoke = async (cmd, args) => {
+            if (cmd === 'get_i18n_labels') count += 1;
+            return invoke(cmd, args);
+        };
+        window.__getI18nCallCount = () => count;
+        return window.__getI18nCallCount();
+    });
+    expect(i18nCallsBefore).toBe(0);
+
+    await page.evaluate(() => {
+        const setToggle = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.checked = value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        setToggle('chk-skip-json', true);
+        setToggle('chk-debug-log', true);
+    });
+    await page.waitForTimeout(200);
+
+    await expect(page.locator('#chk-skip-json')).toBeChecked();
+    await expect(page.locator('#chk-debug-log')).toBeChecked();
+    await expect(page.locator('#chk-skip-js')).not.toBeChecked();
+    await expect(page.locator('#chk-skip-jar')).not.toBeChecked();
+    await expect(page.locator('#chk-skip-book')).not.toBeChecked();
+    await expect(page.locator('#chk-llm-log')).not.toBeChecked();
+
+    const i18nCallsAfter = await page.evaluate(() => window.__getI18nCallCount());
+    expect(i18nCallsAfter).toBe(0);
+});
+
+test('開發者面板開關列應為左開關右文字', async ({ page }) => {
+    await page.locator('#btn-nav-dev').click();
+    await expect(page.locator('#chk-skip-json')).toBeVisible();
+
+    const isSwitchFirst = await page.evaluate(() => {
+        const group = document.querySelector('#developer-settings .switch-group');
+        if (!group) return false;
+        const first = group.firstElementChild;
+        const second = group.children[1];
+        if (!first || !second) return false;
+        const firstIsSwitch = first.classList.contains('switch');
+        const secondIsText = second.id?.startsWith('label-');
+        return firstIsSwitch && secondIsText;
+    });
+    expect(isSwitchFirst).toBe(true);
 });

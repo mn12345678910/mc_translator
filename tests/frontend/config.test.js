@@ -195,6 +195,9 @@ describe('config.js 設定管理模組', () => {
                 }),
             })
         );
+
+        const { updateUiLanguage } = await import('../../frontend/modules/i18n.js');
+        expect(updateUiLanguage).not.toHaveBeenCalled();
     });
 
     it('loadModels 應該獲取模型清單並動態渲染 <option>', async () => {

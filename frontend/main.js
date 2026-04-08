@@ -1,7 +1,7 @@
 // frontend/main.js
 import { state } from './modules/state.js';
 import { debounce, appendLog } from './modules/utils.js';
-import { loadUiLangs, updateUiLanguage, updateToggleStateLabel } from './modules/i18n.js';
+import { loadUiLangs, updateUiLanguage } from './modules/i18n.js';
 import {
     loadConfig,
     loadTranslationLangs,
@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (initState.config) state.currentConfig = initState.config;
             if (initState.style) state.currentStyle = initState.style;
             if (initState.labels) state.currentLabels = initState.labels;
+            if (initState.toggle_labels) state.toggleLabels = initState.toggle_labels;
             applyCssVars(initState.css_vars);
         }
     } catch (e) {
@@ -197,7 +198,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (selectEl) {
             selectEl.addEventListener('change', async () => {
                 if (id.startsWith('chk-')) {
-                    updateToggleStateLabel(id, selectEl.checked);
+                    if (state.toggleLabels?.[id]) {
+                        if (id === 'chk-fast-convert') {
+                            const stateEl = document.getElementById('label-fast-convert-state');
+                            if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                        } else {
+                            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+                            if (labelEl) labelEl.textContent = state.toggleLabels[id];
+                        }
+                    }
                 }
 
                 // 處理簡繁快速轉換開關顯示

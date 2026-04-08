@@ -135,7 +135,6 @@ pub fn run() {
             commands::get_style_config,
             commands::save_style_config,
             commands::get_default_style_config,
-            commands::query_dictionary,
             commands::open_dictionary_location,
             commands::edit_dictionary_item,
             commands::clear_user_dictionary,
