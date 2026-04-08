@@ -20,7 +20,6 @@ export const allMockCommands = [
     'resume_translation',
     'stop_translation',
     'update_active_job_config',
-    'query_dictionary',
     'edit_dictionary_item',
     'clear_user_dictionary',
     'import_user_dictionary',
@@ -39,7 +38,6 @@ export const allMockCommands = [
     'derive_ui_state',
     'get_gui_css_vars',
     'get_dictionary_page',
-    'normalize_form_config_cmd',
     'build_form_config_cmd',
     'build_style_from_form_cmd',
     'toggle_theme_style_cmd',
@@ -179,7 +177,6 @@ export async function initMockTools() {
                                 can_translate: hasModel && hasKey,
                             };
                         },
-                        normalize_form_config_cmd: ({ config }) => config || {},
                         build_form_config_cmd: ({ base, input }) => {
                             const toNum = (v, f) => {
                                 const n = parseInt(v, 10);
@@ -329,7 +326,6 @@ export async function initMockTools() {
                             clear_current_status: status === 'IDLE',
                             clear_batch_status: status === 'IDLE',
                         }),
-                        query_dictionary: [[], 1],
                         open_path_dialog: 'C:\\Mock\\Path',
                         open_folder: null,
                         save_config: ({ config }) => {

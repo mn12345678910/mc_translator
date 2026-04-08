@@ -9,14 +9,6 @@ function rgbToHexStr(arr) {
     return '#' + arr.map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-// 輔助函數：Hex 轉 RGB Array
-export function hexToRgbArr(hex) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return [r, g, b];
-}
-
 export function applyColors(style) {
     if (!style) return;
     const root = document.documentElement;

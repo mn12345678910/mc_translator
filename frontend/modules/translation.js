@@ -121,11 +121,6 @@ export async function updateUiState(status) {
     applyUiPatch(patch || { status });
 }
 
-// 舊函式相容性包裝
-export function setRunningState(isRunning) {
-    updateUiState(isRunning ? UI_STATUS.RUNNING : UI_STATUS.IDLE);
-}
-
 export function initTranslation() {
     if (dom.btnTranslate) {
         dom.btnTranslate.addEventListener('click', async () => {

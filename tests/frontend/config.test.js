@@ -95,7 +95,6 @@ describe('config.js 設定管理模組', () => {
                         .filter(Boolean),
                 };
             }
-            if (cmd === 'normalize_form_config_cmd') return args?.config || {};
             return null;
         });
         vi.clearAllMocks();
