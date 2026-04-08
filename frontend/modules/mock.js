@@ -102,6 +102,81 @@ export async function initMockTools() {
                             return state.currentLabels || {};
                         },
                         get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
+                        get_gui_init_state: () => ({
+                            config: state.currentConfig,
+                            style: state.currentStyle,
+                            labels: state.currentLabels,
+                            css_vars: {},
+                            ui_patch: {
+                                status: 'IDLE',
+                                show_translate: true,
+                                show_pause: false,
+                                show_resume: false,
+                                show_stop: false,
+                                lock_controls: false,
+                                pause_notice: '',
+                                clear_current_status: true,
+                                clear_batch_status: true,
+                            },
+                            toggle_labels: {},
+                        }),
+                        setup_dev_mock: true,
+                        derive_default_prompts: {
+                            default_user_prompt: 'Mock user prompt',
+                            default_system_prompt: 'Mock system prompt',
+                        },
+                        derive_panel_state_cmd: ({ current }) => current || {},
+                        derive_config_ui_state_cmd: ({ provider, selectedModel, apiKey, sourceLang, targetLang }) => {
+                            const noKeyProviders = ['Ollama', 'Google Free', '無'];
+                            const hideKey = noKeyProviders.includes(provider);
+                            const canSkipModel = provider === 'Google Free' || provider === 'Ollama';
+                            const hasModel = canSkipModel || !!selectedModel;
+                            const hasKey = hideKey || !!(apiKey || '').trim();
+                            return {
+                                show_ollama_url: provider === 'Ollama',
+                                show_api_key: !hideKey,
+                                show_api_base_url: !hideKey,
+                                show_fast_convert:
+                                    (targetLang === 'zh_cn' || targetLang === 'zh_tw') && sourceLang !== targetLang,
+                                can_translate: hasModel && hasKey,
+                            };
+                        },
+                        normalize_form_config_cmd: ({ config }) => config || {},
+                        get_dictionary_page: { items: [], total_pages: 1, page: 0, page_size: 10 },
+                        derive_toggle_labels_cmd: {
+                            'chk-glossary-priority': 'official',
+                            'chk-llm-log': 'off',
+                            'chk-skip-json': 'off',
+                            'chk-skip-js': 'off',
+                            'chk-skip-jar': 'off',
+                            'chk-skip-book': 'off',
+                            'chk-debug-log': 'off',
+                            'chk-debug-tools': 'off',
+                            'chk-fast-convert': 'off',
+                        },
+                        derive_palette_state_cmd: {
+                            show_clear_group: false,
+                            show_property_group: false,
+                            show_color_group: true,
+                            show_number_group: false,
+                            label_palette_number: 'Number',
+                            label_palette_color: 'Color',
+                            number_value: 0,
+                            number_step: 1,
+                            color_value: '#ffffff',
+                        },
+                        get_gui_css_vars: {},
+                        derive_ui_state: ({ status }) => ({
+                            status: status || 'IDLE',
+                            show_translate: status !== 'RUNNING' && status !== 'PAUSED',
+                            show_pause: status === 'RUNNING',
+                            show_resume: status === 'PAUSED',
+                            show_stop: status === 'PAUSED',
+                            lock_controls: status === 'RUNNING',
+                            pause_notice: status === 'PAUSED' ? 'paused' : '',
+                            clear_current_status: status === 'IDLE',
+                            clear_batch_status: status === 'IDLE',
+                        }),
                         query_dictionary: [[], 1],
                         open_path_dialog: 'C:\\Mock\\Path',
                         open_folder: null,
