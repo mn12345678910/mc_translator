@@ -8,7 +8,7 @@ const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await invoke('get_gui_init_state');
-    } catch (_e) {
+    } catch {
         // Fallback to legacy pipeline if GUI snapshot command is unavailable.
     }
 
