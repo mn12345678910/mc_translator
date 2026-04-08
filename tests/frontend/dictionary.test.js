@@ -162,23 +162,15 @@ describe('dictionary.js 字典管理模組', () => {
         await tabUser.dispatchEvent(new Event('click'));
         expect(controls.classList.contains('hidden')).toBe(false);
     });
-    it('點擊表格內的刪除按鈕，點按確認後應調用刪除 API', async () => {
-        stateModule.state.currentLabels.status_dict_item_delete_confirm = '刪除 {}?';
+    it('表格不應顯示操作欄位或刪除按鈕', async () => {
         mockInvoke.mockResolvedValue([[['apple', '蘋果']], 1]);
-        globalThis.confirm.mockReturnValue(true);
 
         await dictionaryModule.loadDictionary();
 
         const container = document.getElementById('dict-table-container');
         const deleteBtn = container.querySelector('.delete-item');
 
-        await deleteBtn.dispatchEvent(new Event('click'));
-
-        expect(mockInvoke).toHaveBeenCalledWith('edit_dictionary_item', {
-            key: 'apple',
-            value: '',
-            delete: true
-        });
+        expect(deleteBtn).toBeNull();
     });
 
     it('新增條目時如果 Key 為空應觸發 alert 警告', async () => {
