@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@chenglou/pretext':
-        specifier: ^0.0.4
-        version: 0.0.4
+        specifier: ^0.0.5
+        version: 0.0.5
       '@playwright/test':
         specifier: ^1.52.0
         version: 1.59.1
@@ -71,8 +71,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@chenglou/pretext@0.0.4':
-    resolution: {integrity: sha512-FnPAFMid1/p1j2V2gRPUVBarGUIb2PhkkC9YNnTOfPtTDgHKh8siO8PP9pCxpFfYlcodWPJpE1UbSHGQqt8pQQ==}
+  '@chenglou/pretext@0.0.5':
+    resolution: {integrity: sha512-A8GZN10REdFGsyuiUgLV8jjPDDFMg5GmgxGWV0I3igxBOnzj+jgz2VMmVD7g+SFyoctfeqHFxbNatKSzVRWtRg==}
 
   '@colordx/core@5.0.1':
     resolution: {integrity: sha512-zFq5Ta9C/G3LfkAQZ8lEMXJM7Y9YfoCSFR3PrYP6AsLElM/0g7RAJ5SS0CLGDr4t2tvebpHK7ZcIJIU+B/dxrQ==}
@@ -1321,7 +1321,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@chenglou/pretext@0.0.4': {}
+  '@chenglou/pretext@0.0.5': {}
 
   '@colordx/core@5.0.1': {}
 
