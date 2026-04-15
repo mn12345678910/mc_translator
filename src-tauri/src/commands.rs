@@ -2,6 +2,13 @@ use mc_translator::config::{
     get_api_key, get_official_dict_path, get_user_dict_path, load_dict, save_api_key, save_dict,
     AppConfig, StyleConfig,
 };
+use mc_translator::gui::{
+    apply_palette_mutation, build_form_config, build_gui_init_state, build_style_from_form,
+    clear_palette_override, derive_config_ui_state, derive_css_vars, derive_palette_state,
+    derive_panel_state, derive_toggle_labels, derive_ui_patch, normalize_form_config,
+    toggle_style_theme, ConfigFormInput, DictionaryPageData, PaletteInput, PaletteMutationInput,
+    PanelState, StyleFormInput, UiStatus,
+};
 use mc_translator::i18n::CommonLabels;
 use mc_translator::translation::api::client::CLIENT;
 use mc_translator::translation::job::JobStatus;
@@ -174,6 +181,145 @@ pub fn get_i18n_labels(lang: Option<String>) -> mc_translator::i18n::GuiLabels {
 }
 
 #[tauri::command]
+pub fn get_gui_init_state() -> mc_translator::gui::GuiInitState {
+    let config = AppConfig::load();
+    let style = StyleConfig::load();
+    let labels = mc_translator::i18n::GuiLabels::load_or_default(&config.ui_lang);
+    build_gui_init_state(config, style, labels)
+}
+
+#[tauri::command]
+pub fn derive_ui_state(status: String, lang: Option<String>) -> mc_translator::gui::UiPatch {
+    let cfg = AppConfig::load();
+    let labels =
+        mc_translator::i18n::GuiLabels::load_or_default(lang.as_deref().unwrap_or(&cfg.ui_lang));
+    derive_ui_patch(UiStatus::from_frontend_status(&status), &labels)
+}
+
+#[tauri::command]
+pub fn derive_toggle_labels_cmd(
+    config: Option<AppConfig>,
+    lang: Option<String>,
+) -> HashMap<String, String> {
+    let cfg = config.unwrap_or_else(AppConfig::load);
+    let labels =
+        mc_translator::i18n::GuiLabels::load_or_default(lang.as_deref().unwrap_or(&cfg.ui_lang));
+    derive_toggle_labels(&cfg, &labels)
+}
+
+#[tauri::command]
+pub fn get_gui_css_vars(config: Option<StyleConfig>) -> HashMap<String, String> {
+    let style = config.unwrap_or_else(StyleConfig::load);
+    derive_css_vars(&style)
+}
+
+#[tauri::command]
+pub fn derive_palette_state_cmd(
+    input: PaletteInput,
+    style: Option<StyleConfig>,
+    lang: Option<String>,
+) -> mc_translator::gui::PaletteState {
+    let style_cfg = style.unwrap_or_else(StyleConfig::load);
+    let app_cfg = AppConfig::load();
+    let labels = mc_translator::i18n::GuiLabels::load_or_default(
+        lang.as_deref().unwrap_or(&app_cfg.ui_lang),
+    );
+    derive_palette_state(&style_cfg, &labels, input)
+}
+
+#[tauri::command]
+pub fn derive_default_prompts(lang: String) -> HashMap<String, String> {
+    let target_lang = match lang.as_str() {
+        "zh_tw" | "zh_cn" | "ja_jp" | "en_us" => lang,
+        _ => "en_us".to_string(),
+    };
+    let labels = mc_translator::i18n::GuiLabels::load_or_default(&target_lang);
+    let mut out = HashMap::new();
+    out.insert(
+        "default_user_prompt".to_string(),
+        labels.common.default_user_prompt,
+    );
+    out.insert(
+        "default_system_prompt".to_string(),
+        labels.common.default_system_prompt,
+    );
+    out
+}
+
+#[tauri::command]
+pub fn setup_dev_mock() -> bool {
+    cfg!(debug_assertions)
+}
+
+#[tauri::command]
+pub fn derive_panel_state_cmd(action: String, current: PanelState) -> PanelState {
+    derive_panel_state(&action, current)
+}
+
+#[tauri::command]
+pub fn normalize_form_config_cmd(config: AppConfig) -> AppConfig {
+    normalize_form_config(config)
+}
+
+#[tauri::command]
+pub fn build_form_config_cmd(base: AppConfig, input: ConfigFormInput) -> AppConfig {
+    build_form_config(base, input)
+}
+
+#[tauri::command]
+pub fn build_style_from_form_cmd(base: StyleConfig, input: StyleFormInput) -> StyleConfig {
+    build_style_from_form(base, input)
+}
+
+#[tauri::command]
+pub fn toggle_theme_style_cmd(style: StyleConfig) -> StyleConfig {
+    toggle_style_theme(style)
+}
+
+#[tauri::command]
+pub fn apply_palette_mutation_cmd(style: StyleConfig, input: PaletteMutationInput) -> StyleConfig {
+    apply_palette_mutation(style, input)
+}
+
+#[tauri::command]
+pub fn clear_palette_override_cmd(style: StyleConfig, target: String) -> StyleConfig {
+    clear_palette_override(style, &target)
+}
+
+#[tauri::command]
+pub fn derive_config_ui_state_cmd(
+    provider: String,
+    selected_model: String,
+    api_key: String,
+    source_lang: String,
+    target_lang: String,
+) -> mc_translator::gui::ConfigUiState {
+    derive_config_ui_state(
+        &provider,
+        &selected_model,
+        &api_key,
+        &source_lang,
+        &target_lang,
+    )
+}
+
+#[tauri::command]
+pub fn get_dictionary_page(
+    dict_type: String,
+    page: usize,
+    page_size: usize,
+    search_key: String,
+) -> Result<DictionaryPageData, String> {
+    let (items, total_pages) = query_dictionary(dict_type, page, page_size, search_key)?;
+    Ok(DictionaryPageData {
+        items,
+        total_pages,
+        page,
+        page_size,
+    })
+}
+
+#[tauri::command]
 pub fn get_config() -> AppConfig {
     AppConfig::load()
 }
@@ -301,6 +447,9 @@ pub async fn start_translation(
                         level: LogLevel::Error,
                         message: job.i18n.status_trans_error.replace("{}", &err_msg),
                         timestamp: chrono::Local::now().timestamp_millis(),
+                        segments: mc_translator::gui::parse_log_segments(
+                            &job.i18n.status_trans_error.replace("{}", &err_msg),
+                        ),
                     };
                     let _ = handle.emit("translation-log", entry);
                 }

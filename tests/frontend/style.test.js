@@ -66,6 +66,36 @@ describe('style.js 樣式與主題管理模組', () => {
         document.body.innerHTML += `<div id="label-palette-color"></div>`;
 
         mockInvoke.mockReset();
+        mockInvoke.mockImplementation(async (cmd) => {
+            if (cmd === 'derive_palette_state_cmd') {
+                return {
+                    show_clear_group: false,
+                    show_property_group: false,
+                    show_color_group: true,
+                    show_number_group: false,
+                    label_palette_number: 'Number',
+                    label_palette_color: 'Color',
+                    number_value: 0,
+                    number_step: 1,
+                    color_value: '#ffffff',
+                };
+            }
+            if (cmd === 'build_style_from_form_cmd') {
+                return {
+                    ...(stateModule.state.currentStyle || {}),
+                    font_size: parseFloat(document.getElementById('font-size')?.value || '16'),
+                    btn_rounding_enabled: !!document.getElementById('chk-btn-rounding')?.checked,
+                    btn_rounding_value: parseFloat(document.getElementById('btn-rounding-value')?.value || '4'),
+                    progress_pulse_enabled: !!document.getElementById('chk-pulse')?.checked,
+                    progress_pulse_speed: parseFloat(document.getElementById('pulse-speed')?.value || '1'),
+                    progress_style: document.getElementById('progress-style')?.value || 'default',
+                    dark_bg: document.getElementById('color-bg')?.value === '#ff0000' ? [255, 0, 0] : [30, 30, 35],
+                    dark_text: document.getElementById('color-text')?.value === '#00ff00' ? [0, 255, 0] : [255, 255, 255],
+                };
+            }
+            if (cmd === 'get_gui_css_vars') return {};
+            return null;
+        });
         stateModule.state.currentStyle = {};
         stateModule.state.currentLabels = { label_bg_color: '背景色', label_text_color: '文字色' };
     });
@@ -145,17 +175,34 @@ describe('style.js 樣式與主題管理模組', () => {
     });
 
     describe('updatePaletteValue', () => {
-        it('非指定元件（全域）時，應隱含屬性選單並正確帶入顏色', () => {
+        it('非指定元件（全域）時，應隱含屬性選單並正確帶入顏色', async () => {
             stateModule.state.currentStyle = {
                 dark_bg: [15, 15, 20],
             };
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'derive_palette_state_cmd') {
+                    return {
+                        show_clear_group: false,
+                        show_property_group: false,
+                        show_color_group: true,
+                        show_number_group: false,
+                        label_palette_number: 'Number',
+                        label_palette_color: '背景色',
+                        number_value: 0,
+                        number_step: 1,
+                        color_value: '#0f0f14',
+                    };
+                }
+                if (cmd === 'get_gui_css_vars') return {};
+                return null;
+            });
 
             const targetType = document.getElementById('palette-target-type');
             const targetItem = document.getElementById('palette-target-item');
             targetType.value = 'global';
             targetItem.value = 'dark_bg';
 
-            styleModule.updatePaletteValue();
+            await styleModule.updatePaletteValue();
 
             // 驗證區塊開關
             expect(document.getElementById('palette-property-group').style.display).toBe('none');
@@ -183,8 +230,25 @@ describe('style.js 樣式與主題管理模組', () => {
     });
 
     describe('updatePaletteValue - 進階', () => {
-        it('指定元件且屬性為圓角時，應顯示圓角控制群組', () => {
+        it('指定元件且屬性為圓角時，應顯示圓角控制群組', async () => {
             stateModule.state.currentStyle = { instance_overrides: { 'btn-translate': { rounding: 12 } } };
+            mockInvoke.mockImplementation(async (cmd) => {
+                if (cmd === 'derive_palette_state_cmd') {
+                    return {
+                        show_clear_group: true,
+                        show_property_group: true,
+                        show_color_group: false,
+                        show_number_group: true,
+                        label_palette_number: 'Rounding (px)',
+                        label_palette_color: '背景色',
+                        number_value: 12,
+                        number_step: 1,
+                        color_value: '#ffffff',
+                    };
+                }
+                if (cmd === 'get_gui_css_vars') return {};
+                return null;
+            });
 
             const targetType = document.getElementById('palette-target-type');
             const targetItem = document.getElementById('palette-target-item');
@@ -193,14 +257,14 @@ describe('style.js 樣式與主題管理模組', () => {
             targetItem.value = 'btn-translate';
             property.value = 'rounding';
 
-            styleModule.updatePaletteValue();
+            await styleModule.updatePaletteValue();
 
             expect(document.getElementById('palette-number-group').style.display).toBe('block');
             expect(document.getElementById('palette-color-group').style.display).toBe('none');
             expect(document.getElementById('palette-number').value).toBe('12');
         });
 
-        it('進度條元件應該隱藏文字選項', () => {
+        it('進度條元件應該隱藏文字選項', async () => {
             const targetItem = document.getElementById('palette-target-item');
             const opt = document.createElement('option');
             opt.value = 'progress-bar';
@@ -212,13 +276,13 @@ describe('style.js 樣式與主題管理模組', () => {
             targetType.value = 'specific';
             targetItem.value = 'progress-bar';
 
-            styleModule.updatePaletteValue();
+            await styleModule.updatePaletteValue();
 
             const textOpt = Array.from(property.options).find((opt) => opt.value === 'text');
             expect(textOpt.style.display).toBe('none');
         });
 
-        it('當選擇 progress-bar 且屬性為 text 時應該 fallback 為 bg', () => {
+        it('當選擇 progress-bar 且屬性為 text 時應該 fallback 為 bg', async () => {
             const targetType = document.getElementById('palette-target-type');
             const targetItem = document.getElementById('palette-target-item');
             const property = document.getElementById('palette-property');
@@ -232,7 +296,7 @@ describe('style.js 樣式與主題管理模組', () => {
 
             property.value = 'text';
 
-            styleModule.updatePaletteValue();
+            await styleModule.updatePaletteValue();
 
             expect(property.value).toBe('bg');
         });

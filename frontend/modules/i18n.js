@@ -128,8 +128,8 @@ export async function updateUiLanguage() {
             }
         }
 
-        // 🟢 根據開關狀態刷新 Label 文字 (切換語系時一併觸發)
-        const allSwitches = [
+        // 🟢 直接使用本地 toggleLabels 更新 DOM（從 initState 載入）
+        const switchIds = [
             'chk-glossary-priority',
             'chk-skip-json',
             'chk-skip-js',
@@ -140,9 +140,16 @@ export async function updateUiLanguage() {
             'chk-debug-tools',
             'chk-fast-convert',
         ];
-        allSwitches.forEach((id) => {
-            const toggleEl = document.getElementById(id);
-            if (toggleEl) updateToggleStateLabel(id, toggleEl.checked);
+        switchIds.forEach((id) => {
+            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+            if (labelEl && state.toggleLabels?.[id]) {
+                if (id === 'chk-fast-convert') {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                } else {
+                    labelEl.textContent = state.toggleLabels[id];
+                }
+            }
         });
 
         if (window.__TAURI__ && window.__TAURI__.event) {
@@ -153,40 +160,5 @@ export async function updateUiLanguage() {
         await loadTranslationLangs();
     } catch (err) {
         console.error('Failed to update UI language:', err);
-    }
-}
-
-// 🟢 依照開關撥動狀態，點按時動態且立即更新對應文字 Label
-export function updateToggleStateLabel(id, checked) {
-    const labels = (typeof state !== 'undefined' && state.currentLabels) || {};
-
-    // 🔴 [FIX] 針對 chk-fast-convert 特殊處理
-    if (id === 'chk-fast-convert') {
-        const stateEl = document.getElementById('label-fast-convert-state');
-        if (stateEl) {
-            stateEl.textContent = checked ? labels.label_fast_convert_on : labels.label_fast_convert_off;
-        }
-        return;
-    }
-
-    const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
-    if (!labelEl) return;
-
-    if (id === 'chk-glossary-priority') {
-        labelEl.textContent = checked ? labels.glossary_priority_user : labels.glossary_priority_official;
-    } else if (id === 'chk-llm-log') {
-        labelEl.textContent = checked ? labels.label_enable_log : labels.label_disable_log;
-    } else if (id === 'chk-skip-json') {
-        labelEl.textContent = checked ? labels.label_skip_json : labels.label_no_skip_json;
-    } else if (id === 'chk-skip-js') {
-        labelEl.textContent = checked ? labels.label_skip_js : labels.label_no_skip_js;
-    } else if (id === 'chk-skip-jar') {
-        labelEl.textContent = checked ? labels.label_skip_jar : labels.label_no_skip_jar;
-    } else if (id === 'chk-skip-book') {
-        labelEl.textContent = checked ? labels.label_skip_book : labels.label_no_skip_book;
-    } else if (id === 'chk-debug-log') {
-        labelEl.textContent = checked ? labels.label_enable_debug_log : labels.label_disable_debug_log;
-    } else if (id === 'chk-debug-tools') {
-        labelEl.textContent = checked ? labels.label_hide_debug_tools : labels.label_show_debug_tools;
     }
 }

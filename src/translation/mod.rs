@@ -39,6 +39,14 @@ pub struct LogEntry {
     pub level: LogLevel,
     pub message: String,
     pub timestamp: i64,
+    #[serde(default)]
+    pub segments: Vec<LogSegment>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct LogSegment {
+    pub kind: String,
+    pub text: String,
 }
 
 lazy_static! {

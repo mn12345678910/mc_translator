@@ -20,7 +20,6 @@ export const allMockCommands = [
     'resume_translation',
     'stop_translation',
     'update_active_job_config',
-    'query_dictionary',
     'edit_dictionary_item',
     'clear_user_dictionary',
     'import_user_dictionary',
@@ -29,6 +28,21 @@ export const allMockCommands = [
     'open_dictionary_location',
     'open_path_dialog',
     'open_folder',
+    'get_gui_init_state',
+    'setup_dev_mock',
+    'derive_default_prompts',
+    'derive_panel_state_cmd',
+    'derive_config_ui_state_cmd',
+    'derive_toggle_labels_cmd',
+    'derive_palette_state_cmd',
+    'derive_ui_state',
+    'get_gui_css_vars',
+    'get_dictionary_page',
+    'build_form_config_cmd',
+    'build_style_from_form_cmd',
+    'toggle_theme_style_cmd',
+    'apply_palette_mutation_cmd',
+    'clear_palette_override_cmd',
 ];
 
 export async function initMockTools() {
@@ -97,33 +111,231 @@ export async function initMockTools() {
                                     return json;
                                 }
                             } catch (e) {
-                                console.error('[MOCK] Failed to fetch real i18n JSON, using fallback.', e);
+                                console.error('[MOCK] Failed to fetch real i18n JSON.', e);
                             }
-
-                            // Fallback 基礎內容確保 UI 不會白屏
-                            const fallback = {
-                                app_title: 'Minecraft 模組翻譯器 (Mock)',
-                                label_current_status: '目前狀態',
-                                status_idle: '待機中',
-                                label_input_path: '輸入路徑',
-                                btn_select_file: '選擇檔案',
-                                btn_nav_dev: '開發人員',
-                                cat_all_bg: '全部背景',
-                                lang_zh_tw: '繁體中文 (zh_tw)',
-                                lang_zh_cn: '簡體中文 (zh_cn)',
-                                lang_en_us: 'English (en_us)',
-                                lang_ja_jp: '日本語 (ja_jp)',
-                                label_fast_convert: '快速簡繁轉換',
-                                btn_run_trans: '▶ 執行',
-                                btn_pause_trans: '⏸ 暫停',
-                                btn_stop_trans: '⏹ 停止',
-                                page_title: 'Minecraft 模組翻譯器',
-                            };
-                            state.currentLabels = fallback;
-                            return fallback;
+                            return state.currentLabels || {};
                         },
                         get_models_from_provider: ['gemini-1.5-flash', 'gpt-4o'],
-                        query_dictionary: [[], 1],
+                        get_gui_init_state: () => ({
+                            config: state.currentConfig,
+                            style: state.currentStyle,
+                            labels: state.currentLabels,
+                            css_vars: {},
+                            ui_patch: {
+                                status: 'IDLE',
+                                show_translate: true,
+                                show_pause: false,
+                                show_resume: false,
+                                show_stop: false,
+                                lock_controls: false,
+                                pause_notice: '',
+                                clear_current_status: true,
+                                clear_batch_status: true,
+                            },
+                            toggle_labels: {
+                                'chk-glossary-priority': '使用者優先',
+                                'chk-llm-log': '啟用日誌',
+                                'chk-skip-json': '跳過 JSON',
+                                'chk-skip-js': '跳過 JS',
+                                'chk-skip-jar': '跳過 JAR',
+                                'chk-skip-book': '跳過 Book',
+                                'chk-debug-log': '啟用除錯',
+                                'chk-debug-tools': '顯示工具',
+                                'chk-fast-convert': '簡轉繁',
+                            },
+                        }),
+                        setup_dev_mock: true,
+                        derive_default_prompts: {
+                            default_user_prompt: 'Mock user prompt',
+                            default_system_prompt: 'Mock system prompt',
+                        },
+                        derive_panel_state_cmd: ({ action, current }) => {
+                            const next = { ...(current || {}) };
+                            if (action === 'toggle_api') {
+                                next.show_api_settings = !next.show_api_settings;
+                                if (next.show_api_settings) {
+                                    next.show_developer_mode = false;
+                                    next.show_palette_settings = false;
+                                }
+                            } else if (action === 'toggle_dev') {
+                                next.show_developer_mode = !next.show_developer_mode;
+                                if (next.show_developer_mode) {
+                                    next.show_api_settings = false;
+                                    next.show_palette_settings = false;
+                                }
+                            } else if (action === 'toggle_palette') {
+                                next.show_palette_settings = !next.show_palette_settings;
+                                if (next.show_palette_settings) {
+                                    next.show_api_settings = false;
+                                    next.show_developer_mode = false;
+                                }
+                            }
+                            return next;
+                        },
+                        derive_config_ui_state_cmd: ({ provider, selectedModel, apiKey, sourceLang, targetLang }) => {
+                            const noKeyProviders = ['Ollama', 'Google Free', '無'];
+                            const hideKey = noKeyProviders.includes(provider);
+                            const canSkipModel = provider === 'Google Free' || provider === 'Ollama';
+                            const hasModel = canSkipModel || !!selectedModel;
+                            const hasKey = hideKey || !!(apiKey || '').trim();
+                            return {
+                                show_ollama_url: provider === 'Ollama',
+                                show_api_key: !hideKey,
+                                show_api_base_url: !hideKey,
+                                show_fast_convert:
+                                    (targetLang === 'zh_cn' || targetLang === 'zh_tw') && sourceLang !== targetLang,
+                                can_translate: hasModel && hasKey,
+                            };
+                        },
+                        build_form_config_cmd: ({ base, input }) => {
+                            const toNum = (v, f) => {
+                                const n = parseInt(v, 10);
+                                return Number.isNaN(n) ? f : n;
+                            };
+                            return {
+                                ...(base || {}),
+                                api_provider: input?.api_provider || '無',
+                                api_base_url: input?.api_base_url || '',
+                                ollama_url: input?.ollama_url || '',
+                                model: input?.model || '',
+                                source_lang: input?.source_lang || 'en_us',
+                                target_lang: input?.target_lang || 'zh_tw',
+                                batch_size: toNum(input?.batch_size, base?.batch_size || 150),
+                                batch_max_chars: toNum(input?.batch_max_chars, base?.batch_max_chars || 3500),
+                                timeout: toNum(input?.timeout, base?.timeout || 60),
+                                output_dir: input?.output_dir || '',
+                                pack_format: toNum(input?.pack_format, base?.pack_format || 15),
+                                user_prompt: input?.user_prompt || '',
+                                system_prompt: input?.system_prompt || '',
+                                glossary_priority: input?.glossary_priority || 'official',
+                                skip_json: !!input?.skip_json,
+                                skip_js: !!input?.skip_js,
+                                skip_jar: !!input?.skip_jar,
+                                skip_book: !!input?.skip_book,
+                                enable_llm_log: !!input?.enable_llm_log,
+                                enable_debug_log: !!input?.enable_debug_log,
+                                show_debug_tools: !!input?.show_debug_tools,
+                                ui_lang: input?.ui_lang || 'zh_tw',
+                                path: input?.path || '',
+                                fast_convert: !!input?.fast_convert,
+                                excluded_paths: (input?.excluded_paths_text || '')
+                                    .split('\n')
+                                    .map((s) => s.trim())
+                                    .filter(Boolean),
+                            };
+                        },
+                        build_style_from_form_cmd: ({ base, input }) => {
+                            const toFloat = (v, f) => {
+                                const n = parseFloat(v);
+                                return Number.isNaN(n) ? f : n;
+                            };
+                            const hexToRgb = (hex) => {
+                                if (!hex || !hex.startsWith('#') || hex.length !== 7) return null;
+                                return [
+                                    parseInt(hex.slice(1, 3), 16),
+                                    parseInt(hex.slice(3, 5), 16),
+                                    parseInt(hex.slice(5, 7), 16),
+                                ];
+                            };
+                            const next = {
+                                ...(base || {}),
+                                font_size: toFloat(input?.font_size, base?.font_size || 15),
+                                btn_rounding_enabled: !!input?.btn_rounding_enabled,
+                                btn_rounding_value: toFloat(input?.btn_rounding_value, base?.btn_rounding_value || 4),
+                                progress_pulse_enabled: !!input?.progress_pulse_enabled,
+                                progress_pulse_speed: toFloat(
+                                    input?.progress_pulse_speed,
+                                    base?.progress_pulse_speed || 1
+                                ),
+                                progress_style: input?.progress_style || base?.progress_style || 'default',
+                            };
+                            const bg = hexToRgb(input?.color_bg);
+                            const text = hexToRgb(input?.color_text);
+                            const accent = hexToRgb(input?.color_accent);
+                            const danger = hexToRgb(input?.color_danger);
+                            if (bg) next.dark_bg = bg;
+                            if (text) next.dark_text = text;
+                            if (accent) next.dark_accent = accent;
+                            if (danger) next.dark_danger = danger;
+                            return next;
+                        },
+                        toggle_theme_style_cmd: ({ style }) => ({
+                            ...(style || {}),
+                            theme: (style?.theme || 'dark') === 'dark' ? 'light' : 'dark',
+                        }),
+                        apply_palette_mutation_cmd: ({ style, input }) => {
+                            const next = { ...(style || {}) };
+                            const isSpecific = input?.target_type === 'specific';
+                            const target = input?.target_item || 'dark_bg';
+                            const isDark = (next.theme || 'dark') !== 'light';
+                            const hex = input?.color_hex;
+                            if (hex && typeof hex === 'string' && hex.startsWith('#') && hex.length === 7) {
+                                const rgb = [
+                                    parseInt(hex.slice(1, 3), 16),
+                                    parseInt(hex.slice(3, 5), 16),
+                                    parseInt(hex.slice(5, 7), 16),
+                                ];
+                                if (!isSpecific) {
+                                    next[target] = rgb;
+                                } else {
+                                    next.instance_overrides = next.instance_overrides || {};
+                                    next.instance_overrides[target] = next.instance_overrides[target] || {};
+                                    const key = `${isDark ? 'dark' : 'light'}_${input?.property || 'bg'}`;
+                                    next.instance_overrides[target][key] = rgb;
+                                }
+                            }
+                            if (typeof input?.number_value === 'number') {
+                                if (isSpecific) {
+                                    next.instance_overrides = next.instance_overrides || {};
+                                    next.instance_overrides[target] = next.instance_overrides[target] || {};
+                                    next.instance_overrides[target].rounding = input.number_value;
+                                } else {
+                                    next[target] = input.number_value;
+                                }
+                            }
+                            return next;
+                        },
+                        clear_palette_override_cmd: ({ style, target }) => {
+                            const next = { ...(style || {}) };
+                            next.instance_overrides = { ...(next.instance_overrides || {}) };
+                            delete next.instance_overrides[target];
+                            return next;
+                        },
+                        get_dictionary_page: { items: [], total_pages: 1, page: 0, page_size: 10 },
+                        derive_toggle_labels_cmd: {
+                            'chk-glossary-priority': 'official',
+                            'chk-llm-log': 'off',
+                            'chk-skip-json': 'off',
+                            'chk-skip-js': 'off',
+                            'chk-skip-jar': 'off',
+                            'chk-skip-book': 'off',
+                            'chk-debug-log': 'off',
+                            'chk-debug-tools': 'off',
+                            'chk-fast-convert': 'off',
+                        },
+                        derive_palette_state_cmd: {
+                            show_clear_group: false,
+                            show_property_group: false,
+                            show_color_group: true,
+                            show_number_group: false,
+                            label_palette_number: 'Number',
+                            label_palette_color: 'Color',
+                            number_value: 0,
+                            number_step: 1,
+                            color_value: '#ffffff',
+                        },
+                        get_gui_css_vars: {},
+                        derive_ui_state: ({ status }) => ({
+                            status: status || 'IDLE',
+                            show_translate: status !== 'RUNNING' && status !== 'PAUSED',
+                            show_pause: status === 'RUNNING',
+                            show_resume: status === 'PAUSED',
+                            show_stop: status === 'PAUSED',
+                            lock_controls: status === 'RUNNING',
+                            pause_notice: status === 'PAUSED' ? 'paused' : '',
+                            clear_current_status: status === 'IDLE',
+                            clear_batch_status: status === 'IDLE',
+                        }),
                         open_path_dialog: 'C:\\Mock\\Path',
                         open_folder: null,
                         save_config: ({ config }) => {

@@ -4,42 +4,82 @@ const TAURI_MOCK = () => {
     window.__TAURI__ = {
         core: {
             invoke: async (cmd, args) => {
-                if (cmd === 'get_config') {
+                const defaultConfig = {
+                    api_provider: 'Gemini',
+                    path: '',
+                    ollama_url: 'http://localhost:11434',
+                    api_base_url: '',
+                    batch_size: 150,
+                    batch_max_chars: 3500,
+                    timeout: 60,
+                    pack_format: 15,
+                    glossary_priority: 'official',
+                    ui_lang: 'zh_tw',
+                    output_dir: '',
+                    system_prompt: '',
+                    user_prompt: '',
+                    skip_json: false,
+                    skip_js: false,
+                    skip_jar: false,
+                    skip_book: false,
+                    enable_llm_log: false,
+                    model: '',
+                    show_api_settings: false,
+                    show_developer_mode: false,
+                    show_debug_tools: false,
+                    main_x: 50,
+                    main_y: 50,
+                    main_width: 800,
+                    main_height: 600,
+                    viewer_x: 100,
+                    viewer_y: 100,
+                    viewer_width: 800,
+                    viewer_height: 600,
+                    fast_convert: false,
+                    source_lang: 'en_us',
+                    target_lang: 'zh_tw',
+                };
+                const defaultStyle = {
+                    theme: 'dark',
+                    dark_bg: [30, 30, 35],
+                    dark_text: [255, 255, 255],
+                    dark_btn_bg: [0, 100, 200],
+                    dark_input_bg: [10, 20, 30],
+                    dark_list_bg: [40, 50, 60],
+                    dark_tab_active: [70, 80, 90],
+                    dark_tab_inactive: [100, 110, 120],
+                    dark_label: [130, 140, 150],
+                    font_size: 16,
+                    btn_rounding_enabled: true,
+                    btn_rounding_value: 5,
+                    progress_pulse_enabled: false,
+                    progress_pulse_speed: 2,
+                    show_palette_settings: false,
+                    instance_overrides: {},
+                };
+
+                if (cmd === 'get_gui_init_state') {
                     return {
-                        api_provider: 'Gemini',
-                        path: '',
-                        ollama_url: 'http://localhost:11434',
-                        api_base_url: '',
-                        batch_size: 150,
-                        batch_max_chars: 3500,
-                        timeout: 60,
-                        pack_format: 15,
-                        glossary_priority: 'official',
-                        ui_lang: 'zh_tw',
-                        output_dir: '',
-                        system_prompt: '',
-                        user_prompt: '',
-                        skip_json: false,
-                        skip_js: false,
-                        skip_jar: false,
-                        skip_book: false,
-                        enable_llm_log: false,
-                        model: '',
-                        show_api_settings: false,
-                        show_developer_mode: false,
-                        show_debug_tools: false,
-                        main_x: 50,
-                        main_y: 50,
-                        main_width: 800,
-                        main_height: 600,
-                        viewer_x: 100,
-                        viewer_y: 100,
-                        viewer_width: 800,
-                        viewer_height: 600,
-                        fast_convert: false,
-                        source_lang: 'en_us',
-                        target_lang: 'zh_tw',
+                        config: defaultConfig,
+                        style: defaultStyle,
+                        labels: {},
+                        css_vars: {},
+                        ui_patch: {
+                            status: 'IDLE',
+                            show_translate: true,
+                            show_pause: false,
+                            show_resume: false,
+                            show_stop: false,
+                            lock_controls: false,
+                            pause_notice: '',
+                            clear_current_status: true,
+                            clear_batch_status: true,
+                        },
+                        toggle_labels: {},
                     };
+                }
+                if (cmd === 'get_config') {
+                    return defaultConfig;
                 }
                 if (cmd === 'get_api_key_cmd') return '';
                 if (cmd === 'get_models_from_provider') return [];
@@ -151,36 +191,77 @@ const TAURI_MOCK = () => {
                     };
                 }
                 if (cmd === 'get_style_config') {
-                    return {
-                        theme: 'dark',
-                        dark_bg: [30, 30, 35],
-                        dark_text: [255, 255, 255],
-                        dark_btn_bg: [0, 100, 200],
-                        dark_input_bg: [10, 20, 30],
-                        dark_list_bg: [40, 50, 60],
-                        dark_tab_active: [70, 80, 90],
-                        dark_tab_inactive: [100, 110, 120],
-                        dark_label: [130, 140, 150],
-                        font_size: 16,
-                        btn_rounding_enabled: true,
-                        btn_rounding_value: 5,
-                        progress_pulse_enabled: false,
-                        progress_pulse_speed: 2,
-                        show_palette_settings: false,
-                        instance_overrides: {},
-                    };
+                    return defaultStyle;
                 }
-                if (cmd === 'query_dictionary') return [[], 1];
-                if (cmd === 'get_translation_langs') return ['zh_tw', 'zh_cn', 'ja_jp'];
+                if (cmd === 'derive_panel_state_cmd') {
+                    const next = { ...(args.current || {}) };
+                    if (args.action === 'toggle_api') {
+                        next.show_api_settings = !next.show_api_settings;
+                        if (next.show_api_settings) {
+                            next.show_developer_mode = false;
+                            next.show_palette_settings = false;
+                        }
+                    }
+                    if (args.action === 'toggle_dev') {
+                        next.show_developer_mode = !next.show_developer_mode;
+                        if (next.show_developer_mode) {
+                            next.show_api_settings = false;
+                            next.show_palette_settings = false;
+                        }
+                    }
+                    if (args.action === 'toggle_palette') {
+                        next.show_palette_settings = !next.show_palette_settings;
+                        if (next.show_palette_settings) {
+                            next.show_api_settings = false;
+                            next.show_developer_mode = false;
+                        }
+                    }
+                    return next;
+                }
+                if (cmd === 'toggle_theme_style_cmd') {
+                    return { ...(args.style || defaultStyle), theme: args.style?.theme === 'dark' ? 'light' : 'dark' };
+                }
+                if (cmd === 'get_dictionary_page') return { items: [], total_pages: 1, page: 0, page_size: 10 };
+                if (cmd === 'get_available_translation_langs') return ['zh_tw', 'zh_cn', 'ja_jp'];
+                if (cmd === 'get_available_langs') return ['zh_tw', 'zh_cn', 'ja_jp', 'en_us'];
+                if (cmd === 'derive_toggle_labels_cmd') return {};
+                if (cmd === 'derive_config_ui_state_cmd')
+                    return {
+                        show_ollama_url: false,
+                        show_api_key: true,
+                        show_api_base_url: true,
+                        show_fast_convert: true,
+                        can_translate: true,
+                    };
+                if (cmd === 'derive_palette_state_cmd')
+                    return {
+                        show_clear_group: false,
+                        show_property_group: false,
+                        show_color_group: true,
+                        show_number_group: false,
+                        label_palette_number: '數值',
+                        label_palette_color: '顏色',
+                        number_value: 0,
+                        number_step: 1,
+                        color_value: '#000000',
+                    };
+                if (cmd === 'get_gui_css_vars') return {};
+                if (cmd === 'build_form_config_cmd') return { ...(args.base || {}), ...(args.input || {}) };
+                if (cmd === 'build_style_from_form_cmd') return { ...(args.base || defaultStyle) };
+                if (cmd === 'apply_palette_mutation_cmd') return { ...(args.style || defaultStyle) };
+                if (cmd === 'clear_palette_override_cmd') return { ...(args.style || defaultStyle) };
                 if (cmd === 'save_config') return {};
                 if (cmd === 'save_style_config') return {};
                 if (cmd === 'show_window') return {};
                 if (cmd === 'open_dict_window') return {};
+                if (cmd === 'setup_dev_mock') return true;
+                if (cmd === 'derive_default_prompts') return { default_user_prompt: '', default_system_prompt: '' };
                 return null;
             },
         },
         event: {
             listen: async () => () => {},
+            emit: async () => {},
         },
     };
 };
@@ -249,4 +330,60 @@ test('開發者面板應可展開', async ({ page }) => {
     await page.locator('#btn-nav-dev').click();
     await page.waitForTimeout(500);
     await expect(page.locator('#excluded-paths')).toBeVisible();
+});
+
+test('開發者面板切換開關時不應影響其他開關，也不應觸發整頁語系刷新', async ({ page }) => {
+    await page.locator('#btn-nav-dev').click();
+    await expect(page.locator('#chk-skip-json')).toBeVisible();
+
+    const i18nCallsBefore = await page.evaluate(() => {
+        const invoke = window.__TAURI__.core.invoke;
+        let count = 0;
+        window.__TAURI__.core.invoke = async (cmd, args) => {
+            if (cmd === 'get_i18n_labels') count += 1;
+            return invoke(cmd, args);
+        };
+        window.__getI18nCallCount = () => count;
+        return window.__getI18nCallCount();
+    });
+    expect(i18nCallsBefore).toBe(0);
+
+    await page.evaluate(() => {
+        const setToggle = (id, value) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.checked = value;
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        setToggle('chk-skip-json', true);
+        setToggle('chk-debug-log', true);
+    });
+    await page.waitForTimeout(200);
+
+    await expect(page.locator('#chk-skip-json')).toBeChecked();
+    await expect(page.locator('#chk-debug-log')).toBeChecked();
+    await expect(page.locator('#chk-skip-js')).not.toBeChecked();
+    await expect(page.locator('#chk-skip-jar')).not.toBeChecked();
+    await expect(page.locator('#chk-skip-book')).not.toBeChecked();
+    await expect(page.locator('#chk-llm-log')).not.toBeChecked();
+
+    const i18nCallsAfter = await page.evaluate(() => window.__getI18nCallCount());
+    expect(i18nCallsAfter).toBe(0);
+});
+
+test('開發者面板開關列應為左開關右文字', async ({ page }) => {
+    await page.locator('#btn-nav-dev').click();
+    await expect(page.locator('#chk-skip-json')).toBeVisible();
+
+    const isSwitchFirst = await page.evaluate(() => {
+        const group = document.querySelector('#developer-settings .switch-group');
+        if (!group) return false;
+        const first = group.firstElementChild;
+        const second = group.children[1];
+        if (!first || !second) return false;
+        const firstIsSwitch = first.classList.contains('switch');
+        const secondIsText = second.id?.startsWith('label-');
+        return firstIsSwitch && secondIsText;
+    });
+    expect(isSwitchFirst).toBe(true);
 });

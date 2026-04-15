@@ -1,11 +1,42 @@
 // frontend/modules/config.js
 import { state } from './state.js';
 import { appendLog } from './utils.js';
-import { updateUiLanguage, updateToggleStateLabel } from './i18n.js';
 import { dom } from './dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
+
+function applyConfigUiState(ui) {
+    if (!ui || typeof ui !== 'object') return;
+
+    if (dom.ollamaUrlGroup) {
+        dom.ollamaUrlGroup.style.display = ui.show_ollama_url ? 'block' : 'none';
+    }
+    if (dom.apiKeyGroup) {
+        dom.apiKeyGroup.style.display = ui.show_api_key ? 'block' : 'none';
+    }
+    if (dom.apiBaseUrlGroup) {
+        dom.apiBaseUrlGroup.style.display = ui.show_api_base_url ? 'block' : 'none';
+    }
+    if (dom.groupFastConvert) {
+        dom.groupFastConvert.style.display = ui.show_fast_convert ? 'block' : 'none';
+    }
+    if (dom.btnTranslate) {
+        dom.btnTranslate.disabled = !ui.can_translate;
+    }
+}
+
+export function refreshConfigUiState() {
+    Promise.resolve(
+        invoke('derive_config_ui_state_cmd', {
+            provider: dom.apiProvider ? dom.apiProvider.value : '無',
+            selectedModel: dom.selectedModel ? dom.selectedModel.value : '',
+            apiKey: dom.apiKey ? dom.apiKey.value : '',
+            sourceLang: dom.sourceLang ? dom.sourceLang.value : 'en_us',
+            targetLang: dom.targetLang ? dom.targetLang.value : 'zh_tw',
+        })
+    ).then((ui) => applyConfigUiState(ui));
+}
 
 export async function loadConfig() {
     try {
@@ -52,7 +83,10 @@ export async function loadConfig() {
         if (config.fast_convert !== undefined) {
             if (dom.chkFastConvert) {
                 dom.chkFastConvert.checked = config.fast_convert;
-                updateToggleStateLabel('chk-fast-convert', dom.chkFastConvert.checked);
+                if (state.toggleLabels?.['chk-fast-convert']) {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels['chk-fast-convert'];
+                }
             }
         }
         toggleFastConvertGroup();
@@ -60,9 +94,7 @@ export async function loadConfig() {
             dom.excludedPaths.value = config.excluded_paths.join('\n');
         }
 
-        toggleOllamaGroup();
-        toggleApiKeyVisibility();
-        validateCanTranslate();
+        refreshConfigUiState();
     } catch (e) {
         const mask = state.currentLabels.status_load_config_failed || '❌ 載入配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
@@ -71,59 +103,39 @@ export async function loadConfig() {
 
 export async function saveConfig() {
     try {
-        state.currentConfig.api_provider = dom.apiProvider ? dom.apiProvider.value : '';
-        state.currentConfig.api_base_url = dom.apiBaseUrl ? dom.apiBaseUrl.value : '';
-
         await invoke('save_api_key_cmd', { key: dom.apiKey ? dom.apiKey.value : '' });
-        state.currentConfig.model = dom.selectedModel ? dom.selectedModel.value : '';
-        const old = state.currentConfig;
-        const parseSafeInt = (v, f) => {
-            let p = parseInt(v);
-            return isNaN(p) ? f : p;
-        };
-
-        state.currentConfig.ollama_url = dom.ollamaUrl ? dom.ollamaUrl.value : '';
-        state.currentConfig.batch_size = dom.batchSize ? parseSafeInt(dom.batchSize.value, old.batch_size || 150) : 150;
-        state.currentConfig.batch_max_chars = dom.batchMaxChars
-            ? parseSafeInt(dom.batchMaxChars.value, old.batch_max_chars || 3500)
-            : 3500;
-        state.currentConfig.timeout = dom.timeoutSec ? parseSafeInt(dom.timeoutSec.value, old.timeout || 60) : 60;
-        if (dom.uiLang) state.currentConfig.ui_lang = dom.uiLang.value;
-        if (dom.sourceLang) state.currentConfig.source_lang = dom.sourceLang.value;
-        if (dom.targetLang) state.currentConfig.target_lang = dom.targetLang.value;
-        state.currentConfig.pack_format = dom.packFormat
-            ? parseSafeInt(dom.packFormat.value, old.pack_format || 15)
-            : 15;
-        state.currentConfig.glossary_priority =
-            dom.chkGlossaryPriority && dom.chkGlossaryPriority.checked ? 'user' : 'official';
-        state.currentConfig.ui_lang = dom.uiLang ? dom.uiLang.value : state.currentConfig.ui_lang || 'zh_tw';
-        state.currentConfig.output_dir = dom.outputDir ? dom.outputDir.value : '';
-        state.currentConfig.path = dom.inputPath ? dom.inputPath.value : '';
-
-        state.currentConfig.system_prompt = dom.systemPrompt ? dom.systemPrompt.value : '';
-        state.currentConfig.user_prompt = dom.userPrompt ? dom.userPrompt.value : '';
-
-        state.currentConfig.skip_json = dom.chkSkipJson ? dom.chkSkipJson.checked : false;
-        state.currentConfig.skip_js = dom.chkSkipJs ? dom.chkSkipJs.checked : false;
-        state.currentConfig.skip_jar = dom.chkSkipJar ? dom.chkSkipJar.checked : false;
-        state.currentConfig.skip_book = dom.chkSkipBook ? dom.chkSkipBook.checked : false;
-        state.currentConfig.enable_llm_log = dom.chkLlmLog ? dom.chkLlmLog.checked : false;
-        state.currentConfig.enable_debug_log = dom.chkDebugLog ? dom.chkDebugLog.checked : false;
-        state.currentConfig.show_debug_tools = dom.chkDebugTools ? dom.chkDebugTools.checked : false;
-        if (dom.chkFastConvert) {
-            state.currentConfig.fast_convert = dom.chkFastConvert.checked;
-        }
-
-        state.currentConfig.excluded_paths = dom.excludedPaths
-            ? dom.excludedPaths.value
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .filter((s) => s !== '')
-            : [];
-
+        state.currentConfig = await invoke('build_form_config_cmd', {
+            base: state.currentConfig,
+            input: {
+                api_provider: dom.apiProvider ? dom.apiProvider.value : '',
+                api_base_url: dom.apiBaseUrl ? dom.apiBaseUrl.value : '',
+                ollama_url: dom.ollamaUrl ? dom.ollamaUrl.value : '',
+                model: dom.selectedModel ? dom.selectedModel.value : '',
+                source_lang: dom.sourceLang ? dom.sourceLang.value : 'en_us',
+                target_lang: dom.targetLang ? dom.targetLang.value : 'zh_tw',
+                batch_size: dom.batchSize ? dom.batchSize.value : '',
+                batch_max_chars: dom.batchMaxChars ? dom.batchMaxChars.value : '',
+                timeout: dom.timeoutSec ? dom.timeoutSec.value : '',
+                output_dir: dom.outputDir ? dom.outputDir.value : '',
+                pack_format: dom.packFormat ? dom.packFormat.value : '',
+                user_prompt: dom.userPrompt ? dom.userPrompt.value : '',
+                system_prompt: dom.systemPrompt ? dom.systemPrompt.value : '',
+                glossary_priority: dom.chkGlossaryPriority && dom.chkGlossaryPriority.checked ? 'user' : 'official',
+                skip_json: dom.chkSkipJson ? dom.chkSkipJson.checked : false,
+                skip_js: dom.chkSkipJs ? dom.chkSkipJs.checked : false,
+                skip_jar: dom.chkSkipJar ? dom.chkSkipJar.checked : false,
+                skip_book: dom.chkSkipBook ? dom.chkSkipBook.checked : false,
+                enable_llm_log: dom.chkLlmLog ? dom.chkLlmLog.checked : false,
+                enable_debug_log: dom.chkDebugLog ? dom.chkDebugLog.checked : false,
+                show_debug_tools: dom.chkDebugTools ? dom.chkDebugTools.checked : false,
+                ui_lang: dom.uiLang ? dom.uiLang.value : state.currentConfig.ui_lang || 'zh_tw',
+                path: dom.inputPath ? dom.inputPath.value : '',
+                fast_convert: dom.chkFastConvert ? dom.chkFastConvert.checked : false,
+                excluded_paths_text: dom.excludedPaths ? dom.excludedPaths.value : '',
+            },
+        });
         await invoke('save_config', { config: state.currentConfig });
-        updateUiLanguage();
-        validateCanTranslate();
+        refreshConfigUiState();
     } catch (e) {
         const mask = state.currentLabels.status_save_config_failed || '❌ 儲存配置失敗: {}';
         appendLog(mask.replace('{}', state.currentLabels[e] || e));
@@ -153,7 +165,7 @@ export async function loadTranslationLangs() {
         populate(dom.sourceLang, state.currentConfig.source_lang);
         populate(dom.targetLang, state.currentConfig.target_lang);
 
-        toggleFastConvertGroup();
+        refreshConfigUiState();
     } catch (e) {
         console.error('無法載入翻譯語言清單:', e);
     }
@@ -190,47 +202,20 @@ export async function loadModels() {
 }
 
 export function toggleOllamaGroup() {
-    if (dom.ollamaUrlGroup && dom.apiProvider) {
-        dom.ollamaUrlGroup.style.display = dom.apiProvider.value === 'Ollama' ? 'block' : 'none';
-    }
+    refreshConfigUiState();
 }
 
 /** 當目標語言為中文（zh_cn 或 zh_tw）時顯示快速轉換開關 */
 export function toggleFastConvertGroup() {
-    if (!dom.groupFastConvert || !dom.sourceLang || !dom.targetLang) {
-        return;
-    }
-
-    const src = dom.sourceLang.value;
-    const tgt = dom.targetLang.value;
-    const isTargetChinese = tgt === 'zh_cn' || tgt === 'zh_tw';
-    const shouldShow = isTargetChinese && src !== tgt;
-
-    dom.groupFastConvert.style.display = shouldShow ? 'block' : 'none';
+    refreshConfigUiState();
 }
 
 export function toggleApiKeyVisibility() {
-    if (dom.apiKeyGroup && dom.apiProvider) {
-        const noKeyProviders = ['Ollama', 'Google Free', '無'];
-        const isHidden = noKeyProviders.includes(dom.apiProvider.value);
-        dom.apiKeyGroup.style.display = isHidden ? 'none' : 'block';
-        if (dom.apiBaseUrlGroup) {
-            dom.apiBaseUrlGroup.style.display = isHidden ? 'none' : 'block';
-        }
-    }
+    refreshConfigUiState();
 }
 
 export function validateCanTranslate() {
-    if (dom.btnTranslate && dom.selectedModel && dom.apiProvider) {
-        const noKeyProviders = ['Ollama', 'Google Free', '無'];
-        const needsKey = !noKeyProviders.includes(dom.apiProvider.value);
-        const hasKey = needsKey ? dom.apiKey && dom.apiKey.value.trim() !== '' : true;
-        dom.btnTranslate.disabled =
-            (!dom.selectedModel.value &&
-                dom.apiProvider.value !== 'Google Free' &&
-                dom.apiProvider.value !== 'Ollama') ||
-            !hasKey;
-    }
+    refreshConfigUiState();
 }
 export async function restoreDefaultConfig() {
     try {
@@ -267,7 +252,15 @@ export async function restoreDefaultConfig() {
 
         ['chk-glossary-priority', 'chk-fast-convert'].forEach((id) => {
             const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(el);
+            if (el && state.toggleLabels?.[id]) {
+                if (id === 'chk-fast-convert') {
+                    const stateEl = document.getElementById('label-fast-convert-state');
+                    if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                } else {
+                    const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+                    if (labelEl) labelEl.textContent = state.toggleLabels[id];
+                }
+            }
         });
 
         await loadModels();
@@ -312,8 +305,10 @@ export async function restoreDevDefaults() {
             'chk-debug-log',
             'chk-debug-tools',
         ].forEach((id) => {
-            const el = document.getElementById(id);
-            if (el) updateToggleStateLabel(el);
+            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+            if (labelEl && state.toggleLabels?.[id]) {
+                labelEl.textContent = state.toggleLabels[id];
+            }
         });
 
         await invoke('save_config', { config: state.currentConfig });

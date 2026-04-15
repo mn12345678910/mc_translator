@@ -3,7 +3,15 @@ import { loadUiLangs, updateUiLanguage } from './modules/i18n.js';
 import { loadStyle } from './modules/style.js';
 import { initDictionary, loadDictionary } from './modules/dictionary.js';
 
+const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
+
 document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await invoke('get_gui_init_state');
+    } catch {
+        // Fallback to legacy pipeline if GUI snapshot command is unavailable.
+    }
+
     // 1. Standalone Startup Data load
     await loadConfig();
     await loadUiLangs();

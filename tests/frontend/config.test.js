@@ -64,6 +64,39 @@ describe('config.js 設定管理模組', () => {
 
         // 重設 Mock
         mockInvoke.mockReset();
+        mockInvoke.mockImplementation(async (cmd, args) => {
+            if (cmd === 'derive_config_ui_state_cmd') {
+                const provider = args?.provider || '無';
+                const noKeyProviders = ['Ollama', 'Google Free', '無'];
+                const hideKey = noKeyProviders.includes(provider);
+                return {
+                    show_ollama_url: provider === 'Ollama',
+                    show_api_key: !hideKey,
+                    show_api_base_url: !hideKey,
+                    show_fast_convert: false,
+                    can_translate: true,
+                };
+            }
+            if (cmd === 'build_form_config_cmd') {
+                const toNum = (v, fallback) => {
+                    const n = parseInt(v, 10);
+                    return Number.isNaN(n) ? fallback : n;
+                };
+                return {
+                    ...(args?.base || {}),
+                    ...(args?.input || {}),
+                    batch_size: toNum(args?.input?.batch_size, args?.base?.batch_size || 150),
+                    batch_max_chars: toNum(args?.input?.batch_max_chars, args?.base?.batch_max_chars || 3500),
+                    timeout: toNum(args?.input?.timeout, args?.base?.timeout || 60),
+                    pack_format: toNum(args?.input?.pack_format, args?.base?.pack_format || 15),
+                    excluded_paths: (args?.input?.excluded_paths_text || '')
+                        .split('\n')
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                };
+            }
+            return null;
+        });
         vi.clearAllMocks();
 
         // 重設 State
@@ -98,6 +131,18 @@ describe('config.js 設定管理模組', () => {
             if (cmd === 'get_config') return fakeConfig;
             if (cmd === 'get_api_key_cmd') return 'test-key-123';
             if (cmd === 'get_models_from_provider') return ['llama3', 'mistral'];
+            if (cmd === 'derive_config_ui_state_cmd') {
+                return {
+                    show_ollama_url: true,
+                    show_api_key: false,
+                    show_api_base_url: false,
+                    show_fast_convert: false,
+                    can_translate: true,
+                };
+            }
+            if (cmd === 'build_form_config_cmd') {
+                return { ...fakeConfig };
+            }
             return null;
         });
 
@@ -150,6 +195,9 @@ describe('config.js 設定管理模組', () => {
                 }),
             })
         );
+
+        const { updateUiLanguage } = await import('../../frontend/modules/i18n.js');
+        expect(updateUiLanguage).not.toHaveBeenCalled();
     });
 
     it('loadModels 應該獲取模型清單並動態渲染 <option>', async () => {

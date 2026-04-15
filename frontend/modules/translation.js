@@ -14,45 +14,50 @@ const UI_STATUS = {
     PAUSED: 'PAUSED',
 };
 
-/**
- * 從 DOM 獲取當前所有的表單配置值
- */
-function getFormConfig() {
-    return {
-        ...state.currentConfig,
-        api_provider: dom.apiProvider?.value || '無',
-        api_base_url: dom.apiBaseUrl?.value || '',
-        ollama_url: dom.ollamaUrl?.value || 'http://localhost:11434',
-        model: dom.selectedModel?.value || '',
-        source_lang: dom.sourceLang?.value || 'en_us',
-        target_lang: dom.targetLang?.value || 'zh_tw',
-        batch_size: parseInt(dom.batchSize?.value || '10'),
-        batch_max_chars: parseInt(dom.batchMaxChars?.value || '1000'),
-        timeout: parseInt(dom.timeoutSec?.value || '30'),
-        output_dir: dom.outputDir?.value || '',
-        pack_format: parseInt(dom.packFormat?.value || '15'),
-        user_prompt: dom.userPrompt?.value || '',
-        system_prompt: dom.systemPrompt?.value || '',
-        glossary_priority: dom.chkGlossaryPriority?.checked ? 'user' : 'official',
-        skip_json: dom.chkSkipJson?.checked || false,
-        skip_js: dom.chkSkipJs?.checked || false,
-        skip_jar: dom.chkSkipJar?.checked || false,
-        skip_book: dom.chkSkipBook?.checked || false,
-        enable_llm_log: dom.chkLlmLog?.checked || false,
-        enable_debug_log: dom.chkDebugLog?.checked || false,
-        ui_lang: dom.uiLang?.value || 'zh_tw',
-    };
+async function getFormConfig() {
+    return invoke('build_form_config_cmd', {
+        base: state.currentConfig,
+        input: {
+            api_provider: dom.apiProvider?.value || '無',
+            api_base_url: dom.apiBaseUrl?.value || '',
+            ollama_url: dom.ollamaUrl?.value || 'http://localhost:11434',
+            model: dom.selectedModel?.value || '',
+            source_lang: dom.sourceLang?.value || 'en_us',
+            target_lang: dom.targetLang?.value || 'zh_tw',
+            batch_size: dom.batchSize?.value || '',
+            batch_max_chars: dom.batchMaxChars?.value || '',
+            timeout: dom.timeoutSec?.value || '',
+            output_dir: dom.outputDir?.value || '',
+            pack_format: dom.packFormat?.value || '',
+            user_prompt: dom.userPrompt?.value || '',
+            system_prompt: dom.systemPrompt?.value || '',
+            glossary_priority: dom.chkGlossaryPriority?.checked ? 'user' : 'official',
+            skip_json: dom.chkSkipJson?.checked || false,
+            skip_js: dom.chkSkipJs?.checked || false,
+            skip_jar: dom.chkSkipJar?.checked || false,
+            skip_book: dom.chkSkipBook?.checked || false,
+            enable_llm_log: dom.chkLlmLog?.checked || false,
+            enable_debug_log: dom.chkDebugLog?.checked || false,
+            show_debug_tools: dom.chkDebugTools?.checked || false,
+            ui_lang: dom.uiLang?.value || 'zh_tw',
+            path: dom.inputPath?.value || '',
+            fast_convert: dom.chkFastConvert?.checked || false,
+            excluded_paths_text: dom.excludedPaths?.value || '',
+        },
+    });
 }
 
 /**
  * 核心：根據狀態更新 UI 元件鎖定與顯示
  */
-export function updateUiState(status) {
-    const isRunning = status === UI_STATUS.RUNNING;
-    const isPaused = status === UI_STATUS.PAUSED;
-    const isIdle = status === UI_STATUS.IDLE;
+function applyUiPatch(patch) {
+    const lockControls = !!patch.lock_controls;
+    const showTranslate = !!patch.show_translate;
+    const showPause = !!patch.show_pause;
+    const showResume = !!patch.show_resume;
+    const showStop = !!patch.show_stop;
 
-    // 1. 元件鎖定 (嚴格對齊對照表)
+    // 1. 元件鎖定
     const lockedSelectors = [
         '#input-path',
         '#btn-browse-file',
@@ -74,18 +79,16 @@ export function updateUiState(status) {
 
     const elementsToLock = document.querySelectorAll(lockedSelectors);
     elementsToLock.forEach((el) => {
-        el.disabled = isRunning;
+        el.disabled = lockControls;
     });
 
-    // 2. 按鈕顯隱控制
-    if (dom.btnTranslate) dom.btnTranslate.style.display = isIdle ? 'inline-block' : 'none';
-    if (dom.btnPause) dom.btnPause.style.display = isRunning ? 'inline-block' : 'none';
-    if (dom.btnResume) dom.btnResume.style.display = isPaused ? 'inline-block' : 'none';
-    if (dom.btnStop) dom.btnStop.style.display = isPaused ? 'inline-block' : 'none';
+    if (dom.btnTranslate) dom.btnTranslate.style.display = showTranslate ? 'inline-block' : 'none';
+    if (dom.btnPause) dom.btnPause.style.display = showPause ? 'inline-block' : 'none';
+    if (dom.btnResume) dom.btnResume.style.display = showResume ? 'inline-block' : 'none';
+    if (dom.btnStop) dom.btnStop.style.display = showStop ? 'inline-block' : 'none';
 
-    // 3. 暫停提示訊息
     let notice = document.getElementById('pause-notice');
-    if (!notice && (isRunning || isPaused)) {
+    if (!notice && (showPause || showResume || showStop)) {
         notice = document.createElement('div');
         notice.id = 'pause-notice';
         notice.style.fontSize = '12px';
@@ -96,26 +99,26 @@ export function updateUiState(status) {
         if (ctrlPanel) ctrlPanel.appendChild(notice);
     }
     if (notice) {
-        notice.textContent = isPaused ? '* 修改設定將在恢復後的下一個批次生效' : '';
-        notice.style.opacity = isPaused ? '1' : '0';
+        notice.textContent = patch.pause_notice || '';
+        notice.style.opacity = patch.pause_notice ? '1' : '0';
     }
 
-    // 4. 動畫與狀態清理
-    if (isIdle || isPaused) {
+    if (patch.status !== UI_STATUS.RUNNING) {
         const pulses = document.querySelectorAll('.pulse-glow, [style*="pulse"]');
         pulses.forEach((el) => (el.style.animation = 'none'));
     }
 
-    if (isIdle) {
-        // 重置狀態標籤
+    if (patch.clear_batch_status) {
         if (dom.batchStatusText) dom.batchStatusText.textContent = '';
+    }
+    if (patch.clear_current_status) {
         if (dom.currentStatusLabel) dom.currentStatusLabel.textContent = '';
     }
 }
 
-// 舊函式相容性包裝
-export function setRunningState(isRunning) {
-    updateUiState(isRunning ? UI_STATUS.RUNNING : UI_STATUS.IDLE);
+export async function updateUiState(status) {
+    const patch = await invoke('derive_ui_state', { status, lang: dom.uiLang?.value });
+    applyUiPatch(patch || { status });
 }
 
 export function initTranslation() {
@@ -126,8 +129,8 @@ export function initTranslation() {
             }
             try {
                 // 更新當前 Config Snapshot
-                state.currentConfig = getFormConfig();
-                state.currentConfig.path = dom.inputPath.value;
+                state.currentConfig = await getFormConfig();
+                const inputPath = dom.inputPath.value;
 
                 updateUiState(UI_STATUS.RUNNING);
 
@@ -137,7 +140,7 @@ export function initTranslation() {
 
                 await invoke('start_translation', {
                     config: state.currentConfig,
-                    inputPaths: [state.currentConfig.path],
+                    inputPaths: [inputPath],
                 });
             } catch (e) {
                 appendLog({
@@ -165,7 +168,7 @@ export function initTranslation() {
         dom.btnResume.addEventListener('click', async () => {
             try {
                 // 1. 先同步 UI 修改至後端
-                const latestConfig = getFormConfig();
+                const latestConfig = await getFormConfig();
                 await invoke('update_active_job_config', { config: latestConfig });
 
                 // 2. 執行恢復

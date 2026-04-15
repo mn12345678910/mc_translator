@@ -46,7 +46,7 @@ export function appendLog(entry) {
     const level = (data.level || 'Info').toLowerCase();
     const timeStr = new Date(data.timestamp || Date.now()).toLocaleTimeString([], { hour12: false });
 
-    window.__logViewer.appendLog(data.message, level, timeStr);
+    window.__logViewer.appendLog(data.message, level, timeStr, data.segments || []);
 }
 
 export function escapeHtml(str) {

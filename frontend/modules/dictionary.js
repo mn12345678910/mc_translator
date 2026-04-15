@@ -1,7 +1,6 @@
 // frontend/modules/dictionary.js
 import { state } from './state.js';
 import { appendLog, escapeHtml } from './utils.js';
-import { updateToggleStateLabel } from './i18n.js';
 import { dom } from './dom.js';
 
 // 動態取得 invoke，防止在 Mock 載入前就被靜態截流
@@ -13,12 +12,14 @@ let dictType = 'user';
 
 export async function loadDictionary() {
     try {
-        const [items, totalPages] = await invoke('query_dictionary', {
+        const pageData = await invoke('get_dictionary_page', {
             dictType: dictType,
             page: dictPage,
             pageSize: dictPageSize,
             searchKey: dom.dictSearch ? dom.dictSearch.value.trim() : '',
         });
+        const items = pageData?.items || [];
+        const totalPages = pageData?.total_pages || 0;
 
         if (dom.pageInfo) {
             const mask = state.currentLabels.label_page_info || '第 {} / {} 頁';
@@ -115,8 +116,9 @@ export function initDictionary() {
     if (dom.chkGlossaryPriority) {
         dom.chkGlossaryPriority.addEventListener('change', () => {
             dictPage = 0; // 重置頁碼
-            if (typeof updateToggleStateLabel === 'function') {
-                updateToggleStateLabel('chk-glossary-priority', dom.chkGlossaryPriority.checked);
+            const labelEl = document.getElementById('label-glossary-priority');
+            if (labelEl && state.toggleLabels?.['chk-glossary-priority']) {
+                labelEl.textContent = state.toggleLabels['chk-glossary-priority'];
             }
             loadDictionary();
         });

@@ -61,9 +61,11 @@ pub fn save_translation_memory(lang: &str, memory: &HashMap<String, String>) {
 /// 獲取所有可用的辭典語言
 /// 掃描 dicts/ 根目錄（向後相容）與 official/、user/ 子目錄
 pub fn get_available_dict_langs() -> Vec<String> {
-    let mut langs = std::collections::HashSet::new();
+    collect_available_dict_langs(std::path::Path::new(DICT_DIR))
+}
 
-    let base = std::path::Path::new(DICT_DIR);
+fn collect_available_dict_langs(base: &std::path::Path) -> Vec<String> {
+    let mut langs = std::collections::HashSet::new();
 
     // 1. 掃描根目錄（向後相容舊格式）
     if let Ok(entries) = fs::read_dir(base) {
@@ -103,9 +105,9 @@ pub fn get_available_dict_langs() -> Vec<String> {
         langs.insert("en_us".to_string());
     }
 
-    let mut langs_vec: Vec<String> = langs.into_iter().collect();
-    langs_vec.sort();
-    langs_vec
+    let mut out: Vec<String> = langs.into_iter().collect();
+    out.sort();
+    out
 }
 
 #[cfg(test)]
@@ -210,26 +212,31 @@ mod tests {
     #[test]
     fn test_get_available_dict_langs_scans_subdirs() {
         let _lock = TEST_LOCK.lock().unwrap();
-        let _ = fs::remove_dir_all(DICT_DIR);
-        // 等待 Windows 釋放目錄
-        #[cfg(windows)]
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        ensure_dicts_dir();
+        let base = std::env::temp_dir().join(format!(
+            "mc_translator_dict_scan_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
 
         // 根目錄放一個（向後相容）
-        fs::write(std::path::Path::new(DICT_DIR).join("zh_cn.json"), "{}").unwrap();
+        fs::write(base.join("zh_cn.json"), "{}").unwrap();
         // official 子目錄
-        let official = std::path::Path::new(DICT_DIR).join("official");
+        let official = base.join("official");
         fs::create_dir_all(&official).unwrap();
         fs::write(official.join("zh_tw.json"), "{}").unwrap();
         // user 子目錄
-        let user = std::path::Path::new(DICT_DIR).join("user");
+        let user = base.join("user");
         fs::create_dir_all(&user).unwrap();
         fs::write(user.join("en_us.json"), "{}").unwrap();
 
-        let langs = get_available_dict_langs();
+        let langs = collect_available_dict_langs(&base);
 
-        let _ = fs::remove_dir_all(DICT_DIR);
+        let _ = fs::remove_dir_all(&base);
 
         assert!(
             langs.contains(&"zh_cn".to_string()),
@@ -258,10 +265,19 @@ mod tests {
     #[test]
     fn test_get_available_dict_langs_fallback() {
         let _lock = TEST_LOCK.lock().unwrap();
-        teardown_test_dir();
-        assert!(!std::path::Path::new(DICT_DIR).exists());
+        let base = std::env::temp_dir().join(format!(
+            "mc_translator_dict_fallback_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
 
-        let langs = get_available_dict_langs();
+        let langs = collect_available_dict_langs(&base);
+        let _ = fs::remove_dir_all(&base);
         assert!(langs.contains(&"zh_tw".to_string()));
         assert!(langs.contains(&"zh_cn".to_string()));
         assert!(langs.contains(&"ja_jp".to_string()));

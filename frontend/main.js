@@ -1,7 +1,7 @@
 // frontend/main.js
 import { state } from './modules/state.js';
 import { debounce, appendLog } from './modules/utils.js';
-import { loadUiLangs, updateUiLanguage, updateToggleStateLabel } from './modules/i18n.js';
+import { loadUiLangs, updateUiLanguage } from './modules/i18n.js';
 import {
     loadConfig,
     loadTranslationLangs,
@@ -24,14 +24,44 @@ import { dom } from './modules/dom.js';
 const invoke = (...args) => (window.__TAURI__?.core?.invoke || (async () => ({})))(...args);
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const applyCssVars = (cssVars) => {
+        if (!cssVars || typeof cssVars !== 'object') return;
+        const root = document.documentElement;
+        Object.entries(cssVars).forEach(([key, value]) => {
+            root.style.setProperty(key, value);
+        });
+    };
+
+    // Rust-first init snapshot: keep frontend as thin renderer.
+    try {
+        const initState = await invoke('get_gui_init_state');
+        if (initState && typeof initState === 'object') {
+            if (initState.config) state.currentConfig = initState.config;
+            if (initState.style) state.currentStyle = initState.style;
+            if (initState.labels) state.currentLabels = initState.labels;
+            if (initState.toggle_labels) state.toggleLabels = initState.toggle_labels;
+            applyCssVars(initState.css_vars);
+        }
+    } catch (e) {
+        console.warn('Failed to load Rust GUI init state, fallback to legacy startup:', e);
+    }
+
     // [NEW] 1. 優先在開發模式下載入 Mock 工具，確保後續 invoke 正常
     if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
-        try {
-            const { initMockTools } = await import('./modules/mock.js');
-            await initMockTools();
-            console.log('[DEBUG] Mock tools initialized before config load.');
-        } catch (e) {
-            console.error('Failed to pre-load mock tools:', e);
+        if (window.__TAURI__) {
+            try {
+                await invoke('setup_dev_mock');
+            } catch (e) {
+                console.warn('Failed to setup Rust dev mock:', e);
+            }
+        } else {
+            try {
+                const { initMockTools } = await import('./modules/mock.js');
+                await initMockTools();
+                console.log('[DEBUG] Browser mock tools initialized before config load.');
+            } catch (e) {
+                console.error('Failed to pre-load browser mock tools:', e);
+            }
         }
     }
 
@@ -168,7 +198,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (selectEl) {
             selectEl.addEventListener('change', async () => {
                 if (id.startsWith('chk-')) {
-                    updateToggleStateLabel(id, selectEl.checked);
+                    if (state.toggleLabels?.[id]) {
+                        if (id === 'chk-fast-convert') {
+                            const stateEl = document.getElementById('label-fast-convert-state');
+                            if (stateEl) stateEl.textContent = state.toggleLabels[id];
+                        } else {
+                            const labelEl = document.getElementById(`label-${id.replace('chk-', '')}`);
+                            if (labelEl) labelEl.textContent = state.toggleLabels[id];
+                        }
+                    }
                 }
 
                 // 處理簡繁快速轉換開關顯示
@@ -178,16 +216,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // 目標語言變更時載入預設 Prompt
                 if (id === 'target-lang') {
-                    const lang = selectEl.value;
-                    const builtInLangs = ['zh_tw', 'zh_cn', 'ja_jp', 'en_us'];
-                    const targetLang = builtInLangs.includes(lang) ? lang : 'en_us';
                     try {
-                        const labels = await invoke('get_i18n_labels', { lang: targetLang });
-                        if (dom.userPrompt && labels.default_user_prompt) {
-                            dom.userPrompt.value = labels.default_user_prompt;
+                        const prompts = await invoke('derive_default_prompts', { lang: selectEl.value });
+                        if (dom.userPrompt && prompts.default_user_prompt) {
+                            dom.userPrompt.value = prompts.default_user_prompt;
                         }
-                        if (dom.systemPrompt && labels.default_system_prompt) {
-                            dom.systemPrompt.value = labels.default_system_prompt;
+                        if (dom.systemPrompt && prompts.default_system_prompt) {
+                            dom.systemPrompt.value = prompts.default_system_prompt;
                         }
                     } catch (e) {
                         console.error('載入預設 Prompts 失敗:', e);
@@ -221,55 +256,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panelDev = document.querySelector('.developer-settings');
     const panelTheme = document.querySelector('.theme-settings');
 
-    function updatePanelVisibility() {
-        if (!state.currentConfig || !state.currentStyle) return; // [SAFETY]
-        if (panelApi) panelApi.classList.toggle('expanded', !!state.currentConfig.show_api_settings);
-        if (panelDev) panelDev.classList.toggle('expanded', !!state.currentConfig.show_developer_mode);
-        if (panelTheme) panelTheme.classList.toggle('expanded', !!state.currentStyle.show_palette_settings);
+    function updatePanelVisibility(panelState) {
+        const showApi = panelState ? panelState.show_api_settings : !!state.currentConfig.show_api_settings;
+        const showDev = panelState ? panelState.show_developer_mode : !!state.currentConfig.show_developer_mode;
+        const showPalette = panelState ? panelState.show_palette_settings : !!state.currentStyle.show_palette_settings;
+
+        if (panelApi) panelApi.classList.toggle('expanded', showApi);
+        if (panelDev) panelDev.classList.toggle('expanded', showDev);
+        if (panelTheme) panelTheme.classList.toggle('expanded', showPalette);
 
         // 控制偵錯工具開關的顯示 (僅在開發者模式展開時才顯示開關本身)
         const groupDebugTools = document.getElementById('group-debug-tools');
         if (groupDebugTools) {
-            groupDebugTools.style.display = state.currentConfig.show_developer_mode ? 'flex' : 'none';
+            groupDebugTools.style.display = showDev ? 'flex' : 'none';
         }
+    }
+
+    async function applyPanelAction(action) {
+        const panelState = await invoke('derive_panel_state_cmd', {
+            action,
+            current: {
+                show_api_settings: !!state.currentConfig.show_api_settings,
+                show_developer_mode: !!state.currentConfig.show_developer_mode,
+                show_palette_settings: !!state.currentStyle.show_palette_settings,
+            },
+        });
+        state.currentConfig.show_api_settings = !!panelState.show_api_settings;
+        state.currentConfig.show_developer_mode = !!panelState.show_developer_mode;
+        state.currentStyle.show_palette_settings = !!panelState.show_palette_settings;
+        updatePanelVisibility(panelState);
+        await invoke('save_config', { config: state.currentConfig });
     }
 
     if (dom.btnNavApi) {
         dom.btnNavApi.addEventListener('click', async () => {
-            state.currentConfig.show_api_settings = !state.currentConfig.show_api_settings;
-            if (state.currentConfig.show_api_settings) {
-                state.currentConfig.show_developer_mode = false;
-                state.currentStyle.show_palette_settings = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_api');
         });
     }
     if (dom.btnNavDev) {
         dom.btnNavDev.addEventListener('click', async () => {
-            state.currentConfig.show_developer_mode = !state.currentConfig.show_developer_mode;
-            if (state.currentConfig.show_developer_mode) {
-                state.currentConfig.show_api_settings = false;
-                state.currentStyle.show_palette_settings = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_dev');
         });
     }
     if (dom.btnNavPalette) {
         dom.btnNavPalette.addEventListener('click', async () => {
-            state.currentStyle.show_palette_settings = !state.currentStyle.show_palette_settings;
-            if (state.currentStyle.show_palette_settings) {
-                state.currentConfig.show_api_settings = false;
-                state.currentConfig.show_developer_mode = false;
-            }
-            updatePanelVisibility();
-            await invoke('save_config', { config: state.currentConfig });
+            await applyPanelAction('toggle_palette');
         });
     }
     if (dom.btnNavTheme) {
         dom.btnNavTheme.addEventListener('click', async () => {
-            state.currentStyle.theme = state.currentStyle.theme === 'dark' ? 'light' : 'dark';
+            state.currentStyle = await invoke('toggle_theme_style_cmd', { style: state.currentStyle });
             applyColors(state.currentStyle);
             await invoke('save_style_config', { config: state.currentStyle });
         });
@@ -295,50 +331,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 400);
 
     if (dom.paletteColor) {
-        dom.paletteColor.addEventListener('input', () => {
-            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
-            let target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
-            const prop = dom.paletteProperty ? dom.paletteProperty.value : 'bg'; // bg or text
-            const hex = dom.paletteColor.value;
-            if (!hex.startsWith('#')) return;
-            const bigint = parseInt(hex.slice(1), 16);
-            const rgb = [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-
-            const isDark = state.currentStyle.theme !== 'light';
-
-            if (!isSpecific) {
-                // 全域類別：處理 dark_/light_ 前綴
-                if (target.startsWith('dark_') || target.startsWith('light_')) {
-                    const baseKey = target.substring(target.indexOf('_') + 1);
-                    target = (isDark ? 'dark_' : 'light_') + baseKey;
-                }
-                state.currentStyle[target] = rgb;
-            } else {
-                // 特定組件：根據目前主題決定存入 dark_... 或 light_...
-                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-
-                const themedProp = (isDark ? 'dark_' : 'light_') + prop;
-                state.currentStyle.instance_overrides[target][themedProp] = rgb;
-            }
+        dom.paletteColor.addEventListener('input', async () => {
+            state.currentStyle = await invoke('apply_palette_mutation_cmd', {
+                style: state.currentStyle,
+                input: {
+                    target_type: dom.paletteTargetType ? dom.paletteTargetType.value : 'global',
+                    target_item: dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg',
+                    property: dom.paletteProperty ? dom.paletteProperty.value : 'bg',
+                    color_hex: dom.paletteColor.value,
+                    number_value: null,
+                },
+            });
             applyColors(state.currentStyle);
             debouncedSavePalette();
         });
     }
 
     if (dom.paletteNumber) {
-        dom.paletteNumber.addEventListener('input', () => {
-            const isSpecific = dom.paletteTargetType ? dom.paletteTargetType.value === 'specific' : false;
-            const target = dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg';
-            const val = parseFloat(dom.paletteNumber.value) || 0;
-            if (isSpecific) {
-                if (!state.currentStyle.instance_overrides) state.currentStyle.instance_overrides = {};
-                if (!state.currentStyle.instance_overrides[target]) state.currentStyle.instance_overrides[target] = {};
-                state.currentStyle.instance_overrides[target].rounding = val;
-            } else {
-                // 如果是全域類別（例如 layout 分組中的屬性）
-                state.currentStyle[target] = val;
-            }
+        dom.paletteNumber.addEventListener('input', async () => {
+            state.currentStyle = await invoke('apply_palette_mutation_cmd', {
+                style: state.currentStyle,
+                input: {
+                    target_type: dom.paletteTargetType ? dom.paletteTargetType.value : 'global',
+                    target_item: dom.paletteTargetItem ? dom.paletteTargetItem.value : 'dark_bg',
+                    property: dom.paletteProperty ? dom.paletteProperty.value : 'rounding',
+                    color_hex: null,
+                    number_value: parseFloat(dom.paletteNumber.value) || 0,
+                },
+            });
             applyColors(state.currentStyle);
             debouncedSavePalette();
         });
@@ -351,9 +371,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             const target = dom.paletteTargetItem.value;
 
             try {
-                if (state.currentStyle.instance_overrides && state.currentStyle.instance_overrides[target]) {
-                    delete state.currentStyle.instance_overrides[target];
-                }
+                state.currentStyle = await invoke('clear_palette_override_cmd', {
+                    style: state.currentStyle,
+                    target,
+                });
 
                 updatePaletteValue();
                 applyColors(state.currentStyle);

@@ -189,7 +189,7 @@ export class VirtualLogViewer {
     /**
      * 新增一條日誌
      */
-    appendLog(message, level = 'info', timeStr = '') {
+    appendLog(message, level = 'info', timeStr = '', segments = []) {
         const width = this.container.clientWidth - 20; // 扣除 padding
         const height = this.measureHeight(message, width);
 
@@ -198,6 +198,7 @@ export class VirtualLogViewer {
             level,
             timeStr,
             height,
+            segments: Array.isArray(segments) ? segments : [],
         };
 
         this.logs.push(logEntry);
@@ -344,21 +345,23 @@ export class VirtualLogViewer {
             const msgSpan = document.createElement('span');
             msgSpan.className = 'log-msg';
 
-            // [NEW] 解析標籤並轉換為帶有類別的 Span
-            const parts = log.message.split(/(<dir>.*?<\/dir>|<file>.*?<\/file>)/g);
-            parts.forEach((part) => {
-                if (part.startsWith('<dir>')) {
+            const segments =
+                Array.isArray(log.segments) && log.segments.length > 0
+                    ? log.segments
+                    : [{ kind: 'text', text: log.message }];
+            segments.forEach((seg) => {
+                if (seg.kind === 'dir') {
                     const s = document.createElement('span');
                     s.className = 'log-dir';
-                    s.textContent = part.replace(/<dir>|<\/dir>/g, '');
+                    s.textContent = seg.text || '';
                     msgSpan.appendChild(s);
-                } else if (part.startsWith('<file>')) {
+                } else if (seg.kind === 'file') {
                     const s = document.createElement('span');
                     s.className = 'log-file';
-                    s.textContent = part.replace(/<file>|<\/file>/g, '');
+                    s.textContent = seg.text || '';
                     msgSpan.appendChild(s);
-                } else if (part) {
-                    msgSpan.appendChild(document.createTextNode(part));
+                } else if (seg.text) {
+                    msgSpan.appendChild(document.createTextNode(seg.text));
                 }
             });
 
