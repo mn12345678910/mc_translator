@@ -50,10 +50,10 @@ jobs:
               run: cargo fmt --all -- --check
             - name: Run Clippy (Linter)
               run: cargo clippy -- -D warnings
+            - name: Install cargo-audit
+              uses: taiki-e/install-action@cargo-audit
             - name: Security Audit
-              uses: rustsec/audit-check@v2
-              with:
-                  token: ${{ secrets.GITHUB_TOKEN }}
+              run: cargo audit --deny warnings
             - name: License & Duplicate Check (Deny)
               uses: EmbarkStudios/cargo-deny-action@v2
               env:

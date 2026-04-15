@@ -45,6 +45,7 @@
 | [測試指南](guides/testing_guide.md)              | 如何編寫測試、除錯 CI         |
 | [前端開發指南](guides/frontend_development.md)   | 前端架構、Mock 工具、樣式系統 |
 | [CI 指南](guides/ci_guide.md)                    | CI 流程、Hooks、除錯指南      |
+| [依賴告警處理](guides/dependency_advisories.md)  | RustSec 告警分類與修復策略    |
 
 ## 📜 歷史文檔
 

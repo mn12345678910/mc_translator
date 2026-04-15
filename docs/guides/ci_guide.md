@@ -23,7 +23,7 @@ Push → Pre-commit Hooks → Pre-push Hooks → GitHub Actions
 
 - `cargo fmt` — Rust 程式碼格式檢查
 - `cargo clippy` — Rust Linter（`-D warnings`）
-- `rustsec/audit-check` — Rust 依賴漏洞掃描
+- `cargo-audit` — Rust 依賴漏洞掃描
 - `cargo-deny` — 許可證檢查與重複依賴偵測
 - `pnpm lint` — 前端 Linter
 - `check-tauri` — Tauri API 同步檢查

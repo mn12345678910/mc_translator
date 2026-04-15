@@ -7,7 +7,7 @@
 | 工具                                                                 | 用途                                            | 觸發時機            |
 | -------------------------------------------------------------------- | ----------------------------------------------- | ------------------- |
 | [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)            | Rust 依賴許可證檢查、重複版本偵測、已知漏洞掃描 | 每次 push/PR        |
-| [rustsec/audit-check](https://github.com/RustSec/rustsec)            | Rust 依賴安全公告檢查（RUSTSEC）                | 每次 push/PR        |
+| [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit) | Rust 依賴安全公告檢查（RUSTSEC）             | 每次 push/PR        |
 | [detect-private-key](https://github.com/pre-commit/pre-commit-hooks) | 偵測意外提交的私鑰檔案                          | 每次 commit         |
 | [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)          | Rust 程式碼覆蓋率報告                           | 每次 push（Ubuntu） |
 | [Vitest v8](https://vitest.dev/guide/coverage.html)                  | JavaScript 程式碼覆蓋率報告                     | 每次 push           |
@@ -39,6 +39,7 @@
 - 所有 npm 依賴由 Dependabot 每週自動檢查更新
 - GitHub Actions 版本由 Dependabot 每週自動更新
 - 已知漏洞由 `cargo-deny` 和 `rustsec` 自動偵測
+- 轉移依賴告警的分類與追蹤策略請見 [docs/guides/dependency_advisories.md](docs/guides/dependency_advisories.md)
 
 ## 分支保護
 
