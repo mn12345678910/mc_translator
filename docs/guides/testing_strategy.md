@@ -27,7 +27,7 @@
 - Rust 格式化: `cargo fmt --all -- --check`
 - Rust Lint: `cargo clippy -- -D warnings`
 - Rust 測試: `cargo nextest run --workspace --all-targets`
-- 安全掃描: `cargo-deny`, `rustsec/audit`
+- 安全掃描: `cargo-deny`, `cargo audit`
 - Frontend Lint: `pnpm lint`
 - Frontend 測試: `pnpm vitest run --coverage`
 - Tauri API Bridge: `node tool/check_tauri_sync.js`

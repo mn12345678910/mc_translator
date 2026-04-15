@@ -121,7 +121,7 @@ gh pr merge <number> --squash --delete-branch
 - [ ] 沒有在程式碼中硬編碼 API Key 或密碼（使用 OS Keyring）
 - [ ] `config.cfg`、`.env` 等敏感檔案已加入 `.gitignore`
 - [ ] 沒有意外提交 `dicts/`、`settings/`、`langs/` 等生成目錄
-- [ ] 依賴版本沒有已知漏洞（CI 的 `rustsec/audit-check` 會自動檢查）
+- [ ] 依賴版本沒有已知漏洞（CI 的 `cargo audit` 會自動檢查）
 - [ ] 新增的第三方依賴符合許可證要求（CI 的 `cargo-deny` 會自動檢查）
 
 ## 工具速查表
