@@ -131,7 +131,7 @@ pub async fn load_mc_dicts_with_args(
                 }
             }
             // 排序確保最長字串優先替換（避免部份覆蓋）
-            unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+            unfiltered_diffs.sort_by_key(|entry| std::cmp::Reverse(entry.0.len()));
         }
     } else if target_lang == "zh_cn" {
         if let (Some(cn), Some(tw)) = (files.langs.get("zh_cn"), files.langs.get("zh_tw")) {
@@ -147,7 +147,7 @@ pub async fn load_mc_dicts_with_args(
                 }
             }
             // 排序確保最長字串優先替換（避免部份覆蓋）
-            unfiltered_diffs.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+            unfiltered_diffs.sort_by_key(|entry| std::cmp::Reverse(entry.0.len()));
         }
     }
 

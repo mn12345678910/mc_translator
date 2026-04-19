@@ -177,7 +177,7 @@ pub fn hashmap_to_entries(
             source: t.clone(),
         })
         .collect();
-    entries.sort_by(|a, b| b.original.len().cmp(&a.original.len()));
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.original.len()));
     entries
 }
 
