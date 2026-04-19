@@ -80,7 +80,7 @@ impl GlossaryAutomaton {
         let mut entries = Vec::with_capacity(terms_map.len());
 
         let mut keys: Vec<_> = terms_map.into_iter().collect();
-        keys.sort_by(|a, b| b.0.len().cmp(&a.0.len()));
+        keys.sort_by_key(|entry| std::cmp::Reverse(entry.0.len()));
 
         for (k, v) in keys {
             let source = source_types.get(&k).cloned().unwrap_or(TermType::Official);

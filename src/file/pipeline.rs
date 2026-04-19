@@ -216,7 +216,7 @@ pub async fn process_all_files(
         }
     };
 
-    file_tasks.sort_by(|a, b| get_group_key(&a.path).cmp(&get_group_key(&b.path)));
+    file_tasks.sort_by_key(|a| get_group_key(&a.path));
 
     // 重新規整 global_items，使其與已排序的 file_tasks 順序一致，避免切片失配
     let mut task_item_groups: std::collections::HashMap<usize, Vec<GlobalBatchItem>> =

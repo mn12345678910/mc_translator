@@ -66,7 +66,7 @@ fn apply_glossary_then_hanconv(
         .collect();
 
     // 2. 反向替換（避免 byte offset 位移）
-    matches.sort_by(|a, b| b.0.cmp(&a.0));
+    matches.sort_by_key(|entry| std::cmp::Reverse(entry.0));
     let mut result = text.to_string();
     for (start, end, replacement) in matches {
         // 確認 byte 邊界有效（防止 UTF-8 切割錯誤）
