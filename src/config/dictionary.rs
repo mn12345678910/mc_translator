@@ -114,26 +114,57 @@ fn collect_available_dict_langs(base: &std::path::Path) -> Vec<String> {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+    use std::path::{Path, PathBuf};
     use std::sync::Mutex;
 
     static TEST_LOCK: Mutex<()> = Mutex::new(());
 
-    fn setup_test_dir() {
-        let _ = fs::remove_dir_all(DICT_DIR);
-        ensure_dicts_dir();
+    fn unique_test_dir(label: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "mc_translator_dict_{label}_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ))
     }
 
-    fn teardown_test_dir() {
-        let _ = fs::remove_dir_all(DICT_DIR);
+    fn setup_test_dir(label: &str) -> PathBuf {
+        let base = unique_test_dir(label);
+        let _ = fs::remove_dir_all(&base);
+        fs::create_dir_all(&base).unwrap();
+        base
+    }
+
+    fn teardown_test_dir(path: &Path) {
+        let _ = fs::remove_dir_all(path);
+    }
+
+    struct CurrentDirGuard {
+        original: PathBuf,
+    }
+
+    impl Drop for CurrentDirGuard {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.original);
+        }
+    }
+
+    fn with_test_cwd<T>(path: &Path, f: impl FnOnce() -> T) -> T {
+        let _guard = CurrentDirGuard {
+            original: std::env::current_dir().unwrap(),
+        };
+        std::env::set_current_dir(path).unwrap();
+        f()
     }
 
     /// 1. 正常路徑測試（正常流程）
     #[test]
     fn test_save_load_dict_standard() {
         let _lock = TEST_LOCK.lock().unwrap();
-        setup_test_dir();
-        const TEST_DICT: &str = "test_temp_dictionary_standard.json";
-        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        let base = setup_test_dir("standard");
+        let path = base.join("test_temp_dictionary_standard.json");
         let mut data = HashMap::new();
         data.insert("Apple".to_string(), "蘋果".to_string());
 
@@ -142,16 +173,15 @@ mod tests {
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("Apple").unwrap(), "蘋果");
 
-        teardown_test_dir();
+        teardown_test_dir(&base);
     }
 
     /// 2. 邊界值與 UTF-8 測試（邊界案例 / UTF-8）
     #[test]
     fn test_save_load_dict_utf8_edge() {
         let _lock = TEST_LOCK.lock().unwrap();
-        setup_test_dir();
-        const TEST_DICT: &str = "test_temp_dictionary_utf8.json";
-        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        let base = setup_test_dir("utf8");
+        let path = base.join("test_temp_dictionary_utf8.json");
         let mut data = HashMap::new();
         data.insert("❄️ Ice".to_string(), "冰塊".to_string());
 
@@ -160,22 +190,21 @@ mod tests {
         let loaded: HashMap<String, String> = load_dict(&path);
         assert_eq!(loaded.get("❄️ Ice").unwrap(), "冰塊");
 
-        teardown_test_dir();
+        teardown_test_dir(&base);
     }
 
     /// 3. 強韌性與異常處理（健壯性 / 負向案例）
     #[test]
     fn test_load_corrupt_dict_fallback() {
         let _lock = TEST_LOCK.lock().unwrap();
-        setup_test_dir();
-        const TEST_DICT: &str = "test_temp_dictionary_corrupt.json";
-        let path = std::path::Path::new(DICT_DIR).join(TEST_DICT);
+        let base = setup_test_dir("corrupt");
+        let path = base.join("test_temp_dictionary_corrupt.json");
         let _ = std::fs::write(&path, "{ invalid_json: ");
 
         let loaded: HashMap<String, String> = load_dict(&path);
         assert!(loaded.is_empty());
 
-        teardown_test_dir();
+        teardown_test_dir(&base);
     }
 
     #[test]
@@ -196,17 +225,19 @@ mod tests {
     #[test]
     fn test_translation_memory_load_save_cycle() {
         let _lock = TEST_LOCK.lock().unwrap();
-        setup_test_dir();
+        let base = setup_test_dir("translation_memory");
         let lang = "test_memory_cycle";
         let mut memory = HashMap::new();
         memory.insert("Door".to_string(), "門".to_string());
 
-        save_translation_memory(lang, &memory);
+        with_test_cwd(&base, || {
+            save_translation_memory(lang, &memory);
 
-        let loaded = load_translation_memory(lang);
-        assert_eq!(loaded.get("Door").unwrap(), "門");
+            let loaded = load_translation_memory(lang);
+            assert_eq!(loaded.get("Door").unwrap(), "門");
+        });
 
-        teardown_test_dir();
+        teardown_test_dir(&base);
     }
 
     #[test]
