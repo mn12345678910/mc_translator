@@ -18,7 +18,7 @@ tokio = { version = "1", features = ["full"] }
 lazy_static = "1.4.0"
 regex = "1.10"
 reqwest = { version = "0.13", features = ["json", "cookies", "stream", "form", "native-tls"] }
-zip = "8.5"
+zip = "8.6"
 urlencoding = "2.1"
 hanconv = "0.5"
 chrono = "0.4"
