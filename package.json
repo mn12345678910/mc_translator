@@ -35,7 +35,7 @@
     },
     "homepage": "https://github.com/mn12345678910/mc_translator#readme",
     "devDependencies": {
-        "@playwright/test": "^1.52.0",
+        "@playwright/test": "^1.60.0",
         "@tauri-apps/api": "^2.11.0",
         "@tauri-apps/cli": "^2.11.1",
         "@vitest/coverage-v8": "^4.1.2",
