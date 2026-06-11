@@ -133,7 +133,7 @@ jobs:
               run: pnpm vitest run --coverage
             - name: Upload Rust Coverage to Codecov
               if: matrix.os == 'ubuntu-latest'
-              uses: codecov/codecov-action@v6
+              uses: codecov/codecov-action@v7
               with:
                   files: coverage/rust-lcov.info
                   flags: rust
@@ -142,7 +142,7 @@ jobs:
               env:
                   CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
             - name: Upload Frontend Coverage to Codecov
-              uses: codecov/codecov-action@v6
+              uses: codecov/codecov-action@v7
               with:
                   files: coverage/lcov.info
                   flags: javascript
