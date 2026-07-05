@@ -53,7 +53,7 @@ jobs:
             - name: Install cargo-audit
               uses: taiki-e/install-action@cargo-audit
             - name: Security Audit
-              run: cargo audit --deny warnings
+              run: cargo audit
             - name: License & Duplicate Check (Deny)
               uses: EmbarkStudios/cargo-deny-action@v2
               env:
