@@ -29,7 +29,7 @@ jobs:
             checks: write
             issues: write
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Setup Rust Toolchain
               uses: dtolnay/rust-toolchain@stable
               with:
@@ -86,7 +86,7 @@ jobs:
                 os: [ubuntu-latest, windows-latest]
         runs-on: ${{ matrix.os }}
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Setup Rust Toolchain
               uses: dtolnay/rust-toolchain@stable
             - name: Install Linux dependencies
@@ -156,7 +156,7 @@ jobs:
         name: E2E Tests (Playwright)
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Setup pnpm
               uses: pnpm/action-setup@v6
               with:
@@ -186,7 +186,7 @@ jobs:
         runs-on: ubuntu-latest
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - name: Install Linux dependencies
               if: runner.os == 'Linux'
               run: |
@@ -218,7 +218,7 @@ jobs:
                     - platform: 'windows-latest'
                       name: 'Windows'
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   fetch-depth: 0 # git-cliff needs full history
             - name: Setup pnpm
