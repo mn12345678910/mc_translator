@@ -63,7 +63,7 @@ jobs:
               with:
                   version: 10
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 'latest'
                   cache: 'pnpm'
@@ -106,7 +106,7 @@ jobs:
               with:
                   version: 10
             - name: Setup Node.js (for frontend tests if needed)
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 'latest'
                   cache: 'pnpm'
@@ -162,7 +162,7 @@ jobs:
               with:
                   version: 10
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 'latest'
                   cache: 'pnpm'
@@ -226,7 +226,7 @@ jobs:
               with:
                   version: 10
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 'latest'
                   cache: 'pnpm'
