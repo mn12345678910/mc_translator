@@ -5,6 +5,9 @@
 [![codecov](https://codecov.io/gh/mn12345678910/mc_translator/graph/badge.svg)](https://codecov.io/gh/mn12345678910/mc_translator)
 
 > [!WARNING]
+由於大多數硬體限制，評估目前環境還無法達到理想效果，暫時停止維護
+
+> [!WARNING]
 > 安全須知:
 > 本工具使用系統憑證管理鏈 (`keyring` crate) 對 API KEY 進行安全儲存。
 > 但本工具 100% 由 AI 撰寫，請自行評估風險，如有疑慮請使用 Ollama 本地模型等不需要 API Key 的翻譯服務。
@@ -14,9 +17,6 @@
 > 本工具適合快速翻譯與初稿整理，品質無法取代人工翻譯。請不要將輸出內容直接提交給模組作者。
 
 > [!NOTE]
-> API Key 行為:
-> 選擇需要 API Key 的提供商 (Gemini, OpenAI, DeepSeek, Mistral) 但未設定 Key 時，翻譯會返回明確錯誤。
-> 前端會自動鎖定翻譯按鈕，CLI headless 模式會返回錯誤訊息。
 > Ollama 和 Google Free 不需要 API Key。
 
 `mc_translator` 是一款為 Minecraft 模組與整合包本地化設計的工具，支援 GUI (Tauri) 與 CLI 兩種操作模式。
