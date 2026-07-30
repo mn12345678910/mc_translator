@@ -4,15 +4,14 @@
 
 本專案在 CI 中整合以下自動化安全掃描：
 
-| 工具                                                                 | 用途                                            | 觸發時機            |
-| -------------------------------------------------------------------- | ----------------------------------------------- | ------------------- |
-| [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)            | Rust 依賴許可證檢查、重複版本偵測、已知漏洞掃描 | 每次 push/PR        |
-| [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit) | Rust 依賴安全公告檢查（RUSTSEC）             | 每次 push/PR        |
-| [detect-private-key](https://github.com/pre-commit/pre-commit-hooks) | 偵測意外提交的私鑰檔案                          | 每次 commit         |
-| [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)          | Rust 程式碼覆蓋率報告                           | 每次 push（Ubuntu） |
-| [Vitest v8](https://vitest.dev/guide/coverage.html)                  | JavaScript 程式碼覆蓋率報告                     | 每次 push           |
-| [Codecov](https://codecov.io/)                                       | 覆蓋率追蹤與 PR 評論                            | 每次 push/PR        |
-| [Dependabot](https://github.com/dependabot)                          | 自動化依賴版本更新（cargo/npm/github-actions）  | 每週                |
+| 工具                                                                    | 用途                                            | 觸發時機            |
+| ----------------------------------------------------------------------- | ----------------------------------------------- | ------------------- |
+| [cargo-deny](https://github.com/EmbarkStudios/cargo-deny)               | Rust 依賴許可證檢查、重複版本偵測、已知漏洞掃描 | 每次 push/PR        |
+| [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit) | Rust 依賴安全公告檢查（RUSTSEC）                | 每次 push/PR        |
+| [detect-private-key](https://github.com/pre-commit/pre-commit-hooks)    | 偵測意外提交的私鑰檔案                          | 每次 commit         |
+| [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)             | Rust 程式碼覆蓋率報告                           | 每次 push（Ubuntu） |
+| [Vitest v8](https://vitest.dev/guide/coverage.html)                     | JavaScript 程式碼覆蓋率報告                     | 每次 push           |
+| [Codecov](https://codecov.io/)                                          | 覆蓋率追蹤與 PR 評論                            | 每次 push/PR        |
 
 ## 敏感資料處理政策
 

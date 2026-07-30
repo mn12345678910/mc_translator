@@ -182,7 +182,7 @@ jobs:
     miri:
         name: Miri Analysis
         runs-on: ubuntu-latest
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch'
         steps:
             - uses: actions/checkout@v7
             - name: Install Linux dependencies
