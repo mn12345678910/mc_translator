@@ -43,7 +43,7 @@
         "cssnano": "^8.0.2",
         "eslint": "^10.7.0",
         "happy-dom": "^20.11.1",
-        "postcss-nesting": "^14.0.0",
+        "postcss-nesting": "^14.0.1",
         "prettier": "^3.9.6",
         "vite": "^8.1.5",
         "vitest": "^4.1.2"
