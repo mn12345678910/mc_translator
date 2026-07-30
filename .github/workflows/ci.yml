@@ -39,7 +39,7 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
             - name: Install Sccache
               id: install_sccache
-              uses: mozilla-actions/sccache-action@v0.0.10
+              uses: mozilla-actions/sccache-action@v0.0.11
               continue-on-error: true
             - name: Setup Sccache Wrapper
               if: steps.install_sccache.outcome == 'success'
@@ -94,7 +94,7 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
             - name: Install Sccache
               id: install_sccache
-              uses: mozilla-actions/sccache-action@v0.0.10
+              uses: mozilla-actions/sccache-action@v0.0.11
               continue-on-error: true
             - name: Setup Sccache Wrapper
               if: steps.install_sccache.outcome == 'success'
@@ -237,7 +237,7 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev pkg-config libglib2.0-dev
             - name: Install Sccache
               id: install_sccache
-              uses: mozilla-actions/sccache-action@v0.0.10
+              uses: mozilla-actions/sccache-action@v0.0.11
               continue-on-error: true
             - name: Setup Sccache Wrapper
               if: steps.install_sccache.outcome == 'success'
